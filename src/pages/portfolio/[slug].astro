@@ -1,0 +1,203 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return [
+    {
+      params: { slug: 'fintech-dashboard' },
+      props: {
+        project: {
+          title: 'Fintech Dashboard',
+          category: 'Web Application',
+          tags: ['React', 'Node.js', 'PostgreSQL', 'TypeScript', 'WebSocket'],
+          image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop',
+          overview: 'We partnered with Nexus Financial to build a next-generation trading platform that handles millions of daily transactions with real-time analytics.',
+          challenge: 'Legacy systems were causing 3-second delays on critical trades, resulting in significant revenue loss. The existing dashboard couldn\'t scale beyond 10,000 concurrent users.',
+          solution: 'We architected a microservices-based solution with WebSocket connections for real-time data, optimized database queries, and a React frontend with virtualized lists for massive datasets.',
+          results: [
+            { metric: '99.99%', label: 'Uptime' },
+            { metric: '50ms', label: 'Avg. Latency' },
+            { metric: '100K+', label: 'Concurrent Users' },
+            { metric: '40%', label: 'Revenue Increase' },
+          ],
+          timeline: '6 months',
+          team: '8 engineers',
+        }
+      }
+    },
+    {
+      params: { slug: 'healthtrack-app' },
+      props: {
+        project: {
+          title: 'HealthTrack App',
+          category: 'Mobile App',
+          tags: ['React Native', 'Firebase', 'TensorFlow', 'HealthKit'],
+          image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=600&fit=crop',
+          overview: 'HealthFirst needed a comprehensive health monitoring app that could integrate with wearables and provide AI-powered personalized insights.',
+          challenge: 'Users were overwhelmed by raw health data with no actionable insights. Competitor apps provided generic recommendations that didn\'t account for individual health patterns.',
+          solution: 'We built a React Native app with Firebase backend, integrating with Apple HealthKit and Google Fit. Our ML models analyze patterns to provide personalized health recommendations.',
+          results: [
+            { metric: '4.9★', label: 'App Store Rating' },
+            { metric: '2M+', label: 'Downloads' },
+            { metric: '85%', label: 'Daily Active Users' },
+            { metric: '60%', label: 'User Engagement' },
+          ],
+          timeline: '8 months',
+          team: '6 engineers + 1 ML specialist',
+        }
+      }
+    },
+    {
+      params: { slug: 'ecommerce-platform' },
+      props: {
+        project: {
+          title: 'E-Commerce Platform',
+          category: 'Web Application',
+          tags: ['Next.js', 'Stripe', 'Tailwind CSS', 'PostgreSQL'],
+          image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=600&fit=crop',
+          overview: 'RetailMax needed to unify their online and in-store experience with a modern e-commerce platform that could handle peak traffic during sales events.',
+          challenge: 'The existing platform crashed during Black Friday, costing millions in lost sales. Cart abandonment was at 75% due to a complicated checkout process.',
+          solution: 'We built a headless commerce solution with Next.js, implementing server-side rendering for SEO, optimized checkout flow, and auto-scaling infrastructure on AWS.',
+          results: [
+            { metric: '99.95%', label: 'Uptime' },
+            { metric: '3.2%', label: 'Cart Abandonment' },
+            { metric: '250%', label: 'Sales Increase' },
+            { metric: '<1s', label: 'Page Load Time' },
+          ],
+          timeline: '5 months',
+          team: '5 engineers',
+        }
+      }
+    },
+  ];
+}
+
+const { project } = Astro.props;
+---
+
+<BaseLayout
+  title={project.title}
+  description={`${project.title} - ${project.overview.slice(0, 150)}...`}
+  ogImage={project.image}
+  ogType="article"
+>
+  <!-- Hero -->
+  <section class="pt-32 pb-16 bg-gray-900 text-white">
+    <div class="container-custom">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-gray-400">
+          <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+          <li>/</li>
+          <li><a href="/portfolio" class="hover:text-white transition-colors">Portfolio</a></li>
+          <li>/</li>
+          <li class="text-white">{project.title}</li>
+        </ol>
+      </nav>
+
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <span class="text-primary-400 font-medium mb-2 block">{project.category}</span>
+          <h1 class="text-4xl sm:text-5xl font-bold mb-6">{project.title}</h1>
+          <div class="flex flex-wrap gap-2 mb-6">
+            {project.tags.map((tag: string) => (
+              <span class="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-sm">
+                {tag}
+              </span>
+            ))}
+          </div>
+          <p class="text-gray-300 text-lg">{project.overview}</p>
+        </div>
+        <div class="relative">
+          <img
+            src={project.image}
+            alt={project.title}
+            class="rounded-2xl shadow-2xl"
+            loading="eager"
+            width="1200"
+            height="600"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="py-12 bg-white border-b border-gray-100">
+    <div class="container-custom">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        {project.results.map((result: { metric: string; label: string }) => (
+          <div class="text-center">
+            <div class="text-3xl lg:text-4xl font-bold text-primary-600 mb-1">{result.metric}</div>
+            <div class="text-gray-500">{result.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Project Details -->
+  <section class="section-padding bg-gray-50">
+    <div class="container-custom">
+      <div class="grid lg:grid-cols-3 gap-12">
+        <!-- Sidebar -->
+        <aside class="lg:col-span-1">
+          <div class="bg-white rounded-xl p-6 shadow-sm sticky top-24">
+            <h3 class="font-semibold text-gray-900 mb-4">Project Details</h3>
+            <dl class="space-y-4">
+              <div>
+                <dt class="text-sm text-gray-500">Timeline</dt>
+                <dd class="font-medium text-gray-900">{project.timeline}</dd>
+              </div>
+              <div>
+                <dt class="text-sm text-gray-500">Team Size</dt>
+                <dd class="font-medium text-gray-900">{project.team}</dd>
+              </div>
+              <div>
+                <dt class="text-sm text-gray-500">Services</dt>
+                <dd class="font-medium text-gray-900">Full-Stack Development</dd>
+              </div>
+              <div class="pt-4">
+                <a href="/contact" class="btn-primary w-full text-center">Start Similar Project</a>
+              </div>
+            </dl>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-12">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">The Challenge</h2>
+            <p class="text-gray-600 leading-relaxed">{project.challenge}</p>
+          </div>
+
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Our Solution</h2>
+            <p class="text-gray-600 leading-relaxed">{project.solution}</p>
+          </div>
+
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Tech Stack</h2>
+            <div class="flex flex-wrap gap-3">
+              {project.tags.map((tech: string) => (
+                <span class="px-4 py-2 bg-primary-50 text-primary-700 rounded-lg text-sm font-medium">
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Next Project CTA -->
+  <section class="py-16 bg-gray-900 text-white">
+    <div class="container-custom text-center">
+      <p class="text-primary-400 mb-2">Next Project</p>
+      <h2 class="text-3xl font-bold mb-6">Want to see more?</h2>
+      <a href="/portfolio" class="btn-ghost border-white text-white hover:bg-white hover:text-gray-900">
+        View All Projects
+      </a>
+    </div>
+  </section>
+</BaseLayout>

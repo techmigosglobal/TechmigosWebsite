@@ -1,0 +1,326 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const jobs = await getCollection('careers');
+  return jobs.map((job) => ({
+    params: { slug: job.slug },
+    props: { job },
+  }));
+}
+
+const { job } = Astro.props;
+const { Content } = await job.render();
+---
+
+<BaseLayout
+  title={job.data.title}
+  description={`${job.data.title} - ${job.data.description}`}
+  ogType="article"
+>
+  <!-- JSON-LD Job Posting Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "title": job.data.title,
+    "description": job.data.description,
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "TechMigos",
+      "sameAs": "https://techmigos.com"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": job.data.location
+      }
+    },
+    "employmentType": job.data.type.toUpperCase().replace('-', '_'),
+    "datePosted": job.data.pubDate.toISOString().split('T')[0]
+  })} />
+
+  <!-- Hero -->
+  <section class="pt-32 pb-12 bg-gradient-to-b from-gray-50 to-white">
+    <div class="container-custom">
+      <nav class="mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm text-gray-500">
+          <li><a href="/" class="hover:text-primary-600 transition-colors">Home</a></li>
+          <li>/</li>
+          <li><a href="/careers" class="hover:text-primary-600 transition-colors">Careers</a></li>
+          <li>/</li>
+          <li class="text-gray-900">{job.data.title}</li>
+        </ol>
+      </nav>
+
+      <div class="grid lg:grid-cols-3 gap-12">
+        <div class="lg:col-span-2">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{job.data.title}</h1>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              {job.data.department}
+            </span>
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              {job.data.location}
+            </span>
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              {job.data.type}
+            </span>
+            {job.data.salary && (
+              <span class="flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {job.data.salary}
+              </span>
+            )}
+          </div>
+        </div>
+        <div class="lg:col-span-1">
+          <a href="#apply" class="btn-primary w-full text-center">
+            Apply for This Role
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Job Content -->
+  <section class="section-padding bg-white">
+    <div class="container-custom">
+      <div class="grid lg:grid-cols-3 gap-12">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+          <div class="prose prose-lg prose-gray max-w-none">
+            <Content />
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <!-- Quick Info -->
+            <div class="bg-gray-50 rounded-xl p-6">
+              <h3 class="font-semibold text-gray-900 mb-4">Job Details</h3>
+              <dl class="space-y-4">
+                <div>
+                  <dt class="text-sm text-gray-500">Department</dt>
+                  <dd class="font-medium text-gray-900">{job.data.department}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm text-gray-500">Location</dt>
+                  <dd class="font-medium text-gray-900">{job.data.location}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm text-gray-500">Type</dt>
+                  <dd class="font-medium text-gray-900">{job.data.type}</dd>
+                </div>
+                {job.data.salary && (
+                  <div>
+                    <dt class="text-sm text-gray-500">Salary Range</dt>
+                    <dd class="font-medium text-gray-900">{job.data.salary}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+
+            <!-- Benefits -->
+            <div class="bg-primary-50 rounded-xl p-6">
+              <h3 class="font-semibold text-gray-900 mb-4">Benefits</h3>
+              <ul class="space-y-3">
+                <li class="flex items-center gap-2 text-sm text-gray-700">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Remote-first culture
+                </li>
+                <li class="flex items-center gap-2 text-sm text-gray-700">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  $2,000 learning budget
+                </li>
+                <li class="flex items-center gap-2 text-sm text-gray-700">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Equity compensation
+                </li>
+                <li class="flex items-center gap-2 text-sm text-gray-700">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Health insurance
+                </li>
+                <li class="flex items-center gap-2 text-sm text-gray-700">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Unlimited PTO
+                </li>
+              </ul>
+            </div>
+
+            <!-- Apply CTA -->
+            <a href="#apply" class="btn-primary w-full text-center block">
+              Apply Now
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- Application Form -->
+  <section id="apply" class="section-padding bg-gray-50">
+    <div class="container-custom">
+      <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Apply for This Role</h2>
+          <p class="text-gray-600">
+            Ready to join the team? Fill out the form below and we'll get back to you within 48 hours.
+          </p>
+        </div>
+
+        <form
+          id="application-form"
+          class="bg-white rounded-2xl p-8 shadow-sm space-y-6"
+          method="POST"
+          netlify
+          name="application"
+        >
+          <input type="hidden" name="job-title" value={job.data.title} />
+
+          <div class="grid sm:grid-cols-2 gap-6">
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                Full Name <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                placeholder="John Smith"
+              />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                Email <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                placeholder="john@company.com"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="linkedin" class="block text-sm font-medium text-gray-700 mb-2">
+              LinkedIn Profile
+            </label>
+            <input
+              type="url"
+              id="linkedin"
+              name="linkedin"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="https://linkedin.com/in/johnsmith"
+            />
+          </div>
+
+          <div>
+            <label for="portfolio" class="block text-sm font-medium text-gray-700 mb-2">
+              Portfolio / GitHub URL
+            </label>
+            <input
+              type="url"
+              id="portfolio"
+              name="portfolio"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              placeholder="https://github.com/johnsmith"
+            />
+          </div>
+
+          <div>
+            <label for="cv" class="block text-sm font-medium text-gray-700 mb-2">
+              Resume / CV <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              id="cv"
+              name="cv"
+              required
+              accept=".pdf,.doc,.docx"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+            />
+            <p class="mt-1 text-sm text-gray-500">PDF, DOC, or DOCX up to 10MB</p>
+          </div>
+
+          <div>
+            <label for="cover-letter" class="block text-sm font-medium text-gray-700 mb-2">
+              Cover Letter <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="cover-letter"
+              name="cover-letter"
+              required
+              rows="5"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"
+              placeholder="Tell us why you're excited about this role and what you'd bring to the team..."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="btn-primary w-full"
+          >
+            Submit Application
+          </button>
+
+          <p class="text-sm text-gray-500 text-center">
+            By applying, you agree to our <a href="/privacy" class="text-primary-600 hover:underline">Privacy Policy</a>.
+          </p>
+        </form>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('application-form') as HTMLFormElement;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      alert('Application submitted successfully! We\'ll be in touch soon.');
+      form.reset();
+    } catch (error) {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Submit Application';
+    }
+  });
+</script>

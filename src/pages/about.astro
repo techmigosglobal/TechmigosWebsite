@@ -1,0 +1,320 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const milestones = [
+  { year: '2016', title: 'Foundation & Craft', description: 'TechMigos started with a simple focus: build software with clean architecture, thoughtful UX, and long-term maintainability.' },
+  { year: '2018', title: 'Product Delivery Framework', description: 'We formalized our delivery playbook across discovery, design, build, QA, and launch support for predictable outcomes.' },
+  { year: '2020', title: 'Cross-Platform Capability', description: 'Our team expanded into web, mobile, and cloud-native delivery so clients can ship cohesive products across platforms.' },
+  { year: '2022', title: 'AI-Augmented Engineering', description: 'We introduced practical AI and automation workflows to accelerate product teams without sacrificing quality.' },
+  { year: '2024', title: 'Remote-First Operations', description: 'We evolved into a remote-first collaboration model with transparent communication and async-friendly delivery.' },
+  { year: 'Today', title: 'Build With Clarity', description: 'We continue helping teams move from idea to launch with straightforward communication, reliable execution, and measurable progress.' },
+];
+
+const teamMembers = [
+  { name: 'Alexandra Chen', role: 'CEO & Co-Founder', bio: 'Former engineering lead at Google. 15+ years building products at scale across fintech and SaaS.', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'Leadership' },
+  { name: 'Marcus Johnson', role: 'CTO & Co-Founder', bio: 'Ex-Amazon Principal Engineer. Expert in distributed systems, cloud architecture, and high-scale APIs.', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'Engineering' },
+  { name: 'Sarah Williams', role: 'Head of Design', bio: 'Design veteran with experience at IDEO and Apple. Champion of human-centered design and accessibility.', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'Design' },
+  { name: 'David Park', role: 'Head of Engineering', bio: 'Full-stack architect with deep expertise in React, Node.js ecosystems, and Kubernetes orchestration.', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'Engineering' },
+  { name: 'Priya Sharma', role: 'AI/ML Lead', bio: 'PhD in Machine Learning from Stanford. Published researcher in NLP and computer vision applications.', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'AI/ML' },
+  { name: 'James Wilson', role: 'VP of Client Success', bio: 'Dedicated to ensuring every client achieves their goals. 10+ years in tech consulting and partnerships.', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face', linkedin: '#', tag: 'Growth' },
+];
+
+const values = [
+  { icon: 'innovation', title: 'Innovation First', description: 'We push boundaries and embrace new technologies that create real, measurable value for clients.' },
+  { icon: 'collaboration', title: 'Deep Collaboration', description: 'Great outcomes happen when diverse, talented minds work together toward a shared purpose.' },
+  { icon: 'transparency', title: 'Radical Transparency', description: 'Open communication and honest feedback build the trust that fuels long-term partnerships.' },
+  { icon: 'quality', title: 'Uncompromising Quality', description: 'We obsess over every detail because the smallest things matter most to users.' },
+  { icon: 'agility', title: 'True Agility', description: 'Fast iteration and adaptability let us respond to change and market shifts with confidence.' },
+  { icon: 'impact', title: 'Meaningful Impact', description: 'Every project we take on must make a real difference — for clients, users, and the world.' },
+];
+
+const technologies = [
+  { name: 'React', category: 'Frontend', color: 'from-cyan-400 to-blue-500' },
+  { name: 'Next.js', category: 'Frontend', color: 'from-gray-700 to-gray-900' },
+  { name: 'Vue.js', category: 'Frontend', color: 'from-emerald-400 to-green-500' },
+  { name: 'TypeScript', category: 'Frontend', color: 'from-blue-400 to-blue-600' },
+  { name: 'Node.js', category: 'Backend', color: 'from-green-400 to-emerald-600' },
+  { name: 'Python', category: 'Backend', color: 'from-yellow-400 to-blue-500' },
+  { name: 'PostgreSQL', category: 'Database', color: 'from-blue-500 to-indigo-600' },
+  { name: 'Redis', category: 'Database', color: 'from-red-400 to-red-600' },
+  { name: 'AWS', category: 'Cloud', color: 'from-orange-400 to-amber-500' },
+  { name: 'GCP', category: 'Cloud', color: 'from-blue-400 to-green-400' },
+  { name: 'Docker', category: 'DevOps', color: 'from-blue-400 to-cyan-500' },
+  { name: 'Kubernetes', category: 'DevOps', color: 'from-blue-500 to-indigo-500' },
+  { name: 'Figma', category: 'Design', color: 'from-pink-400 to-purple-500' },
+  { name: 'Flutter', category: 'Mobile', color: 'from-cyan-400 to-blue-400' },
+  { name: 'React Native', category: 'Mobile', color: 'from-cyan-300 to-blue-600' },
+  { name: 'TensorFlow', category: 'AI/ML', color: 'from-orange-400 to-amber-500' },
+];
+
+const tagColors: Record<string, string> = {
+  Leadership: 'bg-violet-100 text-violet-700',
+  Engineering: 'bg-blue-100 text-blue-700',
+  Design: 'bg-pink-100 text-pink-700',
+  'AI/ML': 'bg-emerald-100 text-emerald-700',
+  Growth: 'bg-amber-100 text-amber-700',
+};
+---
+
+<BaseLayout
+  title="About Us"
+  description="Learn about TechMigos — our mission, team, values, and the technologies we use to build world-class software."
+>
+  <!-- ========================================
+       HERO
+       ======================================== -->
+  <section class="pt-36 pb-20 relative overflow-hidden">
+    <div class="absolute inset-0 dot-pattern opacity-50"></div>
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
+    <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-accent-100 rounded-full blur-3xl opacity-40"></div>
+    <div class="container-custom relative z-10">
+      <div class="max-w-3xl">
+        <div class="reveal">
+          <span class="section-eyebrow">About Us</span>
+        </div>
+        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+          We're engineers, designers &<br>
+          <span class="text-gradient">dreamers</span>
+        </h1>
+        <p class="reveal stagger-2 text-xl text-gray-500 max-w-2xl leading-relaxed">
+          Since 2016, we've been building software that makes a difference by helping teams ship practical, scalable digital products.
+        </p>
+        <div class="reveal stagger-3 mt-8 flex items-center gap-6">
+          <a href="/contact" class="btn-primary shine-hover">Work With Us</a>
+          <a href="/careers" class="btn-ghost">Join Our Team</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       MISSION & VISION
+       ======================================== -->
+  <section class="section-padding bg-white">
+    <div class="container-custom">
+      <div class="grid lg:grid-cols-2 gap-20 items-center">
+        <div class="reveal-left">
+          <span class="section-eyebrow">Our Mission</span>
+          <h2 class="text-4xl font-bold text-gray-900 mb-6 leading-tight">
+            To empower every business with <span class="text-gradient">thoughtful technology</span>
+          </h2>
+          <p class="text-gray-600 leading-relaxed mb-6 text-lg">
+            We believe that great technology should be accessible to every business with a great idea. Our mission is to bridge the gap between visionary concepts and world-class implementation.
+          </p>
+          <p class="text-gray-600 leading-relaxed mb-8">
+            Every project we take on is an opportunity to create something meaningful. We're not just building features — we're building foundations for lasting growth.
+          </p>
+          <div class="grid grid-cols-3 gap-6">
+            {[
+              { val: 'Discover', label: 'Plan Clearly' },
+              { val: 'Build', label: 'Ship Reliably' },
+              { val: 'Improve', label: 'Iterate Fast' },
+            ].map(s => (
+              <div class="text-center p-4 rounded-2xl bg-primary-50 border border-primary-100">
+                <div class="text-2xl font-black text-primary-600">{s.val}</div>
+                <div class="text-sm text-gray-500 mt-1">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="relative reveal-right">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary-300 to-accent-300 rounded-3xl transform rotate-3 opacity-20 animate-morph"></div>
+          <img
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop"
+            alt="Team collaboration"
+            class="relative rounded-3xl shadow-2xl object-cover w-full"
+            loading="lazy"
+            width="800"
+            height="600"
+          />
+          <!-- Floating badge -->
+          <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl border border-gray-100 animate-float">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)">💡</div>
+              <div>
+                <div class="font-bold text-gray-900 text-sm">Remote-First</div>
+                <div class="text-xs text-gray-500">Collaborative across time zones</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       TIMELINE
+       ======================================== -->
+  <section class="section-padding" style="background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)">
+    <div class="container-custom">
+      <div class="text-center mb-16 reveal">
+        <span class="section-eyebrow">Our Journey</span>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">How We Evolved</h2>
+        <p class="text-lg text-gray-500 max-w-2xl mx-auto">A continuous improvement journey in process, delivery quality, and collaboration.</p>
+      </div>
+
+      <div class="max-w-3xl mx-auto">
+        <div class="relative">
+          {milestones.map((milestone, index) => (
+            <div class={`relative pl-16 pb-12 last:pb-0 reveal stagger-${Math.min(index + 1, 6)}`}>
+              {/* Vertical line */}
+              {index !== milestones.length - 1 && (
+                <div class="absolute left-5 top-6 bottom-0 w-0.5 bg-gradient-to-b from-primary-300 to-primary-100"></div>
+              )}
+              {/* Dot */}
+              <div class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse-glow" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)">
+                {index + 1}
+              </div>
+              {/* Card */}
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-primary-100 transition-all duration-300 hover:-translate-y-0.5">
+                <span class="inline-block text-primary-600 font-black text-lg mb-1">{milestone.year}</span>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{milestone.title}</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">{milestone.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       TEAM SECTION
+       ======================================== -->
+  <section class="section-padding bg-white">
+    <div class="container-custom">
+      <div class="text-center mb-16 reveal">
+        <span class="section-eyebrow">The Team</span>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Meet the Migos</h2>
+        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
+          World-class engineers, designers, and strategists — united by a passion for exceptional software.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {teamMembers.map((member, i) => (
+          <div class={`group relative bg-white rounded-2xl border border-gray-100 overflow-hidden glow-card stagger-${i + 1} reveal`}>
+            <!-- Gradient header bar -->
+            <div class="h-2 w-full bg-gradient-to-r from-primary-500 to-accent-400"></div>
+            
+            <div class="p-7 text-center">
+              <!-- Avatar with ring -->
+              <div class="relative inline-block mb-4">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  class="w-24 h-24 rounded-full object-cover ring-4 ring-primary-100 group-hover:ring-primary-300 transition-all duration-300 group-hover:scale-105"
+                  loading="lazy"
+                  width="96"
+                  height="96"
+                />
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white"></div>
+              </div>
+              
+              <!-- Info -->
+              <span class={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold mb-3 ${tagColors[member.tag]}`}>
+                {member.tag}
+              </span>
+              <h3 class="text-lg font-bold text-gray-900 mb-1">{member.name}</h3>
+              <p class="text-primary-600 text-sm font-medium mb-3">{member.role}</p>
+              <p class="text-gray-500 text-sm leading-relaxed mb-5">{member.bio}</p>
+              
+              <a
+                href={member.linkedin}
+                class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-50 text-primary-700 text-sm font-semibold hover:bg-primary-100 transition-colors"
+                aria-label={`${member.name} on LinkedIn`}
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                Connect
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       VALUES
+       ======================================== -->
+  <section class="section-padding" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #0e7490 100%)">
+    <div class="container-custom">
+      <div class="text-center mb-16 reveal">
+        <span class="section-eyebrow" style="color:#a5b4fc; background: rgba(165,180,252,0.1); border-color: rgba(165,180,252,0.2);">Our Values</span>
+        <h2 class="text-4xl font-bold text-white mb-4">What We Stand For</h2>
+        <p class="text-indigo-200 max-w-2xl mx-auto">The principles that guide every decision we make and every line of code we write.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {values.map((value, i) => (
+          <div class={`group p-7 rounded-2xl border border-white/10 hover:border-primary-400/40 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 stagger-${i + 1} reveal`}>
+            <div class="w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-2xl" style="background: rgba(255,255,255,0.1)">
+              {value.icon === 'innovation' && '💡'}
+              {value.icon === 'collaboration' && '🤝'}
+              {value.icon === 'transparency' && '🔍'}
+              {value.icon === 'quality' && '✨'}
+              {value.icon === 'agility' && '⚡'}
+              {value.icon === 'impact' && '🌍'}
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">{value.title}</h3>
+            <p class="text-indigo-200 text-sm leading-relaxed">{value.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       TECHNOLOGIES
+       ======================================== -->
+  <section class="section-padding bg-white">
+    <div class="container-custom">
+      <div class="text-center mb-16 reveal">
+        <span class="section-eyebrow">Tech Stack</span>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Technologies We Master</h2>
+        <p class="text-lg text-gray-500 max-w-2xl mx-auto">Best-in-class tools chosen for performance, reliability, and developer experience.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-3 justify-center reveal">
+        {technologies.map((tech, i) => (
+          <div
+            class={`group relative cursor-default stagger-${Math.min(i + 1, 6)}`}
+            title={tech.category}
+          >
+            <div class={`tech-badge flex items-center gap-2`}>
+              <span class={`w-2 h-2 rounded-full bg-gradient-to-br ${tech.color}`}></span>
+              {tech.name}
+              <span class="hidden group-hover:inline text-xs text-gray-400 ml-1">· {tech.category}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       CTA
+       ======================================== -->
+  <section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4, #4F46E5); background-size: 300% 300%;"></div>
+    <div class="container-custom relative z-10 text-center reveal">
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Join us in building the future</h2>
+      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+        We're always looking for talented people who share our passion for great software.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/careers" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white/50 text-white font-bold rounded-xl hover:bg-white/10 hover:border-white transition-all duration-300 text-lg">
+          View Open Positions
+        </a>
+        <a href="/contact" class="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-xl text-lg shine-hover">
+          Get in Touch
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
