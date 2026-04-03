@@ -1,0 +1,355 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const services = [
+  {
+    id: 'web',
+    icon: 'web',
+    emoji: '🌐',
+    title: 'Web Application Development',
+    color: 'from-indigo-500 to-blue-500',
+    description: [
+      'We build high-performance web applications that handle millions of users while maintaining blazing-fast load times. Our engineers are experts in modern JavaScript frameworks and server-side technologies.',
+      'From e-commerce platforms to enterprise dashboards, we architect solutions that scale with your business — following best practices in code quality, testing, and CI/CD to ensure long-term maintainability.',
+      'Our web applications are built with accessibility and SEO in mind, ensuring your product reaches the widest audience possible.',
+    ],
+    deliverables: [
+      'Custom web applications (React, Next.js, Vue, Angular)',
+      'Progressive Web Apps (PWAs) with offline support',
+      'API development and third-party integrations',
+      'Real-time features (WebSockets, Server-Sent Events)',
+      'Performance optimization and Core Web Vitals',
+    ],
+    techStack: ['React', 'Next.js', 'Vue', 'Node.js', 'TypeScript', 'PostgreSQL', 'Redis'],
+  },
+  {
+    id: 'mobile',
+    icon: 'mobile',
+    emoji: '📱',
+    title: 'Mobile App Development',
+    color: 'from-violet-500 to-purple-500',
+    description: [
+      'We create native and cross-platform mobile applications that deliver exceptional user experiences on both iOS and Android. Our team has shipped 50+ mobile apps to the App Store and Google Play.',
+      'Whether you need React Native for speed or native Swift/Kotlin for peak performance, we have the expertise. We follow platform-specific guidelines ensuring your app feels native on every device.',
+      'From concept to App Store, we handle the full mobile development lifecycle including ASO, push notifications, and ongoing maintenance.',
+    ],
+    deliverables: [
+      'Native iOS apps (Swift, SwiftUI)',
+      'Native Android apps (Kotlin, Jetpack Compose)',
+      'Cross-platform apps (React Native, Flutter)',
+      'Mobile API backends and offline sync',
+      'App Store deployment and ASO',
+    ],
+    techStack: ['Swift', 'Kotlin', 'React Native', 'Flutter', 'Firebase', 'GraphQL'],
+  },
+  {
+    id: 'design',
+    icon: 'design',
+    emoji: '🎨',
+    title: 'UI/UX Design & Prototyping',
+    color: 'from-pink-500 to-rose-500',
+    description: [
+      'Great design is at the heart of every successful digital product. Our design team combines deep user research with creative excellence to craft interfaces that users love.',
+      'We follow a human-centered design process: understand users, define problems, ideate solutions, prototype, and iterate based on real feedback. Every decision is backed by data.',
+      'From wireframes to high-fidelity prototypes, we create artifacts that bring your vision to life and serve as a shared language between design and engineering.',
+    ],
+    deliverables: [
+      'User research and persona development',
+      'Information architecture and user flows',
+      'Wireframes and interactive prototypes',
+      'High-fidelity UI designs (Figma-ready)',
+      'Design systems and component libraries',
+      'Usability testing and iteration',
+    ],
+    techStack: ['Figma', 'Sketch', 'Adobe XD', 'Framer', 'Principle'],
+  },
+  {
+    id: 'cloud',
+    icon: 'cloud',
+    emoji: '☁️',
+    title: 'Cloud Architecture & DevOps',
+    color: 'from-cyan-500 to-sky-500',
+    description: [
+      'We design and implement cloud infrastructure that scales automatically, handles failures gracefully, and continuously optimizes costs. Our DevOps practices enable rapid, reliable deployments.',
+      'Whether you\'re starting fresh or migrating from legacy infrastructure, we help you leverage the full power of modern cloud platforms with infrastructure-as-code.',
+      'Our CI/CD pipelines automate testing and deployment, reducing time-to-market while maintaining quality. We set up comprehensive monitoring, logging, and alerting.',
+    ],
+    deliverables: [
+      'Cloud architecture design (AWS, GCP, Azure)',
+      'Infrastructure as Code (Terraform, CloudFormation)',
+      'CI/CD pipeline implementation',
+      'Container orchestration (Kubernetes, ECS)',
+      'Monitoring, logging, and alerting stacks',
+      'Security audits and compliance',
+    ],
+    techStack: ['AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'GitHub Actions'],
+  },
+  {
+    id: 'ai',
+    icon: 'ai',
+    emoji: '🤖',
+    title: 'AI & Machine Learning Integration',
+    color: 'from-emerald-500 to-teal-500',
+    description: [
+      'We integrate AI capabilities into your existing products or build AI-first features from scratch. From natural language processing to computer vision, we bring modern AI to your product.',
+      'Our team stays at the forefront of AI research and applies proven techniques to real-world problems. We identify high-impact AI opportunities and deliver genuine business value.',
+      'We prioritize responsible AI practices, ensuring transparency, fairness, and privacy in every implementation.',
+    ],
+    deliverables: [
+      'Custom AI/ML model development and fine-tuning',
+      'Natural Language Processing (NLP & LLMs)',
+      'Computer Vision applications',
+      'Predictive analytics and forecasting',
+      'LLM integration (OpenAI, Anthropic, HuggingFace)',
+      'Model deployment and MLOps monitoring',
+    ],
+    techStack: ['Python', 'TensorFlow', 'PyTorch', 'OpenAI', 'LangChain', 'Hugging Face'],
+  },
+  {
+    id: 'consulting',
+    icon: 'consulting',
+    emoji: '🧠',
+    title: 'Technology Consulting & Audits',
+    color: 'from-amber-500 to-orange-500',
+    description: [
+      'Sometimes you need an outside perspective. Our consultants provide expert guidance on technology strategy, architecture decisions, and technical due diligence for investments.',
+      'We conduct comprehensive technical audits that identify vulnerabilities, inefficiencies, and opportunities for improvement — backed by data and actionable recommendations.',
+      'Whether planning a major technical migration, evaluating a new stack, or rescuing a struggling project, we bring expertise and fresh perspectives.',
+    ],
+    deliverables: [
+      'Technology stack assessment',
+      'Architecture review and recommendations',
+      'Technical due diligence for M&A',
+      'Code audit and quality analysis',
+      'Performance optimization roadmap',
+      'Team augmentation and mentoring',
+    ],
+    techStack: ['Technical Writing', 'Architecture Patterns', 'System Design', 'Security Best Practices'],
+  },
+];
+
+const faqs = [
+  { question: 'How long does a typical project take?', answer: 'Timelines vary by scope. A landing site takes 4–6 weeks, a full-stack web app typically 3–6 months, and a mobile app 2–4 months. We\'ll give you a precise timeline during discovery.' },
+  { question: 'What is your development process?', answer: 'We follow agile sprints (2 weeks), with regular standups, demos, and full transparency via project management tools. You\'ll always know where we stand.' },
+  { question: 'Do you offer ongoing support after launch?', answer: 'Yes! We offer maintenance plans covering bug fixes, security updates, feature additions, and dedicated support. We want to be your long-term tech partner.' },
+  { question: 'Can you work with our existing team?', answer: 'Absolutely. We frequently augment teams with specialized skills and integrate seamlessly with your existing workflows and tools.' },
+  { question: 'How do you handle scope changes?', answer: 'We use a structured change request process — all scope changes are documented, priced, and approved before work begins. Zero surprises.' },
+  { question: 'What technologies do you specialize in?', answer: 'Our core strengths include React/Next.js, Node.js, Python, AWS/GCP, and mobile with React Native and Flutter. We stay current with AI/ML tooling.' },
+  { question: 'Do you sign NDAs?', answer: 'Yes, always. We sign NDAs before any detailed discussions. Your IP and business ideas are treated with strict confidentiality.' },
+  { question: 'What are your payment terms?', answer: 'Typically: 30% upfront, 30% at design approval, 40% at launch. For larger projects, we can structure milestone-based payments.' },
+];
+---
+
+<BaseLayout
+  title="Services"
+  description="Comprehensive technology services from TechMigos — web development, mobile apps, UI/UX design, cloud architecture, AI/ML, and tech consulting."
+>
+  <!-- HERO -->
+  <section class="pt-36 pb-16 relative overflow-hidden">
+    <div class="absolute inset-0 dot-pattern opacity-40"></div>
+    <div class="absolute -top-32 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
+    <div class="container-custom relative z-10">
+      <nav class="mb-8 reveal" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-sm">
+          <li><a href="/" class="text-gray-400 hover:text-primary-600 transition-colors">Home</a></li>
+          <li class="text-gray-300">/</li>
+          <li class="text-primary-600 font-semibold">Services</li>
+        </ol>
+      </nav>
+      <div class="max-w-3xl">
+        <span class="section-eyebrow reveal">What We Offer</span>
+        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+          End-to-End<br><span class="text-gradient">Technology Services</span>
+        </h1>
+        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed">
+          From concept to global scale — comprehensive services to take your product from idea to market leader.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE QUICK LINKS -->
+  <div class="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+    <div class="container-custom py-3">
+      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {services.map(s => (
+          <a
+            href={`#${s.id}`}
+            class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 whitespace-nowrap"
+          >
+            <span>{s.emoji}</span> {s.title.split(' ')[0]} {s.title.split(' ')[1]}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES CONTENT -->
+  <section class="py-16 bg-white">
+    <div class="container-custom">
+      <div class="space-y-32">
+        {services.map((service, idx) => (
+          <article id={service.id} class="scroll-mt-36">
+            <!-- Section header -->
+            <div class="flex items-start gap-6 mb-10 reveal">
+              <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center text-3xl shadow-lg flex-shrink-0`}>
+                {service.emoji}
+              </div>
+              <div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{service.title}</h2>
+              </div>
+            </div>
+
+            <div class="grid lg:grid-cols-5 gap-12">
+              <!-- Description -->
+              <div class="lg:col-span-3 space-y-4 reveal-left">
+                {service.description.map(para => (
+                  <p class="text-gray-600 leading-relaxed">{para}</p>
+                ))}
+
+                <!-- Tech Stack -->
+                <div class="pt-4">
+                  <h3 class="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wider">Tech Stack</h3>
+                  <div class="flex flex-wrap gap-2">
+                    {service.techStack.map(tech => (
+                      <span class="tech-badge">{tech}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="pt-4">
+                  <a href={`/contact?service=${service.id}`} class="btn-primary inline-flex items-center shine-hover group">
+                    Get a Quote
+                    <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Deliverables card -->
+              <div class="lg:col-span-2 reveal-right">
+                <div class="bg-gray-50 rounded-2xl p-7 border border-gray-100 h-full">
+                  <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)">✓</span>
+                    What We Deliver
+                  </h3>
+                  <ul class="space-y-3">
+                    {service.deliverables.map(item => (
+                      <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-primary-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-700 text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {idx < services.length - 1 && (
+              <div class="mt-20 border-t border-gray-100"></div>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-padding bg-gray-50">
+    <div class="container-custom">
+      <div class="text-center mb-16 reveal">
+        <span class="section-eyebrow">FAQ</span>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+        <p class="text-gray-500 max-w-2xl mx-auto">Everything you need to know before starting your project.</p>
+      </div>
+
+      <div class="max-w-3xl mx-auto space-y-3">
+        {faqs.map((faq, index) => (
+          <div class={`faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden reveal stagger-${Math.min(index + 1, 6)}`}>
+            <button
+              class="faq-trigger w-full px-7 py-5 text-left flex items-center justify-between group"
+              aria-expanded="false"
+              aria-controls={`faq-${index}`}
+            >
+              <span class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{faq.question}</span>
+              <div class="faq-icon w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 flex-shrink-0 ml-4">
+                <svg class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div id={`faq-${index}`} class="faq-body">
+              <p class="text-gray-600 px-7 pb-6 leading-relaxed">{faq.answer}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#4F46E5,#7C3AED,#06B6D4,#4F46E5); background-size:300% 300%;"></div>
+    <div class="container-custom relative z-10 text-center reveal">
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Ready to start your project?</h2>
+      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">Free consultation, no commitment required. Let's see what we can build together.</p>
+      <a href="/contact" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-2xl text-lg shine-hover">
+        Schedule a Consultation
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Smooth FAQ accordion with CSS max-height
+  document.querySelectorAll('.faq-trigger').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const body = trigger.nextElementSibling as HTMLElement;
+      const icon = trigger.querySelector('svg') as SVGElement;
+      const iconWrap = trigger.querySelector('.faq-icon') as HTMLElement;
+      const isOpen = body.classList.contains('open');
+
+      // Close all
+      document.querySelectorAll('.faq-body').forEach(b => b.classList.remove('open'));
+      document.querySelectorAll('.faq-icon svg').forEach(i => i.classList.remove('rotate-180'));
+      document.querySelectorAll('.faq-icon').forEach(w => (w as HTMLElement).classList.remove('bg-primary-100'));
+      document.querySelectorAll('.faq-trigger').forEach(t => t.setAttribute('aria-expanded', 'false'));
+
+      // Open clicked one
+      if (!isOpen) {
+        body.classList.add('open');
+        icon?.classList.add('rotate-180');
+        iconWrap?.classList.add('bg-primary-100');
+        iconWrap?.querySelector('svg')?.classList.add('text-primary-600');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+
+  // Active sidebar link on scroll
+  const articleEls = document.querySelectorAll('article[id]');
+  const navLinks = document.querySelectorAll('.service-nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href') || '';
+          if (href === `#${entry.target.id}`) {
+            link.classList.add('text-primary-600', 'bg-primary-50');
+          } else {
+            link.classList.remove('text-primary-600', 'bg-primary-50');
+          }
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+
+  articleEls.forEach(el => observer.observe(el));
+</script>

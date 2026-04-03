@@ -1,0 +1,193 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const featuredPost = allPosts[0];
+const recentPosts = allPosts.slice(1);
+
+const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'];
+---
+
+<BaseLayout
+  title="Blog"
+  description="Insights, tutorials and thoughts on software development, design, AI/ML, and building great digital products — by the TechMigos team."
+>
+  <!-- HERO -->
+  <section class="pt-36 pb-16 relative overflow-hidden">
+    <div class="absolute inset-0 dot-pattern opacity-50"></div>
+    <div class="absolute -top-32 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
+    <div class="container-custom relative z-10">
+      <div class="max-w-2xl">
+        <span class="section-eyebrow reveal">The TechMigos Blog</span>
+        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
+          Insights &amp;<br><span class="text-gradient">Ideas</span>
+        </h1>
+        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed">
+          Tutorials, opinions, and deep-dives on software, design, AI, and building products that last.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED POST -->
+  {featuredPost && (
+    <section class="pb-16 bg-white">
+      <div class="container-custom">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 reveal">📌 Featured Post</p>
+        <a href={`/blog/${featuredPost.slug}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100 reveal">
+          <div class="grid lg:grid-cols-2 gap-0">
+            <div class="relative overflow-hidden">
+              <img
+                src={featuredPost.data.heroImage || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop'}
+                alt={featuredPost.data.title}
+                class="w-full h-full object-cover min-h-[300px] transform group-hover:scale-105 transition-transform duration-700"
+                loading="eager"
+                width="800"
+                height="600"
+              />
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent to-gray-50/20 group-hover:opacity-0 transition-opacity duration-300"></div>
+            </div>
+            <div class="p-8 lg:p-12 flex flex-col justify-center">
+              <span class="section-eyebrow mb-4" style="width:fit-content">{featuredPost.data.category}</span>
+              <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors leading-tight">
+                {featuredPost.data.title}
+              </h2>
+              <p class="text-gray-600 mb-6 leading-relaxed">{featuredPost.data.description}</p>
+              <div class="flex items-center text-sm text-gray-500 gap-3">
+                <span class="font-medium text-gray-700">{featuredPost.data.author}</span>
+                <span class="w-1 h-1 rounded-full bg-gray-400"></span>
+                <span>{featuredPost.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <span class="w-1 h-1 rounded-full bg-gray-400"></span>
+                <span>{featuredPost.data.readTime || 5} min read</span>
+              </div>
+              <div class="mt-6 inline-flex items-center gap-2 text-primary-600 font-semibold text-sm group-hover:gap-3 transition-all">
+                Read Article
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  )}
+
+  <!-- CATEGORY FILTER -->
+  <div class="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+    <div class="container-custom py-4">
+      <div class="flex flex-wrap justify-center gap-2" id="category-filters">
+        {categories.map(category => (
+          <button
+            class="category-filter px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300"
+            data-category={category}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- POSTS GRID -->
+  <section class="section-padding bg-gray-50">
+    <div class="container-custom">
+      {recentPosts.length > 0 ? (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="posts-grid">
+          {recentPosts.map((post, i) => (
+            <article
+              class={`post-item group bg-white rounded-2xl overflow-hidden border border-gray-100 glow-card stagger-${i + 1} reveal`}
+              data-category={post.data.category}
+            >
+              <a href={`/blog/${post.slug}`} class="block">
+                <div class="relative overflow-hidden">
+                  <img
+                    src={post.data.heroImage || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=500&fit=crop'}
+                    alt={post.data.title}
+                    class="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-700"
+                    loading="lazy"
+                    width="800"
+                    height="500"
+                  />
+                  <!-- Category overlay badge -->
+                  <div class="absolute top-3 left-3">
+                    <span class="px-3 py-1 bg-white/90 backdrop-blur-sm text-primary-700 text-xs font-bold rounded-full shadow-sm">
+                      {post.data.category}
+                    </span>
+                  </div>
+                </div>
+                <div class="p-6">
+                  <div class="flex items-center gap-2 mb-3 text-xs text-gray-400">
+                    <span>📖 {post.data.readTime || 5} min read</span>
+                    <span>•</span>
+                    <span>{post.data.pubDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                  <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-tight">
+                    {post.data.title}
+                  </h3>
+                  <p class="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-2">{post.data.description}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-700">{post.data.author}</span>
+                    <span class="text-primary-600 text-sm font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Read more
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-20 reveal">
+          <div class="text-6xl mb-6">✍️</div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3">No posts yet</h3>
+          <p class="text-gray-500">We're working on some great content. Check back soon!</p>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .category-filter { @apply text-gray-600 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-600; }
+  .category-filter.active {
+    background: linear-gradient(135deg, #4F46E5, #06B6D4);
+    @apply text-white border-transparent shadow-md;
+  }
+  .post-item { transition: opacity 0.4s ease, transform 0.4s ease; }
+  .post-item.hidden-filter { opacity: 0; pointer-events: none; transform: scale(0.95); }
+</style>
+
+<script>
+  const filters = document.querySelectorAll('.category-filter');
+  const posts = document.querySelectorAll('.post-item');
+
+  filters.forEach(filter => {
+    filter.addEventListener('click', () => {
+      const category = filter.getAttribute('data-category');
+      filters.forEach(f => f.classList.remove('active'));
+      filter.classList.add('active');
+
+      posts.forEach(post => {
+        const postCat = post.getAttribute('data-category');
+        if (category === 'All' || category === postCat) {
+          post.classList.remove('hidden-filter');
+          (post as HTMLElement).style.display = 'block';
+        } else {
+          post.classList.add('hidden-filter');
+          setTimeout(() => {
+            if (post.classList.contains('hidden-filter')) (post as HTMLElement).style.display = 'none';
+          }, 400);
+        }
+      });
+    });
+  });
+
+  document.querySelector('.category-filter[data-category="All"]')?.classList.add('active');
+</script>
