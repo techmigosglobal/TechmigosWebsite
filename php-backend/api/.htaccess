@@ -1,0 +1,12 @@
+Options -Indexes
+
+RewriteEngine On
+
+# Route public form endpoints to PHP handlers while keeping current frontend URLs.
+RewriteRule ^csrf$ csrf.php [L,QSA]
+RewriteRule ^leads/contact$ leads/contact.php [L,QSA]
+RewriteRule ^leads/newsletter$ leads/newsletter.php [L,QSA]
+RewriteRule ^leads/careers$ leads/careers.php [L,QSA]
+
+# Deny direct access to internal implementation files.
+RewriteRule ^_core/ - [F,L]

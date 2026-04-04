@@ -1,0 +1,65 @@
+---
+const { name, class: className = '' } = Astro.props;
+const baseProps = {
+  class: className,
+  width: 24,
+  height: 24,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  'stroke-width': 1.6,
+  'stroke-linecap': 'round',
+  'stroke-linejoin': 'round',
+};
+---
+
+{name === 'web' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="M3 12h18"></path>
+    <path d="M12 3c3.8 3.2 3.8 14.8 0 18c-3.8-3.2-3.8-14.8 0-18z"></path>
+    <path d="M5.5 7c4 2.2 9 2.2 13 0"></path>
+    <path d="M5.5 17c4-2.2 9-2.2 13 0"></path>
+  </svg>
+)}
+
+{name === 'mobile' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <rect x="7" y="2.5" width="10" height="19" rx="2"></rect>
+    <path d="M10 5.5h4"></path>
+    <path d="M11 18h2"></path>
+  </svg>
+)}
+
+{name === 'qa' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <path d="M12 2.5l7 3V11c0 5-3.5 8.5-7 10c-3.5-1.5-7-5-7-10V5.5l7-3z"></path>
+    <path d="M9.5 12.5l2 2 4-4"></path>
+  </svg>
+)}
+
+{name === 'backend' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <rect x="4" y="4" width="16" height="6" rx="2"></rect>
+    <rect x="4" y="14" width="16" height="6" rx="2"></rect>
+    <circle cx="7.5" cy="7" r="0.9"></circle>
+    <circle cx="7.5" cy="17" r="0.9"></circle>
+  </svg>
+)}
+
+{name === 'ai' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+    <rect x="9.5" y="9.5" width="5" height="5" rx="1"></rect>
+    <path d="M3 9h4M3 15h4M17 9h4M17 15h4"></path>
+    <path d="M9 3v4M15 3v4M9 17v4M15 17v4"></path>
+  </svg>
+)}
+
+{name === 'consulting' && (
+  <svg {...baseProps} aria-hidden="true" focusable="false">
+    <rect x="3" y="7" width="18" height="11" rx="2"></rect>
+    <path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2"></path>
+    <path d="M3 12h18"></path>
+  </svg>
+)}

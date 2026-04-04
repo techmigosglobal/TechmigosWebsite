@@ -1,0 +1,143 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { isAuthenticated } from '../../lib/adminAuth';
+import { loadSiteContent } from '../../lib/siteContent';
+export const prerender = false;
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login');
+}
+
+const content = await loadSiteContent();
+---
+
+<BaseLayout title="Admin Dashboard" description="Manage testimonials, client works, and portfolio projects.">
+  <section class="pt-32 pb-20 bg-gray-50 min-h-screen">
+    <div class="container-custom max-w-5xl">
+      <div class="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-10">
+        <div>
+          <h1 class="text-4xl font-extrabold text-gray-900">Content Dashboard</h1>
+          <p class="text-gray-500 mt-2">Update testimonials, client names, and portfolio projects without changing code.</p>
+        </div>
+        <button id="logout-btn" class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">Logout</button>
+      </div>
+
+      <form id="content-form" class="space-y-6">
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-3">Client Names</h2>
+          <p class="text-sm text-gray-500 mb-3">Enter one client name per line.</p>
+          <textarea id="clientNames" rows="6" class="form-control form-control--muted form-textarea"></textarea>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-3">Testimonials (JSON)</h2>
+          <p class="text-sm text-gray-500 mb-3">Each testimonial needs: quote, name, role, company, avatar, result.</p>
+          <textarea id="testimonials" rows="12" class="form-control form-control--muted form-textarea font-mono text-sm"></textarea>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-3">Portfolio Projects (JSON)</h2>
+          <p class="text-sm text-gray-500 mb-3">Each project needs all fields currently in this JSON. Set <code>featured: true</code> to show on home page.</p>
+          <textarea id="projects" rows="18" class="form-control form-control--muted form-textarea font-mono text-sm"></textarea>
+        </div>
+
+        <p id="status" class="text-sm font-medium"></p>
+
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script define:vars={{ content }}>
+  const form = document.getElementById('content-form');
+  const status = document.getElementById('status');
+  const clientNamesEl = document.getElementById('clientNames');
+  const testimonialsEl = document.getElementById('testimonials');
+  const projectsEl = document.getElementById('projects');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  function setStatus(message, type = 'error') {
+    if (!status) return;
+    status.textContent = message;
+    status.className = `text-sm font-medium ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+  }
+
+  function validateBeforeSave(payload) {
+    const errors = [];
+
+    if (!Array.isArray(payload.clientNames)) {
+      errors.push('clientNames must be an array.');
+    }
+
+    if (!Array.isArray(payload.testimonials)) {
+      errors.push('testimonials must be an array.');
+    }
+
+    if (!Array.isArray(payload.projects)) {
+      errors.push('projects must be an array.');
+    }
+
+    return errors;
+  }
+
+  if (clientNamesEl) {
+    clientNamesEl.value = content.clientNames.join('\n');
+  }
+
+  if (testimonialsEl) {
+    testimonialsEl.value = JSON.stringify(content.testimonials, null, 2);
+  }
+
+  if (projectsEl) {
+    projectsEl.value = JSON.stringify(content.projects, null, 2);
+  }
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    try {
+      const payload = {
+        clientNames: String(clientNamesEl?.value || '')
+          .split('\n')
+          .map((name) => name.trim())
+          .filter(Boolean),
+        testimonials: JSON.parse(String(testimonialsEl?.value || '[]')),
+        projects: JSON.parse(String(projectsEl?.value || '[]')),
+      };
+      const localErrors = validateBeforeSave(payload);
+      if (localErrors.length > 0) {
+        setStatus(`Validation failed: ${localErrors.join(' ')}`);
+        return;
+      }
+
+      const response = await fetch('/api/admin/content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        if (result.fieldErrors) {
+          const formatted = Object.entries(result.fieldErrors)
+            .slice(0, 4)
+            .map(([key, msg]) => `${key}: ${msg}`)
+            .join(' | ');
+          throw new Error(formatted || result.error || 'Unable to save content.');
+        }
+        throw new Error(result.error || 'Unable to save content.');
+      }
+
+      setStatus('Changes saved successfully.', 'success');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Invalid JSON or request failed.');
+    }
+  });
+
+  logoutBtn?.addEventListener('click', async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    window.location.href = '/admin/login';
+  });
+</script>

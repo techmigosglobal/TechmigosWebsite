@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ServiceIcon from '../components/ServiceIcon.astro';
 
 const services = [
   {
     id: 'web',
     icon: 'web',
-    emoji: '🌐',
     title: 'Web Application Development',
     color: 'from-indigo-500 to-blue-500',
     description: [
@@ -25,9 +25,8 @@ const services = [
   {
     id: 'mobile',
     icon: 'mobile',
-    emoji: '📱',
-    title: 'Mobile App Development',
-    color: 'from-violet-500 to-purple-500',
+    title: 'Mobile Apps',
+    color: 'from-blue-500 to-cyan-500',
     description: [
       'We create native and cross-platform mobile applications that deliver exceptional user experiences on both iOS and Android. Our team has shipped 50+ mobile apps to the App Store and Google Play.',
       'Whether you need React Native for speed or native Swift/Kotlin for peak performance, we have the expertise. We follow platform-specific guidelines ensuring your app feels native on every device.',
@@ -43,51 +42,48 @@ const services = [
     techStack: ['Swift', 'Kotlin', 'React Native', 'Flutter', 'Firebase', 'GraphQL'],
   },
   {
-    id: 'design',
-    icon: 'design',
-    emoji: '🎨',
-    title: 'UI/UX Design & Prototyping',
+    id: 'qa',
+    icon: 'qa',
+    title: 'Quality Assurance & Testing',
     color: 'from-pink-500 to-rose-500',
     description: [
-      'Great design is at the heart of every successful digital product. Our design team combines deep user research with creative excellence to craft interfaces that users love.',
-      'We follow a human-centered design process: understand users, define problems, ideate solutions, prototype, and iterate based on real feedback. Every decision is backed by data.',
-      'From wireframes to high-fidelity prototypes, we create artifacts that bring your vision to life and serve as a shared language between design and engineering.',
+      'Quality is built into everything we ship. Our QA team designs thorough testing strategies that catch bugs early, prevent regressions, and protect critical user journeys.',
+      'We combine manual exploratory testing with automation to validate functionality, edge cases, performance, and reliability across browsers, devices, and environments.',
+      'From sprint-level test planning to pre-release certification, we help your team launch with confidence and maintain consistent product quality over time.',
     ],
     deliverables: [
-      'User research and persona development',
-      'Information architecture and user flows',
-      'Wireframes and interactive prototypes',
-      'High-fidelity UI designs (Figma-ready)',
-      'Design systems and component libraries',
-      'Usability testing and iteration',
+      'Test strategy and end-to-end QA planning',
+      'Manual exploratory and regression testing',
+      'Automated test suites (UI, API, integration)',
+      'Performance, load, and stress testing',
+      'Cross-browser and cross-device validation',
+      'Defect reporting and release sign-off support',
     ],
-    techStack: ['Figma', 'Sketch', 'Adobe XD', 'Framer', 'Principle'],
+    techStack: ['Cypress', 'Playwright', 'Selenium', 'Postman', 'Jest', 'k6', 'JMeter'],
   },
   {
-    id: 'cloud',
-    icon: 'cloud',
-    emoji: '☁️',
-    title: 'Cloud Architecture & DevOps',
+    id: 'backend',
+    icon: 'backend',
+    title: 'Backend Development',
     color: 'from-cyan-500 to-sky-500',
     description: [
-      'We design and implement cloud infrastructure that scales automatically, handles failures gracefully, and continuously optimizes costs. Our DevOps practices enable rapid, reliable deployments.',
-      'Whether you\'re starting fresh or migrating from legacy infrastructure, we help you leverage the full power of modern cloud platforms with infrastructure-as-code.',
-      'Our CI/CD pipelines automate testing and deployment, reducing time-to-market while maintaining quality. We set up comprehensive monitoring, logging, and alerting.',
+      'We engineer robust backend systems that power your product\'s core workflows with speed, reliability, and security. From APIs to distributed services, we build foundations that scale.',
+      'Our team designs clean domain models, resilient service boundaries, and optimized data access patterns to keep your systems maintainable as traffic and complexity grow.',
+      'Whether you need a new backend from scratch or modernization of legacy services, we deliver architecture and implementation that supports long-term product evolution.',
     ],
     deliverables: [
-      'Cloud architecture design (AWS, GCP, Azure)',
-      'Infrastructure as Code (Terraform, CloudFormation)',
-      'CI/CD pipeline implementation',
-      'Container orchestration (Kubernetes, ECS)',
-      'Monitoring, logging, and alerting stacks',
-      'Security audits and compliance',
+      'REST/GraphQL API design and implementation',
+      'Authentication, authorization, and security hardening',
+      'Database schema design and query optimization',
+      'Microservices and event-driven architecture',
+      'Caching, queues, and background job systems',
+      'Monitoring, observability, and reliability engineering',
     ],
-    techStack: ['AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'GitHub Actions'],
+    techStack: ['Node.js', 'Python', 'Java', 'PostgreSQL', 'MongoDB', 'Redis', 'Kafka'],
   },
   {
     id: 'ai',
     icon: 'ai',
-    emoji: '🤖',
     title: 'AI & Machine Learning Integration',
     color: 'from-emerald-500 to-teal-500',
     description: [
@@ -108,8 +104,7 @@ const services = [
   {
     id: 'consulting',
     icon: 'consulting',
-    emoji: '🧠',
-    title: 'Technology Consulting & Audits',
+    title: 'Tech Consulting',
     color: 'from-amber-500 to-orange-500',
     description: [
       'Sometimes you need an outside perspective. Our consultants provide expert guidance on technology strategy, architecture decisions, and technical due diligence for investments.',
@@ -142,7 +137,7 @@ const faqs = [
 
 <BaseLayout
   title="Services"
-  description="Comprehensive technology services from TechMigos — web development, mobile apps, UI/UX design, cloud architecture, AI/ML, and tech consulting."
+  description="Comprehensive technology services from TechMigos — web development, mobile apps, QA/testing, backend development, AI/ML integration, and tech consulting."
 >
   <!-- HERO -->
   <section class="pt-36 pb-16 relative overflow-hidden">
@@ -175,9 +170,9 @@ const faqs = [
         {services.map(s => (
           <a
             href={`#${s.id}`}
-            class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 whitespace-nowrap"
+            class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-[background-color,color] duration-200 whitespace-nowrap"
           >
-            <span>{s.emoji}</span> {s.title.split(' ')[0]} {s.title.split(' ')[1]}
+            <ServiceIcon name={s.icon} class="w-4 h-4" /> {s.title.split(' ')[0]} {s.title.split(' ')[1]}
           </a>
         ))}
       </div>
@@ -192,8 +187,8 @@ const faqs = [
           <article id={service.id} class="scroll-mt-36">
             <!-- Section header -->
             <div class="flex items-start gap-6 mb-10 reveal">
-              <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center text-3xl shadow-lg flex-shrink-0`}>
-                {service.emoji}
+              <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
+                <ServiceIcon name={service.icon} class="w-8 h-8 text-white" />
               </div>
               <div>
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{service.title}</h2>
@@ -275,7 +270,7 @@ const faqs = [
               aria-controls={`faq-${index}`}
             >
               <span class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{faq.question}</span>
-              <div class="faq-icon w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300 flex-shrink-0 ml-4">
+              <div class="faq-icon w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-[background-color,transform] duration-300 flex-shrink-0 ml-4">
                 <svg class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -292,11 +287,11 @@ const faqs = [
 
   <!-- CTA -->
   <section class="py-24 relative overflow-hidden">
-    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#4F46E5,#7C3AED,#06B6D4,#4F46E5); background-size:300% 300%;"></div>
+    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#2563eb,#0ea5e9,#06b6d4,#2563eb); background-size:300% 300%;"></div>
     <div class="container-custom relative z-10 text-center reveal">
       <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Ready to start your project?</h2>
       <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">Free consultation, no commitment required. Let's see what we can build together.</p>
-      <a href="/contact" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-2xl text-lg shine-hover">
+      <a href="/contact" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
         Schedule a Consultation
         <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>

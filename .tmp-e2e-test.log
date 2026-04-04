@@ -1,0 +1,2 @@
+Running backend smoke tests against: http://127.0.0.1:4321
+[FAIL] GET /api/csrf returns token

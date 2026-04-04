@@ -1,0 +1,279 @@
+{
+  "clientNames": [
+    "TechCorp",
+    "Innovate",
+    "FutureFin",
+    "HealthSys",
+    "RetailGo",
+    "CloudNine",
+    "StartupX",
+    "DataFlow"
+  ],
+  "testimonials": [
+    {
+      "quote": "TechMigos transformed our outdated platform into a modern, scalable solution. The team was professional and truly understood our vision.",
+      "name": "Sarah Chen",
+      "role": "CTO",
+      "company": "Nexus Financial",
+      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
+      "result": "Trusted Engineering Partner"
+    },
+    {
+      "quote": "Working with TechMigos felt like having an extension of our own team. They delivered a mobile app that exceeded our expectations.",
+      "name": "Marcus Rodriguez",
+      "role": "Founder",
+      "company": "HealthFirst",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+      "result": "Product Delivered End-to-End"
+    },
+    {
+      "quote": "Their AI expertise helped us implement features we did not think were possible. They are innovative and execution-focused.",
+      "name": "Emily Watson",
+      "role": "VP Product",
+      "company": "RetailMax",
+      "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+      "result": "Strong Collaboration Experience"
+    },
+    {
+      "quote": "From discovery to launch, every phase was executed with precision. The redesign made the product experience clearer and more consistent.",
+      "name": "David Park",
+      "role": "CEO",
+      "company": "GreenTech Solutions",
+      "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+      "result": "Reliable Execution from Start to Launch"
+    }
+  ],
+  "projects": [
+    {
+      "slug": "fintech-dashboard",
+      "title": "Fintech Dashboard",
+      "category": "Web",
+      "emoji": "📊",
+      "tags": [
+        "React",
+        "Node.js",
+        "PostgreSQL"
+      ],
+      "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
+      "description": "A trading operations platform with real-time monitoring and portfolio workflows.",
+      "result": "Platform Modernization Delivered",
+      "overview": "We partnered with the client to build a modern trading operations platform focused on reliability, usability, and maintainability.",
+      "challenge": "Legacy modules created operational friction, inconsistent behavior, and limited extensibility for new workflows.",
+      "solution": "We implemented a modular service architecture, real-time event flows, and a streamlined frontend experience aligned to day-to-day operations.",
+      "results": [
+        {
+          "metric": "Reliability",
+          "label": "Stable core workflows in production"
+        },
+        {
+          "metric": "Scalability",
+          "label": "Architecture prepared for growth"
+        },
+        {
+          "metric": "Security",
+          "label": "Hardened access and data handling"
+        },
+        {
+          "metric": "Maintainability",
+          "label": "Cleaner code boundaries and ownership"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Full-Stack Development",
+      "featured": true
+    },
+    {
+      "slug": "healthtrack-app",
+      "title": "HealthTrack App",
+      "category": "Mobile",
+      "emoji": "🏃",
+      "tags": [
+        "React Native",
+        "Firebase",
+        "AI"
+      ],
+      "image": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=600&fit=crop",
+      "description": "A health companion app with personalized guidance and wearable integrations.",
+      "result": "Mobile Experience Delivered",
+      "overview": "We built a user-focused health companion app designed for everyday tracking, clarity, and actionable recommendations.",
+      "challenge": "Existing experience made it hard for users to understand their data and act on it consistently.",
+      "solution": "We designed guided journeys, clean insights surfaces, and strong integration paths for core wearable data sources.",
+      "results": [
+        {
+          "metric": "Usability",
+          "label": "Clearer day-to-day health workflows"
+        },
+        {
+          "metric": "Adoption",
+          "label": "Smoother onboarding and first-use flow"
+        },
+        {
+          "metric": "Integration",
+          "label": "Reliable wearable data synchronization"
+        },
+        {
+          "metric": "Quality",
+          "label": "Tested release process across devices"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Mobile Product Development",
+      "featured": true
+    },
+    {
+      "slug": "ecommerce-platform",
+      "title": "E-Commerce Platform",
+      "category": "Web",
+      "emoji": "🛍️",
+      "tags": [
+        "Next.js",
+        "Stripe",
+        "Tailwind"
+      ],
+      "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=600&fit=crop",
+      "description": "A unified commerce experience with streamlined checkout and catalog management.",
+      "result": "Commerce Platform Implemented",
+      "overview": "We delivered a modern commerce platform that unifies storefront, product operations, and checkout journeys.",
+      "challenge": "Previous storefront and backend flows were fragmented, causing operational overhead and inconsistent customer experience.",
+      "solution": "We implemented a headless architecture with structured APIs, clearer checkout steps, and improved operational tooling.",
+      "results": [
+        {
+          "metric": "Checkout",
+          "label": "Simplified purchase flow architecture"
+        },
+        {
+          "metric": "Operations",
+          "label": "Improved catalog and order workflows"
+        },
+        {
+          "metric": "Reliability",
+          "label": "More resilient storefront behavior"
+        },
+        {
+          "metric": "Extensibility",
+          "label": "Foundation ready for new features"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Commerce Engineering",
+      "featured": true
+    },
+    {
+      "slug": "logistics-ai",
+      "title": "Logistics AI",
+      "category": "AI/ML",
+      "emoji": "🤖",
+      "tags": [
+        "Python",
+        "TensorFlow",
+        "AWS"
+      ],
+      "image": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&h=600&fit=crop",
+      "description": "A logistics intelligence platform for route planning and delivery operations.",
+      "result": "AI Workflow Integrated",
+      "overview": "We implemented an operations intelligence layer to support planning teams with better route and dispatch decisions.",
+      "challenge": "Planning depended on fragmented tools and manual coordination across dynamic operational constraints.",
+      "solution": "We built a decision-support workflow with model-assisted planning, transparent controls, and operational auditability.",
+      "results": [
+        {
+          "metric": "Planning",
+          "label": "More consistent route decision flow"
+        },
+        {
+          "metric": "Visibility",
+          "label": "Improved operational tracking context"
+        },
+        {
+          "metric": "Automation",
+          "label": "Reduced repetitive manual planning steps"
+        },
+        {
+          "metric": "Governance",
+          "label": "Clearer review and override controls"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "AI Product Engineering"
+    },
+    {
+      "slug": "fitness-app",
+      "title": "FitLife App",
+      "category": "Mobile",
+      "emoji": "💪",
+      "tags": [
+        "Flutter",
+        "Firebase",
+        "HealthKit"
+      ],
+      "image": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=1200&h=600&fit=crop",
+      "description": "A fitness product combining habit support, progress tracking, and coaching tools.",
+      "result": "Fitness Product Experience Built",
+      "overview": "We created a fitness app experience centered on routines, progress visibility, and long-term user motivation.",
+      "challenge": "Users needed a simpler way to stay consistent without switching between disconnected features and screens.",
+      "solution": "We delivered guided plans, focused progress surfaces, and coaching-oriented UX with wearable-ready data flow.",
+      "results": [
+        {
+          "metric": "Clarity",
+          "label": "Simpler progress and routine visibility"
+        },
+        {
+          "metric": "Engagement",
+          "label": "Stronger habit-oriented interaction design"
+        },
+        {
+          "metric": "Continuity",
+          "label": "Better experience across repeated sessions"
+        },
+        {
+          "metric": "Readiness",
+          "label": "Release quality improved through QA coverage"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Mobile Product Development"
+    },
+    {
+      "slug": "saas-dashboard",
+      "title": "SaaS Analytics",
+      "category": "Web",
+      "emoji": "📈",
+      "tags": [
+        "Vue.js",
+        "D3.js",
+        "PostgreSQL"
+      ],
+      "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop",
+      "description": "An analytics workspace for product, operations, and business reporting teams.",
+      "result": "Analytics Workspace Delivered",
+      "overview": "We built a flexible analytics workspace that helps teams access shared metrics and explore insights faster.",
+      "challenge": "Teams relied on disconnected reports and inconsistent metric definitions across departments.",
+      "solution": "We implemented centralized metric models, reusable dashboard components, and configurable reporting workflows.",
+      "results": [
+        {
+          "metric": "Consistency",
+          "label": "Shared metrics model across teams"
+        },
+        {
+          "metric": "Access",
+          "label": "Faster dashboard and report navigation"
+        },
+        {
+          "metric": "Collaboration",
+          "label": "Improved cross-team reporting alignment"
+        },
+        {
+          "metric": "Maintainability",
+          "label": "Easier dashboard iteration and upkeep"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Data Platform Engineering"
+    }
+  ]
+}

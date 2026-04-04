@@ -1,9 +1,84 @@
 ---
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
+type ParsedSection = {
+  title: string;
+  id: string;
+  level: 2 | 3;
+  body: string[];
+  bullets: string[];
+  paragraphs: string[];
+};
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function stripFrontmatter(source: string) {
+  return source.replace(/^---[\s\S]*?---\s*/, '');
+}
+
+function parseSections(source: string) {
+  const lines = source.split('\n');
+  const sections: ParsedSection[] = [];
+  let current: ParsedSection | null = null;
+
+  for (const line of lines) {
+    const headingMatch = line.match(/^(##|###)\s+(.*)$/);
+    if (headingMatch) {
+      if (current) sections.push(current);
+      const title = headingMatch[2].trim();
+      current = {
+        title,
+        id: slugify(title),
+        level: headingMatch[1] === '##' ? 2 : 3,
+        body: [],
+        bullets: [],
+        paragraphs: [],
+      };
+      continue;
+    }
+
+    if (!current) continue;
+    current.body.push(line);
+    const bulletMatch = line.match(/^\s*-\s+(.*)$/);
+    if (bulletMatch) {
+      current.bullets.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    const paragraph = line.trim();
+    if (paragraph) current.paragraphs.push(paragraph);
+  }
+
+  if (current) sections.push(current);
+  return sections;
+}
+
+function findSection(sections: ParsedSection[], candidates: string[]) {
+  return sections.find((section) =>
+    candidates.some((candidate) => section.title.toLowerCase() === candidate.toLowerCase())
+  );
+}
+
+function formatPostedDate(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+}
+
 export async function getStaticPaths() {
-  const jobs = await getCollection('careers');
+  const jobs = await getCollection('careers', ({ data }) => !data.draft);
   return jobs.map((job) => ({
     params: { slug: job.slug },
     props: { job },
@@ -11,7 +86,22 @@ export async function getStaticPaths() {
 }
 
 const { job } = Astro.props;
-const { Content } = await job.render();
+
+const sourcePath = path.join(process.cwd(), 'src', 'content', 'careers', `${job.slug}.mdx`);
+const rawSource = await fs.readFile(sourcePath, 'utf-8').catch(() => '');
+const parsedSections = parseSections(stripFrontmatter(rawSource));
+
+const tocSections = parsedSections.filter((section) => section.level === 2);
+const hiringProcess = findSection(parsedSections, ['Hiring Process']);
+const roleOverview = findSection(parsedSections, ['Role Overview']);
+
+const essentials = [
+  { label: 'Department', value: job.data.department },
+  { label: 'Location', value: job.data.location },
+  { label: 'Employment', value: job.data.type },
+  { label: 'Posted', value: formatPostedDate(job.data.pubDate) },
+  ...(job.data.salary ? [{ label: 'Compensation', value: job.data.salary }] : []),
+];
 ---
 
 <BaseLayout
@@ -19,308 +109,1439 @@ const { Content } = await job.render();
   description={`${job.data.title} - ${job.data.description}`}
   ogType="article"
 >
-  <!-- JSON-LD Job Posting Schema -->
-  <script type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    "title": job.data.title,
-    "description": job.data.description,
-    "hiringOrganization": {
-      "@type": "Organization",
-      "name": "TechMigos",
-      "sameAs": "https://techmigos.com"
-    },
-    "jobLocation": {
-      "@type": "Place",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": job.data.location
-      }
-    },
-    "employmentType": job.data.type.toUpperCase().replace('-', '_'),
-    "datePosted": job.data.pubDate.toISOString().split('T')[0]
-  })} />
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'JobPosting',
+      title: job.data.title,
+      description: job.data.description,
+      hiringOrganization: {
+        '@type': 'Organization',
+        name: 'TechMigos',
+        sameAs: 'https://techmigos.com',
+      },
+      jobLocation: {
+        '@type': 'Place',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: job.data.location,
+        },
+      },
+      employmentType: job.data.type.toUpperCase().replace('-', '_'),
+      datePosted: job.data.pubDate.toISOString().split('T')[0],
+    })}
+  />
 
-  <!-- Hero -->
-  <section class="pt-32 pb-12 bg-gradient-to-b from-gray-50 to-white">
-    <div class="container-custom">
-      <nav class="mb-8" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 text-sm text-gray-500">
+  <section class="career-hero pt-32 pb-16 relative overflow-hidden">
+    <div class="hero-noise" aria-hidden="true"></div>
+    <div class="hero-orb hero-orb-one animate-float" aria-hidden="true"></div>
+    <div class="hero-orb hero-orb-two animate-float-slow" aria-hidden="true"></div>
+    <div class="container-custom relative z-10">
+      <nav class="mb-8 reveal" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2 text-sm text-slate-500">
           <li><a href="/" class="hover:text-primary-600 transition-colors">Home</a></li>
           <li>/</li>
           <li><a href="/careers" class="hover:text-primary-600 transition-colors">Careers</a></li>
           <li>/</li>
-          <li class="text-gray-900">{job.data.title}</li>
+          <li class="text-slate-900">{job.data.title}</li>
         </ol>
       </nav>
 
-      <div class="grid lg:grid-cols-3 gap-12">
-        <div class="lg:col-span-2">
-          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{job.data.title}</h1>
-          <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-            <span class="flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-              </svg>
-              {job.data.department}
-            </span>
-            <span class="flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              {job.data.location}
-            </span>
-            <span class="flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              {job.data.type}
-            </span>
-            {job.data.salary && (
-              <span class="flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                {job.data.salary}
-              </span>
-            )}
+      <div class="hero-grid">
+        <div class="max-w-4xl">
+          <span class="section-eyebrow reveal">Open Position</span>
+          <h1 class="reveal stagger-1 text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-950 leading-[1.05] mb-5">
+            {job.data.title}
+          </h1>
+          <p class="reveal stagger-2 text-lg sm:text-xl text-slate-600 max-w-3xl mb-7 leading-relaxed">
+            {job.data.description}
+          </p>
+
+          <div class="reveal stagger-3 flex flex-wrap gap-2 text-sm mb-8">
+            <span class="role-pill">{job.data.department}</span>
+            <span class="role-pill">{job.data.location}</span>
+            <span class="role-pill">{job.data.type}</span>
+            {job.data.salary && <span class="role-pill">{job.data.salary}</span>}
           </div>
-        </div>
-        <div class="lg:col-span-1">
-          <a href="#apply" class="btn-primary w-full text-center">
-            Apply for This Role
-          </a>
+
+          <div class="reveal stagger-4 hero-actions">
+            <a href="#apply" class="btn-primary hero-cta">Start Application</a>
+            <a href="#role-details" class="btn-ghost hero-cta-secondary">Read Role Details</a>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Job Content -->
-  <section class="section-padding bg-white">
+  <section class="career-summary pb-10">
     <div class="container-custom">
-      <div class="grid lg:grid-cols-3 gap-12">
-        <!-- Main Content -->
-        <div class="lg:col-span-2">
-          <div class="prose prose-lg prose-gray max-w-none">
-            <Content />
+      <div class="summary-grid summary-grid--single">
+        <div class="summary-card reveal">
+          <span class="summary-kicker">Role Snapshot</span>
+          <dl class="summary-list">
+            {essentials.map((item) => (
+              <div class="summary-list-item">
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+          {roleOverview?.paragraphs?.[0] && <p class="summary-intro">{roleOverview.paragraphs[0]}</p>}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="role-details" class="pb-20">
+    <div class="container-custom">
+      <div class="content-shell">
+        <div class="content-main">
+          <div class="section-header reveal">
+            <div>
+              <span class="section-eyebrow">Role Details</span>
+              <h2 class="section-title">Explore the role section by section</h2>
+            </div>
+            {tocSections.length > 0 && (
+              <nav class="toc-strip" aria-label="Job description sections">
+                {tocSections.map((section) => (
+                  <a href={`#${section.id}`} class="toc-chip" data-toc-link={section.id}>
+                    {section.title}
+                  </a>
+                ))}
+              </nav>
+            )}
           </div>
+
+          <article class="job-content-card reveal-left">
+            <div class="job-content">
+              <div class="job-content-intro">
+                <p>Open any section to read the details without scanning one long wall of content.</p>
+              </div>
+
+              <div class="job-accordion">
+                {tocSections.map((section, index) => (
+                  <details
+                    class="job-accordion-item"
+                    id={section.id}
+                    data-role-section={section.id}
+                    open={index === 0}
+                  >
+                    <summary class="job-accordion-summary">
+                      <span>{section.title}</span>
+                      <span class="job-accordion-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none">
+                          <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                      </span>
+                    </summary>
+                    <div class="job-accordion-body">
+                      {section.paragraphs.map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                      {section.bullets.length > 0 && (
+                        <ul>
+                          {section.bullets.map((item) => <li>{item}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </article>
         </div>
 
-        <!-- Sidebar -->
-        <aside class="lg:col-span-1">
-          <div class="sticky top-24 space-y-6">
-            <!-- Quick Info -->
-            <div class="bg-gray-50 rounded-xl p-6">
-              <h3 class="font-semibold text-gray-900 mb-4">Job Details</h3>
-              <dl class="space-y-4">
+        <aside class="content-sidebar reveal-right">
+          <div class="sidebar-card sidebar-card--sticky">
+            <p class="sidebar-kicker">Quick View</p>
+            <h2 class="sidebar-title">Everything important, without the scroll hunt</h2>
+            <dl class="sidebar-facts">
+              {essentials.map((item) => (
                 <div>
-                  <dt class="text-sm text-gray-500">Department</dt>
-                  <dd class="font-medium text-gray-900">{job.data.department}</dd>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
                 </div>
-                <div>
-                  <dt class="text-sm text-gray-500">Location</dt>
-                  <dd class="font-medium text-gray-900">{job.data.location}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm text-gray-500">Type</dt>
-                  <dd class="font-medium text-gray-900">{job.data.type}</dd>
-                </div>
-                {job.data.salary && (
-                  <div>
-                    <dt class="text-sm text-gray-500">Salary Range</dt>
-                    <dd class="font-medium text-gray-900">{job.data.salary}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-
-            <!-- Benefits -->
-            <div class="bg-primary-50 rounded-xl p-6">
-              <h3 class="font-semibold text-gray-900 mb-4">Benefits</h3>
-              <ul class="space-y-3">
-                <li class="flex items-center gap-2 text-sm text-gray-700">
-                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Remote-first culture
-                </li>
-                <li class="flex items-center gap-2 text-sm text-gray-700">
-                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  $2,000 learning budget
-                </li>
-                <li class="flex items-center gap-2 text-sm text-gray-700">
-                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Equity compensation
-                </li>
-                <li class="flex items-center gap-2 text-sm text-gray-700">
-                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Health insurance
-                </li>
-                <li class="flex items-center gap-2 text-sm text-gray-700">
-                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                  Unlimited PTO
-                </li>
-              </ul>
-            </div>
-
-            <!-- Apply CTA -->
-            <a href="#apply" class="btn-primary w-full text-center block">
-              Apply Now
-            </a>
+              ))}
+            </dl>
+            <a href="#apply" class="btn-primary w-full text-center">Apply for This Role</a>
           </div>
+
+          {hiringProcess?.bullets && hiringProcess.bullets.length > 0 && (
+            <div class="sidebar-card sidebar-card--soft">
+              <p class="sidebar-kicker">Hiring Process</p>
+              <ol class="timeline-list">
+                {hiringProcess.bullets.map((item) => <li>{item}</li>)}
+              </ol>
+            </div>
+          )}
         </aside>
       </div>
     </div>
   </section>
 
-  <!-- Application Form -->
-  <section id="apply" class="section-padding bg-gray-50">
+  <section id="apply" class="pb-28">
     <div class="container-custom">
-      <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Apply for This Role</h2>
-          <p class="text-gray-600">
-            Ready to join the team? Fill out the form below and we'll get back to you within 48 hours.
-          </p>
+      <div class="application-shell reveal">
+        <div class="application-topbar">
+          <div class="application-head">
+            <span class="section-eyebrow">Application Form</span>
+            <h2 class="section-title">Apply for {job.data.title}</h2>
+            <p class="text-slate-600 max-w-2xl leading-relaxed">
+              Share the essentials, upload your resume, and tell us how you think about ownership and impact.
+            </p>
+          </div>
+
+          <div class="application-assurance">
+            <div class="assurance-item">
+              <strong>Secure submission</strong>
+              <span>Protected with CSRF validation and rate limiting.</span>
+            </div>
+            <div class="assurance-item">
+              <strong>File support</strong>
+              <span>PDF, DOC, DOCX up to 5 MB.</span>
+            </div>
+          </div>
         </div>
 
-        <form
-          id="application-form"
-          class="bg-white rounded-2xl p-8 shadow-sm space-y-6"
-          method="POST"
-          netlify
-          name="application"
-        >
-          <input type="hidden" name="job-title" value={job.data.title} />
+        <div class="application-progress-wrap">
+          <div class="application-progress" aria-hidden="true">
+            <div id="application-progress-fill" class="application-progress-fill"></div>
+          </div>
+          <p id="application-progress-label" class="application-progress-label">0% complete</p>
+        </div>
 
-          <div class="grid sm:grid-cols-2 gap-6">
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                Full Name <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                placeholder="John Smith"
-              />
+        <form id="career-application-form" class="application-form" method="POST" enctype="multipart/form-data" novalidate>
+          <input type="hidden" name="jobTitle" value={job.data.title} />
+          <input type="text" name="company_website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+
+          <section class="form-panel">
+            <div class="form-panel-head">
+              <h3>Your Profile</h3>
+              <p>Start with the details we need to reach you and understand your background.</p>
             </div>
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                Email <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                placeholder="john@company.com"
-              />
+
+            <div class="field-grid">
+              <div class="field" data-required="true">
+                <label for="name" class="field-label">Full Name</label>
+                <div class="field-control">
+                  <input id="name" name="name" type="text" class="field-input" autocomplete="name" placeholder="John Smith" required />
+                </div>
+                <p class="field-hint">Use the name you want us to use in communication.</p>
+                <p class="field-error" id="error-name" aria-live="polite"></p>
+              </div>
+
+              <div class="field" data-required="true">
+                <label for="email" class="field-label">Email Address</label>
+                <div class="field-control">
+                  <input id="email" name="email" type="email" class="field-input" autocomplete="email" placeholder="name@example.com" required />
+                </div>
+                <p class="field-hint">We will use this for role updates and interview coordination.</p>
+                <p class="field-error" id="error-email" aria-live="polite"></p>
+              </div>
             </div>
+          </section>
+
+          <section class="form-panel">
+            <div class="form-panel-head">
+              <h3>Links and Resume</h3>
+              <p>Add helpful public links, then upload the latest version of your resume.</p>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="linkedin" class="field-label">LinkedIn URL</label>
+                <div class="field-control">
+                  <input id="linkedin" name="linkedin" type="url" class="field-input" placeholder="https://linkedin.com/in/your-profile" />
+                </div>
+                <p class="field-hint">Optional, but helpful for professional context.</p>
+                <p class="field-error" id="error-linkedin" aria-live="polite"></p>
+              </div>
+
+              <div class="field">
+                <label for="portfolio" class="field-label">Portfolio or GitHub URL</label>
+                <div class="field-control">
+                  <input id="portfolio" name="portfolio" type="url" class="field-input" placeholder="https://github.com/your-profile" />
+                </div>
+                <p class="field-hint">Share work that best reflects how you think and build.</p>
+                <p class="field-error" id="error-portfolio" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="field field-file" data-required="true" id="resume-field">
+              <div class="field-head">
+                <label for="cv" class="field-label-static">Resume or CV</label>
+                <span class="field-badge">Required</span>
+              </div>
+              <input id="cv" name="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="field-file-input" required />
+              <label for="cv" class="upload-dropzone" id="upload-dropzone">
+                <span class="upload-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 16.5v.5A2 2 0 0 0 7 19h10a2 2 0 0 0 2-2v-.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                </span>
+                <span class="upload-copy">
+                  <strong>Drop your resume here</strong>
+                  <span>or click to browse local files</span>
+                </span>
+              </label>
+              <div class="upload-meta">
+                <p class="field-help">Accepted formats: PDF, DOC, DOCX. Maximum file size: 5 MB.</p>
+                <div id="cv-file-summary" class="upload-summary" hidden>
+                  <span id="cv-file-name" class="upload-summary-name"></span>
+                  <button type="button" id="cv-remove" class="upload-remove">Remove</button>
+                </div>
+              </div>
+              <p class="field-error" id="error-cv" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <section class="form-panel">
+            <div class="form-panel-head">
+              <h3>Tell Us About Your Fit</h3>
+              <p>Use this space to connect your experience to the role, the systems you have owned, and the impact you delivered.</p>
+            </div>
+
+            <div class="field" data-required="true">
+              <div class="field-head">
+                <label for="coverLetter" class="field-label-static">Cover Letter</label>
+                <span class="field-badge">Minimum 30 characters</span>
+              </div>
+              <div class="field-control">
+                <textarea id="coverLetter" name="coverLetter" rows="7" class="field-input field-textarea" maxlength="1200" placeholder="Share the systems you have worked on, your role in them, and why this opportunity fits." required></textarea>
+              </div>
+              <div class="field-meta">
+                <p class="field-help">A short, thoughtful explanation is better than a generic template.</p>
+                <p id="cover-letter-count" class="field-count">0 / 1200</p>
+              </div>
+              <p class="field-error" id="error-coverLetter" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <div class="application-actions">
+            <button type="submit" id="career-submit" class="btn-primary application-submit">
+              <span id="career-submit-text">Submit Application</span>
+              <svg id="career-submit-spinner" class="hidden animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </button>
+
+            <p class="application-note">By submitting, you agree that TechMigos may review your application materials for hiring evaluation.</p>
           </div>
 
-          <div>
-            <label for="linkedin" class="block text-sm font-medium text-gray-700 mb-2">
-              LinkedIn Profile
-            </label>
-            <input
-              type="url"
-              id="linkedin"
-              name="linkedin"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="https://linkedin.com/in/johnsmith"
-            />
-          </div>
-
-          <div>
-            <label for="portfolio" class="block text-sm font-medium text-gray-700 mb-2">
-              Portfolio / GitHub URL
-            </label>
-            <input
-              type="url"
-              id="portfolio"
-              name="portfolio"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="https://github.com/johnsmith"
-            />
-          </div>
-
-          <div>
-            <label for="cv" class="block text-sm font-medium text-gray-700 mb-2">
-              Resume / CV <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="file"
-              id="cv"
-              name="cv"
-              required
-              accept=".pdf,.doc,.docx"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-            />
-            <p class="mt-1 text-sm text-gray-500">PDF, DOC, or DOCX up to 10MB</p>
-          </div>
-
-          <div>
-            <label for="cover-letter" class="block text-sm font-medium text-gray-700 mb-2">
-              Cover Letter <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              id="cover-letter"
-              name="cover-letter"
-              required
-              rows="5"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none"
-              placeholder="Tell us why you're excited about this role and what you'd bring to the team..."
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            class="btn-primary w-full"
-          >
-            Submit Application
-          </button>
-
-          <p class="text-sm text-gray-500 text-center">
-            By applying, you agree to our <a href="/privacy" class="text-primary-600 hover:underline">Privacy Policy</a>.
-          </p>
+          <p id="career-status" class="career-status" role="status" aria-live="polite"></p>
         </form>
       </div>
     </div>
   </section>
 </BaseLayout>
 
+<style>
+  .career-hero {
+    background:
+      radial-gradient(circle at 0% 18%, rgba(14, 165, 233, 0.18), transparent 35%),
+      radial-gradient(circle at 82% 12%, rgba(79, 70, 229, 0.16), transparent 34%),
+      linear-gradient(180deg, #f8fbff 0%, #ffffff 78%);
+  }
+
+  .hero-noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.25;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)),
+      radial-gradient(rgba(15, 23, 42, 0.06) 0.7px, transparent 0.7px);
+    background-size: auto, 18px 18px;
+    pointer-events: none;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: end;
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    pointer-events: none;
+  }
+
+  .hero-orb-one {
+    width: 260px;
+    height: 260px;
+    top: 44px;
+    right: 6%;
+    background: rgba(14, 165, 233, 0.18);
+  }
+
+  .hero-orb-two {
+    width: 220px;
+    height: 220px;
+    bottom: 8px;
+    left: 8%;
+    background: rgba(99, 102, 241, 0.14);
+  }
+
+  .role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.82rem;
+    border-radius: 9999px;
+    border: 1px solid #d8e6ff;
+    background: rgba(255, 255, 255, 0.88);
+    color: #0f172a;
+    font-weight: 600;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .role-pill:hover {
+    border-color: #7dd3fc;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.12);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .hero-cta,
+  .hero-cta-secondary {
+    min-height: 50px;
+  }
+
+  .summary-kicker,
+  .sidebar-kicker {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border-radius: 9999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .career-summary {
+    margin-top: -1.2rem;
+    position: relative;
+    z-index: 12;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .summary-grid--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summary-card,
+  .job-content-card,
+  .sidebar-card,
+  .application-shell,
+  .form-panel {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  }
+
+  .summary-card {
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+  }
+
+  .summary-intro {
+    margin-top: 1rem;
+    color: #475569;
+    line-height: 1.7;
+    max-width: 72ch;
+  }
+
+  .summary-list {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .summary-list-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .summary-list-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .summary-list-item dt {
+    color: #64748b;
+    font-size: 0.86rem;
+  }
+
+  .summary-list-item dd {
+    text-align: right;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .content-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: start;
+  }
+
+  .content-main {
+    min-width: 0;
+  }
+
+  .content-sidebar {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .section-title {
+    margin-top: 0.6rem;
+    color: #0f172a;
+    font-size: clamp(1.9rem, 3vw, 2.7rem);
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .toc-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .toc-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    border-radius: 9999px;
+    border: 1px solid #dbeafe;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+    padding: 0.55rem 0.9rem;
+    transition: all 180ms ease;
+  }
+
+  .toc-chip:hover,
+  .toc-chip.is-active {
+    color: #0f172a;
+    border-color: #60a5fa;
+    background: #eff6ff;
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
+  }
+
+  .job-content-card {
+    border-radius: 1.4rem;
+    padding: 1.5rem;
+  }
+
+  .job-content {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .job-content-intro {
+    color: #64748b;
+    line-height: 1.6;
+  }
+
+  .job-accordion {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .job-accordion-item {
+    border: 1px solid #dbeafe;
+    border-radius: 1rem;
+    background: #ffffff;
+    overflow: hidden;
+    scroll-margin-top: 7rem;
+  }
+
+  .job-accordion-item[open] {
+    border-color: #93c5fd;
+    box-shadow: 0 14px 30px rgba(59, 130, 246, 0.08);
+  }
+
+  .job-accordion-item.is-current {
+    border-color: #60a5fa;
+  }
+
+  .job-accordion-summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .job-accordion-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .job-accordion-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    flex-shrink: 0;
+    transition: transform 180ms ease;
+  }
+
+  .job-accordion-icon svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .job-accordion-item[open] .job-accordion-icon {
+    transform: rotate(180deg);
+  }
+
+  .job-accordion-body {
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem 1.1rem 1.15rem;
+  }
+
+  .job-accordion-body p {
+    color: #334155;
+    line-height: 1.75;
+    max-width: 70ch;
+  }
+
+  .job-accordion-body p + p {
+    margin-top: 0.85rem;
+  }
+
+  .job-accordion-body ul {
+    margin-top: 0.9rem;
+    padding-left: 1.2rem;
+  }
+
+  .job-accordion-body li {
+    margin: 0.5rem 0;
+    color: #1e293b;
+  }
+
+  .sidebar-card {
+    border-radius: 1.2rem;
+    padding: 1.2rem;
+  }
+
+  .sidebar-card--sticky {
+    position: relative;
+    top: auto;
+  }
+
+  .sidebar-card--soft {
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+  }
+
+  .sidebar-title {
+    color: #0f172a;
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-top: 0.75rem;
+  }
+
+  .sidebar-facts {
+    display: grid;
+    gap: 0.9rem;
+    margin: 1rem 0 1.2rem;
+  }
+
+  .sidebar-facts dt {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .sidebar-facts dd {
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .timeline-list {
+    counter-reset: step;
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 0.9rem;
+  }
+
+  .timeline-list li {
+    position: relative;
+    padding-left: 2.4rem;
+    color: #1e293b;
+  }
+
+  .timeline-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: -0.05rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .application-shell {
+    border-radius: 1.5rem;
+    padding: 1.1rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98)),
+      linear-gradient(135deg, rgba(219, 234, 254, 0.4), rgba(186, 230, 253, 0.3));
+  }
+
+  .application-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .application-assurance {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .assurance-item {
+    border-radius: 1rem;
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
+    padding: 0.95rem 1rem;
+  }
+
+  .assurance-item strong {
+    display: block;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+  }
+
+  .assurance-item span {
+    color: #475569;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .application-progress-wrap {
+    margin-bottom: 1rem;
+  }
+
+  .application-progress {
+    width: 100%;
+    height: 0.56rem;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .application-progress-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    transition: width 220ms ease;
+  }
+
+  .application-progress-label {
+    margin-top: 0.55rem;
+    font-size: 0.83rem;
+    color: #475569;
+    font-weight: 700;
+  }
+
+  .application-form {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .form-panel {
+    border-radius: 1.3rem;
+    padding: 1rem;
+  }
+
+  .form-panel-head {
+    margin-bottom: 0.9rem;
+  }
+
+  .form-panel-head h3 {
+    color: #0f172a;
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .form-panel-head p {
+    color: #64748b;
+    margin-top: 0.3rem;
+    line-height: 1.6;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .field {
+    border: 1px solid #dbeafe;
+    border-radius: 1rem;
+    background: #ffffff;
+    padding: 1rem;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .field:hover {
+    border-color: #93c5fd;
+  }
+
+  .field:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    align-items: center;
+    margin-bottom: 0.7rem;
+  }
+
+  .field-label,
+  .field-label-static {
+    display: block;
+    color: #0f172a;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+
+  .field-badge {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-radius: 9999px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .field-control {
+    border: 1px solid #dbeafe;
+    border-radius: 0.95rem;
+    background: #f8fbff;
+    padding: 0.9rem 1rem;
+    transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+  }
+
+  .field:focus-within .field-control {
+    border-color: #60a5fa;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+  }
+
+  .field-input {
+    display: block;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: #ffffff;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a;
+    caret-color: #0f172a;
+    font-size: 0.98rem;
+    line-height: 1.6;
+    min-height: 1.6rem;
+    padding: 0.15rem 0;
+    opacity: 1;
+  }
+
+  .field-input::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+  }
+
+  .field-textarea {
+    min-height: 150px;
+    resize: vertical;
+    padding-top: 0.2rem;
+  }
+
+  .field-hint,
+  .field-help {
+    color: #64748b;
+    font-size: 0.79rem;
+    line-height: 1.5;
+  }
+
+  .field-hint {
+    margin-top: 0.55rem;
+  }
+
+  .field-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .field-file {
+    position: relative;
+  }
+
+  .upload-dropzone {
+    display: grid;
+    justify-items: center;
+    gap: 0.8rem;
+    border: 1.5px dashed #93c5fd;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #f8fbff, #eff6ff);
+    padding: 1.4rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .upload-dropzone:hover,
+  .upload-dropzone.is-dragover {
+    border-color: #2563eb;
+    background: linear-gradient(180deg, #eff6ff, #dbeafe);
+    transform: translateY(-1px);
+  }
+
+  .upload-icon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 9999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+  }
+
+  .upload-icon svg {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .upload-copy strong {
+    display: block;
+    color: #0f172a;
+    font-size: 1rem;
+  }
+
+  .upload-copy span {
+    display: block;
+    margin-top: 0.2rem;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .upload-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+
+  .upload-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 9999px;
+    background: #eff6ff;
+    color: #0f172a;
+    font-size: 0.82rem;
+  }
+
+  .upload-summary-name {
+    font-weight: 700;
+    max-width: 17rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .upload-remove {
+    color: #1d4ed8;
+    font-weight: 700;
+  }
+
+  .field-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+
+  .field-count {
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .field-error {
+    min-height: 1.1rem;
+    margin-top: 0.55rem;
+    color: #dc2626;
+    font-size: 0.79rem;
+  }
+
+  .field.field--error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  }
+
+  .field.field--valid {
+    border-color: #86efac;
+  }
+
+  .application-actions {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .application-submit {
+    width: 100%;
+    min-height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+
+  .application-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .application-note {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.84rem;
+  }
+
+  .career-status {
+    min-height: 1.5rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+
+  .career-status.success {
+    color: #15803d;
+  }
+
+  .career-status.error {
+    color: #b91c1c;
+  }
+
+  @media (min-width: 768px) {
+    .field-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .application-topbar {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+
+    .application-shell {
+      padding: 1.6rem;
+    }
+
+    .form-panel {
+      padding: 1.15rem;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .content-shell {
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 1.6rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .career-summary {
+      margin-top: -1rem;
+    }
+
+    .job-content-card,
+    .summary-card,
+    .sidebar-card,
+    .insight-card {
+      padding: 1rem;
+    }
+
+    .application-shell {
+      padding: 0.95rem;
+    }
+
+    .upload-meta,
+    .field-meta,
+    .field-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
+
 <script>
-  const form = document.getElementById('application-form') as HTMLFormElement;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  const ALLOWED_FILE_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+  const ALLOWED_FILE_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  const form = document.getElementById('career-application-form');
+  const progressFill = document.getElementById('application-progress-fill');
+  const progressLabel = document.getElementById('application-progress-label');
+  const submitBtn = document.getElementById('career-submit');
+  const submitText = document.getElementById('career-submit-text');
+  const submitSpinner = document.getElementById('career-submit-spinner');
+  const statusEl = document.getElementById('career-status');
+  const fileInput = document.getElementById('cv');
+  const fileSummary = document.getElementById('cv-file-summary');
+  const fileNameEl = document.getElementById('cv-file-name');
+  const removeFileBtn = document.getElementById('cv-remove');
+  const dropzone = document.getElementById('upload-dropzone');
+  const coverLetter = document.getElementById('coverLetter');
+  const coverLetterCount = document.getElementById('cover-letter-count');
 
-    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
+  const requiredIds = ['name', 'email', 'coverLetter', 'cv'];
+  const touched = new Set();
+
+  function slugify(value) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function getFileExtension(file) {
+    const parts = file.name.split('.');
+    return parts.length > 1 ? parts.pop().toLowerCase() : '';
+  }
+
+  function validateFile(file) {
+    if (!file) return 'Please upload your resume file.';
+    const fileExtension = getFileExtension(file);
+    if (file.type && !ALLOWED_FILE_TYPES.includes(file.type) && !ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+      return 'Upload a PDF, DOC, or DOCX file.';
+    }
+    if (!file.type && !ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+      return 'Upload a PDF, DOC, or DOCX file.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Resume files must be 5 MB or smaller.';
+    }
+    return '';
+  }
+
+  const validators = {
+    name: (value) => value.trim().length > 1 ? '' : 'Please enter your full name.',
+    email: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'Please enter a valid email address.',
+    linkedin: (value) => !value || /^https?:\/\//.test(value) ? '' : 'Use a full URL starting with http:// or https://.',
+    portfolio: (value) => !value || /^https?:\/\//.test(value) ? '' : 'Use a full URL starting with http:// or https://.',
+    coverLetter: (value) => value.trim().length >= 30 ? '' : 'Please add at least 30 characters in your cover letter.',
+    cv: (_value, file) => validateFile(file),
+  };
+
+  function setFieldError(id, message) {
+    const input = document.getElementById(id);
+    const field = input?.closest('.field');
+    const errorEl = document.getElementById(`error-${id}`);
+    if (!field || !errorEl) return;
+
+    field.classList.toggle('field--error', Boolean(message));
+    field.classList.toggle('field--valid', !message && touched.has(id) && hasValue(input));
+    errorEl.textContent = message || '';
+  }
+
+  function hasValue(input) {
+    if (!input) return false;
+    if (input.type === 'file') return Boolean(input.files && input.files[0]);
+    return Boolean(input.value && input.value.trim());
+  }
+
+  function updateProgress() {
+    let done = 0;
+    requiredIds.forEach((id) => {
+      const input = document.getElementById(id);
+      if (hasValue(input)) done += 1;
+    });
+
+    const percentage = Math.round((done / requiredIds.length) * 100);
+    if (progressFill) progressFill.style.width = `${percentage}%`;
+    if (progressLabel) progressLabel.textContent = `${percentage}% complete`;
+  }
+
+  function setLoading(loading) {
+    if (!submitBtn || !submitText || !submitSpinner) return;
+    submitBtn.disabled = loading;
+    submitText.textContent = loading ? 'Submitting...' : 'Submit Application';
+    submitSpinner.classList.toggle('hidden', !loading);
+  }
+
+  async function getCsrfToken() {
+    const response = await fetch('/api/csrf', { credentials: 'include' });
+    if (!response.ok) throw new Error('Failed to initialize secure form session. Please refresh and try again.');
+    const data = await response.json();
+    if (!data?.token) throw new Error('Missing secure form token. Please refresh and try again.');
+    return data.token;
+  }
+
+  function setStatus(message, type) {
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.classList.remove('success', 'error');
+    if (type) statusEl.classList.add(type);
+  }
+
+  function syncCount() {
+    if (coverLetter && coverLetterCount) {
+      coverLetterCount.textContent = `${coverLetter.value.length} / 1200`;
+    }
+  }
+
+  function syncFileSummary() {
+    const file = fileInput?.files?.[0];
+    if (file && fileNameEl && fileSummary) {
+      fileNameEl.textContent = `${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`;
+      fileSummary.hidden = false;
+    } else if (fileSummary && fileNameEl) {
+      fileNameEl.textContent = '';
+      fileSummary.hidden = true;
+    }
+  }
+
+  function assignSections() {
+    const tocLinks = document.querySelectorAll('[data-toc-link]');
+    const sections = document.querySelectorAll('[data-role-section]');
+
+    if (!sections.length || !tocLinks.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+      if (!visible) return;
+
+      const id = visible.target.getAttribute('data-role-section');
+      if (!id) return;
+
+      sections.forEach((section) => section.classList.toggle('is-current', section.getAttribute('data-role-section') === id));
+      tocLinks.forEach((link) => {
+        link.classList.toggle('is-active', link.getAttribute('data-toc-link') === id);
+      });
+    }, { rootMargin: '-35% 0px -55% 0px', threshold: [0.2, 0.6] });
+
+    sections.forEach((section) => observer.observe(section));
+
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        const id = link.getAttribute('data-toc-link');
+        if (!id) return;
+        const section = document.querySelector(`[data-role-section="${id}"]`);
+        if (section instanceof HTMLDetailsElement) {
+          section.open = true;
+        }
+      });
+    });
+  }
+
+  function validateField(id, { force = false } = {}) {
+    const input = document.getElementById(id);
+    if (!input || !validators[id]) return '';
+
+    const message = id === 'cv'
+      ? validators[id]('', input.files && input.files[0])
+      : validators[id](input.value || '');
+
+    if (force || touched.has(id)) setFieldError(id, message);
+    return message;
+  }
+
+  function attachInputBehavior(input) {
+    const id = input.id;
+    if (!id) return;
+
+    input.addEventListener('input', () => {
+      updateProgress();
+      if (id !== 'cv') validateField(id);
+      if (id === 'coverLetter') syncCount();
+    });
+
+    input.addEventListener('blur', () => {
+      touched.add(id);
+      validateField(id, { force: true });
+      updateProgress();
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      touched.add('cv');
+      syncFileSummary();
+      validateField('cv', { force: true });
+      updateProgress();
+    });
+  }
+
+  removeFileBtn?.addEventListener('click', () => {
+    if (!fileInput) return;
+    fileInput.value = '';
+    touched.add('cv');
+    syncFileSummary();
+    validateField('cv', { force: true });
+    updateProgress();
+  });
+
+  ['dragenter', 'dragover'].forEach((eventName) => {
+    dropzone?.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach((eventName) => {
+    dropzone?.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('is-dragover');
+    });
+  });
+
+  dropzone?.addEventListener('drop', (event) => {
+    const transfer = event.dataTransfer;
+    if (!transfer?.files?.length || !fileInput) return;
+    fileInput.files = transfer.files;
+    touched.add('cv');
+    syncFileSummary();
+    validateField('cv', { force: true });
+    updateProgress();
+  });
+
+  document.querySelectorAll('.field-input, .field-file-input').forEach((input) => attachInputBehavior(input));
+
+  syncCount();
+  syncFileSummary();
+  updateProgress();
+  assignSections();
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus('');
+
+    let firstErrorInput = null;
+    let hasErrors = false;
+
+    Object.keys(validators).forEach((id) => {
+      touched.add(id);
+      const message = validateField(id, { force: true });
+      if (message && !firstErrorInput) firstErrorInput = document.getElementById(id);
+      if (message) hasErrors = true;
+    });
+
+    if (hasErrors) {
+      setStatus('Please fix the highlighted fields before submitting.', 'error');
+      firstErrorInput?.focus();
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      alert('Application submitted successfully! We\'ll be in touch soon.');
+      const csrfToken = await getCsrfToken();
+      const formData = new FormData(form);
+
+      const response = await fetch('/api/leads/careers', {
+        method: 'POST',
+        headers: {
+          'x-csrf-token': csrfToken,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        if (result.fieldErrors) {
+          Object.entries(result.fieldErrors).forEach(([key, value]) => {
+            touched.add(key);
+            setFieldError(key, String(value));
+          });
+        }
+        throw new Error(result.error || 'Could not submit your application right now.');
+      }
+
       form.reset();
+      touched.clear();
+      document.querySelectorAll('.field').forEach((field) => field.classList.remove('field--error', 'field--valid'));
+      document.querySelectorAll('.field-error').forEach((el) => { el.textContent = ''; });
+      syncCount();
+      syncFileSummary();
+      updateProgress();
+      setStatus('Application submitted successfully. Our team will review your materials and follow up soon.', 'success');
     } catch (error) {
-      alert('Something went wrong. Please try again.');
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      setStatus(message, 'error');
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Submit Application';
+      setLoading(false);
     }
   });
 </script>

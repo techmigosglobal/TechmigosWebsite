@@ -1,0 +1,13 @@
+
+> techmigos-website@1.0.0 dev
+> astro dev --host 127.0.0.1 --port 4321
+
+10:07:08 [types] Generated 2ms
+10:07:08 [vite] Re-optimizing dependencies because vite config has changed
+
+ astro  v4.16.19 ready in 860 ms
+
+┃ Local    http://127.0.0.1:4321/
+
+10:07:09 watching for file changes...
+10:07:10 [200] / 17ms

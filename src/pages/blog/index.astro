@@ -8,36 +8,45 @@ allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 const featuredPost = allPosts[0];
 const recentPosts = allPosts.slice(1);
 
-const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'];
+const dynamicCategories = Array.from(new Set(allPosts.map((post) => post.data.category))).sort();
+const categories = ['All', ...dynamicCategories];
 ---
 
 <BaseLayout
   title="Blog"
-  description="Insights, tutorials and thoughts on software development, design, AI/ML, and building great digital products — by the TechMigos team."
+  description="SEO-focused tutorials, portfolio case studies, and future technology insights for students, programmers, and developers by Ravali at TechMigos."
 >
-  <!-- HERO -->
   <section class="pt-36 pb-16 relative overflow-hidden">
     <div class="absolute inset-0 dot-pattern opacity-50"></div>
     <div class="absolute -top-32 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
     <div class="container-custom relative z-10">
-      <div class="max-w-2xl">
+      <div class="max-w-3xl">
         <span class="section-eyebrow reveal">The TechMigos Blog</span>
         <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-          Insights &amp;<br><span class="text-gradient">Ideas</span>
+          Practical Tech Insights for<br /><span class="text-gradient">Students & Developers</span>
         </h1>
-        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed">
-          Tutorials, opinions, and deep-dives on software, design, AI, and building products that last.
+        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed mb-8">
+          Monthly deep-dives on portfolio engineering, software trends, AI, cloud, and career growth in real-world development.
         </p>
+
+        <div class="reveal stagger-3 bg-white border border-gray-200 rounded-2xl p-3 shadow-sm">
+          <label for="blog-search" class="sr-only">Search blog posts</label>
+          <input
+            id="blog-search"
+            type="search"
+            placeholder="Search by keyword, topic, tools, or career goal..."
+            class="form-control form-control--muted text-sm"
+          />
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- FEATURED POST -->
   {featuredPost && (
     <section class="pb-16 bg-white">
       <div class="container-custom">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 reveal">📌 Featured Post</p>
-        <a href={`/blog/${featuredPost.slug}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100 reveal">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 reveal">Featured Post</p>
+        <a href={`/blog/${featuredPost.slug}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-500 border border-gray-100 reveal">
           <div class="grid lg:grid-cols-2 gap-0">
             <div class="relative overflow-hidden">
               <img
@@ -56,14 +65,14 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
                 {featuredPost.data.title}
               </h2>
               <p class="text-gray-600 mb-6 leading-relaxed">{featuredPost.data.description}</p>
-              <div class="flex items-center text-sm text-gray-500 gap-3">
+              <div class="flex items-center text-sm text-gray-500 gap-3 flex-wrap">
                 <span class="font-medium text-gray-700">{featuredPost.data.author}</span>
                 <span class="w-1 h-1 rounded-full bg-gray-400"></span>
                 <span>{featuredPost.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 <span class="w-1 h-1 rounded-full bg-gray-400"></span>
-                <span>{featuredPost.data.readTime || 5} min read</span>
+                <span>{featuredPost.data.readTime || 6} min read</span>
               </div>
-              <div class="mt-6 inline-flex items-center gap-2 text-primary-600 font-semibold text-sm group-hover:gap-3 transition-all">
+              <div class="mt-6 inline-flex items-center gap-2 text-primary-600 font-semibold text-sm group-hover:gap-3 transition-[gap]">
                 Read Article
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
@@ -76,13 +85,12 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
     </section>
   )}
 
-  <!-- CATEGORY FILTER -->
-  <div class="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+  <div class="sticky top-20 z-40 bg-white/85 backdrop-blur-xl border-b border-gray-100 shadow-sm">
     <div class="container-custom py-4">
       <div class="flex flex-wrap justify-center gap-2" id="category-filters">
-        {categories.map(category => (
+        {categories.map((category) => (
           <button
-            class="category-filter px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300"
+            class="category-filter px-5 py-2 rounded-full text-sm font-semibold transition-[background-color,border-color,color,box-shadow] duration-300"
             data-category={category}
           >
             {category}
@@ -92,15 +100,18 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
     </div>
   </div>
 
-  <!-- POSTS GRID -->
   <section class="section-padding bg-gray-50">
     <div class="container-custom">
+      <div class="mb-6 text-sm text-gray-500" id="results-count">Showing {recentPosts.length} posts</div>
       {recentPosts.length > 0 ? (
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="posts-grid">
           {recentPosts.map((post, i) => (
             <article
               class={`post-item group bg-white rounded-2xl overflow-hidden border border-gray-100 glow-card stagger-${i + 1} reveal`}
               data-category={post.data.category}
+              data-title={post.data.title.toLowerCase()}
+              data-description={post.data.description.toLowerCase()}
+              data-tags={post.data.tags.join(' ').toLowerCase()}
             >
               <a href={`/blog/${post.slug}`} class="block">
                 <div class="relative overflow-hidden">
@@ -112,7 +123,6 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
                     width="800"
                     height="500"
                   />
-                  <!-- Category overlay badge -->
                   <div class="absolute top-3 left-3">
                     <span class="px-3 py-1 bg-white/90 backdrop-blur-sm text-primary-700 text-xs font-bold rounded-full shadow-sm">
                       {post.data.category}
@@ -120,8 +130,8 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
                   </div>
                 </div>
                 <div class="p-6">
-                  <div class="flex items-center gap-2 mb-3 text-xs text-gray-400">
-                    <span>📖 {post.data.readTime || 5} min read</span>
+                  <div class="flex items-center gap-2 mb-3 text-xs text-gray-400 flex-wrap">
+                    <span>{post.data.readTime || 6} min read</span>
                     <span>•</span>
                     <span>{post.data.pubDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   </div>
@@ -129,6 +139,11 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
                     {post.data.title}
                   </h3>
                   <p class="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-2">{post.data.description}</p>
+                  <div class="flex flex-wrap gap-2 mb-4">
+                    {post.data.tags.slice(0, 3).map((tag: string) => (
+                      <span class="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600">#{tag}</span>
+                    ))}
+                  </div>
                   <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-gray-700">{post.data.author}</span>
                     <span class="text-primary-600 text-sm font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -145,9 +160,8 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
         </div>
       ) : (
         <div class="text-center py-20 reveal">
-          <div class="text-6xl mb-6">✍️</div>
           <h3 class="text-2xl font-bold text-gray-900 mb-3">No posts yet</h3>
-          <p class="text-gray-500">We're working on some great content. Check back soon!</p>
+          <p class="text-gray-500">We are working on great content. Check back soon.</p>
         </div>
       )}
     </div>
@@ -160,34 +174,68 @@ const categories = ['All', 'Technology', 'Design', 'AI/ML', 'DevOps', 'Business'
     background: linear-gradient(135deg, #4F46E5, #06B6D4);
     @apply text-white border-transparent shadow-md;
   }
-  .post-item { transition: opacity 0.4s ease, transform 0.4s ease; }
-  .post-item.hidden-filter { opacity: 0; pointer-events: none; transform: scale(0.95); }
+  .post-item { transition: opacity 0.35s ease, transform 0.35s ease; }
+  .post-item.hidden-filter { opacity: 0; pointer-events: none; transform: scale(0.96); }
 </style>
 
 <script>
-  const filters = document.querySelectorAll('.category-filter');
-  const posts = document.querySelectorAll('.post-item');
+  const filters = Array.from(document.querySelectorAll('.category-filter'));
+  const posts = Array.from(document.querySelectorAll('.post-item'));
+  const searchInput = document.getElementById('blog-search');
+  const resultsCount = document.getElementById('results-count');
 
-  filters.forEach(filter => {
+  let activeCategory = 'All';
+  let query = '';
+
+  function applyFilters() {
+    let visibleCount = 0;
+
+    posts.forEach((post) => {
+      const category = post.getAttribute('data-category') || '';
+      const title = post.getAttribute('data-title') || '';
+      const description = post.getAttribute('data-description') || '';
+      const tags = post.getAttribute('data-tags') || '';
+      const matchesCategory = activeCategory === 'All' || activeCategory === category;
+      const matchesSearch = !query || `${title} ${description} ${tags}`.includes(query);
+      const show = matchesCategory && matchesSearch;
+
+      if (show) {
+        visibleCount += 1;
+        post.classList.remove('hidden-filter');
+        post.style.display = 'block';
+      } else {
+        post.classList.add('hidden-filter');
+        setTimeout(() => {
+          if (post.classList.contains('hidden-filter')) {
+            post.style.display = 'none';
+          }
+        }, 300);
+      }
+    });
+
+    if (resultsCount) {
+      resultsCount.textContent = `Showing ${visibleCount} post${visibleCount === 1 ? '' : 's'}`;
+    }
+  }
+
+  filters.forEach((filter) => {
     filter.addEventListener('click', () => {
-      const category = filter.getAttribute('data-category');
-      filters.forEach(f => f.classList.remove('active'));
+      activeCategory = filter.getAttribute('data-category') || 'All';
+      filters.forEach((item) => item.classList.remove('active'));
       filter.classList.add('active');
-
-      posts.forEach(post => {
-        const postCat = post.getAttribute('data-category');
-        if (category === 'All' || category === postCat) {
-          post.classList.remove('hidden-filter');
-          (post as HTMLElement).style.display = 'block';
-        } else {
-          post.classList.add('hidden-filter');
-          setTimeout(() => {
-            if (post.classList.contains('hidden-filter')) (post as HTMLElement).style.display = 'none';
-          }, 400);
-        }
-      });
+      applyFilters();
     });
   });
 
-  document.querySelector('.category-filter[data-category="All"]')?.classList.add('active');
+  searchInput?.addEventListener('input', (event) => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      query = target.value.trim().toLowerCase();
+      applyFilters();
+    }
+  });
+
+  const defaultFilter = document.querySelector('.category-filter[data-category="All"]');
+  defaultFilter?.classList.add('active');
+  applyFilters();
 </script>

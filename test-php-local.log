@@ -1,0 +1,16 @@
+
+> techmigos-website@1.0.0 test:php-local
+> BASE_URL=http://127.0.0.1:4321 ./scripts/test-php-backend-local.sh
+
+Running backend smoke tests against: http://127.0.0.1:4321
+[PASS] GET /api/csrf returns token
+[PASS] POST /api/leads/contact validation
+[PASS] contact validation response marks ok=false
+[PASS] POST /api/leads/contact success
+[PASS] contact success response has accepted=true
+[PASS] POST /api/leads/newsletter validation
+[PASS] POST /api/leads/newsletter success
+[PASS] POST /api/leads/careers validation
+[PASS] POST /api/leads/careers success
+[PASS] CSRF rejection
+All smoke tests passed.

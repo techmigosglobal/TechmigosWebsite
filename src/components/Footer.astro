@@ -17,15 +17,15 @@ const footerLinks = {
   services: [
     { name: 'Web Development', href: '/services#web' },
     { name: 'Mobile Apps', href: '/services#mobile' },
-    { name: 'UI/UX Design', href: '/services#design' },
-    { name: 'Cloud & DevOps', href: '/services#cloud' },
+    { name: 'Quality Assurance & Testing', href: '/services#qa' },
+    { name: 'Backend Development', href: '/services#backend' },
     { name: 'AI/ML Integration', href: '/services#ai' },
     { name: 'Tech Consulting', href: '/services#consulting' },
   ],
   contact: [
-    { name: 'hello@techmigos.com', href: 'mailto:hello@techmigos.com', emoji: '📧' },
-    { name: '+1 (555) 000-0000', href: 'tel:+15550000000', emoji: '📞' },
-    { name: 'San Francisco, CA', href: '#', emoji: '📍' },
+    { name: 'info@techmigos.com', href: 'mailto:info@techmigos.com', emoji: '📧' },
+    { name: '+919959703547', href: 'tel:+919959703547', emoji: '📞' },
+    { name: 'Hyderabad, Telangana, India, 500079', href: '#', emoji: '📍' },
   ],
 };
 
@@ -60,23 +60,39 @@ const socialLinks = [
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
         <div>
-          <h3 class="text-2xl font-bold text-white mb-1">Stay in the loop 📬</h3>
+          <h3 class="text-2xl font-bold text-white mb-1">Stay in the loop</h3>
           <p class="text-indigo-300 text-sm">Get the latest insights on tech, design, and AI delivered to your inbox.</p>
         </div>
-        <form class="flex gap-3 w-full lg:w-auto" onsubmit="event.preventDefault();">
+        <form id="newsletter-form" class="flex gap-3 w-full lg:w-auto">
           <input
+            name="company_website"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+            class="hidden"
+            aria-hidden="true"
+          />
+          <label for="newsletter-email" class="sr-only">Email address</label>
+          <input
+            id="newsletter-email"
+            name="email"
             type="email"
-            placeholder="your@email.com"
-            class="flex-1 lg:w-72 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:bg-white/15 transition-all text-sm backdrop-blur-sm"
+            placeholder="your@email.com…"
+            required
+            autocomplete="email"
+            spellcheck="false"
+            class="form-control flex-1 lg:w-72 text-sm bg-white text-slate-900 placeholder:text-slate-400 border-white/30"
           />
           <button
+            id="newsletter-submit"
             type="submit"
-            class="px-5 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-300 hover:-translate-y-0.5 shine-hover"
+            class="px-5 py-3 rounded-xl font-semibold text-sm text-white transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 shine-hover"
             style="background: linear-gradient(135deg, #4F46E5, #06B6D4)"
           >
             Subscribe
           </button>
         </form>
+        <p id="newsletter-status" class="text-xs text-indigo-300 w-full lg:w-auto lg:text-right"></p>
       </div>
     </div>
   </div>
@@ -89,12 +105,13 @@ const socialLinks = [
       <div class="space-y-5 lg:col-span-1">
         <a href="/" class="flex items-center space-x-2.5 group" aria-label="TechMigos Home">
           <div class="relative">
-            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
-              class="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-              <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#818CF8" stroke-width="2" fill="none"/>
-              <path d="M16 8L22 12V20L16 24L10 20V12L16 8Z" fill="#818CF8"/>
-              <path d="M16 14L19 16V22L16 24L13 22V16L16 14Z" fill="#22D3EE"/>
-            </svg>
+            <img
+              src="/icon.png"
+              alt="TechMigos logo"
+              width="40"
+              height="40"
+              class="h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-110"
+            />
           </div>
           <span class="text-xl font-black text-white">TechMigos</span>
         </a>
@@ -107,11 +124,9 @@ const socialLinks = [
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              class="w-9 h-9 rounded-lg flex items-center justify-center text-indigo-400 transition-all duration-300 hover:text-white hover:scale-110"
+              class="footer-social w-9 h-9 rounded-lg flex items-center justify-center text-indigo-400 transition-[transform,background-color,color] duration-300 hover:text-white hover:scale-105"
               style="background: rgba(255,255,255,0.07)"
               aria-label={social.name}
-              onmouseenter="this.style.background='linear-gradient(135deg,#4F46E5,#06B6D4)'"
-              onmouseleave="this.style.background='rgba(255,255,255,0.07)'"
             >
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" set:html={social.icon}></svg>
             </a>
@@ -129,7 +144,7 @@ const socialLinks = [
                 href={link.href}
                 class="text-sm text-indigo-300 hover:text-white transition-colors duration-200 flex items-center gap-1.5 group"
               >
-                <span class="w-0 group-hover:w-3 h-0.5 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full transition-all duration-300 overflow-hidden"></span>
+                <span class="w-0 group-hover:w-3 h-0.5 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full transition-[width] duration-300 overflow-hidden"></span>
                 {link.name}
               </a>
             </li>
@@ -147,7 +162,7 @@ const socialLinks = [
                 href={link.href}
                 class="text-sm text-indigo-300 hover:text-white transition-colors duration-200 flex items-center gap-1.5 group"
               >
-                <span class="w-0 group-hover:w-3 h-0.5 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full transition-all duration-300 overflow-hidden"></span>
+                <span class="w-0 group-hover:w-3 h-0.5 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full transition-[width] duration-300 overflow-hidden"></span>
                 {link.name}
               </a>
             </li>
@@ -175,7 +190,7 @@ const socialLinks = [
         <!-- CTA pill -->
         <a
           href="/contact"
-          class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 shine-hover"
+          class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 shine-hover"
           style="background: linear-gradient(135deg, #4F46E5, #06B6D4)"
         >
           Start a Project
@@ -192,7 +207,7 @@ const socialLinks = [
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p class="text-sm text-indigo-400">
-          &copy; {currentYear} TechMigos. All rights reserved. Built with ❤️ in San Francisco.
+          &copy; {currentYear} TechMigos. All rights reserved. Built in Hyderabad, Telangana, India.
         </p>
         <div class="flex items-center gap-4 text-sm text-indigo-400">
           <a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a>
@@ -205,3 +220,53 @@ const socialLinks = [
     </div>
   </div>
 </footer>
+
+<script>
+  const newsletterForm = document.getElementById('newsletter-form') as HTMLFormElement;
+  const newsletterStatus = document.getElementById('newsletter-status');
+  const newsletterSubmit = document.getElementById('newsletter-submit') as HTMLButtonElement;
+
+  newsletterForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(newsletterForm);
+    const payload = {
+      email: String(formData.get('email') || ''),
+      company_website: String(formData.get('company_website') || ''),
+    };
+
+    try {
+      newsletterSubmit.disabled = true;
+      newsletterSubmit.textContent = 'Subscribing…';
+      const response = await fetch('/api/leads/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        const firstError = result.fieldErrors ? Object.values(result.fieldErrors)[0] : null;
+        throw new Error(String(firstError || result.error || 'Could not subscribe.'));
+      }
+      newsletterForm.reset();
+      if (newsletterStatus) {
+        newsletterStatus.textContent = 'Thanks for subscribing.';
+        newsletterStatus.className = 'text-xs text-emerald-300 w-full lg:w-auto lg:text-right';
+      }
+    } catch (error) {
+      if (newsletterStatus) {
+        newsletterStatus.textContent = error instanceof Error ? error.message : 'Could not subscribe right now.';
+        newsletterStatus.className = 'text-xs text-rose-300 w-full lg:w-auto lg:text-right';
+      }
+    } finally {
+      newsletterSubmit.disabled = false;
+      newsletterSubmit.textContent = 'Subscribe';
+    }
+  });
+</script>
+
+<style>
+  .footer-social:hover,
+  .footer-social:focus-visible {
+    background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  }
+</style>
