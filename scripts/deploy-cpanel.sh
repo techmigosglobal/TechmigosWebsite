@@ -241,7 +241,7 @@ if [[ "$RUN_SMOKE" -eq 1 ]]; then
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "curl -i https://$DOMAIN/api/csrf"
-    echo "curl -i https://$DOMAIN/support"
+    echo "curl -i https://$DOMAIN/support/"
     echo "curl -i -c <cookie-file> https://$DOMAIN/api/csrf"
     echo "curl -i -b <cookie-file> -X POST https://$DOMAIN/api/leads/contact -H 'Content-Type: application/json' -H 'x-csrf-token: <token-from-csrf>' -d '{}'"
     echo "curl -i -b <cookie-file> -X POST https://$DOMAIN/api/leads/newsletter -H 'Content-Type: application/json' -H 'x-csrf-token: <token-from-csrf>' -d '{}'"
@@ -271,7 +271,7 @@ if [[ "$RUN_SMOKE" -eq 1 ]]; then
       exit 1
     fi
 
-    support_status="$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/support")"
+    support_status="$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/support/")"
     if [[ "$support_status" != "200" ]]; then
       echo "Support page smoke check failed with status $support_status" >&2
       exit 1
