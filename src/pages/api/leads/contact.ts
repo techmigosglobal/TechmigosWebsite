@@ -43,6 +43,7 @@ export const POST: APIRoute = async ({ request, clientAddress, cookies }) => {
       service: asString(body?.service),
       budget: asString(body?.budget),
       message: asString(body?.message),
+      sourcePath: asString(body?.sourcePath),
     };
 
     const fieldErrors: Record<string, string> = {};

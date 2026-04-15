@@ -30,6 +30,7 @@ try {
         'service' => as_string($body['service'] ?? ''),
         'budget' => as_string($body['budget'] ?? ''),
         'message' => as_string($body['message'] ?? ''),
+        'sourcePath' => as_string($body['sourcePath'] ?? ''),
     ];
 
     $fieldErrors = [];
@@ -48,7 +49,19 @@ try {
     }
 
     insert_contact_lead($payload, $ip, $userAgent);
-    json_ok(['accepted' => true]);
+    $notification = notify_contact_submission($payload, [
+        'ip' => $ip,
+        'userAgent' => $userAgent,
+        'submittedAt' => gmdate('c'),
+        'sourcePath' => $payload['sourcePath'],
+    ]);
+    json_ok([
+        'accepted' => true,
+        'mail' => [
+            'user' => $notification['user'] ?? ['ok' => false, 'reason' => 'unknown'],
+            'company' => $notification['company'] ?? ['ok' => false, 'reason' => 'unknown'],
+        ],
+    ]);
 } catch (Throwable $error) {
     error_log('[leads/contact] submission failed: ' . $error->getMessage());
     json_error('Could not submit your message right now.', 500);

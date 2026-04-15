@@ -3,39 +3,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Contact"
-  description="Get in touch with TechMigos. Schedule a free consultation and let's build something extraordinary together."
+  title="Support"
+  description="Get help from TechMigos for an active project, deployment issue, or product request. We triage support requests quickly and respond within one business day."
 >
-  <!-- HERO -->
   <section class="pt-36 pb-16 relative overflow-hidden">
     <div class="absolute inset-0 dot-pattern opacity-50"></div>
-    <div class="absolute -top-32 -right-32 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
-    <div class="absolute bottom-0 left-0 w-72 h-72 bg-accent-100 rounded-full blur-3xl opacity-40"></div>
+    <div class="absolute -top-28 -right-24 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-accent-100 rounded-full blur-3xl opacity-40"></div>
     <div class="container-custom relative z-10">
-      <div class="max-w-2xl">
-        <span class="section-eyebrow reveal">Get In Touch</span>
+      <div class="max-w-3xl">
+        <span class="section-eyebrow reveal">Need Help?</span>
         <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-          Let's Build<br><span class="text-gradient">Something Great</span>
+          Fast, Clear
+          <span class="text-gradient">Support</span>
         </h1>
-        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed">
-          Ready to start your project? We'd love to hear about it. Fill in the form or reach us directly — we reply within 24 hours.
+        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed max-w-2xl">
+          Tell us what is broken, blocked, or unclear and we will route it to the right person.
+          For production incidents, include the exact page, error message, and steps to reproduce.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- CONTACT SECTION -->
   <section class="pb-32 bg-white">
     <div class="container-custom">
       <div class="grid lg:grid-cols-5 gap-16">
-
-        <!-- FORM (left, wider) -->
         <div class="lg:col-span-3 reveal-left">
           <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Send us a message</h2>
-            <p class="text-gray-500 text-sm mb-8">We'll get back to you within one business day.</p>
+            <div class="flex items-start justify-between gap-6 mb-8">
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Open a support request</h2>
+                <p class="text-gray-500 text-sm">We usually reply within one business day. Urgent issues should be marked high priority.</p>
+              </div>
+              <div class="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-50 text-2xl">
+                🛟
+              </div>
+            </div>
 
-            <form id="contact-form" class="space-y-6" method="POST">
+            <form id="support-form" class="space-y-6" method="POST">
               <input type="text" name="company_website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
 
               <div class="grid sm:grid-cols-2 gap-6">
@@ -44,7 +49,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     Full Name <span class="text-red-500">*</span>
                   </label>
                   <input
-                    type="text" id="name" name="name" required
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
                     class="form-input form-control form-control--muted"
                     placeholder="John Smith"
                   />
@@ -54,63 +62,104 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     Email <span class="text-red-500">*</span>
                   </label>
                   <input
-                    type="email" id="email" name="email" required
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
                     class="form-input form-control form-control--muted"
                     placeholder="john@company.com"
                   />
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="company" class="form-label">Company</label>
-                <input
-                  type="text" id="company" name="company"
-                  class="form-input form-control form-control--muted"
-                  placeholder="Your company name"
-                />
+              <div class="grid sm:grid-cols-2 gap-6">
+                <div class="form-group">
+                  <label for="company" class="form-label">Company</label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    class="form-input form-control form-control--muted"
+                    placeholder="Your company or organization"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="product" class="form-label">Product / Project</label>
+                  <input
+                    type="text"
+                    id="product"
+                    name="product"
+                    class="form-input form-control form-control--muted"
+                    placeholder="Website, app, campaign, or area affected"
+                  />
+                </div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-6">
                 <div class="form-group">
-                  <label for="service" class="form-label">Service Interest</label>
+                  <label for="topic" class="form-label">
+                    Support Topic <span class="text-red-500">*</span>
+                  </label>
                   <select
-                    id="service" name="service"
+                    id="topic"
+                    name="topic"
+                    required
                     class="form-input form-control form-control--muted appearance-none"
                   >
-                    <option value="">Select a service</option>
-                    <option value="web">Web Development</option>
-                    <option value="mobile">Mobile Apps</option>
-                    <option value="qa">Quality Assurance & Testing</option>
-                    <option value="backend">Backend Development</option>
-                    <option value="ai">AI/ML Integration</option>
-                    <option value="consulting">Tech Consulting</option>
+                    <option value="">Choose a topic</option>
+                    <option value="technical">Technical issue</option>
+                    <option value="deployment">Deployment help</option>
+                    <option value="bug">Bug report</option>
+                    <option value="content">Content update</option>
+                    <option value="access">Account access</option>
+                    <option value="billing">Billing or invoice</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="budget" class="form-label">Budget Range</label>
+                  <label for="priority" class="form-label">
+                    Priority <span class="text-red-500">*</span>
+                  </label>
                   <select
-                    id="budget" name="budget"
+                    id="priority"
+                    name="priority"
+                    required
                     class="form-input form-control form-control--muted appearance-none"
                   >
-                    <option value="">Select budget</option>
-                    <option value="10k-25k">$10K – $25K</option>
-                    <option value="25k-50k">$25K – $50K</option>
-                    <option value="50k-100k">$50K – $100K</option>
-                    <option value="100k-250k">$100K – $250K</option>
-                    <option value="250k+">$250K+</option>
+                    <option value="">Choose priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
                   </select>
                 </div>
               </div>
 
               <div class="form-group">
+                <label for="subject" class="form-label">
+                  Subject <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="subject"
+                  name="subject"
+                  required
+                  class="form-input form-control form-control--muted"
+                  placeholder="Short summary of the issue"
+                />
+              </div>
+
+              <div class="form-group">
                 <label for="message" class="form-label">
-                  Project Description <span class="text-red-500">*</span>
+                  Request Details <span class="text-red-500">*</span>
                 </label>
                 <textarea
-                  id="message" name="message" required rows="5"
+                  id="message"
+                  name="message"
+                  required
+                  rows="6"
                   class="form-input form-control form-control--muted form-textarea resize-none"
-                  placeholder="Tell us about your project goals, timeline, and any existing tech..."
+                  placeholder="Describe what happened, what you expected, the page or feature involved, and any steps to reproduce it."
                 ></textarea>
               </div>
 
@@ -119,7 +168,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 id="submit-btn"
                 class="btn-primary w-full justify-center py-4 text-base shine-hover group"
               >
-                <span id="btn-text">Send Message</span>
+                <span id="btn-text">Send Support Request</span>
                 <svg id="btn-icon" class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                 </svg>
@@ -132,37 +181,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <!-- CONTACT INFO (right) -->
         <div class="lg:col-span-2 reveal-right space-y-6">
-          <!-- Contact cards -->
           {[
             {
-              icon: '📧',
-              title: 'Email Us',
-              value: 'info@techmigos.com',
-              href: 'mailto:info@techmigos.com',
-              sub: 'We reply within 24 hours',
-            },
-            {
-              icon: '📞',
-              title: 'WhatsApp Us',
+              icon: '⚡',
+              title: 'Urgent issues',
               value: '+919959703547',
               href: 'tel:+919959703547',
-              sub: 'Mon–Fri, 9AM–6PM IST',
+              sub: 'Call or WhatsApp for blocked deployments and production outages',
             },
             {
-              icon: '📍',
-              title: 'Visit Us',
-              value: 'Hyderabad, Telangana, India, 500079',
-              href: '#',
-              sub: 'India Office',
+              icon: '📧',
+              title: 'Email support',
+              value: 'info@techmigos.com',
+              href: 'mailto:info@techmigos.com',
+              sub: 'Best for screenshots, logs, and longer explanations',
             },
             {
               icon: '🕐',
-              title: 'Office Hours',
+              title: 'Response window',
+              value: 'Within 1 business day',
+              href: '#',
+              sub: 'High priority items are reviewed first during office hours',
+            },
+            {
+              icon: '📍',
+              title: 'Office hours',
               value: 'Mon–Fri: 9AM – 6PM IST',
               href: '#',
-              sub: 'Weekend: By appointment',
+              sub: 'Weekend support is handled by appointment',
             },
           ].map((item, i) => (
             <a
@@ -179,31 +226,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               </div>
             </a>
           ))}
-          <!-- Social links -->
-          <div>
-            <p class="text-sm font-semibold text-gray-500 mb-3">Follow us</p>
-            <div class="flex gap-3">
-              {[
-                { label: 'LinkedIn', href: 'https://linkedin.com/company/techmigos', icon: '<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>' },
-                { label: 'GitHub', href: 'https://github.com/techmigos', icon: '<path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>' },
-                { label: 'Twitter', href: 'https://twitter.com/techmigos', icon: '<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>' },
-              ].map(s => (
-                <a
-                  href={s.href} target="_blank" rel="noopener noreferrer"
-                  class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary-600 hover:text-white transition-[background-color,color,transform] duration-300 hover:scale-110"
-                  aria-label={s.label}
-                >
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" set:html={s.icon}></svg>
-                </a>
-              ))}
-            </div>
+
+          <div class="rounded-3xl border border-gray-100 bg-gray-50 p-6">
+            <h3 class="text-base font-bold text-gray-900 mb-4">Include these details if possible</h3>
+            <ul class="space-y-3 text-sm text-gray-600">
+              <li class="flex gap-3"><span class="text-primary-600">•</span>Exact page or feature name</li>
+              <li class="flex gap-3"><span class="text-primary-600">•</span>Steps to reproduce the issue</li>
+              <li class="flex gap-3"><span class="text-primary-600">•</span>Error message or screenshot</li>
+              <li class="flex gap-3"><span class="text-primary-600">•</span>Any recent changes before the issue started</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Toast notification -->
   <div id="form-toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl shadow-2xl transform translate-y-24 opacity-0 transition-[transform,opacity] duration-500 z-50 flex items-center gap-3">
     <span id="toast-icon" class="text-xl"></span>
     <p id="toast-message" class="font-medium"></p>
@@ -211,7 +248,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  const form = document.getElementById('contact-form') as HTMLFormElement;
+  const form = document.getElementById('support-form') as HTMLFormElement;
   const toast = document.getElementById('form-toast') as HTMLElement;
   const toastMessage = document.getElementById('toast-message') as HTMLElement;
   const toastIcon = document.getElementById('toast-icon') as HTMLElement;
@@ -220,8 +257,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const btnIcon = document.getElementById('btn-icon') as HTMLElement;
   const btnSpinner = document.getElementById('btn-spinner') as HTMLElement;
 
-  // Floating label effect
-  document.querySelectorAll('.form-input').forEach(input => {
+  document.querySelectorAll('.form-input').forEach((input) => {
     input.addEventListener('focus', () => {
       (input as HTMLElement).parentElement?.classList.add('focused');
     });
@@ -246,7 +282,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   function setLoading(loading: boolean) {
     submitBtn.disabled = loading;
-    btnText.textContent = loading ? 'Sending...' : 'Send Message';
+    btnText.textContent = loading ? 'Sending...' : 'Send Support Request';
     btnIcon.classList.toggle('hidden', loading);
     btnSpinner.classList.toggle('hidden', !loading);
   }
@@ -260,20 +296,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     return String(result.token);
   }
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
     setLoading(true);
+
     try {
       const formData = new FormData(form);
+      const topic = String(formData.get('topic') || '');
+      const priority = String(formData.get('priority') || '');
+      const subject = String(formData.get('subject') || '');
+      const details = String(formData.get('message') || '');
+      const company = String(formData.get('company') || '');
+      const product = String(formData.get('product') || '');
+
+      const message = [
+        `Subject: ${subject}`,
+        `Support Topic: ${topic}`,
+        `Priority: ${priority}`,
+        company ? `Company: ${company}` : '',
+        product ? `Product / Project: ${product}` : '',
+        '',
+        details,
+      ].filter(Boolean).join('\n');
+
       const payload = {
         name: String(formData.get('name') || ''),
         email: String(formData.get('email') || ''),
-        company: String(formData.get('company') || ''),
-        service: String(formData.get('service') || ''),
-        budget: String(formData.get('budget') || ''),
-        message: String(formData.get('message') || ''),
+        company,
+        service: topic,
+        budget: priority,
+        message,
         company_website: String(formData.get('company_website') || ''),
-        sourcePath: '/contact',
+        sourcePath: '/support',
       };
 
       const csrfToken = await getCsrfToken();
@@ -286,6 +340,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         body: JSON.stringify(payload),
       });
       const result = await response.json();
+
       if (!response.ok || !result.ok) {
         if (result.fieldErrors) {
           const firstError = Object.values(result.fieldErrors)[0];
@@ -294,7 +349,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         throw new Error(result.error || 'Request failed.');
       }
 
-      showToast("Message sent! We'll be in touch within 24 hours.", 'success');
+      showToast('Support request sent. We will review it shortly.', 'success');
       form.reset();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Something went wrong. Please email us directly.';

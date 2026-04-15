@@ -13,6 +13,7 @@ const footerLinks = {
     { name: 'Portfolio', href: '/portfolio' },
     { name: 'Blog', href: '/blog' },
     { name: 'Careers', href: '/careers' },
+    { name: 'Support', href: '/support' },
   ],
   services: [
     { name: 'Web Development', href: '/services#web' },
@@ -226,6 +227,15 @@ const socialLinks = [
   const newsletterStatus = document.getElementById('newsletter-status');
   const newsletterSubmit = document.getElementById('newsletter-submit') as HTMLButtonElement;
 
+  async function getCsrfToken() {
+    const response = await fetch('/api/csrf', { method: 'GET' });
+    const result = await response.json();
+    if (!response.ok || !result?.token) {
+      throw new Error('Could not initialize secure newsletter submission. Please refresh and try again.');
+    }
+    return String(result.token);
+  }
+
   newsletterForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const formData = new FormData(newsletterForm);
@@ -237,9 +247,13 @@ const socialLinks = [
     try {
       newsletterSubmit.disabled = true;
       newsletterSubmit.textContent = 'Subscribing…';
+      const csrfToken = await getCsrfToken();
       const response = await fetch('/api/leads/newsletter', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
         body: JSON.stringify(payload),
       });
       const result = await response.json();
