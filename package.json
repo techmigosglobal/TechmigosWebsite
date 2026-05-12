@@ -7,7 +7,7 @@
     "dev:local-php": "LOCAL_PHP_BACKEND_URL=http://127.0.0.1:8080 astro dev --host 127.0.0.1",
     "dev:showcase": "npm run dev --prefix appshowcase",
     "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:showcase\"",
-    "start": "node ./dist/server/entry.mjs",
+    "start": "astro preview",
     "build": "astro build",
     "build:full": "npm run build && npm run build --prefix appshowcase && rm -rf dist/client/showcase && mkdir -p dist/client/showcase && cp -r appshowcase/out/* dist/client/showcase/",
     "preview": "astro preview",
