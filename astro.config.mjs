@@ -6,7 +6,7 @@ import node from '@astrojs/node';
 const localPhpBackendUrl = process.env.LOCAL_PHP_BACKEND_URL?.trim();
 
 export default defineConfig({
-  output: 'server',
+  output: 'static',
   adapter: node({
     mode: 'standalone',
   }),
