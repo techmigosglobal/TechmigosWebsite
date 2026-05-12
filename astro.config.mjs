@@ -1,11 +1,15 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
+import node from '@astrojs/node';
 
 const localPhpBackendUrl = process.env.LOCAL_PHP_BACKEND_URL?.trim();
 
 export default defineConfig({
-  output: 'static',
+  output: 'server',
+  adapter: node({
+    mode: 'standalone',
+  }),
   site: 'https://techmigos.com',
   integrations: [
     tailwind(),
