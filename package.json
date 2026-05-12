@@ -24,6 +24,7 @@
     "@astrojs/mdx": "^4.0.0",
     "@astrojs/node": "^9.5.5",
     "@astrojs/tailwind": "^6.0.2",
+    "@vercel/speed-insights": "^2.0.0",
     "astro": "^5.18.1",
     "astro-icon": "^1.1.0",
     "lucide-react": "^0.372.0",
