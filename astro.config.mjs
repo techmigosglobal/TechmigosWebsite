@@ -1,11 +1,15 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
+import vercel from '@astrojs/vercel';
 
 const localPhpBackendUrl = process.env.LOCAL_PHP_BACKEND_URL?.trim();
 
 export default defineConfig({
   output: 'static',
+  adapter: vercel({
+    webAnalytics: { enabled: true },
+  }),
   site: 'https://techmigos.com',
   integrations: [
     tailwind(),
