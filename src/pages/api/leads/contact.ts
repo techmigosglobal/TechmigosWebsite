@@ -4,7 +4,7 @@ import { saveLead } from '../../../lib/leads';
 import { checkRateLimit, getRequestIp } from '../../../lib/rateLimit';
 import { validateCsrfToken, CSRF_HEADER } from '../../../lib/csrfMiddleware';
 
-export const prerender = false;
+export const prerender = true;
 
 function asString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { generateCsrfToken, CSRF_COOKIE_OPTIONS } from '../../lib/csrfMiddleware';
 
-export const prerender = false;
+export const prerender = true;
 
 export const GET: APIRoute = async ({ cookies }) => {
   const { token, secret } = generateCsrfToken();

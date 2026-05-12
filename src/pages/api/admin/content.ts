@@ -3,7 +3,7 @@ import { isAuthenticated } from '../../../lib/adminAuth';
 import { loadSiteContent, saveSiteContent, validateSiteContentPayload } from '../../../lib/siteContent';
 import { jsonError, jsonOk } from '../../../lib/apiResponse';
 
-export const prerender = false;
+export const prerender = true;
 
 function unauthorized() {
   return jsonError('Unauthorized', 401);

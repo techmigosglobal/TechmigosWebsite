@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAdminCredentials, setSessionCookie } from '../../../lib/adminAuth';
 import { jsonError, jsonOk } from '../../../lib/apiResponse';
 
-export const prerender = false;
+export const prerender = true;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
