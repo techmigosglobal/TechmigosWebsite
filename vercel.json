@@ -4,11 +4,5 @@
   "framework": "astro",
   "env": {
     "NODE_ENV": "production"
-  },
-  "regions": ["sfo1"],
-  "functions": {
-    "dist/server/entry.mjs": {
-      "maxDuration": 60
-    }
   }
 }
