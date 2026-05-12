@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'Focus Today';
+const webUrl = 'https://crii-focus-today.web.app';
+const androidUrl = 'https://play.google.com/store/apps/details?id=com.eagletv.eagle_tv';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/focus-today/screen-login.svg',
+    alt: 'Focus Today login and language selection screen',
+    title: 'Fast OTP Onboarding',
+    caption: 'Phone-based sign in with quick language access for inclusive onboarding.',
+  },
+  {
+    src: '/images/portfolio/focus-today/screen-feed.svg',
+    alt: 'Focus Today feed with article and PDF cards',
+    title: 'News Feed Experience',
+    caption: 'Rich feed cards for civic updates, stories, and actionable public information.',
+  },
+  {
+    src: '/images/portfolio/focus-today/screen-discover.svg',
+    alt: 'Focus Today discover search and post list screen',
+    title: 'Discover and Search',
+    caption: 'Find posts, users, and hashtags through a streamlined discovery workflow.',
+  },
+  {
+    src: '/images/portfolio/focus-today/screen-settings.svg',
+    alt: 'Focus Today settings screen with language and notifications',
+    title: 'Preference Controls',
+    caption: 'Manage language, notifications, and playback behavior through simple controls.',
+  },
+  {
+    src: '/images/portfolio/focus-today/screen-tablet.svg',
+    alt: 'Focus Today tablet splash and welcome UI',
+    title: 'Cross-Device Readiness',
+    caption: 'Responsive visual system adapted for larger screen experiences.',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Multilingual UX',
+    description: 'Language-first onboarding and navigation built for regional audience accessibility.',
+  },
+  {
+    icon: '02',
+    title: 'Content + PDF Cards',
+    description: 'Structured feed cards support text updates, image media, and PDF-centric civic material.',
+  },
+  {
+    icon: '03',
+    title: 'Realtime Delivery',
+    description: 'Firebase-backed pipelines keep stories and alerts synchronized across active devices.',
+  },
+  {
+    icon: '04',
+    title: 'Trusted Auth Flow',
+    description: 'Phone OTP and platform-verification pathways designed for stable sign-in completion.',
+  },
+  {
+    icon: '05',
+    title: 'Notification Ready',
+    description: 'Push and group notifications are integrated to support ongoing public communication.',
+  },
+  {
+    icon: '06',
+    title: 'Operational Settings',
+    description: 'Preferences for theme, language, and feed behavior reduce friction in daily usage.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/focus-today/screen-login.svg',
+    alt: 'Focus Today login screen',
+    title: 'Entry and Identity',
+    description: 'Users start with OTP-first sign in and immediate language selection to reduce onboarding drop-off.',
+  },
+  {
+    image: '/images/portfolio/focus-today/screen-feed.svg',
+    alt: 'Focus Today content feed screen',
+    title: 'Story Consumption',
+    description: 'The vertical feed highlights important civic stories with compact metadata and quick actions.',
+  },
+  {
+    image: '/images/portfolio/focus-today/screen-discover.svg',
+    alt: 'Focus Today discover screen',
+    title: 'Topic Discovery',
+    description: 'Search and discover patterns help users navigate high-volume updates without noise.',
+  },
+  {
+    image: '/images/portfolio/focus-today/screen-settings.svg',
+    alt: 'Focus Today settings and controls screen',
+    title: 'Personalization + Controls',
+    description: 'Settings give users direct control over language, notifications, and autoplay behavior.',
+  },
+];
+
+const trustItems = [
+  {
+    quote: 'The app experience now feels structured and reliable for day-to-day publishing operations.',
+    name: 'Community Editorial Team',
+    role: 'Product Stakeholders',
+  },
+  {
+    quote: 'Multilingual access and mobile-first readability made local content easier to consume.',
+    name: 'Field Distribution Group',
+    role: 'Regional Coordinators',
+  },
+  {
+    quote: 'Deployment across web and Android gave us a practical way to validate behavior on live devices.',
+    name: 'Delivery Engineering Team',
+    role: 'Implementation Review',
+  },
+];
+---
+
+<BaseLayout
+  title="Focus Today"
+  description="Focus Today case study: a Flutter + Firebase civic news product with multilingual onboarding, realtime feed delivery, and live web/android access."
+  ogImage="/images/portfolio/focus-today/cover-focus-today.svg"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    tagline="A community-first civic news application connecting people with verified local updates, emergency alerts, and public meeting information."
+    heroImage="/images/portfolio/focus-today/screen-login.svg"
+    webUrl={webUrl}
+    androidUrl={androidUrl}
+  />
+
+  <ShowcaseCarousel slides={showcaseSlides} />
+
+  <FeatureGrid features={features} />
+
+  <ScrollStoryDemo steps={storySteps} webUrl={webUrl} androidUrl={androidUrl} />
+
+  <TrustCards items={trustItems} />
+
+  <FinalCta webUrl={webUrl} androidUrl={androidUrl} />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">Focus Today by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

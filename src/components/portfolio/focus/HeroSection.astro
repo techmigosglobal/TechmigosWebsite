@@ -1,0 +1,44 @@
+---
+import PhoneFrame from './PhoneFrame.astro';
+
+interface Props {
+  appName: string;
+  tagline: string;
+  heroImage: string;
+  webUrl: string;
+  androidUrl: string;
+}
+
+const { appName, tagline, heroImage, webUrl, androidUrl } = Astro.props;
+---
+
+<section class="relative overflow-hidden pt-32 pb-20 sm:pt-36 sm:pb-24">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.22),transparent_55%),radial-gradient(circle_at_85%_15%,rgba(14,165,233,0.18),transparent_45%),linear-gradient(180deg,#f8fbff_0%,#f3f6fc_60%,#eef3fa_100%)]"></div>
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute -top-20 -right-12 h-72 w-72 rounded-full bg-white/60 blur-3xl"></div>
+    <div class="absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-primary-100/70 blur-3xl"></div>
+  </div>
+
+  <div class="container-custom relative z-10 grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+    <div class="reveal">
+      <span class="section-eyebrow">Flutter + Firebase Product</span>
+      <h1 class="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">{appName}</h1>
+      <p class="mt-5 max-w-xl text-lg text-gray-600 sm:text-xl">{tagline}</p>
+
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <a href={webUrl} target="_blank" rel="noopener noreferrer" class="btn-primary">Try Web Live</a>
+        <a href={androidUrl} target="_blank" rel="noopener noreferrer" class="btn-ghost border-slate-300">Get Android App</a>
+      </div>
+
+      <p class="mt-5 text-sm text-gray-500">Verified local updates, multilingual content, and civic engagement workflows in one mobile experience.</p>
+    </div>
+
+    <div class="reveal-scale justify-self-center lg:justify-self-end">
+      <div class="relative rounded-[2.5rem] border border-white/70 bg-white/45 p-4 shadow-[0_40px_80px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+        <div class="animate-float-slow">
+          <PhoneFrame src={heroImage} alt={`${appName} hero screen`} priority={true} />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

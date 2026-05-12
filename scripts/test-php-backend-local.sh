@@ -86,4 +86,31 @@ csrf_reject_resp="$(curl -sS -w "\n%{http_code}" -H "Content-Type: application/j
 csrf_reject_status="${csrf_reject_resp##*$'\n'}"
 assert_status "$csrf_reject_status" "403" "CSRF rejection"
 
+# 9) Admin me unauthorized
+admin_me_resp="$(curl -sS -w "\n%{http_code}" "$BASE_URL/api/admin/auth/me")"
+admin_me_status="${admin_me_resp##*$'\n'}"
+assert_status "$admin_me_status" "401" "GET /api/admin/auth/me unauthorized"
+
+# 10) Admin login invalid credentials
+admin_login_invalid_resp="$(curl -sS -w "\n%{http_code}" -H "Content-Type: application/json" -X POST "$BASE_URL/api/admin/auth/login" -d '{"username":"invalid","password":"invalid"}')"
+admin_login_invalid_status="${admin_login_invalid_resp##*$'\n'}"
+assert_status "$admin_login_invalid_status" "401" "POST /api/admin/auth/login invalid credentials"
+
+# 11) Admin login success (uses env or secure default fallback)
+admin_username="${ADMIN_USERNAME:-admin}"
+admin_password="${ADMIN_PASSWORD:-admin123}"
+admin_login_success_resp="$(curl -sS -c "$COOKIE_JAR" -w "\n%{http_code}" -H "Content-Type: application/json" -X POST "$BASE_URL/api/admin/auth/login" -d "{\"username\":\"$admin_username\",\"password\":\"$admin_password\"}")"
+admin_login_success_status="${admin_login_success_resp##*$'\n'}"
+assert_status "$admin_login_success_status" "200" "POST /api/admin/auth/login success"
+
+# 12) Admin me authorized
+admin_me_auth_resp="$(curl -sS -b "$COOKIE_JAR" -w "\n%{http_code}" "$BASE_URL/api/admin/auth/me")"
+admin_me_auth_status="${admin_me_auth_resp##*$'\n'}"
+assert_status "$admin_me_auth_status" "200" "GET /api/admin/auth/me authorized"
+
+# 13) Admin leads authorized
+admin_leads_resp="$(curl -sS -b "$COOKIE_JAR" -w "\n%{http_code}" "$BASE_URL/api/admin/leads")"
+admin_leads_status="${admin_leads_resp##*$'\n'}"
+assert_status "$admin_leads_status" "200" "GET /api/admin/leads authorized"
+
 echo "All smoke tests passed."

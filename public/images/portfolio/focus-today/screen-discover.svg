@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 1800' role='img' aria-label='Focus Today discover screen'>
+  <rect width='900' height='1800' fill='#eef2f8'/>
+  <text x='50' y='120' fill='#111827' font-size='72' font-family='Inter, Arial' font-weight='700'>Discover</text>
+  <text x='50' y='180' fill='#64748b' font-size='32' font-family='Inter, Arial'>Top stories, trending topics and voices</text>
+  <rect x='40' y='240' width='820' height='104' rx='26' fill='white' stroke='#cbd5e1'/>
+  <text x='90' y='304' fill='#6b7280' font-size='34' font-family='Inter, Arial'>Search posts, users, hashtags...</text>
+  <text x='58' y='410' fill='#111827' font-size='36' font-family='Inter, Arial' font-weight='600'>5 Posts</text>
+  <rect x='30' y='450' width='840' height='250' rx='32' fill='white' stroke='#d8dee9'/>
+  <rect x='30' y='730' width='840' height='250' rx='32' fill='white' stroke='#d8dee9'/>
+  <rect x='30' y='1010' width='840' height='250' rx='32' fill='white' stroke='#d8dee9'/>
+  <rect x='30' y='1290' width='840' height='250' rx='32' fill='white' stroke='#d8dee9'/>
+  <rect x='20' y='1660' width='860' height='110' rx='30' fill='#e7ebf1'/>
+  <circle cx='130' cy='1715' r='24' fill='#64748b'/>
+  <circle cx='340' cy='1715' r='24' fill='#0f2d63'/>
+  <circle cx='550' cy='1715' r='24' fill='#64748b'/>
+  <circle cx='760' cy='1715' r='24' fill='#64748b'/>
+</svg>

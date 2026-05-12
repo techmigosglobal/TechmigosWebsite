@@ -1,0 +1,21 @@
+---
+interface Props {
+  webUrl: string;
+  androidUrl: string;
+}
+
+const { webUrl, androidUrl } = Astro.props;
+---
+
+<section class="relative overflow-hidden py-20">
+  <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg, #0f2d63, #1d4ed8, #0284c7, #0f2d63); background-size: 260% 260%;"></div>
+  <div class="container-custom relative z-10 text-center reveal">
+    <h2 class="text-3xl font-extrabold text-white sm:text-5xl">Experience Focus Today Live</h2>
+    <p class="mx-auto mt-5 max-w-2xl text-lg text-white/80">Explore the deployed web experience and Android distribution package used for public access and field validation.</p>
+
+    <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+      <a href={webUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-xl bg-white px-8 py-3 font-bold text-primary-700 transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl">Open Web Live</a>
+      <a href={androidUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-xl border-2 border-white/60 px-8 py-3 font-bold text-white transition-colors duration-300 hover:border-white hover:bg-white/10">Open Android Live</a>
+    </div>
+  </div>
+</section>

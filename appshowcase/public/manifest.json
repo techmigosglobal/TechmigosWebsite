@@ -1,0 +1,21 @@
+{
+  "name": "SchoolDesk",
+  "short_name": "SchoolDesk",
+  "description": "School Management Made Simple",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "/assets/images/app_logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/app_logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

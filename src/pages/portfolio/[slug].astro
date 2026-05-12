@@ -1,8 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import type { GetStaticPaths } from 'astro';
 import { loadSiteContent } from '../../lib/siteContent';
 
-export const prerender = false;
+export const getStaticPaths = (async () => {
+  const { projects } = await loadSiteContent();
+  const customHandledSlugs = new Set(['focus-today', 'school-desk']);
+
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+  })).filter((entry) => !customHandledSlugs.has(entry.params.slug));
+}) satisfies GetStaticPaths;
 
 const { projects } = await loadSiteContent();
 const slug = Astro.params.slug ?? '';

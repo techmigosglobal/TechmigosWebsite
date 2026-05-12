@@ -2,7 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ServiceIcon from '../components/ServiceIcon.astro';
 import { loadSiteContent } from '../lib/siteContent';
-export const prerender = false;
 
 const services = [
   {
@@ -95,6 +94,7 @@ const processSteps = [
 
 const { testimonials, projects } = await loadSiteContent();
 const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
+const showTestimonials = false;
 ---
 
 <BaseLayout title="Home" description="TechMigos - Building Tomorrow, Together. We partner with startups and enterprises to design, build, and ship world-class digital products.">
@@ -264,7 +264,7 @@ const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {featuredWork.map((project, i) => (
-          <a href={`/portfolio/${project.slug}`} class={`group block bg-white rounded-2xl overflow-hidden shadow-sm glow-card stagger-${i + 1} reveal`}>
+          <a href={project.href || `/portfolio/${project.slug}`} class={`group block bg-white rounded-2xl overflow-hidden shadow-sm glow-card stagger-${i + 1} reveal`}>
             <div class="relative overflow-hidden">
               <img
                 src={project.image}
@@ -355,7 +355,8 @@ const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
   <!-- ========================================
        TESTIMONIALS
        ======================================== -->
-  <section class="section-padding bg-gray-50 relative overflow-hidden">
+    {showTestimonials && (
+    <section class="section-padding bg-gray-50 relative overflow-hidden">
     <div class="absolute top-0 right-0 w-80 h-80 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
     <div class="container-custom relative z-10">
       <div class="text-center mb-16 reveal">
@@ -403,6 +404,7 @@ const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
       </div>
     </div>
   </section>
+  )}
 
   <!-- ========================================
        CTA BANNER

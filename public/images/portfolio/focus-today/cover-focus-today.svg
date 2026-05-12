@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 1800' role='img' aria-label='Focus Today login screen'>
+  <defs>
+    <linearGradient id='bg' x1='0' x2='0' y1='0' y2='1'>
+      <stop offset='0%' stop-color='#eceff5'/>
+      <stop offset='100%' stop-color='#dfe4ee'/>
+    </linearGradient>
+    <linearGradient id='card' x1='0' x2='1' y1='0' y2='1'>
+      <stop offset='0%' stop-color='#ffffff'/>
+      <stop offset='100%' stop-color='#f4f7fb'/>
+    </linearGradient>
+  </defs>
+  <rect width='900' height='1800' fill='url(#bg)'/>
+  <rect x='320' y='180' width='260' height='260' rx='58' fill='#d8e4ff'/>
+  <image href='/images/portfolio/focus-today/app-icon.png' x='320' y='180' width='260' height='260'/>
+  <text x='450' y='560' text-anchor='middle' fill='#111827' font-size='62' font-family='Inter, Arial' font-weight='700'>Welcome to Focus Today</text>
+  <text x='450' y='635' text-anchor='middle' fill='#4b5563' font-size='36' font-family='Inter, Arial'>Sign in using your phone number</text>
+  <rect x='75' y='740' width='750' height='180' rx='30' fill='url(#card)' stroke='#b6c2d3' stroke-width='3'/>
+  <rect x='120' y='790' width='72' height='72' rx='16' fill='#0f2d63'/>
+  <text x='235' y='840' fill='#111827' font-size='40' font-family='Inter, Arial' font-weight='600'>Login with Phone OTP</text>
+  <text x='235' y='892' fill='#6b7280' font-size='30' font-family='Inter, Arial'>Quick sign in with OTP</text>
+  <rect x='140' y='1030' width='170' height='70' rx='34' fill='#0f2d63'/>
+  <text x='225' y='1074' text-anchor='middle' fill='white' font-size='30' font-family='Inter, Arial'>English</text>
+  <rect x='342' y='1030' width='190' height='70' rx='34' fill='#e9edf5'/>
+  <text x='437' y='1074' text-anchor='middle' fill='#4b5563' font-size='30' font-family='Inter, Arial'>తెలుగు</text>
+  <rect x='564' y='1030' width='190' height='70' rx='34' fill='#e9edf5'/>
+  <text x='659' y='1074' text-anchor='middle' fill='#4b5563' font-size='30' font-family='Inter, Arial'>हिन्दी</text>
+</svg>

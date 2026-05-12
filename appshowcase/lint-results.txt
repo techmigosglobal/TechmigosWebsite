@@ -1,0 +1,74 @@
+
+> appshowcase@0.1.0 lint
+> next lint
+
+
+./src/app/admin/page.tsx
+51:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+174:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+233:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+295:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+319:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/components/PilotSchoolBadge.tsx
+70:31  Warning: 'i' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/components/ShowcaseSection.tsx
+57:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+77:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/components/StakeholderSection.tsx
+68:44  Error: Unnecessary escape character: \'.  no-useless-escape
+
+./src/app/error.tsx
+39:11  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+./src/app/login/page.tsx
+112:13  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+119:13  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+132:15  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+./src/app/not-found.tsx
+31:23  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+31:44  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+31:57  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/privacy/page.tsx
+15:9  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+./src/app/terms/page.tsx
+15:9  Error: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+./src/components/Footer.tsx
+20:74  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/AppIcon.tsx
+50:51  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+85:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+104:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/AppImage.tsx
+22:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+47:9  Warning: 'isExternalUrl' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+74:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+116:5  Warning: 'onMouseEnter' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+117:5  Warning: 'onMouseLeave' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+118:5  Warning: 'onMouseMove' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+124:7  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+135:5  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/contexts/AuthContext.tsx
+6:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+17:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:6  Warning: React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/lib/supabase/client.ts
+42:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+55:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+93:17  Error: Expected an assignment or function call and instead saw an expression.  @typescript-eslint/no-unused-expressions
+96:23  Error: Empty block statement.  no-empty
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

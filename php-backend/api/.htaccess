@@ -2,11 +2,33 @@ Options -Indexes
 
 RewriteEngine On
 
-# Route public form endpoints to PHP handlers while keeping current frontend URLs.
+# Public form endpoints
 RewriteRule ^csrf$ csrf.php [L,QSA]
 RewriteRule ^leads/contact$ leads/contact.php [L,QSA]
 RewriteRule ^leads/newsletter$ leads/newsletter.php [L,QSA]
 RewriteRule ^leads/careers$ leads/careers.php [L,QSA]
+
+# Admin auth
+RewriteRule ^admin/auth/login$ admin/auth/login.php [L,QSA]
+RewriteRule ^admin/auth/logout$ admin/auth/logout.php [L,QSA]
+RewriteRule ^admin/auth/me$ admin/auth/me.php [L,QSA]
+
+# Admin testimonials
+RewriteRule ^admin/testimonials$ admin/testimonials/index.php [L,QSA]
+RewriteRule ^admin/testimonials/([0-9]+)$ admin/testimonials/item.php?id=$1 [L,QSA]
+
+# Admin portfolio
+RewriteRule ^admin/portfolio$ admin/portfolio/index.php [L,QSA]
+RewriteRule ^admin/portfolio/([0-9]+)$ admin/portfolio/item.php?id=$1 [L,QSA]
+
+# Admin leads
+RewriteRule ^admin/leads$ admin/leads/index.php [L,QSA]
+RewriteRule ^admin/leads/([a-z]+)/([0-9]+)$ admin/leads/item.php?type=$1&id=$2 [L,QSA]
+RewriteRule ^admin/leads/([a-z]+)/([0-9]+)/notes$ admin/leads/notes.php?type=$1&id=$2 [L,QSA]
+
+# Admin users
+RewriteRule ^admin/users$ admin/users/index.php [L,QSA]
+RewriteRule ^admin/users/([0-9]+)$ admin/users/item.php?id=$1 [L,QSA]
 
 # Deny direct access to internal implementation files.
 RewriteRule ^_core/ - [F,L]

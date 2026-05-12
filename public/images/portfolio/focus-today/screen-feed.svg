@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 1800' role='img' aria-label='Focus Today feed screen'>
+  <rect width='900' height='1800' fill='#0b1020'/>
+  <rect x='0' y='0' width='900' height='180' fill='#f6f8fb'/>
+  <rect x='40' y='45' width='300' height='70' rx='14' fill='white' stroke='#d1d5db'/>
+  <text x='190' y='90' text-anchor='middle' fill='#111827' font-size='34' font-family='Inter, Arial'>Focus Today</text>
+  <rect x='0' y='220' width='900' height='780' fill='white'/>
+  <rect x='36' y='260' width='828' height='500' fill='#e5e7eb'/>
+  <rect x='36' y='790' width='680' height='95' fill='none'/>
+  <text x='36' y='835' fill='white' font-size='52' font-family='Inter, Arial' font-weight='700'>Assaulted by religious Hatred,</text>
+  <text x='36' y='890' fill='white' font-size='52' font-family='Inter, Arial' font-weight='700'>Justice Denied</text>
+  <text x='36' y='940' fill='#cbd5e1' font-size='31' font-family='Inter, Arial'>A petition highlight from Focus Today news feed.</text>
+  <rect x='20' y='1660' width='860' height='110' rx='30' fill='#e7ebf1'/>
+  <circle cx='130' cy='1715' r='24' fill='#0f2d63'/>
+  <circle cx='340' cy='1715' r='24' fill='#64748b'/>
+  <circle cx='550' cy='1715' r='24' fill='#64748b'/>
+  <circle cx='760' cy='1715' r='24' fill='#64748b'/>
+</svg>

@@ -1,11 +1,43 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 .astro/
-.DS_Store
+out/
+.next/
+
+# Environment & secrets
 .env
 .env.*
 !.env.example
+php-backend/api/.env.php
+scripts/deploy-cpanel.env
+
+# Storage & uploads (runtime data)
+php-backend/storage/local.sqlite
+php-backend/storage/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.cursor/
+.claude/
+.openclaw/
+
+# Temp & log files
+.tmp-*
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Plan files (agent artifacts)
+*.plan.md
+
+# Large binary assets (track separately if needed)
+*.pdf

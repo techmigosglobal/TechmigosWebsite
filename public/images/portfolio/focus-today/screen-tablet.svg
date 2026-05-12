@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' role='img' aria-label='Focus Today tablet splash screen'>
+  <defs>
+    <linearGradient id='tabBg' x1='0' x2='1' y1='0' y2='1'>
+      <stop offset='0%' stop-color='#f5f7fb'/>
+      <stop offset='100%' stop-color='#e3e9f5'/>
+    </linearGradient>
+  </defs>
+  <rect width='1600' height='1000' fill='#0b0f14'/>
+  <rect x='340' y='70' width='920' height='860' rx='36' fill='url(#tabBg)'/>
+  <rect x='368' y='180' width='864' height='420' rx='20' fill='#c9d7f0'/>
+  <image href='/images/portfolio/focus-today/app-icon.png' x='660' y='230' width='280' height='280'/>
+  <rect x='368' y='628' width='864' height='190' rx='22' fill='white' stroke='#d4dce9'/>
+  <text x='430' y='700' fill='#111827' font-size='52' font-family='Inter, Arial' font-weight='700'>Welcome to Focus Today</text>
+  <text x='430' y='755' fill='#4b5563' font-size='30' font-family='Inter, Arial'>Community-first civic news platform with verified local updates.</text>
+  <rect x='430' y='842' width='360' height='58' rx='29' fill='white' stroke='#d8deea'/>
+  <text x='610' y='880' text-anchor='middle' fill='#475569' font-size='22' font-family='Inter, Arial'>Maintained by TechMigos</text>
+</svg>

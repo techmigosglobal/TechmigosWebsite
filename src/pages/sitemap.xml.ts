@@ -39,6 +39,7 @@ export const GET: APIRoute = async () => {
     { path: '/support', changefreq: 'monthly', priority: '0.8' },
     { path: '/privacy', changefreq: 'yearly', priority: '0.4' },
     { path: '/terms', changefreq: 'yearly', priority: '0.4' },
+    { path: '/showcase', changefreq: 'weekly', priority: '1.0' },
   ];
 
   const urls = [

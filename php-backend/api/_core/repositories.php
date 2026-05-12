@@ -7,9 +7,13 @@ function insert_contact_lead(array $payload, string $ipAddress, string $userAgen
     $nowExpression = db_now_expression();
     $stmt = db()->prepare(
         'INSERT INTO contact_leads (
-            name, email, company, service, budget, message, ip_address, user_agent, created_at
+            name, email, company, service, budget, message,
+            status, priority, assigned_to, next_followup_at,
+            ip_address, user_agent, created_at, updated_at
         ) VALUES (
-            :name, :email, :company, :service, :budget, :message, :ip_address, :user_agent, ' . $nowExpression . '
+            :name, :email, :company, :service, :budget, :message,
+            :status, :priority, :assigned_to, :next_followup_at,
+            :ip_address, :user_agent, ' . $nowExpression . ', ' . $nowExpression . '
         )'
     );
 
@@ -20,6 +24,10 @@ function insert_contact_lead(array $payload, string $ipAddress, string $userAgen
         'service' => $payload['service'],
         'budget' => $payload['budget'],
         'message' => $payload['message'],
+        'status' => 'new',
+        'priority' => 'medium',
+        'assigned_to' => null,
+        'next_followup_at' => null,
         'ip_address' => $ipAddress,
         'user_agent' => $userAgent,
     ]);
@@ -30,14 +38,20 @@ function insert_newsletter_lead(string $email, string $ipAddress, string $userAg
     $nowExpression = db_now_expression();
     $stmt = db()->prepare(
         'INSERT INTO newsletter_subscribers (
-            email, ip_address, user_agent, created_at
+            email, status, priority, assigned_to, next_followup_at,
+            ip_address, user_agent, created_at, updated_at
         ) VALUES (
-            :email, :ip_address, :user_agent, ' . $nowExpression . '
+            :email, :status, :priority, :assigned_to, :next_followup_at,
+            :ip_address, :user_agent, ' . $nowExpression . ', ' . $nowExpression . '
         )'
     );
 
     $stmt->execute([
         'email' => $email,
+        'status' => 'new',
+        'priority' => 'medium',
+        'assigned_to' => null,
+        'next_followup_at' => null,
         'ip_address' => $ipAddress,
         'user_agent' => $userAgent,
     ]);
@@ -59,9 +73,14 @@ function insert_career_application(array $payload, array $upload, string $ipAddr
             resume_mime_type,
             resume_size,
             resume_path,
+            status,
+            priority,
+            assigned_to,
+            next_followup_at,
             ip_address,
             user_agent,
-            created_at
+            created_at,
+            updated_at
         ) VALUES (
             :job_title,
             :name,
@@ -74,8 +93,13 @@ function insert_career_application(array $payload, array $upload, string $ipAddr
             :resume_mime_type,
             :resume_size,
             :resume_path,
+            :status,
+            :priority,
+            :assigned_to,
+            :next_followup_at,
             :ip_address,
             :user_agent,
+            ' . $nowExpression . ',
             ' . $nowExpression . '
         )'
     );
@@ -92,6 +116,10 @@ function insert_career_application(array $payload, array $upload, string $ipAddr
         'resume_mime_type' => $upload['mimeType'],
         'resume_size' => $upload['size'],
         'resume_path' => $upload['relativePath'],
+        'status' => 'new',
+        'priority' => 'medium',
+        'assigned_to' => null,
+        'next_followup_at' => null,
         'ip_address' => $ipAddress,
         'user_agent' => $userAgent,
     ]);

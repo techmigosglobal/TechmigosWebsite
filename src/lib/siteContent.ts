@@ -23,6 +23,7 @@ export type Project = {
   team: string;
   services: string;
   featured?: boolean;
+  href?: string;
 };
 
 export type Testimonial = {
@@ -286,6 +287,7 @@ function sanitizeProjects(value: unknown): Project[] {
         team: cleanString(data.team),
         services: cleanString(data.services),
         featured: Boolean(data.featured),
+        href: data.href ? cleanString(data.href) : undefined,
       };
     })
     .filter((item) => {

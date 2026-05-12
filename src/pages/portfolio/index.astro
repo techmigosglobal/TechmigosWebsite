@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { loadSiteContent } from '../../lib/siteContent';
-export const prerender = false;
 
 const { projects } = await loadSiteContent();
 const categories = ['All', ...new Set(projects.map((project) => project.category))];
@@ -60,7 +59,7 @@ const categories = ['All', ...new Set(projects.map((project) => project.category
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="portfolio-grid">
         {projects.map((project, i) => (
           <a
-            href={`/portfolio/${project.slug}`}
+            href={project.href || `/portfolio/${project.slug}`}
             class={`portfolio-item group block bg-white rounded-2xl overflow-hidden border border-gray-100 glow-card stagger-${i + 1} reveal`}
             data-category={project.category}
             data-title={project.title}

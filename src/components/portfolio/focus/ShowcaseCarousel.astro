@@ -1,0 +1,91 @@
+---
+import PhoneFrame from './PhoneFrame.astro';
+
+type Slide = {
+  src: string;
+  alt: string;
+  title: string;
+  caption: string;
+};
+
+interface Props {
+  slides: Slide[];
+}
+
+const { slides } = Astro.props;
+---
+
+<section class="section-padding bg-white" id="focus-showcase">
+  <div class="container-custom">
+    <div class="mb-10 text-center reveal">
+      <span class="section-eyebrow">App Showcase</span>
+      <h2 class="mt-4 text-3xl font-extrabold text-gray-900 sm:text-4xl">A Polished Mobile Experience</h2>
+      <p class="mx-auto mt-4 max-w-2xl text-gray-600">Core screens presented in a smooth scroll carousel designed for quick product comprehension.</p>
+    </div>
+
+    <div class="relative reveal">
+      <div id="focus-carousel-track" class="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {slides.map((slide, index) => (
+          <article class="focus-slide min-w-[86%] snap-center rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-6 shadow-sm sm:min-w-[48%] lg:min-w-[32%]" data-slide-index={index}>
+            <div class="mx-auto w-fit">
+              <PhoneFrame src={slide.src} alt={slide.alt} />
+            </div>
+            <h3 class="mt-5 text-center text-xl font-bold text-gray-900">{slide.title}</h3>
+            <p class="mt-2 text-center text-sm text-gray-600">{slide.caption}</p>
+          </article>
+        ))}
+      </div>
+
+      <div class="mt-4 flex items-center justify-center gap-2" id="focus-carousel-dots">
+        {slides.map((_, index) => (
+          <button
+            class="focus-dot h-2.5 w-2.5 rounded-full bg-slate-300 transition-all duration-300"
+            data-dot-index={index}
+            aria-label={`Go to slide ${index + 1}`}
+          ></button>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const track = document.getElementById('focus-carousel-track');
+  const slides = Array.from(document.querySelectorAll('.focus-slide'));
+  const dots = Array.from(document.querySelectorAll('.focus-dot'));
+
+  if (track && slides.length && dots.length) {
+    const activate = (index) => {
+      dots.forEach((dot, dotIndex) => {
+        dot.classList.toggle('bg-primary-600', dotIndex === index);
+        dot.classList.toggle('w-8', dotIndex === index);
+        dot.classList.toggle('bg-slate-300', dotIndex !== index);
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const index = Number(entry.target.getAttribute('data-slide-index') || 0);
+          activate(index);
+        });
+      },
+      { root: track, threshold: 0.6 }
+    );
+
+    slides.forEach((slide) => observer.observe(slide));
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const index = Number(dot.getAttribute('data-dot-index') || 0);
+        const target = slides[index];
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      });
+    });
+
+    activate(0);
+  }
+</script>

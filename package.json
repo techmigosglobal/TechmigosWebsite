@@ -5,24 +5,34 @@
   "scripts": {
     "dev": "astro dev",
     "dev:local-php": "LOCAL_PHP_BACKEND_URL=http://127.0.0.1:8080 astro dev --host 127.0.0.1",
+    "dev:showcase": "npm run dev --prefix appshowcase",
+    "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:showcase\"",
     "start": "astro dev",
     "build": "astro build",
+    "build:full": "npm run build && npm run build --prefix appshowcase && rm -rf dist/client/showcase && mkdir -p dist/client/showcase && cp -r appshowcase/out/* dist/client/showcase/",
     "preview": "astro preview",
     "astro": "astro",
     "verify:content": "./scripts/verify-blog-content.sh",
     "php:serve:local": "APP_ENV=development DB_DRIVER=sqlite DB_SQLITE_PATH=$PWD/php-backend/storage/local.sqlite CAREER_UPLOAD_DIR=$PWD/php-backend/storage/uploads/careers php -S 127.0.0.1:8080 php-backend/router.php",
-    "test:php-local": "BASE_URL=http://127.0.0.1:4321 ./scripts/test-php-backend-local.sh"
+    "test:php-local": "BASE_URL=http://127.0.0.1:4321 ./scripts/test-php-backend-local.sh",
+    "migrate:crm-content": "php ./scripts/migrate-content-to-crm.php",
+    "deploy:cpanel": "./scripts/deploy-cpanel.sh",
+    "deploy:cpanel:init": "cp scripts/deploy-cpanel.env.example scripts/deploy-cpanel.env",
+    "release:github": "./scripts/release-github.sh"
   },
   "dependencies": {
-    "@astrojs/mdx": "^3.1.2",
-    "@astrojs/node": "^8.3.4",
-    "@astrojs/tailwind": "^5.1.0",
-    "astro": "^4.8.0",
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/node": "^9.0.0",
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^5.18.1",
     "astro-icon": "^1.1.0",
     "lucide-react": "^0.372.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.3"
   },
   "devDependencies": {
-    "@types/node": "^20.12.7"
+    "@astrojs/check": "^0.9.8",
+    "@types/node": "^20.12.7",
+    "typescript": "^5.9.3"
   }
 }

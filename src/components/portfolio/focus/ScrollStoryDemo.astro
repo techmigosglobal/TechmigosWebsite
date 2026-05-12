@@ -1,0 +1,111 @@
+---
+import PhoneFrame from './PhoneFrame.astro';
+
+type StoryStep = {
+  title: string;
+  description: string;
+  image: string;
+  alt: string;
+};
+
+interface Props {
+  steps: StoryStep[];
+  webUrl: string;
+  androidUrl: string;
+}
+
+const { steps, webUrl, androidUrl } = Astro.props;
+const initialStep = steps[0];
+---
+
+<section class="section-padding bg-slate-950 text-white" id="focus-demo">
+  <div class="container-custom">
+    <div class="mb-12 max-w-3xl reveal">
+      <span class="section-eyebrow !border-white/25 !bg-white/5 !text-white/80">Interactive Demo</span>
+      <h2 class="mt-4 text-3xl font-extrabold sm:text-4xl">Scroll Through the Product Narrative</h2>
+      <p class="mt-4 text-white/75">As you scroll, the on-device preview updates to demonstrate key application states and user pathways.</p>
+    </div>
+
+    <div class="grid gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+      <aside class="reveal lg:sticky lg:top-24 lg:self-start">
+        <div class="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-sm">
+          <div class="mx-auto w-fit" id="focus-story-phone">
+            <PhoneFrame src={initialStep.image} alt={initialStep.alt} />
+          </div>
+          <p id="focus-story-caption" class="mt-4 text-center text-sm text-white/70">{initialStep.title}</p>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-cyan-200">Live Device Access</p>
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <a href={webUrl} target="_blank" rel="noopener noreferrer" class="rounded-lg border border-white/25 bg-white/5 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10">Web Live</a>
+            <a href={androidUrl} target="_blank" rel="noopener noreferrer" class="rounded-lg border border-white/25 bg-white/5 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10">Android Live</a>
+          </div>
+        </div>
+      </aside>
+
+      <div class="space-y-4" id="focus-story-steps">
+        {steps.map((step, index) => (
+          <article
+            class={`focus-story-step reveal rounded-2xl border border-white/15 p-6 transition-all duration-300 ${index === 0 ? 'is-active bg-white/12 shadow-xl' : 'bg-white/5'}`}
+            data-image={step.image}
+            data-alt={step.alt}
+            data-title={step.title}
+          >
+            <p class="text-xs font-semibold uppercase tracking-wider text-cyan-200">Step {(index + 1).toString().padStart(2, '0')}</p>
+            <h3 class="mt-2 text-xl font-bold">{step.title}</h3>
+            <p class="mt-2 text-white/75">{step.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const storySteps = Array.from(document.querySelectorAll('.focus-story-step'));
+  const phoneImage = document.querySelector('#focus-story-phone img');
+  const caption = document.getElementById('focus-story-caption');
+  const mediaReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (storySteps.length && phoneImage && caption) {
+    const setActive = (step) => {
+      const image = step.getAttribute('data-image') || '';
+      const alt = step.getAttribute('data-alt') || '';
+      const title = step.getAttribute('data-title') || '';
+
+      storySteps.forEach((item) => {
+        item.classList.remove('is-active', 'bg-white/12', 'shadow-xl');
+        item.classList.add('bg-white/5');
+      });
+
+      step.classList.add('is-active', 'bg-white/12', 'shadow-xl');
+      step.classList.remove('bg-white/5');
+
+      if (phoneImage.getAttribute('src') !== image) {
+        phoneImage.setAttribute('src', image);
+      }
+      phoneImage.setAttribute('alt', alt);
+      caption.textContent = title;
+    };
+
+    if (mediaReduced) {
+      storySteps.forEach((step) => {
+        step.addEventListener('click', () => setActive(step));
+      });
+    } else {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActive(entry.target);
+            }
+          });
+        },
+        { threshold: 0.55 }
+      );
+
+      storySteps.forEach((step) => observer.observe(step));
+    }
+  }
+</script>

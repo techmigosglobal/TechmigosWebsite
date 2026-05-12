@@ -70,3 +70,36 @@ function user_agent(): string
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
     return is_string($ua) ? trim($ua) : '';
 }
+
+function query_param(string $name, string $default = ''): string
+{
+    $value = $_GET[$name] ?? $default;
+    if (!is_string($value)) {
+        return $default;
+    }
+
+    return trim($value);
+}
+
+function query_int_param(string $name, int $default = 0): int
+{
+    $raw = query_param($name, '');
+    if ($raw === '') {
+        return $default;
+    }
+
+    return (int) $raw;
+}
+
+function parse_path_suffix(string $prefix): string
+{
+    $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $uriPath = is_string($uriPath) ? $uriPath : '/';
+
+    if (!str_starts_with($uriPath, $prefix)) {
+        return '';
+    }
+
+    $suffix = substr($uriPath, strlen($prefix));
+    return is_string($suffix) ? trim($suffix, '/') : '';
+}

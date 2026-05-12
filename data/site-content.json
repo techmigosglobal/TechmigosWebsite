@@ -274,6 +274,86 @@
       "timeline": "Defined during discovery and scope planning",
       "team": "Cross-functional delivery team tailored to scope",
       "services": "Data Platform Engineering"
+    },
+    {
+      "slug": "focus-today",
+      "title": "Focus Today",
+      "category": "Mobile",
+      "emoji": "📰",
+      "tags": [
+        "Flutter",
+        "Firebase",
+        "Android",
+        "Web"
+      ],
+      "image": "/images/portfolio/focus-today/cover-focus-today.svg",
+      "description": "A civic-first mobile news platform with multilingual onboarding, live updates, and cross-device access.",
+      "result": "Live Web + Android Experience",
+      "overview": "Focus Today is a Flutter + Firebase product designed to publish verified civic content, emergency updates, and public-interest stories for regional audiences.",
+      "challenge": "The team needed a stable, multilingual, mobile-first publishing experience that remained simple for users while supporting high-volume content delivery.",
+      "solution": "We implemented a focused product architecture with OTP onboarding, structured feed/discovery patterns, configurable settings, and deployment-ready web/android access.",
+      "results": [
+        {
+          "metric": "Multilingual UX",
+          "label": "Localized onboarding and navigation flow"
+        },
+        {
+          "metric": "Civic Feed",
+          "label": "Story + PDF-ready content presentation"
+        },
+        {
+          "metric": "Realtime",
+          "label": "Firebase-backed update delivery model"
+        },
+        {
+          "metric": "Device Reach",
+          "label": "Live web and Android distribution links"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Mobile Product Development"
+    },
+    {
+      "slug": "school-desk",
+      "title": "SchoolDesk",
+      "category": "Mobile",
+      "emoji": "🏫",
+      "tags": [
+        "Flutter",
+        "Next.js",
+        "Supabase",
+        "Firebase"
+      ],
+      "image": "/images/school-desk-logo.png",
+      "description": "A full-stack school management platform connecting administrators, teachers, parents, and students in one unified system.",
+      "result": "Live Multi-Stakeholder Platform",
+      "overview": "SchoolDesk is a comprehensive school management platform built to digitize academics, finance, transport, and communication for 200+ schools. Trusted by pilot schools in Hyderabad & Bengaluru.",
+      "challenge": "Schools were relying on fragmented tools — spreadsheets, WhatsApp groups, and paper records — causing delays, data loss, and poor parent communication.",
+      "solution": "We built a unified platform with role-based dashboards for administrators, teachers, parents, and students — covering attendance, fees, academics, transport, and real-time communication in one product.",
+      "results": [
+        {
+          "metric": "200+ Schools",
+          "label": "Trusted pilot network across Hyderabad & Bengaluru"
+        },
+        {
+          "metric": "4.9★ Rating",
+          "label": "Exceptional user satisfaction across all roles"
+        },
+        {
+          "metric": "30 Min Onboarding",
+          "label": "Schools go live fast, not in 30 days"
+        },
+        {
+          "metric": "4 Stakeholders",
+          "label": "Admins, Teachers, Parents & Students — one platform"
+        }
+      ],
+      "timeline": "Ongoing — active development and school onboarding",
+      "team": "Cross-functional product + mobile + backend team",
+      "services": "Full-Stack Mobile Product Development",
+      "featured": true,
+      "href": "/showcase"
     }
   ]
 }

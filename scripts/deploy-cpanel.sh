@@ -128,8 +128,8 @@ require_cmd curl
 require_cmd tar
 
 if [[ "$RUN_BUILD" -eq 1 ]]; then
-  log "Building Astro frontend"
-  npm run build
+  log "Building unified static frontend (Astro + Next.js Showcase)"
+  npm run build:full
 fi
 
 if [[ ! -d "$ROOT_DIR/dist" ]]; then
@@ -274,6 +274,12 @@ if [[ "$RUN_SMOKE" -eq 1 ]]; then
     support_status="$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/support/")"
     if [[ "$support_status" != "200" ]]; then
       echo "Support page smoke check failed with status $support_status" >&2
+      exit 1
+    fi
+
+    showcase_status="$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/showcase/")"
+    if [[ "$showcase_status" != "200" ]]; then
+      echo "Showcase app smoke check failed with status $showcase_status" >&2
       exit 1
     fi
 

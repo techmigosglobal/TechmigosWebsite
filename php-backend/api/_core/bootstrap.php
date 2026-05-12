@@ -11,6 +11,10 @@ require_once __DIR__ . '/rate_limit.php';
 require_once __DIR__ . '/validation.php';
 require_once __DIR__ . '/uploads.php';
 require_once __DIR__ . '/repositories.php';
+require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . '/notifications.php';
+require_once __DIR__ . '/admin_auth.php';
+require_once __DIR__ . '/crm_repository.php';
 
 $appConfig = app_config();
 date_default_timezone_set($appConfig['timezone']);

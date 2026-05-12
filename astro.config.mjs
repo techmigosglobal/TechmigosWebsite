@@ -1,15 +1,11 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
-import node from '@astrojs/node';
 
 const localPhpBackendUrl = process.env.LOCAL_PHP_BACKEND_URL?.trim();
 
 export default defineConfig({
-  output: 'hybrid',
-  adapter: node({
-    mode: 'standalone',
-  }),
+  output: 'static',
   site: 'https://techmigos.com',
   integrations: [
     tailwind(),
@@ -22,17 +18,22 @@ export default defineConfig({
     domains: ['images.unsplash.com', 'picsum.photos'],
   },
   vite: {
-    server: localPhpBackendUrl
-      ? {
+      server: {
           proxy: {
-            '/api': {
-              target: localPhpBackendUrl,
+            '/showcase': {
+              target: 'http://127.0.0.1:4028',
               changeOrigin: true,
               secure: false,
             },
+            ...(localPhpBackendUrl ? {
+              '/api': {
+                target: localPhpBackendUrl,
+                changeOrigin: true,
+                secure: false,
+              },
+            } : {}),
           },
-        }
-      : undefined,
+        },
     ssr: {
       noExternal: ['lucide-react']
     }

@@ -29,7 +29,18 @@ try {
     }
 
     insert_newsletter_lead($email, $ip, $userAgent);
-    json_ok(['accepted' => true]);
+    $notification = notify_newsletter_submission($email, [
+        'ip' => $ip,
+        'userAgent' => $userAgent,
+        'submittedAt' => gmdate('c'),
+    ]);
+    json_ok([
+        'accepted' => true,
+        'mail' => [
+            'user' => $notification['user'] ?? ['ok' => false, 'reason' => 'unknown'],
+            'company' => $notification['company'] ?? ['ok' => false, 'reason' => 'unknown'],
+        ],
+    ]);
 } catch (Throwable $error) {
     error_log('[leads/newsletter] submission failed: ' . $error->getMessage());
     json_error('Could not subscribe right now.', 500);

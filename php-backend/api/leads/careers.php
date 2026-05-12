@@ -62,8 +62,19 @@ try {
 
     $storedUpload = store_career_upload($uploadFile, $payload['name']);
     insert_career_application($payload, $storedUpload, $ip, $userAgent);
+    $notification = notify_career_submission($payload, $storedUpload, [
+        'ip' => $ip,
+        'userAgent' => $userAgent,
+        'submittedAt' => gmdate('c'),
+    ]);
 
-    json_ok(['accepted' => true]);
+    json_ok([
+        'accepted' => true,
+        'mail' => [
+            'user' => $notification['user'] ?? ['ok' => false, 'reason' => 'unknown'],
+            'company' => $notification['company'] ?? ['ok' => false, 'reason' => 'unknown'],
+        ],
+    ]);
 } catch (Throwable $error) {
     error_log('[leads/careers] submission failed: ' . $error->getMessage());
     json_error('Could not submit your application right now.', 500);
