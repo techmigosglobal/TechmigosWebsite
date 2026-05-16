@@ -14,8 +14,6 @@ yarn-error.log
 docs/
 scripts/
 php-backend/
-appshowcase/
 public/.htaccess
 data/
 .DS_Store
-*.md
