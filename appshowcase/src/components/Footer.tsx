@@ -22,7 +22,11 @@ export default function Footer() {
   ];
 
   const socials = [
-    { icon: 'GlobeAltIcon' as const, href: 'https://techmigos.com', label: 'TechMigos Website' },
+    {
+      icon: 'GlobeAltIcon' as const,
+      href: 'https://www.techmigos.com',
+      label: 'TechMigos Website',
+    },
     { icon: 'EnvelopeIcon' as const, href: 'mailto:info@techmigos.com', label: 'Email TechMigos' },
   ];
 
@@ -53,7 +57,7 @@ export default function Footer() {
                 </span>
               </Link>
               <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-                {links.map((link) => (
+                {links.map((link) =>
                   link.id ? (
                     <a
                       key={link.label}
@@ -72,7 +76,7 @@ export default function Footer() {
                       {link.label}
                     </Link>
                   )
-                ))}
+                )}
               </nav>
             </div>
 
@@ -102,7 +106,7 @@ export default function Footer() {
             <span className="flex items-center gap-1.5">
               Built with ❤️ by{' '}
               <a
-                href="https://techmigos.com"
+                href="https://www.techmigos.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-foreground hover:text-accent transition-colors underline underline-offset-2"

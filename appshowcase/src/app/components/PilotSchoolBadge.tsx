@@ -67,7 +67,7 @@ export default function PilotSchoolBadge() {
 
         {/* Cards */}
         <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {pilots.map((pilot, i) => (
+          {pilots.map((pilot) => (
             <div
               key={pilot.school}
               className="reveal rounded-2xl border border-border bg-card p-5 sm:p-6 flex flex-col gap-4 hover:border-accent/40 transition-colors duration-300"

@@ -53,7 +53,7 @@ export default function FounderStripSection() {
 
         {/* Link */}
         <a
-          href="https://techmigos.com"
+          href="https://www.techmigos.com"
           target="_blank"
           rel="noopener noreferrer"
           className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline underline-offset-4 transition-colors whitespace-nowrap"

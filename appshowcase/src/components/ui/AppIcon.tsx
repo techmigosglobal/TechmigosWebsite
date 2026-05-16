@@ -47,7 +47,9 @@ import {
   ChevronRightIcon as ChevronRightIconSolid,
 } from '@heroicons/react/24/solid';
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+type HeroIconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+const iconMap: Record<string, HeroIconComponent> = {
   HomeIcon,
   PauseIcon,
   PlayIcon,
@@ -82,7 +84,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   ArrowLeftIcon,
 };
 
-const solidIconMap: Record<string, React.ComponentType<any>> = {
+const solidIconMap: Record<string, HeroIconComponent> = {
   HomeIcon: HomeIconSolid,
   PauseIcon: PauseIconSolid,
   PlayIcon: PlayIconSolid,
@@ -94,14 +96,13 @@ const solidIconMap: Record<string, React.ComponentType<any>> = {
 
 type IconVariant = 'outline' | 'solid';
 
-interface IconProps {
+interface IconProps extends Omit<React.SVGProps<SVGSVGElement>, 'onClick'> {
   name: string; // Changed to string to accept dynamic values
   variant?: IconVariant;
   size?: number;
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
-  [key: string]: any;
 }
 
 function Icon({

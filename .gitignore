@@ -6,6 +6,7 @@ dist/
 .astro/
 out/
 .next/
+.vercel/
 
 # Environment & secrets
 .env
@@ -41,3 +42,4 @@ pnpm-debug.log*
 
 # Large binary assets (track separately if needed)
 *.pdf
+.vercel

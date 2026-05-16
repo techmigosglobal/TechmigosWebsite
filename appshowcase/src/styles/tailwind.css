@@ -3,21 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: #F7F6F2;
-  --foreground: #1C2B3A;
-  --primary: #1C2B3A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #EAE9E4;
-  --secondary-foreground: #1C2B3A;
-  --accent: #F59E0B;
-  --accent-foreground: #1C2B3A;
-  --muted: #EAE9E4;
-  --muted-foreground: #6B7280;
-  --card: #FFFFFF;
-  --card-foreground: #1C2B3A;
-  --border: #D8D6CF;
-  --input: #D8D6CF;
-  --ring: #F59E0B;
+  --background: #f7f6f2;
+  --foreground: #1c2b3a;
+  --primary: #1c2b3a;
+  --primary-foreground: #ffffff;
+  --secondary: #eae9e4;
+  --secondary-foreground: #1c2b3a;
+  --accent: #f59e0b;
+  --accent-foreground: #1c2b3a;
+  --muted: #eae9e4;
+  --muted-foreground: #6b7280;
+  --card: #ffffff;
+  --card-foreground: #1c2b3a;
+  --border: #d8d6cf;
+  --input: #d8d6cf;
+  --ring: #f59e0b;
   --radius: 1rem;
   --font-sans: var(--font-dm-sans), sans-serif;
 }
@@ -39,7 +39,13 @@
     /* scroll-behavior: smooth; */
   }
 
-  h1, h2, h3, h4, h5, h6, p {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
     margin: 0;
   }
 }
@@ -48,8 +54,9 @@
 .reveal {
   opacity: 0;
   transform: translateY(2rem);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal.active {
@@ -57,11 +64,21 @@
   transform: translateY(0);
 }
 
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
-.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-1 {
+  transition-delay: 0.1s;
+}
+.reveal-delay-2 {
+  transition-delay: 0.2s;
+}
+.reveal-delay-3 {
+  transition-delay: 0.3s;
+}
+.reveal-delay-4 {
+  transition-delay: 0.4s;
+}
+.reveal-delay-5 {
+  transition-delay: 0.5s;
+}
 
 /* Text mask reveal */
 .text-reveal-wrapper {
@@ -73,8 +90,9 @@
 .text-reveal-content {
   transform: translateY(110%);
   opacity: 0;
-  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 1.2s ease;
+  transition:
+    transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 1.2s ease;
   display: block;
 }
 
@@ -89,8 +107,9 @@
   inset: 0;
   opacity: 0;
   transform: translateY(20px) scale(0.98);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 
@@ -102,8 +121,13 @@
 
 /* Highlight pulse */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
 }
 
 .highlight-pulse {
@@ -112,8 +136,13 @@
 
 /* Float animation */
 @keyframes float-gentle {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .float-gentle {
@@ -122,8 +151,12 @@
 
 /* Progress bar */
 @keyframes progress-fill {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .progress-fill {
@@ -132,8 +165,7 @@
 
 /* Grid guide lines */
 .grid-guide {
-  background-image: 
-    linear-gradient(to right, rgba(28, 43, 58, 0.04) 1px, transparent 1px);
+  background-image: linear-gradient(to right, rgba(28, 43, 58, 0.04) 1px, transparent 1px);
   background-size: 8.33% 100%;
 }
 
@@ -154,15 +186,25 @@
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--background); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
 
 /* Nav indicator */
 .nav-indicator {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.3s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
 }
 
 /* Section active nav */
@@ -176,8 +218,9 @@
 
 /* Bento hover */
 .bento-card {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease;
 }
 
 .bento-card:hover {

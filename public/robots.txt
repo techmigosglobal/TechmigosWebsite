@@ -2,4 +2,6 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://techmigos.com/sitemap-index.xml
+Disallow: /api/
+
+Sitemap: https://www.techmigos.com/sitemap-index.xml

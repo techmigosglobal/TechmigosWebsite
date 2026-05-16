@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 interface FormState {
   name: string;
   school: string;
   phone: string;
+}
+
+function apiUrl(path: string) {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL?.trim().replace(/\/$/, '');
+  if (!base) {
+    throw new Error('Demo request API is not configured.');
+  }
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export default function DemoRequestForm() {
@@ -58,12 +65,21 @@ export default function DemoRequestForm() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const { error: dbError } = await supabase
-        .from('demo_requests')
-        .insert({ name: form.name.trim(), school: form.school.trim(), phone: form.phone.trim() });
+      const response = await fetch(apiUrl('/api/leads/demo'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          school: form.school.trim(),
+          phone: form.phone.trim(),
+          sourcePath: '/showcase',
+        }),
+      });
+      const result = await response
+        .json()
+        .catch(() => ({ ok: false, error: 'Unexpected server response.' }));
 
-      if (dbError) {
+      if (!response.ok || !result.ok) {
         setError('Something went wrong. Please try again or WhatsApp us directly.');
       } else {
         setSubmitted(true);

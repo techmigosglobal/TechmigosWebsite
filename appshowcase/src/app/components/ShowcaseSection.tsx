@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
-import { createClient } from '@/lib/supabase/client';
 
 interface ShowcaseFeature {
   text: string;
@@ -24,6 +23,23 @@ interface ShowcaseSection {
   screenImage: string;
   screenAlt: string;
   accentColor: string;
+}
+
+interface ShowcaseSectionRow {
+  id: string;
+  section_order: number;
+  section_key: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  features: ShowcaseFeature[] | unknown;
+  highlight: string;
+  design_insight_label: string;
+  design_insight_description: string;
+  screen_image: string;
+  screen_alt: string;
+  accent_color: string;
 }
 
 // Fallback static data in case DB is unavailable
@@ -47,14 +63,13 @@ const fallbackSections: ShowcaseSection[] = [
     designInsightLabel: 'Design Decision',
     designInsightDescription:
       'Each stakeholder sees only what they need — reducing cognitive load and increasing daily active usage by 3×.',
-    screenImage:
-      'https://img.rocket.new/generatedImages/rocket_gen_img_1f5404807-1769365502162.png',
+    screenImage: '/showcase/assets/images/generated/showcase-overview.webp',
     screenAlt: 'Dashboard interface showing school management overview',
     accentColor: '#F59E0B',
   },
 ];
 
-function mapRow(row: any): ShowcaseSection {
+function mapRow(row: ShowcaseSectionRow): ShowcaseSection {
   return {
     id: row.id,
     sectionOrder: row.section_order,
@@ -74,13 +89,13 @@ function mapRow(row: any): ShowcaseSection {
 }
 
 interface ShowcaseSectionProps {
-  initialData?: any[];
+  initialData?: ShowcaseSectionRow[];
 }
 
 const ShowcaseSectionComponent = memo(function ShowcaseSection({
   initialData,
 }: ShowcaseSectionProps) {
-  const [sections, setSections] = useState<ShowcaseSection[]>(() => {
+  const [sections] = useState<ShowcaseSection[]>(() => {
     if (initialData && initialData.length > 0) {
       return initialData.map(mapRow);
     }
@@ -135,22 +150,6 @@ const ShowcaseSectionComponent = memo(function ShowcaseSection({
     // Mobile tab strip
     scrollContainer(mobileTabRef.current, activeIndex);
   }, [activeIndex]);
-
-  // Fetch sections from Supabase — only if initialData is not provided
-  useEffect(() => {
-    if (initialData && initialData.length > 0) return;
-    const supabase = createClient();
-    supabase
-      .from('feature_sections')
-      .select('*')
-      .eq('is_active', true)
-      .order('section_order', { ascending: true })
-      .then(({ data, error }: { data: any[] | null; error: any }) => {
-        if (!error && data && data.length > 0) {
-          setSections(data.map(mapRow));
-        }
-      });
-  }, [initialData]);
 
   const goToSection = useCallback((index: number) => {
     if (index === activeIndexRef.current) return;

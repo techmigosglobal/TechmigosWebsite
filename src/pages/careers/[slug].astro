@@ -80,14 +80,14 @@ function formatPostedDate(date: Date) {
 export async function getStaticPaths() {
   const jobs = await getCollection('careers', ({ data }) => !data.draft);
   return jobs.map((job) => ({
-    params: { slug: job.slug },
+    params: { slug: job.id },
     props: { job },
   }));
 }
 
 const { job } = Astro.props;
 
-const sourcePath = path.join(process.cwd(), 'src', 'content', 'careers', `${job.slug}.mdx`);
+const sourcePath = path.join(process.cwd(), 'src', 'content', 'careers', `${job.id}.md`);
 const rawSource = await fs.readFile(sourcePath, 'utf-8').catch(() => '');
 const parsedSections = parseSections(stripFrontmatter(rawSource));
 
@@ -110,6 +110,7 @@ const essentials = [
   ogType="article"
 >
   <script
+    is:inline
     type="application/ld+json"
     set:html={JSON.stringify({
       '@context': 'https://schema.org',
@@ -119,7 +120,7 @@ const essentials = [
       hiringOrganization: {
         '@type': 'Organization',
         name: 'TechMigos',
-        sameAs: 'https://techmigos.com',
+        sameAs: 'https://www.techmigos.com',
       },
       jobLocation: {
         '@type': 'Place',
@@ -1237,7 +1238,7 @@ const essentials = [
   }
 </style>
 
-<script>
+<script is:inline>
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
   const ALLOWED_FILE_TYPES = [
     'application/pdf',
@@ -1263,15 +1264,6 @@ const essentials = [
 
   const requiredIds = ['name', 'email', 'coverLetter', 'cv'];
   const touched = new Set();
-
-  function slugify(value) {
-    return value
-      .toLowerCase()
-      .trim()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
 
   function getFileExtension(file) {
     const parts = file.name.split('.');
@@ -1339,11 +1331,7 @@ const essentials = [
   }
 
   async function getCsrfToken() {
-    const response = await fetch('/api/csrf', { credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to initialize secure form session. Please refresh and try again.');
-    const data = await response.json();
-    if (!data?.token) throw new Error('Missing secure form token. Please refresh and try again.');
-    return data.token;
+    return window.techmigosGetCsrfToken('Failed to initialize secure form session. Please refresh and try again.');
   }
 
   function setStatus(message, type) {
@@ -1510,7 +1498,7 @@ const essentials = [
       const csrfToken = await getCsrfToken();
       const formData = new FormData(form);
 
-      const response = await fetch('/api/leads/careers', {
+      const response = await window.techmigosApiFetch('/api/leads/careers', {
         method: 'POST',
         headers: {
           'x-csrf-token': csrfToken,

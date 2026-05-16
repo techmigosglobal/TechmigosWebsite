@@ -5,6 +5,10 @@ import { getCollection } from 'astro:content';
 const allJobs = await getCollection('careers', ({ data }) => !data.draft);
 allJobs.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
+function entrySlug(entry: { id: string }) {
+  return entry.id;
+}
+
 const perks = [
   { marker: '01', title: 'Remote-First', description: 'Work from anywhere in the world. We trust you to do your best work wherever you thrive.' },
   { marker: '02', title: 'Equity for All', description: 'Every team member gets equity so you share in the success you help create.' },
@@ -106,7 +110,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
           <div class="max-w-4xl mx-auto space-y-4" id="jobs-list">
             {allJobs.map((job, i) => (
               <a
-                href={`/careers/${job.slug}`}
+                href={`/careers/${entrySlug(job)}`}
                 class={`job-item flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-6 border border-gray-100 hover:border-primary-300 hover:shadow-xl transition-[border-color,box-shadow,transform] duration-300 transform hover:-translate-y-1 group stagger-${i + 1} reveal`}
                 data-department={job.data.department}
               >

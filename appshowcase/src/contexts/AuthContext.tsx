@@ -1,23 +1,33 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
+import type { AuthResponse, Session, User, UserResponse } from '@supabase/supabase-js';
 
-// Stable module-level reference — avoids re-creating the client on every render
-// and satisfies the react-hooks/exhaustive-deps rule
-const supabase = createClient();
+type SupabaseClient = ReturnType<typeof createClient>;
+let supabase: SupabaseClient | null = null;
+
+function getSupabaseClient() {
+  if (!supabase) {
+    supabase = createClient();
+  }
+  return supabase;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { fullName?: string; avatarUrl?: string }) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: { fullName?: string; avatarUrl?: string }
+  ) => Promise<AuthResponse['data']>;
+  signIn: (email: string, password: string) => Promise<AuthResponse['data']>;
   signOut: () => Promise<void>;
   getCurrentUser: () => Promise<User | null>;
   isEmailVerified: () => boolean;
-  getUserProfile: () => Promise<any>;
+  getUserProfile: () => Promise<Record<string, unknown> | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,10 +46,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const supabaseClient = getSupabaseClient();
+
     // Get initial session
-    supabase.auth
+    supabaseClient.auth
       .getSession()
-      .then(({ data: { session }, error }: { data: { session: Session | null }, error: any }) => {
+      .then(({ data: { session }, error }) => {
         if (error) {
           console.warn('Supabase session warning:', error.message);
           // Supabase will automatically clear the local session if the refresh token is invalid
@@ -48,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error('Failed to get session:', err);
         setLoading(false);
       });
@@ -56,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+    } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -66,80 +78,99 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Email/Password Sign Up
-  const signUp = async (
-    email: string,
-    password: string,
-    metadata: { fullName?: string; avatarUrl?: string } = {}
-  ) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: metadata?.fullName || '',
-          avatar_url: metadata?.avatarUrl || '',
+  const signUp = useCallback(
+    async (
+      email: string,
+      password: string,
+      metadata: { fullName?: string; avatarUrl?: string } = {}
+    ): Promise<AuthResponse['data']> => {
+      const { data, error } = await getSupabaseClient().auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: metadata?.fullName || '',
+            avatar_url: metadata?.avatarUrl || '',
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) throw error;
-    return data;
-  };
+      });
+      if (error) throw error;
+      return data;
+    },
+    []
+  );
 
   // Email/Password Sign In
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-    return data;
-  };
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<AuthResponse['data']> => {
+      const { data, error } = await getSupabaseClient().auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      return data;
+    },
+    []
+  );
 
   // Sign Out
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
+  const signOut = useCallback(async () => {
+    const { error } = await getSupabaseClient().auth.signOut();
     if (error) throw error;
-  };
+  }, []);
 
   // Get Current User
-  const getCurrentUser = async () => {
+  const getCurrentUser = useCallback(async (): Promise<User | null> => {
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    }: UserResponse = await getSupabaseClient().auth.getUser();
     if (error) throw error;
     return user;
-  };
+  }, []);
 
   // Check if Email is Verified
-  const isEmailVerified = () => {
+  const isEmailVerified = useCallback(() => {
     return user?.email_confirmed_at !== null;
-  };
+  }, [user?.email_confirmed_at]);
 
   // Get User Profile from Database
-  const getUserProfile = async () => {
+  const getUserProfile = useCallback(async (): Promise<Record<string, unknown> | null> => {
     if (!user) return null;
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseClient()
       .from('user_profiles')
       .select('*')
       .eq('id', user.id)
       .single();
     if (error) throw error;
     return data;
-  };
+  }, [user]);
 
-  const value = React.useMemo(() => ({
-    user,
-    session,
-    loading,
-    signUp,
-    signIn,
-    signOut,
-    getCurrentUser,
-    isEmailVerified,
-    getUserProfile,
-  }), [user, session, loading]);
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      loading,
+      signUp,
+      signIn,
+      signOut,
+      getCurrentUser,
+      isEmailVerified,
+      getUserProfile,
+    }),
+    [
+      user,
+      session,
+      loading,
+      signUp,
+      signIn,
+      signOut,
+      getCurrentUser,
+      isEmailVerified,
+      getUserProfile,
+    ]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

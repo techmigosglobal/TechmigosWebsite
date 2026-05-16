@@ -1,21 +1,25 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+
+function entrySlug(entry: { id: string }) {
+  return entry.id;
+}
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts.map((post) => ({
-    params: { slug: post.slug },
+    params: { slug: post.id },
     props: { post },
   }));
 }
 
 const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { Content, headings } = await render(post);
 
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const relatedPosts = allPosts
-  .filter((candidate) => candidate.slug !== post.slug)
+  .filter((candidate) => candidate.id !== post.id)
   .map((candidate) => {
     const sharedTags = candidate.data.tags.filter((tag: string) => post.data.tags.includes(tag)).length;
     const sameCategoryBonus = candidate.data.category === post.data.category ? 3 : 0;
@@ -31,7 +35,7 @@ const relatedPosts = allPosts
   .map((item) => item.candidate);
 
 const fallbackPosts = allPosts
-  .filter((candidate) => candidate.slug !== post.slug)
+  .filter((candidate) => candidate.id !== post.id)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 
@@ -53,10 +57,10 @@ const articleSchema = {
     name: 'TechMigos',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://techmigos.com/icon.png',
+      url: 'https://www.techmigos.com/icon.png',
     },
   },
-  image: post.data.heroImage || 'https://techmigos.com/og-image.png',
+  image: post.data.heroImage || 'https://www.techmigos.com/og-image.png',
   mainEntityOfPage: {
     '@type': 'WebPage',
     '@id': Astro.url.href,
@@ -72,7 +76,7 @@ const articleSchema = {
   ogImage={post.data.heroImage}
   ogType="article"
 >
-  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
   <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-primary-600 z-50" style="width: 0%"></div>
 
@@ -232,7 +236,7 @@ const articleSchema = {
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {finalRelatedPosts.map((related) => (
-          <a href={`/blog/${related.slug}`} class="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
+          <a href={`/blog/${entrySlug(related)}`} class="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
             <img
               src={related.data.heroImage || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&h=360&fit=crop'}
               alt={related.data.title}

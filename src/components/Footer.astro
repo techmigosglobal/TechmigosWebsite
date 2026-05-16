@@ -26,7 +26,7 @@ const footerLinks = {
   contact: [
     { name: 'info@techmigos.com', href: 'mailto:info@techmigos.com', emoji: '📧' },
     { name: '+919959703547', href: 'tel:+919959703547', emoji: '📞' },
-    { name: 'Hyderabad, Telangana, India, 500079', href: '#', emoji: '📍' },
+    { name: 'Hyderabad, Telangana, India, 500079', href: 'https://www.google.com/maps/search/?api=1&query=Hyderabad%2C%20Telangana%2C%20India%20500079', emoji: '📍' },
   ],
 };
 
@@ -93,7 +93,7 @@ const socialLinks = [
             Subscribe
           </button>
         </form>
-        <p id="newsletter-status" class="text-xs text-indigo-300 w-full lg:w-auto lg:text-right"></p>
+        <p id="newsletter-status" class="text-xs text-indigo-300 w-full lg:w-auto lg:text-right" role="status" aria-live="polite"></p>
       </div>
     </div>
   </div>
@@ -228,12 +228,7 @@ const socialLinks = [
   const newsletterSubmit = document.getElementById('newsletter-submit') as HTMLButtonElement;
 
   async function getCsrfToken() {
-    const response = await fetch('/api/csrf', { method: 'GET' });
-    const result = await response.json();
-    if (!response.ok || !result?.token) {
-      throw new Error('Could not initialize secure newsletter submission. Please refresh and try again.');
-    }
-    return String(result.token);
+    return (window as any).techmigosGetCsrfToken('Could not initialize secure newsletter submission. Please refresh and try again.');
   }
 
   newsletterForm?.addEventListener('submit', async (event) => {
@@ -248,7 +243,7 @@ const socialLinks = [
       newsletterSubmit.disabled = true;
       newsletterSubmit.textContent = 'Subscribing…';
       const csrfToken = await getCsrfToken();
-      const response = await fetch('/api/leads/newsletter', {
+      const response = await (window as any).techmigosApiFetch('/api/leads/newsletter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

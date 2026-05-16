@@ -37,8 +37,8 @@ export const createWebPageSchema = (
     name: 'SchoolDesk',
     url: siteUrl,
   },
-  datePublished: new Date().toISOString(),
-  dateModified: new Date().toISOString(),
+  datePublished: '2026-04-01',
+  dateModified: '2026-05-16',
 });
 
 export const createSoftwareApplicationSchema = (

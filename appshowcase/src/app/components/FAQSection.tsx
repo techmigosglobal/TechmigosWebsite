@@ -152,10 +152,7 @@ export default function FAQSection() {
         {/* Footer CTA */}
         <p className="text-center text-sm text-muted-foreground mt-10">
           Still have questions?{' '}
-          <a
-            href="#demo"
-            className="text-accent font-semibold hover:underline underline-offset-4"
-          >
+          <a href="#demo" className="text-accent font-semibold hover:underline underline-offset-4">
             Book a free demo →
           </a>
         </p>

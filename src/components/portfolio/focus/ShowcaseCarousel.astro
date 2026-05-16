@@ -55,7 +55,7 @@ const { slides } = Astro.props;
   const dots = Array.from(document.querySelectorAll('.focus-dot'));
 
   if (track && slides.length && dots.length) {
-    const activate = (index) => {
+    const activate = (index: number) => {
       dots.forEach((dot, dotIndex) => {
         dot.classList.toggle('bg-primary-600', dotIndex === index);
         dot.classList.toggle('w-8', dotIndex === index);

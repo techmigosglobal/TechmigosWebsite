@@ -4,21 +4,25 @@ import { loadSiteContent } from '../lib/siteContent';
 
 export const prerender = true;
 
-const SITE = 'https://techmigos.com';
+const SITE = 'https://www.techmigos.com';
 
 function abs(path: string) {
   return `${SITE}${path}`;
 }
 
+function entrySlug(entry: { id: string }) {
+  return entry.id;
+}
+
 function urlTag(
   url: string,
   {
-    lastmod = new Date().toISOString(),
+    lastmod,
     changefreq,
     priority,
   }: { lastmod?: string; changefreq?: string; priority?: string } = {},
 ) {
-  return `<url><loc>${url}</loc><lastmod>${lastmod}</lastmod>${changefreq ? `<changefreq>${changefreq}</changefreq>` : ''}${priority ? `<priority>${priority}</priority>` : ''}</url>`;
+  return `<url><loc>${url}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}${changefreq ? `<changefreq>${changefreq}</changefreq>` : ''}${priority ? `<priority>${priority}</priority>` : ''}</url>`;
 }
 
 export const GET: APIRoute = async () => {
@@ -50,14 +54,14 @@ export const GET: APIRoute = async () => {
       }),
     ),
     ...blogPosts.map((post) =>
-      urlTag(abs(`/blog/${post.slug}`), {
+      urlTag(abs(`/blog/${entrySlug(post)}`), {
         lastmod: post.data.pubDate.toISOString(),
         changefreq: 'monthly',
         priority: '0.8',
       }),
     ),
     ...careerPosts.map((job) =>
-      urlTag(abs(`/careers/${job.slug}`), {
+      urlTag(abs(`/careers/${entrySlug(job)}`), {
         lastmod: job.data.pubDate.toISOString(),
         changefreq: 'weekly',
         priority: '0.7',

@@ -69,7 +69,7 @@ const initialStep = steps[0];
   const mediaReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (storySteps.length && phoneImage && caption) {
-    const setActive = (step) => {
+    const setActive = (step: Element) => {
       const image = step.getAttribute('data-image') || '';
       const alt = step.getAttribute('data-alt') || '';
       const title = step.getAttribute('data-title') || '';

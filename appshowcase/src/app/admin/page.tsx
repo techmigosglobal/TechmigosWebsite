@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -30,6 +30,28 @@ interface FeatureSection {
   isActive: boolean;
 }
 
+interface FeatureSectionRow {
+  id: string;
+  section_order: number;
+  section_key: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  features: FeatureItem[] | unknown;
+  highlight: string;
+  design_insight_label: string;
+  design_insight_description: string;
+  screen_image: string;
+  screen_alt: string;
+  accent_color: string;
+  is_active: boolean;
+}
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 const ICON_OPTIONS = [
   'HomeIcon',
   'AcademicCapIcon',
@@ -48,7 +70,7 @@ const ICON_OPTIONS = [
   'ComputerDesktopIcon',
 ];
 
-function mapRow(row: any): FeatureSection {
+function mapRow(row: FeatureSectionRow): FeatureSection {
   return {
     id: row.id,
     sectionOrder: row.section_order,
@@ -107,7 +129,7 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -119,21 +141,21 @@ export default function AdminPage() {
   const fetchSections = useCallback(async () => {
     setLoadingData(true);
     try {
-      const { data, error: fetchError }: { data: any[] | null; error: any } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('feature_sections')
         .select('*')
         .order('section_order', { ascending: true });
 
       if (fetchError) throw fetchError;
-      const mapped = (data || []).map(mapRow);
+      const mapped = ((data || []) as FeatureSectionRow[]).map(mapRow);
       setSections(mapped);
       if (mapped.length > 0 && !selectedId) {
         setSelectedId(mapped[0].id);
         setEditData(mapped[0]);
         setFeaturesText(mapped[0].features.map((f: FeatureItem) => f.text).join('\n'));
       }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load sections');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to load sections'));
     } finally {
       setLoadingData(false);
     }
@@ -171,10 +193,12 @@ export default function AdminPage() {
         .getPublicUrl(fileName);
 
       return urlData?.publicUrl || null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setErr(
-        err?.message ||
+        errorMessage(
+          err,
           'Upload failed. Make sure the "showcase-screenshots" bucket exists in Supabase Storage.'
+        )
       );
       return null;
     } finally {
@@ -230,8 +254,8 @@ export default function AdminPage() {
 
       setSaveMsg('Changes saved successfully!');
       await fetchSections();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to save changes');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to save changes'));
     } finally {
       setSaving(false);
     }
@@ -287,13 +311,13 @@ export default function AdminPage() {
       setAddFeaturesText('');
       await fetchSections();
       if (data) {
-        const mapped = mapRow(data);
+        const mapped = mapRow(data as FeatureSectionRow);
         setSelectedId(mapped.id);
         setEditData(mapped);
         setFeaturesText(mapped.features.map((f) => f.text).join('\n'));
       }
-    } catch (err: any) {
-      setAddError(err?.message || 'Failed to add section');
+    } catch (err: unknown) {
+      setAddError(errorMessage(err, 'Failed to add section'));
     } finally {
       setAddSaving(false);
     }
@@ -316,8 +340,8 @@ export default function AdminPage() {
       setEditData({});
       setFeaturesText('');
       await fetchSections();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to delete section');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to delete section'));
     } finally {
       setDeleting(false);
     }

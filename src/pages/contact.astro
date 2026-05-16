@@ -156,14 +156,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               icon: '📍',
               title: 'Visit Us',
               value: 'Hyderabad, Telangana, India, 500079',
-              href: '#',
+              href: 'https://www.google.com/maps/search/?api=1&query=Hyderabad%2C%20Telangana%2C%20India%20500079',
               sub: 'India Office',
             },
             {
               icon: '🕐',
               title: 'Office Hours',
               value: 'Mon–Fri: 9AM – 6PM IST',
-              href: '#',
+              href: 'mailto:info@techmigos.com',
               sub: 'Weekend: By appointment',
             },
           ].map((item, i) => (
@@ -206,7 +206,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <!-- Toast notification -->
-  <div id="form-toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl shadow-2xl transform translate-y-24 opacity-0 transition-[transform,opacity] duration-500 z-50 flex items-center gap-3">
+  <div id="form-toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl shadow-2xl transform translate-y-24 opacity-0 transition-[transform,opacity] duration-500 z-50 flex items-center gap-3" role="status" aria-live="polite">
     <span id="toast-icon" class="text-xl"></span>
     <p id="toast-message" class="font-medium"></p>
   </div>
@@ -254,12 +254,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   async function getCsrfToken() {
-    const response = await fetch('/api/csrf', { method: 'GET' });
-    const result = await response.json();
-    if (!response.ok || !result?.token) {
-      throw new Error('Could not initialize secure form submission. Please refresh and try again.');
-    }
-    return String(result.token);
+    return (window as any).techmigosGetCsrfToken('Could not initialize secure form submission. Please refresh and try again.');
   }
 
   form?.addEventListener('submit', async (e) => {
@@ -279,7 +274,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       };
 
       const csrfToken = await getCsrfToken();
-      const response = await fetch('/api/leads/contact', {
+      const response = await (window as any).techmigosApiFetch('/api/leads/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

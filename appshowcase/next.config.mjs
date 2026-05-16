@@ -1,9 +1,8 @@
-import { imageHosts } from './image-hosts.config.mjs';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   basePath: '/showcase',
+  outputFileTracingRoot: new URL('.', import.meta.url).pathname,
 
   // Remove X-Powered-By header to reduce response size
   poweredByHeader: false,
@@ -12,14 +11,6 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
 
   distDir: process.env.DIST_DIR || '.next',
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 
   // Compress responses
   compress: true,

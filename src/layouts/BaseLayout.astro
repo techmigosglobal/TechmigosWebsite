@@ -19,7 +19,10 @@ const {
   noIndex = false
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
+const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
+const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
+const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/$/, '');
 ---
 
 <!DOCTYPE html>
@@ -43,14 +46,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={`${title} | TechMigos`} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
+    <meta property="og:image" content={absoluteOgImage} />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
     <meta property="twitter:title" content={`${title} | TechMigos`} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={ogImage} />
+    <meta property="twitter:image" content={absoluteOgImage} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/icon.png" />
@@ -59,17 +62,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <!-- Theme Color -->
     <meta name="theme-color" content="#2563EB" />
 
-    <!-- Preconnect to external resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="techmigos-api-base-url" content={publicApiBaseUrl} />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "TechMigos",
-      "url": "https://techmigos.com",
-      "logo": "https://techmigos.com/icon.png",
+      "url": siteOrigin,
+      "logo": `${siteOrigin}/icon.png`,
       "description": description,
       "sameAs": [
         "https://linkedin.com/company/techmigos",
@@ -82,6 +83,80 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         "contactType": "customer service"
       }
     })} />
+    <script is:inline>
+      const apiBaseMeta = document.querySelector('meta[name="techmigos-api-base-url"]');
+      const publicApiBaseUrl = apiBaseMeta ? apiBaseMeta.getAttribute('content') || '' : '';
+
+      window.TechMigosConfig = {
+        apiBaseUrl: publicApiBaseUrl,
+      };
+
+      const adminSessionKeys = {
+        accessToken: 'tm_admin_access_token',
+        refreshToken: 'tm_admin_refresh_token',
+        expiresAt: 'tm_admin_expires_at',
+      };
+
+      window.techmigosSetAdminSession = function techmigosSetAdminSession(session) {
+        if (!session) return;
+        try {
+          localStorage.setItem(adminSessionKeys.accessToken, String(session.accessToken || ''));
+          localStorage.setItem(adminSessionKeys.refreshToken, String(session.refreshToken || ''));
+          localStorage.setItem(adminSessionKeys.expiresAt, String(session.expiresAt || ''));
+        } catch {
+          // Local storage may be unavailable in hardened browsers.
+        }
+      };
+
+      window.techmigosClearAdminSession = function techmigosClearAdminSession() {
+        try {
+          localStorage.removeItem(adminSessionKeys.accessToken);
+          localStorage.removeItem(adminSessionKeys.refreshToken);
+          localStorage.removeItem(adminSessionKeys.expiresAt);
+        } catch {
+          // no-op
+        }
+      };
+
+      window.techmigosGetAdminAccessToken = function techmigosGetAdminAccessToken() {
+        try {
+          return localStorage.getItem(adminSessionKeys.accessToken) || '';
+        } catch {
+          return '';
+        }
+      };
+
+      window.techmigosApiUrl = function techmigosApiUrl(path) {
+        const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
+        const base = String(window.TechMigosConfig?.apiBaseUrl || '').replace(/\/$/, '');
+        return base ? `${base}${normalizedPath}` : normalizedPath;
+      };
+
+      window.techmigosApiFetch = function techmigosApiFetch(path, options) {
+        const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
+        const headers = new Headers((options || {}).headers || {});
+        const accessToken = window.techmigosGetAdminAccessToken();
+
+        if (normalizedPath.startsWith('/api/admin') && accessToken && !headers.has('Authorization')) {
+          headers.set('Authorization', `Bearer ${accessToken}`);
+        }
+
+        return fetch(window.techmigosApiUrl(path), {
+          credentials: 'include',
+          ...(options || {}),
+          headers,
+        });
+      };
+
+      window.techmigosGetCsrfToken = async function techmigosGetCsrfToken(message) {
+        const response = await window.techmigosApiFetch('/api/csrf', { method: 'GET' });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.token) {
+          throw new Error(message || 'Secure form submission is unavailable. Please email info@techmigos.com directly.');
+        }
+        return String(result.token);
+      };
+    </script>
   </head>
   <body class="bg-white text-gray-900">
     <!-- Skip to main content link for accessibility -->
@@ -113,7 +188,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       const allowEnhancedMotion = finePointer.matches && !reducedMotion.matches;
       let dotX = -100, dotY = -100;
       let ringX = -100, ringY = -100;
-      let animFrame: number | undefined;
 
       if (!allowEnhancedMotion) {
         dot?.remove();
@@ -121,19 +195,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }
 
       if (allowEnhancedMotion && dot && ring) {
+        const cursorDot = dot;
+        const cursorRing = ring;
+
         document.addEventListener('mousemove', (e) => {
           dotX = e.clientX;
           dotY = e.clientY;
-          dot.style.left = dotX + 'px';
-          dot.style.top = dotY + 'px';
+          cursorDot.style.left = dotX + 'px';
+          cursorDot.style.top = dotY + 'px';
         }, { passive: true });
 
         function animateCursor() {
           ringX += (dotX - ringX) * 0.12;
           ringY += (dotY - ringY) * 0.12;
-          ring.style.left = ringX + 'px';
-          ring.style.top = ringY + 'px';
-          animFrame = requestAnimationFrame(animateCursor);
+          cursorRing.style.left = ringX + 'px';
+          cursorRing.style.top = ringY + 'px';
+          requestAnimationFrame(animateCursor);
         }
 
         animateCursor();
@@ -145,10 +222,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         });
 
         document.addEventListener('mouseleave', () => {
-          dot.style.left = '-100px';
-          dot.style.top = '-100px';
-          ring.style.left = '-100px';
-          ring.style.top = '-100px';
+          cursorDot.style.left = '-100px';
+          cursorDot.style.top = '-100px';
+          cursorRing.style.left = '-100px';
+          cursorRing.style.top = '-100px';
         });
       }
 

@@ -10,6 +10,10 @@ allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 const featuredPost = allPosts[0];
 const recentPosts = allPosts.slice(1);
 
+function entrySlug(entry: { id: string }) {
+  return entry.id;
+}
+
 const dynamicCategories = Array.from(new Set(allPosts.map((post) => post.data.category))).sort();
 const categories = ['All', ...dynamicCategories];
 ---
@@ -48,7 +52,7 @@ const categories = ['All', ...dynamicCategories];
     <section class="pb-16 bg-white">
       <div class="container-custom">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 reveal">Featured Post</p>
-        <a href={`/blog/${featuredPost.slug}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-500 border border-gray-100 reveal">
+        <a href={`/blog/${entrySlug(featuredPost)}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-500 border border-gray-100 reveal">
           <div class="grid lg:grid-cols-2 gap-0">
             <div class="relative overflow-hidden">
               <img
@@ -115,7 +119,7 @@ const categories = ['All', ...dynamicCategories];
               data-description={post.data.description.toLowerCase()}
               data-tags={post.data.tags.join(' ').toLowerCase()}
             >
-              <a href={`/blog/${post.slug}`} class="block">
+              <a href={`/blog/${entrySlug(post)}`} class="block">
                 <div class="relative overflow-hidden">
                   <img
                     src={post.data.heroImage || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=500&fit=crop'}
@@ -182,7 +186,7 @@ const categories = ['All', ...dynamicCategories];
 
 <script>
   const filters = Array.from(document.querySelectorAll('.category-filter'));
-  const posts = Array.from(document.querySelectorAll('.post-item'));
+  const posts = Array.from(document.querySelectorAll<HTMLElement>('.post-item'));
   const searchInput = document.getElementById('blog-search');
   const resultsCount = document.getElementById('results-count');
 

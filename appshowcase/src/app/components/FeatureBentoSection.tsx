@@ -49,7 +49,7 @@ const bentoCards = [
       'Join Google Meet or Zoom in one tap. Access subject-wise PDFs, videos, and notes from a searchable library.',
     stat: '∞',
     statLabel: 'content library',
-    accentColor: '#8B5CF6',
+    accentColor: '#0F766E',
     colSpan: 'lg:col-span-1',
     rowSpan: '',
     dark: false,

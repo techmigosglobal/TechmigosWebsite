@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Admin CRM Dashboard" description="Manage testimonials, portfolio content, and leads.">
+<BaseLayout title="Admin CRM Dashboard" description="Manage testimonials, portfolio content, and leads." noIndex={true}>
   <section class="pt-32 pb-20 bg-gray-50 min-h-screen">
     <div class="container-custom max-w-7xl space-y-6">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -19,7 +19,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <button class="crm-tab" data-tab="users">Users</button>
       </div>
 
-      <p id="global-status" class="text-sm font-medium"></p>
+      <p id="global-status" class="text-sm font-medium" role="status" aria-live="polite"></p>
 
       <section id="tab-content" class="crm-panel space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -283,8 +283,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <input id="u-fullname" class="form-control form-control--muted" placeholder="Full name" required />
             <select id="u-role" class="form-control form-control--muted">
               <option value="sales">Sales</option>
-              <option value="editor">Editor</option>
               <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
             </select>
             <input id="u-password" type="password" class="form-control form-control--muted" placeholder="Password" required />
             <button type="submit" class="btn-primary text-sm md:col-span-5">Create User</button>
@@ -323,7 +323,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 </style>
 
-<script>
+<script is:inline>
   const state = {
     me: null,
     testimonials: [],
@@ -393,19 +393,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   function canAccessContent() {
-    return state.me?.role === 'admin' || state.me?.role === 'editor';
+    return state.me?.role === 'super_admin' || state.me?.role === 'admin';
   }
 
   function canAccessLeads() {
-    return state.me?.role === 'admin' || state.me?.role === 'sales';
+    return state.me?.role === 'super_admin' || state.me?.role === 'admin' || state.me?.role === 'sales';
   }
 
   function canAccessUsers() {
-    return state.me?.role === 'admin';
+    return state.me?.role === 'super_admin';
   }
 
   async function api(path, options = {}) {
-    const response = await fetch(path, {
+    const response = await window.techmigosApiFetch(path, {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
@@ -633,8 +633,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     Array.from(document.querySelectorAll('.user-toggle')).forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = Number(btn.getAttribute('data-user-id') || '0');
+        const id = String(btn.getAttribute('data-user-id') || '');
         const active = btn.getAttribute('data-active') === '1';
+        if (!id) return;
         try {
           await api(`/api/admin/users/${id}`, {
             method: 'PATCH',
@@ -709,7 +710,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   async function loadUsers() {
-    if (state.me?.role !== 'admin') return;
+    if (state.me?.role !== 'super_admin') return;
     const data = await api('/api/admin/users');
     state.users = data.items || [];
     renderUsers();
@@ -720,6 +721,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     try {
       await api('/api/admin/auth/logout', { method: 'POST' });
     } finally {
+      if (typeof window.techmigosClearAdminSession === 'function') {
+        window.techmigosClearAdminSession();
+      }
       window.location.href = '/admin/login';
     }
   });

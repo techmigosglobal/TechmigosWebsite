@@ -20,7 +20,7 @@ const stakeholders = [
       'Instant reports: daily, weekly, and monthly summaries',
     ],
 
-    image: 'https://img.rocket.new/generatedImages/rocket_gen_img_16b0648e6-1768136751414.png',
+    image: '/showcase/assets/images/generated/stakeholder-admin.webp',
     imageAlt:
       'Modern school administrator working at a bright, organized desk with dual monitors showing management dashboards',
     accent: '#1C2B3A',
@@ -41,7 +41,7 @@ const stakeholders = [
       'Parent communication directly from the teacher portal',
     ],
 
-    image: 'https://img.rocket.new/generatedImages/rocket_gen_img_101336450-1772141567927.png',
+    image: '/showcase/assets/images/generated/stakeholder-teacher.webp',
     imageAlt:
       'Teacher in a bright modern classroom engaging with students, natural light coming through windows',
     accent: '#3B82F6',
@@ -63,7 +63,7 @@ const stakeholders = [
       'Online test results with instant trends and insights',
     ],
 
-    image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1a1124d7d-1764671589216.png',
+    image: '/showcase/assets/images/generated/stakeholder-parent.webp',
     imageAlt:
       "Parent happily reviewing their child's school progress on a smartphone in a bright home environment",
     accent: '#10B981',

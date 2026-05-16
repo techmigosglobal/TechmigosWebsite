@@ -6,7 +6,6 @@ const navLinks = [
   { name: 'About', href: '/about' },
   { name: 'Blog', href: '/blog' },
   { name: 'Careers', href: '/careers' },
-  { name: 'Login', href: '/admin/login' },
   { name: 'Contact', href: '/contact' },
 ];
 
@@ -136,7 +135,7 @@ const currentPath = Astro.url.pathname;
         if (scrolled) {
           navbar.style.background = 'rgba(255,255,255,0.85)';
           navbar.style.backdropFilter = 'blur(20px)';
-          navbar.style.webkitBackdropFilter = 'blur(20px)';
+          navbar.style.setProperty('-webkit-backdrop-filter', 'blur(20px)');
           navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08), 0 1px 0 rgba(0,0,0,0.06)';
         } else {
           navbar.style.background = window.location.pathname === '/' ? 'transparent' : 'rgba(255,255,255,0.95)';

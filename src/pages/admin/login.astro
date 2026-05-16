@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Admin Login" description="Company admin and CRM access for TechMigos.">
+<BaseLayout title="Admin Login" description="Company admin and CRM access for TechMigos." noIndex={true}>
   <section class="min-h-screen pt-32 pb-20 bg-gray-50">
     <div class="container-custom max-w-md">
       <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
@@ -11,8 +11,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
         <form id="login-form" class="space-y-5">
           <div>
-            <label for="username" class="form-label">Username</label>
-            <input id="username" name="username" type="text" required class="form-control form-control--muted" autocomplete="username" />
+            <label for="email" class="form-label">Email</label>
+            <input id="email" name="email" type="email" required class="form-control form-control--muted" autocomplete="username" />
           </div>
 
           <div>
@@ -20,7 +20,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <input id="password" name="password" type="password" required class="form-control form-control--muted" autocomplete="current-password" />
           </div>
 
-          <p id="error" class="form-error hidden"></p>
+          <p id="error" class="form-error hidden" role="alert" aria-live="assertive"></p>
 
           <button id="login-submit" type="submit" class="btn-primary w-full justify-center">Login</button>
         </form>
@@ -36,7 +36,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   async function tryRedirectIfAuthenticated() {
     try {
-      const response = await fetch('/api/admin/auth/me', { credentials: 'include' });
+      const response = await (window as any).techmigosApiFetch('/api/admin/auth/me');
       if (response.ok) {
         window.location.href = '/admin/dashboard';
       }
@@ -53,7 +53,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     error?.classList.add('hidden');
 
     const formData = new FormData(form as HTMLFormElement);
-    const username = String(formData.get('username') || '');
+    const email = String(formData.get('email') || '');
     const password = String(formData.get('password') || '');
 
     if (submitBtn instanceof HTMLButtonElement) {
@@ -62,11 +62,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
 
     try {
-      const response = await fetch('/api/admin/auth/login', {
+      const response = await (window as any).techmigosApiFetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const result = await response.json().catch(() => ({ ok: false, error: 'Unexpected server response.' }));
@@ -79,6 +79,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             : 'Invalid username or password.');
         }
         return;
+      }
+
+      if (typeof (window as any).techmigosSetAdminSession === 'function') {
+        (window as any).techmigosSetAdminSession(result.data?.session);
       }
 
       window.location.href = '/admin/dashboard';

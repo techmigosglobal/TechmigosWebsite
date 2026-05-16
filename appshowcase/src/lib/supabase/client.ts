@@ -2,6 +2,28 @@ import { createBrowserClient } from '@supabase/ssr';
 
 const PFX = 'sb_';
 
+type CookieOptions = {
+  path?: string;
+  maxAge?: number;
+  domain?: string;
+  expires?: string | number | Date;
+};
+
+type StoredCookie = {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+};
+
+type SupabaseBrowserClient = ReturnType<typeof createBrowserClient>;
+
+declare global {
+  interface Window {
+    __sb_patched__?: boolean;
+    __supabaseClient?: SupabaseBrowserClient;
+  }
+}
+
 const canUseCookies = (() => {
   let cache: boolean | null = null;
   return () => {
@@ -39,7 +61,7 @@ const fromStorage = () => {
   }
 };
 
-const setCookie = (name: string, value: string, options?: any) => {
+const setCookie = (name: string, value: string, options?: CookieOptions) => {
   let s = `${name}=${encodeURIComponent(value)}; Path=${options?.path || '/'}; SameSite=None; Secure; Partitioned`;
   if (options?.maxAge) s += `; Max-Age=${options.maxAge}`;
   if (options?.domain) s += `; Domain=${options.domain}`;
@@ -51,8 +73,8 @@ const getToken = () =>
   (canUseCookies() ? fromCookies() : fromStorage()).find((c) => c.name.includes('auth-token'))
     ?.value ?? null;
 
-if (typeof window !== 'undefined' && !(window as any).__sb_patched__) {
-  (window as any).__sb_patched__ = true;
+if (typeof window !== 'undefined' && !window.__sb_patched__) {
+  window.__sb_patched__ = true;
   const orig = window.fetch.bind(window);
   window.fetch = (input, init) => {
     const token = getToken();
@@ -74,51 +96,58 @@ if (typeof window !== 'undefined' && !(window as any).__sb_patched__) {
 
 let browserClient: ReturnType<typeof createBrowserClient> | undefined;
 
+function requiredPublicEnv(name: 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY') {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is required for SchoolDesk Supabase features.`);
+  }
+  return value;
+}
+
 export function createClient() {
   // Singleton pattern for the browser client
   if (typeof window !== 'undefined') {
-    if ((window as any).__supabaseClient) {
-      return (window as any).__supabaseClient;
+    if (window.__supabaseClient) {
+      return window.__supabaseClient;
     }
   }
 
   if (browserClient) return browserClient;
 
-  browserClient = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => (canUseCookies() ? fromCookies() : fromStorage()),
-        setAll(cookiesToSet) {
-          if (typeof document === 'undefined') return;
-          if (canUseCookies()) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              value
-                ? setCookie(name, value, options)
-                : (document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=None; Secure`)
-            );
-          } else {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              try {
-                if (value) {
-                  localStorage.setItem(`${PFX}${name}`, value);
-                } else {
-                  localStorage.removeItem(`${PFX}${name}`);
-                }
-              } catch (_error) {
-                // ignore
+  const supabaseUrl = requiredPublicEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseAnonKey = requiredPublicEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+  browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll: () => (canUseCookies() ? fromCookies() : fromStorage()),
+      setAll(cookiesToSet: StoredCookie[]) {
+        if (typeof document === 'undefined') return;
+        if (canUseCookies()) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            value
+              ? setCookie(name, value, options)
+              : (document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=None; Secure`)
+          );
+        } else {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              if (value) {
+                localStorage.setItem(`${PFX}${name}`, value);
+              } else {
+                localStorage.removeItem(`${PFX}${name}`);
               }
-              if (value) setCookie(name, value, options);
-            });
-          }
-        },
+            } catch {
+              // ignore
+            }
+            if (value) setCookie(name, value, options);
+          });
+        }
       },
-    }
-  );
+    },
+  });
 
   if (typeof window !== 'undefined') {
-    (window as any).__supabaseClient = browserClient;
+    window.__supabaseClient = browserClient;
   }
 
   return browserClient;

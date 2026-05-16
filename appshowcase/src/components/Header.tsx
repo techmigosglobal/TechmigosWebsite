@@ -4,8 +4,6 @@ import React, { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import Icon from '@/components/ui/AppIcon';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { smoothScrollTo } from '@/lib/scroll-utils';
 
 // Static data outside component to prevent recreation on every render
@@ -25,8 +23,6 @@ const navLinks: NavLink[] = [
 const Header = memo(function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -44,11 +40,6 @@ const Header = memo(function Header() {
       document.body.style.overflow = '';
     };
   }, [menuOpen]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    router?.refresh();
-  };
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string | undefined) => {
     if (!id) return;
@@ -105,30 +96,13 @@ const Header = memo(function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-2">
-            {user ? (
-              <>
-                <Link
-                  href="/admin"
-                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Icon name="Cog6ToothIcon" size={13} aria-hidden="true" />
-                  Admin
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex h-8 items-center justify-center rounded-lg border border-border px-4 text-xs font-medium text-foreground hover:bg-muted transition-all duration-200"
-              >
-                Admin Login
-              </Link>
-            )}
+            <a
+              href="#cta"
+              className="inline-flex h-8 items-center justify-center rounded-lg border border-border px-4 text-xs font-medium text-foreground hover:bg-muted transition-all duration-200"
+              onClick={(e) => handleNavClick(e, 'cta')}
+            >
+              Request Demo
+            </a>
           </div>
 
           {/* Mobile Hamburger */}
@@ -176,35 +150,13 @@ const Header = memo(function Header() {
             menuOpen ? 'translate-y-0' : '-translate-y-4'
           }`}
         >
-          {user ? (
-            <>
-              <Link
-                href="/admin"
-                className="flex items-center justify-center h-11 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors gap-2"
-                onClick={() => setMenuOpen(false)}
-              >
-                <Icon name="Cog6ToothIcon" size={14} aria-hidden="true" />
-                Admin Panel
-              </Link>
-              <button
-                onClick={() => {
-                  handleSignOut();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center justify-center h-11 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center justify-center h-11 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              Admin Login
-            </Link>
-          )}
+          <a
+            href="#cta"
+            className="flex items-center justify-center h-11 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            onClick={(e) => handleNavClick(e, 'cta')}
+          >
+            Request Demo
+          </a>
         </div>
       </div>
     </>
