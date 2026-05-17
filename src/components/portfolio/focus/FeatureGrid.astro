@@ -7,17 +7,25 @@ type Feature = {
 
 interface Props {
   features: Feature[];
+  eyebrow?: string;
+  title?: string;
+  description?: string;
 }
 
-const { features } = Astro.props;
+const {
+  features,
+  eyebrow = 'Feature Stack',
+  title = 'Built for Fast Civic Publishing',
+  description = 'A practical mobile architecture focused on clear publishing flows, local language access, and stable day-to-day operation.',
+} = Astro.props;
 ---
 
 <section class="section-padding bg-gray-50" id="focus-features">
   <div class="container-custom">
     <div class="mb-12 text-center reveal">
-      <span class="section-eyebrow">Feature Stack</span>
-      <h2 class="mt-4 text-3xl font-extrabold text-gray-900 sm:text-4xl">Built for Fast Civic Publishing</h2>
-      <p class="mx-auto mt-4 max-w-2xl text-gray-600">A practical mobile architecture focused on clear publishing flows, local language access, and stable day-to-day operation.</p>
+      <span class="section-eyebrow">{eyebrow}</span>
+      <h2 class="mt-4 text-3xl font-extrabold text-gray-900 sm:text-4xl">{title}</h2>
+      <p class="mx-auto mt-4 max-w-2xl text-gray-600">{description}</p>
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">

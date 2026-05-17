@@ -221,6 +221,11 @@ const DEFAULT_CONTENT: SiteContent = {
 };
 
 const DATA_FILE = process.env.SITE_CONTENT_PATH ?? path.join(process.cwd(), 'data', 'site-content.json');
+const FEATURED_PROJECT_ORDER = new Map([
+  ['focus-today', 0],
+  ['school-desk', 1],
+  ['focusflow', 2],
+]);
 
 function cleanString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
@@ -308,6 +313,13 @@ function sanitizeProjects(value: unknown): Project[] {
         item.team &&
         item.services
       );
+    })
+    .sort((a, b) => {
+      const aPriority = FEATURED_PROJECT_ORDER.get(a.slug) ?? Number.MAX_SAFE_INTEGER;
+      const bPriority = FEATURED_PROJECT_ORDER.get(b.slug) ?? Number.MAX_SAFE_INTEGER;
+
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return 0;
     });
 }
 

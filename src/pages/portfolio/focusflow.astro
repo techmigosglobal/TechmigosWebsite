@@ -1,0 +1,207 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'FocusFlow';
+const contactUrl = '/contact';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-01.webp',
+    alt: 'FocusFlow dashboard with daily goal, streak, and plan cards',
+    title: 'Daily Focus Home',
+    caption: 'A calm dashboard brings the daily goal, streak, schedule, and next action into one scan.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-02.webp',
+    alt: 'FocusFlow mood setup screen with ambient rain sound',
+    title: 'Mood Setup',
+    caption: 'Users begin by naming their mood and choosing an ambient sound before starting work.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-04.webp',
+    alt: 'FocusFlow suggestions screen with tools for breaking down tasks',
+    title: 'Task Breakdown',
+    caption: 'Afternoon suggestions and micro-tools turn vague work into smaller, startable steps.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-08.webp',
+    alt: 'FocusFlow getting ready completion screen',
+    title: 'Readiness Ritual',
+    caption: 'A short guided sequence helps users remove friction before the timer starts.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-10.webp',
+    alt: 'FocusFlow 25 minute deep work timer',
+    title: 'Deep Work Timer',
+    caption: 'A quiet session screen keeps controls visible without competing with the work.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-18.webp',
+    alt: 'FocusFlow quick thought dump modal',
+    title: 'Thought Capture',
+    caption: 'Interruptions can be parked in a quick dump instead of derailing the focus session.',
+  },
+  {
+    src: '/images/portfolio/focusflow/screenshots/screen-19.webp',
+    alt: 'FocusFlow settings screen with accessibility preferences',
+    title: 'Accessible Settings',
+    caption: 'Reduced motion, font size, haptics, and backup settings keep the product comfortable for repeat use.',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Daily Focus Planning',
+    description: 'A lightweight plan surface groups deep work, review, and wind-down tasks without burying users in menus.',
+  },
+  {
+    icon: '02',
+    title: 'Mood-Aware Start',
+    description: 'The app acknowledges energy and anxiety levels before suggesting the right session pattern.',
+  },
+  {
+    icon: '03',
+    title: 'Guided Preparation',
+    description: 'Small readiness prompts help users settle their space, open materials, and start without friction.',
+  },
+  {
+    icon: '04',
+    title: 'Session Guardrails',
+    description: 'Timer, pause, end-session, and extension controls are intentionally simple and hard to misuse.',
+  },
+  {
+    icon: '05',
+    title: 'Thought Parking',
+    description: 'Voice and typed thought capture protect the session when unrelated ideas arrive mid-work.',
+  },
+  {
+    icon: '06',
+    title: 'Comfort Controls',
+    description: 'Reduced motion, font size, haptics, backup, and theme preferences support long-term daily use.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/focusflow/screenshots/screen-01.webp',
+    alt: 'FocusFlow dashboard screen',
+    title: 'Start With the Day',
+    description: 'The home screen makes the next session, daily goal, and remaining plan obvious at a glance.',
+  },
+  {
+    image: '/images/portfolio/focusflow/screenshots/screen-05.webp',
+    alt: 'FocusFlow guided getting ready screen',
+    title: 'Remove Start Friction',
+    description: 'The preparation flow converts good intentions into concrete setup actions before the timer begins.',
+  },
+  {
+    image: '/images/portfolio/focusflow/screenshots/screen-10.webp',
+    alt: 'FocusFlow deep work timer screen',
+    title: 'Protect the Session',
+    description: 'The timer interface keeps focus on the remaining work window while preserving escape hatches.',
+  },
+  {
+    image: '/images/portfolio/focusflow/screenshots/screen-18.webp',
+    alt: 'FocusFlow thought dump screen',
+    title: 'Park Interruptions',
+    description: 'Thought capture gives distractions a place to go without forcing the user to leave the session.',
+  },
+  {
+    image: '/images/portfolio/focusflow/screenshots/screen-19.webp',
+    alt: 'FocusFlow settings screen',
+    title: 'Tune for Repeat Use',
+    description: 'Accessibility and backup controls make the experience practical for a real daily habit product.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product direction centers on reducing the emotional cost of starting focused work.',
+    name: 'Product Strategy',
+    role: 'Behavior-first mobile flow',
+  },
+  {
+    quote: 'Every high-friction moment has a low-pressure fallback: pause, park a thought, shorten the session, or reset.',
+    name: 'UX Architecture',
+    role: 'Session guardrail design',
+  },
+  {
+    quote: 'The visual language stays soft, readable, and low-stimulation so the UI does not become another source of noise.',
+    name: 'Interface System',
+    role: 'Calm productivity design',
+  },
+];
+---
+
+<BaseLayout
+  title="FocusFlow"
+  description="FocusFlow case study: a calming mobile focus assistant for daily planning, mood-aware preparation, deep work sessions, thought capture, and accessibility controls."
+  ogImage="/images/portfolio/focusflow/cover-focusflow.webp"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Focus Product"
+    tagline="A calm productivity assistant that helps users start deep work, protect focused time, and park distractions without losing momentum."
+    heroImage="/images/portfolio/focusflow/screenshots/screen-01.webp"
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Daily planning, mood-aware setup, guided readiness, focus timers, interruption capture, and accessibility controls in one mobile product narrative."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="A Complete Focus Session Journey"
+    description="The uploaded FocusFlow screenshots are arranged as a case-study sequence from dashboard to preparation, deep work, thought capture, and settings."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Calm, Repeatable Focus"
+    description="FocusFlow is shaped around real behavior: starting is hard, interruptions happen, and comfort settings matter when a tool is used every day."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Intention to Protected Deep Work"
+    description="Scroll through the core user journey: see the day, prepare the workspace, start the timer, park interruptions, and tune the experience for repeat use."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind the Screens"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Focused Mobile Product"
+    description="Use this FocusFlow direction as a reference for calming productivity, habit support, timer-driven workflows, and mobile-first accessibility."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">FocusFlow by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

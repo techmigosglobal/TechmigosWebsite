@@ -5,7 +5,7 @@ import { loadSiteContent } from '../../lib/siteContent';
 
 export const getStaticPaths = (async () => {
   const { projects } = await loadSiteContent();
-  const customHandledSlugs = new Set(['focus-today', 'school-desk']);
+  const customHandledSlugs = new Set(['focus-today', 'school-desk', 'focusflow']);
 
   return projects.map((project) => ({
     params: { slug: project.slug },

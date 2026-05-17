@@ -61,22 +61,23 @@ const trustItems = [
     role: 'Active School Member',
   },
 ];
-
-return Astro.redirect(webUrl);
 ---
 
 <BaseLayout
   title="SchoolDesk"
   description="SchoolDesk case study: A comprehensive school management platform digitizing academics, finance, and communication."
-  ogImage="/images/school-desk-logo.png"
+  ogImage="/images/portfolio/school-desk/cover-schooldesk.webp"
   ogType="article"
 >
   <HeroSection
     appName={appName}
+    eyebrow="School Operations Platform"
     tagline="One platform for every stakeholder. Digitize your school's academics, finance, and communication in 30 minutes."
     heroImage="/images/school-desk-logo.png"
     webUrl={webUrl}
     androidUrl={androidUrl}
+    primaryLabel="Open Interactive Showcase"
+    supportText="Role-based workflows for administrators, teachers, parents, and students, supported by operational dashboards and live showcase access."
   />
 
   <section class="py-20 bg-white">
@@ -159,11 +160,24 @@ return Astro.redirect(webUrl);
     </div>
   </section>
 
-  <FeatureGrid features={features} />
+  <FeatureGrid
+    features={features}
+    title="Built for Multi-Role School Operations"
+    description="A full-stack platform model covering administration, academics, finance, communication, and resource workflows across school stakeholders."
+  />
 
-  <TrustCards items={trustItems} />
+  <TrustCards
+    items={trustItems}
+    title="Validated Across School Roles"
+  />
 
-  <FinalCta webUrl={webUrl} androidUrl={androidUrl} />
+  <FinalCta
+    webUrl={webUrl}
+    androidUrl={androidUrl}
+    title="Explore SchoolDesk Live"
+    description="Open the integrated showcase to review the role-based product flow and school management feature set."
+    primaryLabel="Open Interactive Showcase"
+  />
 
   <section class="bg-slate-100 py-8">
     <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">

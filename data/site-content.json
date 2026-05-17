@@ -286,7 +286,7 @@
         "Android",
         "Web"
       ],
-      "image": "/images/portfolio/focus-today/cover-focus-today.svg",
+      "image": "/images/portfolio/focus-today/cover-screenshots.webp",
       "description": "A civic-first mobile news platform with multilingual onboarding, live updates, and cross-device access.",
       "result": "Live Web + Android Experience",
       "overview": "Focus Today is a Flutter + Firebase product designed to publish verified civic content, emergency updates, and public-interest stories for regional audiences.",
@@ -312,7 +312,8 @@
       ],
       "timeline": "Defined during discovery and scope planning",
       "team": "Cross-functional delivery team tailored to scope",
-      "services": "Mobile Product Development"
+      "services": "Mobile Product Development",
+      "featured": true
     },
     {
       "slug": "school-desk",
@@ -325,7 +326,7 @@
         "Supabase",
         "Firebase"
       ],
-      "image": "/images/school-desk-logo.png",
+      "image": "/images/portfolio/school-desk/cover-schooldesk.webp",
       "description": "A full-stack school management platform connecting administrators, teachers, parents, and students in one unified system.",
       "result": "Live Multi-Stakeholder Platform",
       "overview": "SchoolDesk is a comprehensive school management platform built to digitize academics, finance, transport, and communication for 200+ schools. Trusted by pilot schools in Hyderabad & Bengaluru.",
@@ -352,8 +353,47 @@
       "timeline": "Ongoing — active development and school onboarding",
       "team": "Cross-functional product + mobile + backend team",
       "services": "Full-Stack Mobile Product Development",
-      "featured": true,
-      "href": "/showcase"
+      "featured": true
+    },
+    {
+      "slug": "focusflow",
+      "title": "FocusFlow",
+      "category": "Mobile",
+      "emoji": "FF",
+      "tags": [
+        "Flutter",
+        "Behavior UX",
+        "Timer Flow",
+        "Mobile"
+      ],
+      "image": "/images/portfolio/focusflow/cover-focusflow.webp",
+      "description": "A calming focus assistant for daily planning, mood-aware preparation, deep work sessions, thought capture, and comfort controls.",
+      "result": "Guided Focus Experience Designed",
+      "overview": "FocusFlow is a mobile productivity product shaped around the real behavior of starting focused work, protecting deep-work time, and safely parking distractions.",
+      "challenge": "Most focus tools either feel too clinical or too busy. Users need help starting, staying, pausing, and recovering without the interface becoming another source of friction.",
+      "solution": "We shaped a calm session journey with daily planning, mood setup, guided preparation, a deep-work timer, thought dump capture, pause and end guardrails, and accessibility settings.",
+      "results": [
+        {
+          "metric": "Daily Plan",
+          "label": "Clear focus goal, streak, and session agenda"
+        },
+        {
+          "metric": "Mood Setup",
+          "label": "Soft onboarding before each work session"
+        },
+        {
+          "metric": "Deep Work",
+          "label": "Timer, pause, end, and extension controls"
+        },
+        {
+          "metric": "Comfort",
+          "label": "Reduced motion, font size, haptics, and backup settings"
+        }
+      ],
+      "timeline": "Case-study product direction and screen system",
+      "team": "Product strategy, UX, mobile UI, and QA review",
+      "services": "Mobile Product Design and Development",
+      "featured": true
     }
   ]
 }
