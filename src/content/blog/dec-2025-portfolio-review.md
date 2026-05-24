@@ -74,7 +74,7 @@ Use this checklist to evaluate your portfolio:
 Here's a template for presenting projects effectively:
 
 ```markdown
-## Project Name: TaskFlow
+## Project Name: StudyBoard
 
 **Role:** Full-Stack Developer
 **Tech Stack:** Next.js, PostgreSQL, Prisma

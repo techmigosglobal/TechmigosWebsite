@@ -162,46 +162,6 @@
       "featured": true
     },
     {
-      "slug": "taskflow",
-      "title": "TaskFlow",
-      "category": "Mobile",
-      "emoji": "TF",
-      "tags": [
-        "Flutter",
-        "Task Management",
-        "Role-Based Access",
-        "Mobile"
-      ],
-      "image": "/images/portfolio/taskflow/cover-taskflow.webp",
-      "description": "A role-driven productivity app for managing projects, tasks, team discussion, permissions, quick actions, and analytics.",
-      "result": "Role-Based Task Platform",
-      "overview": "TaskFlow is a mobile productivity platform designed for teams that need clear ownership across projects, tasks, discussions, approvals, and role-based access.",
-      "challenge": "Teams often split work across task lists, chat tools, documents, and permission spreadsheets, making ownership and status hard to understand.",
-      "solution": "We shaped a role-driven mobile workflow with dashboards, project tracking, task details, comments, approvals, PDF export, discussion channels, analytics, settings, and permission controls.",
-      "results": [
-        {
-          "metric": "Projects",
-          "label": "Searchable planning and progress tracking"
-        },
-        {
-          "metric": "Tasks",
-          "label": "Priority, status, assignee, files, and activity"
-        },
-        {
-          "metric": "Roles",
-          "label": "Admin, HR, employee, and freelancer access"
-        },
-        {
-          "metric": "Collab",
-          "label": "Discussion, comments, approvals, and PDF export"
-        }
-      ],
-      "timeline": "Case-study product direction and screen system",
-      "team": "Product strategy, UX, mobile UI, and QA review",
-      "services": "Mobile Product Design and Development",
-      "featured": true
-    },
-    {
       "slug": "logistics-ai",
       "title": "Logistics AI",
       "category": "AI/ML",
@@ -276,6 +236,46 @@
       "timeline": "Defined during discovery and scope planning",
       "team": "Cross-functional delivery team tailored to scope",
       "services": "Mobile Product Development"
+    },
+    {
+      "slug": "workora",
+      "title": "Workora",
+      "category": "Mobile",
+      "emoji": "WO",
+      "tags": [
+        "Flutter",
+        "Team Productivity",
+        "Task Management",
+        "Mobile"
+      ],
+      "image": "/images/portfolio/workora/cover-workora.webp",
+      "description": "A role-driven productivity app for projects, tasks, collaboration, files, permissions, and team visibility.",
+      "result": "Role-Driven Work Platform",
+      "overview": "Workora is a mobile productivity platform that keeps dashboards, projects, tasks, discussions, files, and role-based workspace controls in one clear team app.",
+      "challenge": "Teams needed a cleaner way to coordinate work without splitting ownership, updates, files, and permissions across disconnected tools.",
+      "solution": "We shaped Workora around a mobile-first workflow with dashboard visibility, project tracking, task states, task details, real-time discussion, file handling, and role-aware administration.",
+      "results": [
+        {
+          "metric": "Dashboard",
+          "label": "Team progress and activity visible at a glance"
+        },
+        {
+          "metric": "Projects",
+          "label": "Searchable project lists with progress tracking"
+        },
+        {
+          "metric": "Tasks",
+          "label": "Priority labels, status states, activity, and files"
+        },
+        {
+          "metric": "Collab",
+          "label": "Discussion channels, mentions, and shared assets"
+        }
+      ],
+      "timeline": "Case-study product direction and screen system",
+      "team": "Product strategy, UX, mobile UI, and QA review",
+      "services": "Mobile Product Design and Development",
+      "featured": true
     },
     {
       "slug": "saas-dashboard",

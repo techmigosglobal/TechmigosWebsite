@@ -1,0 +1,234 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'Workora';
+const contactUrl = '/contact';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/workora/screenshots/screen-01.webp',
+    alt: 'Workora login screen for company issued credentials',
+    title: 'Secure Login',
+    caption: 'A simple entry screen sets the tone for a company-issued, role-aware productivity platform.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-06.webp',
+    alt: 'Workora dashboard and projects overview screens',
+    title: 'Workspace Overview',
+    caption: 'Dashboard, projects, tasks, files, and collaboration stay connected in one focused mobile workspace.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-08.webp',
+    alt: 'Workora projects screen with search, filters, progress, and team visibility',
+    title: 'Project Clarity',
+    caption: 'Search, filter, and track every project with readable cards, progress states, and owner context.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-07.webp',
+    alt: 'Workora all tasks screen with priorities, status groups, and quick create action',
+    title: 'Task Tracking',
+    caption: 'Priority labels, clean task states, and quick creation keep daily work moving without extra friction.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-03.webp',
+    alt: 'Workora task detail screens with status, activity, attachments, and comments',
+    title: 'Task Detail',
+    caption: 'Status, ownership, files, comments, and activity history are visible from the task detail view.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-02.webp',
+    alt: 'Workora discussion screen with channels, mentions, files, and instant chat',
+    title: 'Realtime Discussion',
+    caption: 'Channels, mentions, file sharing, and chat help teams stay aligned around the work itself.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-04.webp',
+    alt: 'Workora file management screens for project files and task attachments',
+    title: 'Files in Context',
+    caption: 'Project files and task attachments are kept close to the workflow so assets do not get lost.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-05.webp',
+    alt: 'Workora role management and company overview screens for leaders and teams',
+    title: 'Role-Based Workspace',
+    caption: 'Leaders can review team visibility, user roles, and secure access from a dedicated workspace.',
+    displayClass: 'workora-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/workora/screenshots/screen-01.webp',
+    alt: 'Workora login screen for company issued credentials',
+    title: 'Back to Workora',
+    caption: 'The flow closes on the same branded login screen, keeping the Workora product story bookended cleanly.',
+    displayClass: 'workora-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Dashboard Visibility',
+    description: 'A concise home view helps admins and teams understand employees, projects, completed work, overdue tasks, and weekly activity.',
+  },
+  {
+    icon: '02',
+    title: 'Project Tracking',
+    description: 'Search, filters, progress bars, owners, dates, and team context make project status easier to scan.',
+  },
+  {
+    icon: '03',
+    title: 'Task Lifecycle',
+    description: 'Tasks include priorities, status groups, assignees, due dates, activity, comments, and attachment context.',
+  },
+  {
+    icon: '04',
+    title: 'Realtime Collaboration',
+    description: 'Discussion channels, mentions, file sharing, and instant messages keep conversations tied to team work.',
+  },
+  {
+    icon: '05',
+    title: 'File Workflows',
+    description: 'Documents, screenshots, spreadsheets, and design notes can stay attached to the right project or task.',
+  },
+  {
+    icon: '06',
+    title: 'Role-Aware Access',
+    description: 'Admin, manager, employee, and executive views support clearer workspace permissions and team governance.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/workora/screenshots/screen-01.webp',
+    alt: 'Workora secure login screen',
+    title: 'Enter Workora',
+    description: 'The first screen introduces the product clearly with company-issued login credentials and a focused brand moment.',
+  },
+  {
+    image: '/images/portfolio/workora/screenshots/screen-06.webp',
+    alt: 'Workora dashboard overview',
+    title: 'Start With Team Status',
+    description: 'The dashboard gives leaders a quick read on employees, active projects, completed work, overdue tasks, and weekly activity.',
+  },
+  {
+    image: '/images/portfolio/workora/screenshots/screen-08.webp',
+    alt: 'Workora projects list',
+    title: 'Organize Projects',
+    description: 'Project cards show progress, due dates, owners, and team presence so planning stays visible.',
+  },
+  {
+    image: '/images/portfolio/workora/screenshots/screen-07.webp',
+    alt: 'Workora all tasks view',
+    title: 'Track Every Task',
+    description: 'Task filters, priority labels, grouped states, and quick creation make the everyday work queue easier to manage.',
+  },
+  {
+    image: '/images/portfolio/workora/screenshots/screen-03.webp',
+    alt: 'Workora task detail and activity view',
+    title: 'Review Details',
+    description: 'Task detail brings together status, assignment, priority, due date, attachments, comments, and activity history.',
+  },
+  {
+    image: '/images/portfolio/workora/screenshots/screen-02.webp',
+    alt: 'Workora discussion channels',
+    title: 'Discuss in Real Time',
+    description: 'Channels, mentions, attached files, and replies keep collaboration close to the operational flow.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product direction keeps team operations visible without turning the mobile app into a crowded control panel.',
+    name: 'Product Strategy',
+    role: 'Team productivity system',
+  },
+  {
+    quote: 'The screen system uses repeated bottom navigation and consistent content cards so users can move between dashboard, projects, tasks, discussion, and profile smoothly.',
+    name: 'UX Architecture',
+    role: 'Role-driven mobile flow',
+  },
+  {
+    quote: 'Files, comments, status, and activity are designed to sit near the task or project they belong to.',
+    name: 'Interface System',
+    role: 'Work context design',
+  },
+];
+---
+
+<BaseLayout
+  title="Workora"
+  description="Workora case study: a role-driven mobile productivity platform for dashboards, projects, tasks, discussion, files, team visibility, and workspace permissions."
+  ogImage="/images/portfolio/workora/cover-workora.webp"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Productivity Platform"
+    tagline="A role-driven work app that brings dashboards, projects, tasks, discussion, files, and team visibility into one mobile workspace."
+    heroImage="/images/portfolio/workora/screenshots/screen-01.webp"
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Dashboard visibility, project tracking, task lifecycle management, realtime discussion, file workflows, and role-aware access for modern teams."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="Workora Screens for the Full Team Workflow"
+    description="The Workora screens are arranged as a complete product sequence, with the poster screenshots bottom-aligned so each mobile screen reads cleanly."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Teams That Need Clear Ownership"
+    description="Workora combines operational visibility with practical mobile workflows for projects, tasks, collaboration, files, and workspace permissions."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Team Overview to Task-Level Context"
+    description="Scroll through the core Workora journey: understand team status, organize projects, track tasks, review details, and collaborate in real time."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind Workora"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Team Productivity App"
+    description="Use this Workora direction as a reference for role-driven productivity, task lifecycle tracking, project visibility, collaboration, and mobile-first operations."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">Workora by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
