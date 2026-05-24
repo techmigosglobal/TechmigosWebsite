@@ -60,7 +60,74 @@ const isPreframedScreenshot = src.includes('/screenshots/');
   .focus-device-shot.focus-showcase-shot {
     width: min(300px, 72vw);
     height: 535px;
+    max-width: none;
     max-height: none;
+    object-fit: cover;
+    object-position: center center;
+    transform-origin: center center;
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-01 {
+    transform: translateY(38px) scale(1.17);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-04 {
+    transform: scale(0.96);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-21 {
+    transform: scale(1);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-22 {
+    transform: scale(1.09);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-23 {
+    transform: scale(1.04);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-10 {
+    transform: scale(1.05);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-18 {
+    transform-origin: top center;
+    transform: scale(1.36);
+  }
+
+  .focus-device-shot.focus-showcase-shot--screen-19 {
+    transform: scale(0.98);
+  }
+
+  .focus-device-shot.focus-today-shot--02 {
+    transform: translateY(6px) scale(0.98);
+  }
+
+  .focus-device-shot.focus-today-shot--03 {
+    transform: translateY(2px) scale(1);
+  }
+
+  .focus-device-shot.focus-today-shot--04 {
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .focus-device-shot.focus-today-shot--05 {
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .focus-device-shot.focus-today-shot--08 {
+    transform: translateY(38px) scale(1.18);
+  }
+
+  .focus-device-shot.focus-today-shot--11 {
+    transform: translateY(2px) scale(1);
+  }
+
+  .focus-device-shot.taskflow-showcase-poster {
+    object-fit: contain;
+    object-position: center;
+    transform: none;
   }
 
   .focus-phone-shell {

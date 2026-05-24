@@ -6,6 +6,7 @@ type Slide = {
   alt: string;
   title: string;
   caption: string;
+  displayClass?: string;
 };
 
 interface Props {
@@ -32,13 +33,13 @@ const {
     </div>
 
     <div class="relative reveal">
-      <div id="focus-carousel-track" class="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div id="focus-carousel-track" class="flex snap-x snap-mandatory items-start gap-6 overflow-x-auto pb-6 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {slides.map((slide, index) => (
-          <article class="focus-slide min-w-[86%] snap-center px-4 py-3 text-center sm:min-w-[48%] lg:min-w-[32%]" data-slide-index={index}>
-            <div class="mx-auto flex h-[535px] items-center justify-center">
-              <PhoneFrame src={slide.src} alt={slide.alt} className="focus-showcase-shot" />
+          <article class="focus-slide flex min-w-[86%] snap-center flex-col px-4 py-3 text-center sm:min-w-[48%] lg:min-w-[32%]" data-slide-index={index}>
+            <div class="focus-shot-viewport mx-auto flex items-start justify-center overflow-hidden">
+              <PhoneFrame src={slide.src} alt={slide.alt} className={`focus-showcase-shot ${slide.displayClass || ''}`} />
             </div>
-            <h3 class="mt-5 text-xl font-bold text-gray-900">{slide.title}</h3>
+            <h3 class="mt-3 text-xl font-bold text-gray-900">{slide.title}</h3>
             <p class="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-gray-600">{slide.caption}</p>
           </article>
         ))}
@@ -173,3 +174,16 @@ const {
     startAutoAdvance();
   }
 </script>
+
+<style>
+  .focus-shot-viewport {
+    width: min(300px, 72vw);
+    height: 535px;
+  }
+
+  @media (max-width: 639px) {
+    .focus-shot-viewport {
+      height: min(535px, 128vw);
+    }
+  }
+</style>

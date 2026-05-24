@@ -162,6 +162,46 @@
       "featured": true
     },
     {
+      "slug": "taskflow",
+      "title": "TaskFlow",
+      "category": "Mobile",
+      "emoji": "TF",
+      "tags": [
+        "Flutter",
+        "Task Management",
+        "Role-Based Access",
+        "Mobile"
+      ],
+      "image": "/images/portfolio/taskflow/cover-taskflow.webp",
+      "description": "A role-driven productivity app for managing projects, tasks, team discussion, permissions, quick actions, and analytics.",
+      "result": "Role-Based Task Platform",
+      "overview": "TaskFlow is a mobile productivity platform designed for teams that need clear ownership across projects, tasks, discussions, approvals, and role-based access.",
+      "challenge": "Teams often split work across task lists, chat tools, documents, and permission spreadsheets, making ownership and status hard to understand.",
+      "solution": "We shaped a role-driven mobile workflow with dashboards, project tracking, task details, comments, approvals, PDF export, discussion channels, analytics, settings, and permission controls.",
+      "results": [
+        {
+          "metric": "Projects",
+          "label": "Searchable planning and progress tracking"
+        },
+        {
+          "metric": "Tasks",
+          "label": "Priority, status, assignee, files, and activity"
+        },
+        {
+          "metric": "Roles",
+          "label": "Admin, HR, employee, and freelancer access"
+        },
+        {
+          "metric": "Collab",
+          "label": "Discussion, comments, approvals, and PDF export"
+        }
+      ],
+      "timeline": "Case-study product direction and screen system",
+      "team": "Product strategy, UX, mobile UI, and QA review",
+      "services": "Mobile Product Design and Development",
+      "featured": true
+    },
+    {
       "slug": "logistics-ai",
       "title": "Logistics AI",
       "category": "AI/ML",

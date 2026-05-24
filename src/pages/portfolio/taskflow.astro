@@ -1,0 +1,221 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'TaskFlow';
+const contactUrl = '/contact';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-01.webp',
+    alt: 'TaskFlow role-driven productivity overview with login and admin dashboard screens',
+    title: 'Role-Driven Productivity',
+    caption: 'A clear entry point for teams to manage projects, tasks, collaboration, and role-aware workspaces.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-05.webp',
+    alt: 'TaskFlow projects and all tasks screens with search, filters, and progress tracking',
+    title: 'Projects and Tasks',
+    caption: 'Search, filter, create, and track work with project progress and task priority states in one flow.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-06.webp',
+    alt: 'TaskFlow task detail screens with details, activity, assignees, deadlines, and attachments',
+    title: 'Detailed Task Tracking',
+    caption: 'Task detail pages keep descriptions, assignees, status, deadlines, files, and activity together.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-07.webp',
+    alt: 'TaskFlow task comments and quick action sheet with PDF export and approvals',
+    title: 'Comments and Actions',
+    caption: 'Teams can discuss updates, approve tasks, download PDFs, and complete work from quick actions.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-08.webp',
+    alt: 'TaskFlow real-time discussion screen with channels, mentions, files, and instant chat',
+    title: 'Real-Time Discussion',
+    caption: 'Channels, mentions, file sharing, and instant chat keep project conversations connected to work.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-02.webp',
+    alt: 'TaskFlow profile and role-based access screens for admin HR employee and freelancer workflows',
+    title: 'Role-Based Access',
+    caption: 'Admin, HR, employee, and freelancer permissions are presented with clear responsibilities and actions.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-04.webp',
+    alt: 'TaskFlow company overview and profile analytics screens with quick links and task statistics',
+    title: 'Work at a Glance',
+    caption: 'Dashboards combine company overview, task statistics, quick links, and performance insights.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/taskflow/screenshots/screen-03.webp',
+    alt: 'TaskFlow settings analytics calendar and reports screens',
+    title: 'Settings and Analytics',
+    caption: 'Settings, calendar access, analytics, and reports help users jump to important tools quickly.',
+    displayClass: 'taskflow-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Project Planning',
+    description: 'Project lists, progress bars, search, filters, and creation actions make work easy to organize.',
+  },
+  {
+    icon: '02',
+    title: 'Task Management',
+    description: 'Priority, status, assignee, deadline, comments, files, and activity are kept in one task record.',
+  },
+  {
+    icon: '03',
+    title: 'Role-Based Workflows',
+    description: 'Admin, HR, employee, and freelancer views map permissions to what each user actually needs.',
+  },
+  {
+    icon: '04',
+    title: 'Team Discussion',
+    description: 'Channels, mentions, attachments, and instant chat reduce context switching between tools.',
+  },
+  {
+    icon: '05',
+    title: 'Quick Actions',
+    description: 'Approvals, PDF export, mark-done, edit, reject, and delete actions are available where decisions happen.',
+  },
+  {
+    icon: '06',
+    title: 'Analytics and Settings',
+    description: 'Dashboards, task statistics, reports, calendar access, and profile settings support daily operations.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/taskflow/screenshots/screen-01.webp',
+    alt: 'TaskFlow dashboard and login overview',
+    title: 'Start From the Role',
+    description: 'TaskFlow opens with a role-driven structure so each team member lands in a workspace built for their responsibilities.',
+  },
+  {
+    image: '/images/portfolio/taskflow/screenshots/screen-05.webp',
+    alt: 'TaskFlow projects and tasks management',
+    title: 'Plan and Track Work',
+    description: 'Projects and tasks are searchable, filterable, and progress-oriented, helping teams move from planning to completion.',
+  },
+  {
+    image: '/images/portfolio/taskflow/screenshots/screen-06.webp',
+    alt: 'TaskFlow task detail tracking',
+    title: 'Keep Details Together',
+    description: 'Each task captures status, comments, timeline, assignee, project, deadline, files, and activity in one place.',
+  },
+  {
+    image: '/images/portfolio/taskflow/screenshots/screen-08.webp',
+    alt: 'TaskFlow real-time discussion',
+    title: 'Collaborate in Context',
+    description: 'Discussion channels and file sharing let team communication stay close to the work being discussed.',
+  },
+  {
+    image: '/images/portfolio/taskflow/screenshots/screen-02.webp',
+    alt: 'TaskFlow role-based access and permissions',
+    title: 'Control Access Cleanly',
+    description: 'Role and permission screens make access rules visible, understandable, and easier to maintain.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product direction prioritizes everyday operational clarity over feature sprawl.',
+    name: 'Product Strategy',
+    role: 'Role-aware task platform',
+  },
+  {
+    quote: 'Task details, comments, files, approvals, and PDF export are grouped around the moment of action.',
+    name: 'Workflow Design',
+    role: 'Task lifecycle architecture',
+  },
+  {
+    quote: 'The interface language uses strong hierarchy, soft surfaces, and quick links to keep dense work readable.',
+    name: 'Interface System',
+    role: 'Mobile productivity UI',
+  },
+];
+---
+
+<BaseLayout
+  title="TaskFlow"
+  description="TaskFlow case study: a role-driven mobile productivity app for projects, tasks, team collaboration, permissions, analytics, quick actions, and detailed task tracking."
+  ogImage="/images/portfolio/taskflow/cover-taskflow.webp"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Task Management Product"
+    tagline="A role-driven productivity platform for managing projects, assigning tasks, collaborating with teams, and tracking work from dashboard to done."
+    heroImage="/images/portfolio/taskflow/screenshots/screen-01.webp"
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Projects, tasks, role-based permissions, team discussion, task details, approvals, PDF export, settings, and analytics in one mobile workflow."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="A Complete TaskFlow Work Journey"
+    description="TaskFlow screens show the full work system: dashboard, projects, tasks, comments, approvals, discussion, roles, settings, and analytics."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Teams That Need Clear Ownership"
+    description="TaskFlow combines task management and collaboration with role-aware access, so teams can plan work, discuss updates, and take action without losing context."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Role-Based Access to Completed Work"
+    description="Scroll through the core journey: enter the right workspace, plan projects, manage tasks, collaborate, and keep permissions understandable."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind TaskFlow"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Task Management App"
+    description="Use this TaskFlow direction as a reference for role-driven productivity, team collaboration, task lifecycle tracking, and mobile-first operations."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">TaskFlow by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
