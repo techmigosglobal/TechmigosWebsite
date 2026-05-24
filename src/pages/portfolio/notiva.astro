@@ -1,0 +1,200 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'Notiva';
+const contactUrl = '/contact';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/notiva/screenshots/screen-02.webp',
+    alt: 'Notiva welcome screen for turning voice into organized notes',
+    title: 'Meet Notiva',
+    caption: 'A clear onboarding moment frames Notiva as a simple voice-to-notes companion.',
+    displayClass: 'notiva-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/notiva/screenshots/screen-04.webp',
+    alt: 'Notiva home dashboard with capture, continue, stats, and quick capture actions',
+    title: 'Capture Ideas Instantly',
+    caption: 'Voice notes, meetings, and task capture are presented as fast, focused actions from the home screen.',
+    displayClass: 'notiva-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/notiva/screenshots/screen-01.webp',
+    alt: 'Notiva recording complete screen with transcription review and save choices',
+    title: 'Review Before Save',
+    caption: 'Users can edit the transcript, record more, save and exit, or discard before committing a note.',
+    displayClass: 'notiva-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/notiva/screenshots/screen-03.webp',
+    alt: 'Notiva settings and export screen with privacy controls',
+    title: 'Manage and Export',
+    caption: 'Export defaults, haptics, help, privacy, and app settings sit in one clean control area.',
+    displayClass: 'notiva-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/notiva/screenshots/screen-05.webp',
+    alt: 'Notiva full product overview with multiple screens and feature highlights',
+    title: 'Complete Notes System',
+    caption: 'The broader product system includes capture, notes, settings, personalization, and export flows.',
+    displayClass: 'notiva-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Voice Capture',
+    description: 'A prominent capture action helps users record thoughts, meetings, and task ideas before they disappear.',
+  },
+  {
+    icon: '02',
+    title: 'Instant Transcription',
+    description: 'Recorded audio is converted into editable text so users can review and refine notes quickly.',
+  },
+  {
+    icon: '03',
+    title: 'Continuation Flow',
+    description: 'Continue recording and record-more states make it easy to extend a note without starting over.',
+  },
+  {
+    icon: '04',
+    title: 'Organized Notes',
+    description: 'Notes, favorites, daily counts, and quick actions give captured content a simple home.',
+  },
+  {
+    icon: '05',
+    title: 'Export Controls',
+    description: 'PDF and data export pathways make notes portable for sharing, printing, and backup.',
+  },
+  {
+    icon: '06',
+    title: 'Personal Settings',
+    description: 'Theme, recording quality, auto save, auto transcription, privacy, and support controls round out the product.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/notiva/screenshots/screen-02.webp',
+    alt: 'Notiva welcome screen',
+    title: 'Introduce the Voice Habit',
+    description: 'The opening screen positions Notiva as a focused tool for turning speech into organized notes.',
+  },
+  {
+    image: '/images/portfolio/notiva/screenshots/screen-04.webp',
+    alt: 'Notiva quick capture dashboard',
+    title: 'Capture From Home',
+    description: 'The dashboard gives users quick voice, meeting, and task entry points with lightweight note stats.',
+  },
+  {
+    image: '/images/portfolio/notiva/screenshots/screen-01.webp',
+    alt: 'Notiva transcription review screen',
+    title: 'Review the Transcript',
+    description: 'After recording, the review sheet gives clear save, edit, continue, and discard options.',
+  },
+  {
+    image: '/images/portfolio/notiva/screenshots/screen-03.webp',
+    alt: 'Notiva settings and export screen',
+    title: 'Control Export and Privacy',
+    description: 'Settings support data export, help, privacy, haptic feedback, and default note formats.',
+  },
+  {
+    image: '/images/portfolio/notiva/screenshots/screen-05.webp',
+    alt: 'Notiva product overview collage',
+    title: 'Show the Complete System',
+    description: 'The full product overview connects capture, notes, personalization, settings, and export into one mobile story.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product direction centers on making voice capture feel quick enough for fleeting thoughts and structured enough for later review.',
+    name: 'Product Strategy',
+    role: 'Voice-first notes product',
+  },
+  {
+    quote: 'The review-before-save flow protects users from losing context while still keeping the recording journey short.',
+    name: 'UX Architecture',
+    role: 'Capture and transcription flow',
+  },
+  {
+    quote: 'Soft visual treatment, large actions, and clear settings help the app feel useful without becoming heavy.',
+    name: 'Interface System',
+    role: 'Simple productivity design',
+  },
+];
+---
+
+<BaseLayout
+  title="Notiva"
+  description="Notiva case study: a mobile voice-to-notes app for capturing ideas, transcribing speech, reviewing notes, organizing content, and exporting data."
+  ogImage="/images/portfolio/notiva/cover-notiva.webp"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Voice Notes Product"
+    tagline="A voice-to-notes mobile app that helps users capture thoughts, transcribe recordings, organize notes, and export ideas with less friction."
+    heroImage="/images/portfolio/notiva/screenshots/screen-02.webp"
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Voice capture, instant transcription, review-before-save workflows, notes organization, export controls, and privacy-first settings in one mobile product."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="Notiva Screens for Voice-to-Notes Workflows"
+    description="The Notiva screenshots are arranged from onboarding and capture through transcription review, settings, export, and the complete product overview."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Quick Thoughts and Organized Notes"
+    description="Notiva combines fast recording with practical review, organization, personalization, privacy, and export workflows."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Spoken Thought to Shareable Note"
+    description="Scroll through the core Notiva journey: introduce the voice habit, capture from home, review the transcript, manage settings, and export notes."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind Notiva"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Voice Notes App"
+    description="Use this Notiva direction as a reference for voice capture, transcription, notes organization, export settings, and mobile-first productivity."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">Notiva by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

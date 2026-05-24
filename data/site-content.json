@@ -278,6 +278,46 @@
       "featured": true
     },
     {
+      "slug": "notiva",
+      "title": "Notiva",
+      "category": "Mobile",
+      "emoji": "NO",
+      "tags": [
+        "Flutter",
+        "Voice Notes",
+        "Transcription",
+        "Mobile"
+      ],
+      "image": "/images/portfolio/notiva/cover-notiva.webp",
+      "description": "A voice-to-notes mobile app for capturing ideas, transcribing speech, organizing notes, and exporting content.",
+      "result": "Voice Notes Product",
+      "overview": "Notiva is a mobile note-taking product that turns voice capture into organized notes with transcription, simple review flows, settings, privacy controls, and export options.",
+      "challenge": "Users needed a faster way to capture spoken ideas and meetings while keeping notes searchable, editable, and easy to export.",
+      "solution": "We shaped a calm voice-notes experience with quick capture, instant transcription, recording review, note management, export settings, profile controls, and privacy-first app preferences.",
+      "results": [
+        {
+          "metric": "Capture",
+          "label": "Quick voice, meeting, and task note entry"
+        },
+        {
+          "metric": "Transcribe",
+          "label": "Speech converted into editable note text"
+        },
+        {
+          "metric": "Organize",
+          "label": "Notes, favorites, and continuation flows in one app"
+        },
+        {
+          "metric": "Export",
+          "label": "PDF, document, text, and backup-ready output paths"
+        }
+      ],
+      "timeline": "Case-study product direction and screen system",
+      "team": "Product strategy, UX, mobile UI, and QA review",
+      "services": "Mobile Product Design and Development",
+      "featured": true
+    },
+    {
       "slug": "saas-dashboard",
       "title": "SaaS Analytics",
       "category": "Web",
