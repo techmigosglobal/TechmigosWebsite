@@ -45,76 +45,38 @@
   ],
   "projects": [
     {
-      "slug": "fintech-dashboard",
-      "title": "Fintech Dashboard",
-      "category": "Web",
-      "emoji": "📊",
-      "tags": [
-        "React",
-        "Node.js",
-        "PostgreSQL"
-      ],
-      "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
-      "description": "A trading operations platform with real-time monitoring and portfolio workflows.",
-      "result": "Platform Modernization Delivered",
-      "overview": "We partnered with the client to build a modern trading operations platform focused on reliability, usability, and maintainability.",
-      "challenge": "Legacy modules created operational friction, inconsistent behavior, and limited extensibility for new workflows.",
-      "solution": "We implemented a modular service architecture, real-time event flows, and a streamlined frontend experience aligned to day-to-day operations.",
-      "results": [
-        {
-          "metric": "Reliability",
-          "label": "Stable core workflows in production"
-        },
-        {
-          "metric": "Scalability",
-          "label": "Architecture prepared for growth"
-        },
-        {
-          "metric": "Security",
-          "label": "Hardened access and data handling"
-        },
-        {
-          "metric": "Maintainability",
-          "label": "Cleaner code boundaries and ownership"
-        }
-      ],
-      "timeline": "Defined during discovery and scope planning",
-      "team": "Cross-functional delivery team tailored to scope",
-      "services": "Full-Stack Development",
-      "featured": true
-    },
-    {
-      "slug": "healthtrack-app",
-      "title": "HealthTrack App",
+      "slug": "focus-today",
+      "title": "Focus Today",
       "category": "Mobile",
-      "emoji": "🏃",
+      "emoji": "📰",
       "tags": [
-        "React Native",
+        "Flutter",
         "Firebase",
-        "AI"
+        "Android",
+        "Web"
       ],
-      "image": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=600&fit=crop",
-      "description": "A health companion app with personalized guidance and wearable integrations.",
-      "result": "Mobile Experience Delivered",
-      "overview": "We built a user-focused health companion app designed for everyday tracking, clarity, and actionable recommendations.",
-      "challenge": "Existing experience made it hard for users to understand their data and act on it consistently.",
-      "solution": "We designed guided journeys, clean insights surfaces, and strong integration paths for core wearable data sources.",
+      "image": "/images/portfolio/focus-today/cover-screenshots.webp",
+      "description": "A civic-first mobile news platform with multilingual onboarding, live updates, and cross-device access.",
+      "result": "Live Web + Android Experience",
+      "overview": "Focus Today is a Flutter + Firebase product designed to publish verified civic content, emergency updates, and public-interest stories for regional audiences.",
+      "challenge": "The team needed a stable, multilingual, mobile-first publishing experience that remained simple for users while supporting high-volume content delivery.",
+      "solution": "We implemented a focused product architecture with OTP onboarding, structured feed/discovery patterns, configurable settings, and deployment-ready web/android access.",
       "results": [
         {
-          "metric": "Usability",
-          "label": "Clearer day-to-day health workflows"
+          "metric": "Multilingual UX",
+          "label": "Localized onboarding and navigation flow"
         },
         {
-          "metric": "Adoption",
-          "label": "Smoother onboarding and first-use flow"
+          "metric": "Civic Feed",
+          "label": "Story + PDF-ready content presentation"
         },
         {
-          "metric": "Integration",
-          "label": "Reliable wearable data synchronization"
+          "metric": "Realtime",
+          "label": "Firebase-backed update delivery model"
         },
         {
-          "metric": "Quality",
-          "label": "Tested release process across devices"
+          "metric": "Device Reach",
+          "label": "Live web and Android distribution links"
         }
       ],
       "timeline": "Defined during discovery and scope planning",
@@ -123,119 +85,44 @@
       "featured": true
     },
     {
-      "slug": "ecommerce-platform",
-      "title": "E-Commerce Platform",
-      "category": "Web",
-      "emoji": "🛍️",
-      "tags": [
-        "Next.js",
-        "Stripe",
-        "Tailwind"
-      ],
-      "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=600&fit=crop",
-      "description": "A unified commerce experience with streamlined checkout and catalog management.",
-      "result": "Commerce Platform Implemented",
-      "overview": "We delivered a modern commerce platform that unifies storefront, product operations, and checkout journeys.",
-      "challenge": "Previous storefront and backend flows were fragmented, causing operational overhead and inconsistent customer experience.",
-      "solution": "We implemented a headless architecture with structured APIs, clearer checkout steps, and improved operational tooling.",
-      "results": [
-        {
-          "metric": "Checkout",
-          "label": "Simplified purchase flow architecture"
-        },
-        {
-          "metric": "Operations",
-          "label": "Improved catalog and order workflows"
-        },
-        {
-          "metric": "Reliability",
-          "label": "More resilient storefront behavior"
-        },
-        {
-          "metric": "Extensibility",
-          "label": "Foundation ready for new features"
-        }
-      ],
-      "timeline": "Defined during discovery and scope planning",
-      "team": "Cross-functional delivery team tailored to scope",
-      "services": "Commerce Engineering",
-      "featured": true
-    },
-    {
-      "slug": "logistics-ai",
-      "title": "Logistics AI",
-      "category": "AI/ML",
-      "emoji": "🤖",
-      "tags": [
-        "Python",
-        "TensorFlow",
-        "AWS"
-      ],
-      "image": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&h=600&fit=crop",
-      "description": "A logistics intelligence platform for route planning and delivery operations.",
-      "result": "AI Workflow Integrated",
-      "overview": "We implemented an operations intelligence layer to support planning teams with better route and dispatch decisions.",
-      "challenge": "Planning depended on fragmented tools and manual coordination across dynamic operational constraints.",
-      "solution": "We built a decision-support workflow with model-assisted planning, transparent controls, and operational auditability.",
-      "results": [
-        {
-          "metric": "Planning",
-          "label": "More consistent route decision flow"
-        },
-        {
-          "metric": "Visibility",
-          "label": "Improved operational tracking context"
-        },
-        {
-          "metric": "Automation",
-          "label": "Reduced repetitive manual planning steps"
-        },
-        {
-          "metric": "Governance",
-          "label": "Clearer review and override controls"
-        }
-      ],
-      "timeline": "Defined during discovery and scope planning",
-      "team": "Cross-functional delivery team tailored to scope",
-      "services": "AI Product Engineering"
-    },
-    {
-      "slug": "fitness-app",
-      "title": "FitLife App",
+      "slug": "school-desk",
+      "title": "SchoolDesk",
       "category": "Mobile",
-      "emoji": "💪",
+      "emoji": "🏫",
       "tags": [
         "Flutter",
-        "Firebase",
-        "HealthKit"
+        "Next.js",
+        "Supabase",
+        "Firebase"
       ],
-      "image": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=1200&h=600&fit=crop",
-      "description": "A fitness product combining habit support, progress tracking, and coaching tools.",
-      "result": "Fitness Product Experience Built",
-      "overview": "We created a fitness app experience centered on routines, progress visibility, and long-term user motivation.",
-      "challenge": "Users needed a simpler way to stay consistent without switching between disconnected features and screens.",
-      "solution": "We delivered guided plans, focused progress surfaces, and coaching-oriented UX with wearable-ready data flow.",
+      "image": "/images/portfolio/school-desk/cover-schooldesk.webp",
+      "description": "A full-stack school management platform connecting administrators, teachers, parents, and students in one unified system.",
+      "result": "Live Multi-Stakeholder Platform",
+      "overview": "SchoolDesk is a comprehensive school management platform built to digitize academics, finance, transport, and communication for 200+ schools. Trusted by pilot schools in Hyderabad & Bengaluru.",
+      "challenge": "Schools were relying on fragmented tools — spreadsheets, WhatsApp groups, and paper records — causing delays, data loss, and poor parent communication.",
+      "solution": "We built a unified platform with role-based dashboards for administrators, teachers, parents, and students — covering attendance, fees, academics, transport, and real-time communication in one product.",
       "results": [
         {
-          "metric": "Clarity",
-          "label": "Simpler progress and routine visibility"
+          "metric": "200+ Schools",
+          "label": "Trusted pilot network across Hyderabad & Bengaluru"
         },
         {
-          "metric": "Engagement",
-          "label": "Stronger habit-oriented interaction design"
+          "metric": "4.9★ Rating",
+          "label": "Exceptional user satisfaction across all roles"
         },
         {
-          "metric": "Continuity",
-          "label": "Better experience across repeated sessions"
+          "metric": "30 Min Onboarding",
+          "label": "Schools go live fast, not in 30 days"
         },
         {
-          "metric": "Readiness",
-          "label": "Release quality improved through QA coverage"
+          "metric": "4 Stakeholders",
+          "label": "Admins, Teachers, Parents & Students — one platform"
         }
       ],
-      "timeline": "Defined during discovery and scope planning",
-      "team": "Cross-functional delivery team tailored to scope",
-      "services": "Mobile Product Development"
+      "timeline": "Ongoing — active development and school onboarding",
+      "team": "Cross-functional product + mobile + backend team",
+      "services": "Full-Stack Mobile Product Development",
+      "featured": true
     },
     {
       "slug": "workora",
@@ -318,6 +205,239 @@
       "featured": true
     },
     {
+      "slug": "spendscanr",
+      "title": "SpendScanr",
+      "category": "Mobile",
+      "emoji": "SS",
+      "tags": [
+        "Flutter",
+        "Finance",
+        "Expense Tracking",
+        "Mobile"
+      ],
+      "image": "/images/portfolio/spendscanr/cover-spendscanr.webp",
+      "description": "A privacy-first personal finance app for tracking transactions, viewing spending analytics, exporting reports, and customizing settings.",
+      "result": "Expense Tracking Product",
+      "overview": "SpendScanr is a mobile finance product that helps users log transactions, understand balances, review analytics, export reports, and control local-first privacy settings.",
+      "challenge": "Users needed a simple spending tracker that made money activity visible without adding heavy accounting workflows or confusing configuration.",
+      "solution": "We shaped a dark-mode-first finance experience with overview cards, searchable transactions, analytics export, category and currency settings, theme controls, and privacy-focused storage.",
+      "results": [
+        {
+          "metric": "Overview",
+          "label": "Balance, income, expenses, and recent activity"
+        },
+        {
+          "metric": "Transactions",
+          "label": "Searchable income and expense logging"
+        },
+        {
+          "metric": "Analytics",
+          "label": "Portable spending reports and summaries"
+        },
+        {
+          "metric": "Privacy",
+          "label": "Local-first controls with simple settings"
+        }
+      ],
+      "timeline": "Case-study product direction and screen system",
+      "team": "Product strategy, UX, mobile UI, and QA review",
+      "services": "Mobile Product Design and Development",
+      "featured": true
+    },
+    {
+      "slug": "healthtrack-app",
+      "title": "HealthTrack App",
+      "category": "Mobile",
+      "emoji": "🏃",
+      "tags": [
+        "React Native",
+        "Firebase",
+        "AI"
+      ],
+      "image": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=600&fit=crop",
+      "description": "A health companion app with personalized guidance and wearable integrations.",
+      "result": "Mobile Experience Delivered",
+      "overview": "We built a user-focused health companion app designed for everyday tracking, clarity, and actionable recommendations.",
+      "challenge": "Existing experience made it hard for users to understand their data and act on it consistently.",
+      "solution": "We designed guided journeys, clean insights surfaces, and strong integration paths for core wearable data sources.",
+      "results": [
+        {
+          "metric": "Usability",
+          "label": "Clearer day-to-day health workflows"
+        },
+        {
+          "metric": "Adoption",
+          "label": "Smoother onboarding and first-use flow"
+        },
+        {
+          "metric": "Integration",
+          "label": "Reliable wearable data synchronization"
+        },
+        {
+          "metric": "Quality",
+          "label": "Tested release process across devices"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Mobile Product Development",
+      "featured": true
+    },
+    {
+      "slug": "fitness-app",
+      "title": "FitLife App",
+      "category": "Mobile",
+      "emoji": "💪",
+      "tags": [
+        "Flutter",
+        "Firebase",
+        "HealthKit"
+      ],
+      "image": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=1200&h=600&fit=crop",
+      "description": "A fitness product combining habit support, progress tracking, and coaching tools.",
+      "result": "Fitness Product Experience Built",
+      "overview": "We created a fitness app experience centered on routines, progress visibility, and long-term user motivation.",
+      "challenge": "Users needed a simpler way to stay consistent without switching between disconnected features and screens.",
+      "solution": "We delivered guided plans, focused progress surfaces, and coaching-oriented UX with wearable-ready data flow.",
+      "results": [
+        {
+          "metric": "Clarity",
+          "label": "Simpler progress and routine visibility"
+        },
+        {
+          "metric": "Engagement",
+          "label": "Stronger habit-oriented interaction design"
+        },
+        {
+          "metric": "Continuity",
+          "label": "Better experience across repeated sessions"
+        },
+        {
+          "metric": "Readiness",
+          "label": "Release quality improved through QA coverage"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Mobile Product Development"
+    },
+    {
+      "slug": "fintech-dashboard",
+      "title": "Fintech Dashboard",
+      "category": "Web",
+      "emoji": "📊",
+      "tags": [
+        "React",
+        "Node.js",
+        "PostgreSQL"
+      ],
+      "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop",
+      "description": "A trading operations platform with real-time monitoring and portfolio workflows.",
+      "result": "Platform Modernization Delivered",
+      "overview": "We partnered with the client to build a modern trading operations platform focused on reliability, usability, and maintainability.",
+      "challenge": "Legacy modules created operational friction, inconsistent behavior, and limited extensibility for new workflows.",
+      "solution": "We implemented a modular service architecture, real-time event flows, and a streamlined frontend experience aligned to day-to-day operations.",
+      "results": [
+        {
+          "metric": "Reliability",
+          "label": "Stable core workflows in production"
+        },
+        {
+          "metric": "Scalability",
+          "label": "Architecture prepared for growth"
+        },
+        {
+          "metric": "Security",
+          "label": "Hardened access and data handling"
+        },
+        {
+          "metric": "Maintainability",
+          "label": "Cleaner code boundaries and ownership"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Full-Stack Development",
+      "featured": true
+    },
+    {
+      "slug": "ecommerce-platform",
+      "title": "E-Commerce Platform",
+      "category": "Web",
+      "emoji": "🛍️",
+      "tags": [
+        "Next.js",
+        "Stripe",
+        "Tailwind"
+      ],
+      "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&h=600&fit=crop",
+      "description": "A unified commerce experience with streamlined checkout and catalog management.",
+      "result": "Commerce Platform Implemented",
+      "overview": "We delivered a modern commerce platform that unifies storefront, product operations, and checkout journeys.",
+      "challenge": "Previous storefront and backend flows were fragmented, causing operational overhead and inconsistent customer experience.",
+      "solution": "We implemented a headless architecture with structured APIs, clearer checkout steps, and improved operational tooling.",
+      "results": [
+        {
+          "metric": "Checkout",
+          "label": "Simplified purchase flow architecture"
+        },
+        {
+          "metric": "Operations",
+          "label": "Improved catalog and order workflows"
+        },
+        {
+          "metric": "Reliability",
+          "label": "More resilient storefront behavior"
+        },
+        {
+          "metric": "Extensibility",
+          "label": "Foundation ready for new features"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "Commerce Engineering",
+      "featured": true
+    },
+    {
+      "slug": "logistics-ai",
+      "title": "Logistics AI",
+      "category": "AI/ML",
+      "emoji": "🤖",
+      "tags": [
+        "Python",
+        "TensorFlow",
+        "AWS"
+      ],
+      "image": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&h=600&fit=crop",
+      "description": "A logistics intelligence platform for route planning and delivery operations.",
+      "result": "AI Workflow Integrated",
+      "overview": "We implemented an operations intelligence layer to support planning teams with better route and dispatch decisions.",
+      "challenge": "Planning depended on fragmented tools and manual coordination across dynamic operational constraints.",
+      "solution": "We built a decision-support workflow with model-assisted planning, transparent controls, and operational auditability.",
+      "results": [
+        {
+          "metric": "Planning",
+          "label": "More consistent route decision flow"
+        },
+        {
+          "metric": "Visibility",
+          "label": "Improved operational tracking context"
+        },
+        {
+          "metric": "Automation",
+          "label": "Reduced repetitive manual planning steps"
+        },
+        {
+          "metric": "Governance",
+          "label": "Clearer review and override controls"
+        }
+      ],
+      "timeline": "Defined during discovery and scope planning",
+      "team": "Cross-functional delivery team tailored to scope",
+      "services": "AI Product Engineering"
+    },
+    {
       "slug": "saas-dashboard",
       "title": "SaaS Analytics",
       "category": "Web",
@@ -354,86 +474,6 @@
       "timeline": "Defined during discovery and scope planning",
       "team": "Cross-functional delivery team tailored to scope",
       "services": "Data Platform Engineering"
-    },
-    {
-      "slug": "focus-today",
-      "title": "Focus Today",
-      "category": "Mobile",
-      "emoji": "📰",
-      "tags": [
-        "Flutter",
-        "Firebase",
-        "Android",
-        "Web"
-      ],
-      "image": "/images/portfolio/focus-today/cover-screenshots.webp",
-      "description": "A civic-first mobile news platform with multilingual onboarding, live updates, and cross-device access.",
-      "result": "Live Web + Android Experience",
-      "overview": "Focus Today is a Flutter + Firebase product designed to publish verified civic content, emergency updates, and public-interest stories for regional audiences.",
-      "challenge": "The team needed a stable, multilingual, mobile-first publishing experience that remained simple for users while supporting high-volume content delivery.",
-      "solution": "We implemented a focused product architecture with OTP onboarding, structured feed/discovery patterns, configurable settings, and deployment-ready web/android access.",
-      "results": [
-        {
-          "metric": "Multilingual UX",
-          "label": "Localized onboarding and navigation flow"
-        },
-        {
-          "metric": "Civic Feed",
-          "label": "Story + PDF-ready content presentation"
-        },
-        {
-          "metric": "Realtime",
-          "label": "Firebase-backed update delivery model"
-        },
-        {
-          "metric": "Device Reach",
-          "label": "Live web and Android distribution links"
-        }
-      ],
-      "timeline": "Defined during discovery and scope planning",
-      "team": "Cross-functional delivery team tailored to scope",
-      "services": "Mobile Product Development",
-      "featured": true
-    },
-    {
-      "slug": "school-desk",
-      "title": "SchoolDesk",
-      "category": "Mobile",
-      "emoji": "🏫",
-      "tags": [
-        "Flutter",
-        "Next.js",
-        "Supabase",
-        "Firebase"
-      ],
-      "image": "/images/portfolio/school-desk/cover-schooldesk.webp",
-      "description": "A full-stack school management platform connecting administrators, teachers, parents, and students in one unified system.",
-      "result": "Live Multi-Stakeholder Platform",
-      "overview": "SchoolDesk is a comprehensive school management platform built to digitize academics, finance, transport, and communication for 200+ schools. Trusted by pilot schools in Hyderabad & Bengaluru.",
-      "challenge": "Schools were relying on fragmented tools — spreadsheets, WhatsApp groups, and paper records — causing delays, data loss, and poor parent communication.",
-      "solution": "We built a unified platform with role-based dashboards for administrators, teachers, parents, and students — covering attendance, fees, academics, transport, and real-time communication in one product.",
-      "results": [
-        {
-          "metric": "200+ Schools",
-          "label": "Trusted pilot network across Hyderabad & Bengaluru"
-        },
-        {
-          "metric": "4.9★ Rating",
-          "label": "Exceptional user satisfaction across all roles"
-        },
-        {
-          "metric": "30 Min Onboarding",
-          "label": "Schools go live fast, not in 30 days"
-        },
-        {
-          "metric": "4 Stakeholders",
-          "label": "Admins, Teachers, Parents & Students — one platform"
-        }
-      ],
-      "timeline": "Ongoing — active development and school onboarding",
-      "team": "Cross-functional product + mobile + backend team",
-      "services": "Full-Stack Mobile Product Development",
-      "featured": true
     },
     {
       "slug": "focusflow",

@@ -1,0 +1,200 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'SpendScanr';
+const contactUrl = '/contact';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/spendscanr/screenshots/screen-03.webp',
+    alt: 'SpendScanr overview screen with balance, income, expenses, top spending, and recent transactions',
+    title: 'Track Every Rupee',
+    caption: 'The overview screen brings balance, income, expenses, top spending, and recent activity into one glance.',
+    displayClass: 'spendscanr-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/spendscanr/screenshots/screen-05.webp',
+    alt: 'SpendScanr transactions screen with search, filters, and quick add',
+    title: 'Log Transactions Fast',
+    caption: 'Search, filters, and a floating add action keep income and expense logging quick.',
+    displayClass: 'spendscanr-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/spendscanr/screenshots/screen-01.webp',
+    alt: 'SpendScanr analytics export screen with PDF and sharing options',
+    title: 'Export Clear Insights',
+    caption: 'Analytics can become portable reports through PDF export and sharing controls.',
+    displayClass: 'spendscanr-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/spendscanr/screenshots/screen-02.webp',
+    alt: 'SpendScanr settings screen with categories, currency, transactions, storage, and privacy',
+    title: 'Control Every Detail',
+    caption: 'Categories, currency, storage, privacy, and transaction reset actions stay in a simple settings hub.',
+    displayClass: 'spendscanr-showcase-poster',
+  },
+  {
+    src: '/images/portfolio/spendscanr/screenshots/screen-04.webp',
+    alt: 'SpendScanr personalization screen with Google sync, appearance mode, and color themes',
+    title: 'Personalize Your Style',
+    caption: 'Appearance, themes, and optional Google sync make the finance tool feel personal while staying practical.',
+    displayClass: 'spendscanr-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Financial Overview',
+    description: 'A dark, focused dashboard gives users balance, income, expenses, top spending, and recent activity at a glance.',
+  },
+  {
+    icon: '02',
+    title: 'Transaction Logging',
+    description: 'Search, filters, income and expense tabs, and quick add actions support fast daily transaction capture.',
+  },
+  {
+    icon: '03',
+    title: 'Analytics Export',
+    description: 'Reports and summaries can be exported as PDF or shared so insights are not trapped inside the app.',
+  },
+  {
+    icon: '04',
+    title: 'Category Control',
+    description: 'Custom categories and currency preferences let users structure spending around their real habits.',
+  },
+  {
+    icon: '05',
+    title: 'Theme Personalization',
+    description: 'Light, dark, system appearance, and color theme controls help users tune the product visually.',
+  },
+  {
+    icon: '06',
+    title: 'Privacy-First Storage',
+    description: 'Local-first storage and clear privacy controls support a simple, trusted finance experience.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/spendscanr/screenshots/screen-03.webp',
+    alt: 'SpendScanr overview dashboard',
+    title: 'Start With the Money Snapshot',
+    description: 'The overview screen gives users a fast financial health check before they dive into details.',
+  },
+  {
+    image: '/images/portfolio/spendscanr/screenshots/screen-05.webp',
+    alt: 'SpendScanr transactions screen',
+    title: 'Log and Find Transactions',
+    description: 'Transactions can be searched, filtered, and added without making the core workflow feel heavy.',
+  },
+  {
+    image: '/images/portfolio/spendscanr/screenshots/screen-01.webp',
+    alt: 'SpendScanr analytics export screen',
+    title: 'Make Insights Portable',
+    description: 'Analytics and spending summaries can be exported or shared whenever users need a report.',
+  },
+  {
+    image: '/images/portfolio/spendscanr/screenshots/screen-02.webp',
+    alt: 'SpendScanr settings and privacy screen',
+    title: 'Control Finance Details',
+    description: 'Settings cover categories, currency, storage, privacy, transaction counts, and reset controls.',
+  },
+  {
+    image: '/images/portfolio/spendscanr/screenshots/screen-04.webp',
+    alt: 'SpendScanr personalization screen',
+    title: 'Personalize the Experience',
+    description: 'Theme and sync preferences help users tailor the app while keeping finance data understandable.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product direction keeps expense tracking fast enough for daily use and clear enough for repeated review.',
+    name: 'Product Strategy',
+    role: 'Personal finance workflow',
+  },
+  {
+    quote: 'The navigation mirrors the mental model: overview first, transactions next, analytics when needed, settings when configuring.',
+    name: 'UX Architecture',
+    role: 'Finance app structure',
+  },
+  {
+    quote: 'Dark mode, bold totals, and simple cards help the finance data feel readable without becoming spreadsheet-like.',
+    name: 'Interface System',
+    role: 'Privacy-first finance UI',
+  },
+];
+---
+
+<BaseLayout
+  title="SpendScanr"
+  description="SpendScanr case study: a mobile expense tracking app for financial overview, transaction logging, spending analytics, report export, customization, and privacy-first settings."
+  ogImage="/images/portfolio/spendscanr/cover-spendscanr.webp"
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Finance Product"
+    tagline="A privacy-first spending tracker that helps users log transactions, understand balances, export reports, and personalize their finance workspace."
+    heroImage="/images/portfolio/spendscanr/screenshots/screen-03.webp"
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Financial overview, transaction logging, analytics export, custom categories, currency settings, theme controls, and local-first privacy in one mobile product."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="SpendScanr Screens for Everyday Expense Tracking"
+    description="The SpendScanr screenshots are arranged from overview and transactions through analytics export, privacy settings, and visual personalization."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Simple, Private Money Tracking"
+    description="SpendScanr combines fast daily transaction capture with clear analytics, export controls, customization, and privacy-first storage."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Spending Snapshot to Shareable Report"
+    description="Scroll through the core SpendScanr journey: review the overview, log transactions, export analytics, configure details, and personalize the app."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind SpendScanr"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Finance Tracking App"
+    description="Use this SpendScanr direction as a reference for expense tracking, analytics exports, local-first storage, and mobile-first finance workflows."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">SpendScanr by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
