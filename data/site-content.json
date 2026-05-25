@@ -125,22 +125,22 @@
       "featured": true
     },
     {
-      "slug": "workora",
-      "title": "Workora",
+      "slug": "techmigos-hub",
+      "title": "TechMigos Hub",
       "category": "Mobile",
-      "emoji": "WO",
+      "emoji": "TH",
       "tags": [
         "Flutter",
         "Team Productivity",
         "Task Management",
         "Mobile"
       ],
-      "image": "/images/portfolio/workora/cover-workora.webp",
-      "description": "A role-driven productivity app for projects, tasks, collaboration, files, permissions, and team visibility.",
+      "image": "/images/portfolio/techmigos-hub/cover-techmigos-hub.png",
+      "description": "A role-driven productivity app for secure company login, projects, tasks, discussion, settings, and team visibility.",
       "result": "Role-Driven Work Platform",
-      "overview": "Workora is a mobile productivity platform that keeps dashboards, projects, tasks, discussions, files, and role-based workspace controls in one clear team app.",
+      "overview": "TechMigos Hub is a mobile productivity platform that keeps secure login, dashboards, projects, tasks, discussions, files, settings, and role-based workspace controls in one clear team app.",
       "challenge": "Teams needed a cleaner way to coordinate work without splitting ownership, updates, files, and permissions across disconnected tools.",
-      "solution": "We shaped Workora around a mobile-first workflow with dashboard visibility, project tracking, task states, task details, real-time discussion, file handling, and role-aware administration.",
+      "solution": "We shaped TechMigos Hub around a mobile-first workflow with company login, project tracking, task states, task details, real-time discussion, file handling, settings, and role-aware administration.",
       "results": [
         {
           "metric": "Dashboard",

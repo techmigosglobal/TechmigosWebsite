@@ -1,0 +1,236 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'TechMigos Hub';
+const contactUrl = '/contact';
+const imageBase = '/images/portfolio/techmigos-hub';
+
+const showcaseSlides = [
+  {
+    src: `${imageBase}/screenshots/screen-01-login.png`,
+    alt: 'TechMigos Hub login and company login ID screens',
+    title: 'Secure Login',
+    caption: 'Get started securely with company login, role-driven access, and fast onboarding into the workspace.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-02-projects.png`,
+    alt: 'TechMigos Hub projects screen with search, filters, progress, and team visibility',
+    title: 'Projects',
+    caption: 'Search active projects, filter by status, scan progress, and see team ownership at a glance.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-03-tasks.png`,
+    alt: 'TechMigos Hub all tasks screen with priority labels and quick create action',
+    title: 'Tasks',
+    caption: 'Review all tasks, to-do work, completed items, priority labels, and quick task creation in one flow.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-05-discussion.png`,
+    alt: 'TechMigos Hub discussion screen with channels, mentions, files, and instant chat',
+    title: 'Discussion',
+    caption: 'Keep channels, direct messages, mentions, files, and team conversations connected to daily work.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-06-settings.png`,
+    alt: 'TechMigos Hub settings screen with appearance, notifications, and admin tools',
+    title: 'Settings',
+    caption: 'Control appearance, notifications, account preferences, administration, billing, and audit tools cleanly.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-07-dashboard.png`,
+    alt: 'TechMigos Hub dashboard and notifications overview',
+    title: 'Dashboard',
+    caption: 'Monitor projects, overdue work, live metrics, and weekly activity from one clean dashboard.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-04-task-detail.png`,
+    alt: 'TechMigos Hub task detail screens with status, activity, files, and details',
+    title: 'Task Detail',
+    caption: 'Update status, review activity, access files, and take action from one organized view.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-08-leaders.png`,
+    alt: 'TechMigos Hub leader and team role management screens',
+    title: 'Leaders and Teams',
+    caption: 'Manage users, roles, permissions, and organization details from one elegant workspace.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-09-actions.png`,
+    alt: 'TechMigos Hub task action sheet for edit, PDF export, approval, rejection, and deletion',
+    title: 'Quick Actions',
+    caption: 'Edit tasks, download PDFs, approve work, reject requests, and manage decisions in one tap.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+  {
+    src: `${imageBase}/screenshots/screen-10-message-control.png`,
+    alt: 'TechMigos Hub delete message confirmation in discussion',
+    title: 'Message Control',
+    caption: 'Delete accidental or outdated messages with clear confirmation and secure control.',
+    displayClass: 'techmigos-hub-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Role-Driven Access',
+    description: 'Company login, roles, and permissions help each user land in the right workspace with the right controls.',
+  },
+  {
+    icon: '02',
+    title: 'Project Clarity',
+    description: 'Search, filters, progress cards, dates, and team visibility make project status easy to scan.',
+  },
+  {
+    icon: '03',
+    title: 'Task Management',
+    description: 'Priority labels, task states, quick create, task detail, activity, attachments, and exports keep work moving.',
+  },
+  {
+    icon: '04',
+    title: 'Realtime Discussion',
+    description: 'Channels, mentions, file sharing, message replies, and confirmation prompts keep collaboration tidy.',
+  },
+  {
+    icon: '05',
+    title: 'Admin Controls',
+    description: 'Appearance, notifications, user management, billing, audit logs, and company settings are grouped clearly.',
+  },
+  {
+    icon: '06',
+    title: 'Live Metrics',
+    description: 'Dashboard stats surface employees, active projects, completed tasks, overdue work, and weekly activity.',
+  },
+];
+
+const storySteps = [
+  {
+    image: `${imageBase}/screenshots/screen-01-login.png`,
+    alt: 'TechMigos Hub secure login screens',
+    title: 'Start Securely',
+    description: 'The first screen guides users through company login and role-driven access before they enter the workspace.',
+  },
+  {
+    image: `${imageBase}/screenshots/screen-02-projects.png`,
+    alt: 'TechMigos Hub projects screen',
+    title: 'Organize Projects',
+    description: 'Project cards show progress, task counts, team presence, due dates, and status filters for quick planning.',
+  },
+  {
+    image: `${imageBase}/screenshots/screen-03-tasks.png`,
+    alt: 'TechMigos Hub tasks screen',
+    title: 'Track Every Task',
+    description: 'Teams can filter by priority, review clean task states, and create new tasks without leaving the workflow.',
+  },
+  {
+    image: `${imageBase}/screenshots/screen-05-discussion.png`,
+    alt: 'TechMigos Hub discussion channels',
+    title: 'Collaborate in Real Time',
+    description: 'Channels, mentions, shared files, and instant chat keep conversations connected to team work.',
+  },
+  {
+    image: `${imageBase}/screenshots/screen-06-settings.png`,
+    alt: 'TechMigos Hub settings screen',
+    title: 'Control Settings',
+    description: 'Admins can personalize the workspace, configure notification preferences, and manage system tools.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The product sequence begins with secure onboarding, then moves directly into projects, tasks, discussion, and settings.',
+    name: 'Flow Design',
+    role: 'Ordered mobile journey',
+  },
+  {
+    quote: 'Each poster screen uses the same visual height so the showcase feels intentional while preserving the phone UI details.',
+    name: 'Presentation System',
+    role: 'Equal-height screen layout',
+  },
+  {
+    quote: 'The app language stays practical: live metrics, smart filters, priority labels, real-time channels, and admin tools.',
+    name: 'Content Direction',
+    role: 'Description from product screens',
+  },
+];
+---
+
+<BaseLayout
+  title="TechMigos Hub"
+  description="TechMigos Hub case study: a role-driven mobile productivity platform for secure login, projects, tasks, discussion, settings, admin tools, and team visibility."
+  ogImage={`${imageBase}/cover-techmigos-hub.png`}
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Mobile Productivity Platform"
+    tagline="A role-driven work app for secure login, project clarity, task tracking, real-time discussion, settings, and admin control."
+    heroImage={`${imageBase}/screenshots/screen-01-login.png`}
+    webUrl={contactUrl}
+    primaryLabel="Discuss Similar Build"
+    supportText="Company login, progress tracking, priority labels, channels, mentions, notifications, admin tools, and live metrics for modern teams."
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="App Showcase"
+    title="TechMigos Hub Screens in Product Order"
+    description="The screens are arranged from login to projects, tasks, discussion, settings, and supporting admin workflows with equal-height poster framing."
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Teams That Need Clear Ownership"
+    description="TechMigos Hub combines project visibility, task control, real-time collaboration, settings, and role-aware administration in one mobile workspace."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={contactUrl}
+    eyebrow="Product Narrative"
+    title="From Secure Login to Workspace Control"
+    description="Scroll through the core TechMigos Hub journey: sign in, organize projects, track tasks, collaborate in discussion, and manage settings."
+    accessEyebrow="Project Inquiry"
+    primaryLabel="Start a Similar Project"
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind TechMigos Hub"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Team Productivity App"
+    description="Use this TechMigos Hub direction as a reference for role-driven productivity, task lifecycle tracking, project visibility, collaboration, settings, and mobile-first operations."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">TechMigos Hub by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
