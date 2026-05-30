@@ -75,8 +75,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         error?.classList.remove('hidden');
         if (error) {
           error.textContent = result.error || (response.status === 404
-            ? 'Admin login API is unavailable in this deployment.'
-            : 'Invalid username or password.');
+            ? 'Admin login API is unavailable in this deployment.' :'Invalid username or password.');
         }
         return;
       }

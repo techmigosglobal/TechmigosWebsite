@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
-import AppLogo from '@/components/ui/AppLogo';
-import AppImage from '@/components/ui/AppImage';
-import Icon from '@/components/ui/AppIcon';
+import { useAuth } from '../../contexts/AuthContext';
+import { createClient } from '../../lib/supabase/client';
+import AppLogo from '../../components/ui/AppLogo';
+import AppImage from '../../components/ui/AppImage';
+import Icon from '../../components/ui/AppIcon';
 
 interface FeatureItem {
   text: string;
@@ -634,8 +634,7 @@ export default function AdminPage() {
                           onClick={() => setAddSectionData((p) => ({ ...p, icon: iconName }))}
                           className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all duration-150 ${
                             addSectionData.icon === iconName
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                              ? 'bg-primary/10 border-primary text-primary' :'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                           }`}
                           title={iconName}
                         >
@@ -881,8 +880,7 @@ export default function AdminPage() {
                           onClick={() => setEditData((p) => ({ ...p, icon: iconName }))}
                           className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all duration-150 ${
                             editData.icon === iconName
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                              ? 'bg-primary/10 border-primary text-primary' :'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                           }`}
                           title={iconName}
                         >

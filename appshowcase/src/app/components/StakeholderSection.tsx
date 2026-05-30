@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, memo } from 'react';
-import Icon from '@/components/ui/AppIcon';
-import AppImage from '@/components/ui/AppImage';
+import Icon from '../../components/ui/AppIcon';
+import AppImage from '../../components/ui/AppImage';
 
 const stakeholders = [
   {
@@ -65,7 +65,7 @@ const stakeholders = [
 
     image: '/showcase/assets/images/generated/stakeholder-parent.webp',
     imageAlt:
-      "Parent happily reviewing their child's school progress on a smartphone in a bright home environment",
+      "Parent happily reviewing their child\'s school progress on a smartphone in a bright home environment",
     accent: '#10B981',
     flip: false,
   },

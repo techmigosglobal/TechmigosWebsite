@@ -13,8 +13,7 @@ function insert_contact_lead(array $payload, string $ipAddress, string $userAgen
         ) VALUES (
             :name, :email, :company, :service, :budget, :message,
             :status, :priority, :assigned_to, :next_followup_at,
-            :ip_address, :user_agent, ' . $nowExpression . ', ' . $nowExpression . '
-        )'
+            :ip_address, :user_agent, '. $nowExpression . ', ' . $nowExpression . ' )'
     );
 
     $stmt->execute([
@@ -42,8 +41,7 @@ function insert_newsletter_lead(string $email, string $ipAddress, string $userAg
             ip_address, user_agent, created_at, updated_at
         ) VALUES (
             :email, :status, :priority, :assigned_to, :next_followup_at,
-            :ip_address, :user_agent, ' . $nowExpression . ', ' . $nowExpression . '
-        )'
+            :ip_address, :user_agent, '. $nowExpression . ', ' . $nowExpression . ' )'
     );
 
     $stmt->execute([
@@ -100,8 +98,7 @@ function insert_career_application(array $payload, array $upload, string $ipAddr
             :ip_address,
             :user_agent,
             ' . $nowExpression . ',
-            ' . $nowExpression . '
-        )'
+            ' . $nowExpression . ' )'
     );
 
     $stmt->execute([

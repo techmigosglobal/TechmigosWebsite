@@ -1,18 +1,18 @@
 'use client';
 
 import React from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import HeroSection from '@/app/components/HeroSection';
-import WhatsAppButton from '@/app/components/WhatsAppButton';
-import ShowcaseSection from '@/app/components/ShowcaseSection';
-import StakeholderSection from '@/app/components/StakeholderSection';
-import HowItWorksSection from '@/app/components/HowItWorksSection';
-import FounderStripSection from '@/app/components/FounderStripSection';
-import PilotSchoolBadge from '@/app/components/PilotSchoolBadge';
-import DemoRequestForm from '@/app/components/DemoRequestForm';
-import FAQSection from '@/app/components/FAQSection';
-import CTAStripSection from '@/app/components/CTAStripSection';
+import Header from '../components/Header';
+import Footer from '../../../src/components/Footer.astro';
+import HeroSection from './components/HeroSection';
+import WhatsAppButton from './components/WhatsAppButton';
+import ShowcaseSection from './components/ShowcaseSection';
+import StakeholderSection from './components/StakeholderSection';
+import HowItWorksSection from './components/HowItWorksSection';
+import FounderStripSection from './components/FounderStripSection';
+import PilotSchoolBadge from './components/PilotSchoolBadge';
+import DemoRequestForm from './components/DemoRequestForm';
+import FAQSection from './components/FAQSection';
+import CTAStripSection from './components/CTAStripSection';
 
 export default function HomePage() {
   return (

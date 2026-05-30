@@ -88,9 +88,7 @@ if [[ "$CURRENT_BRANCH" != "$BRANCH" ]]; then
 fi
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  echo "git status"
-  echo "git add -A"
-  echo "git commit -m \"$COMMIT_MESSAGE\""
+  echo "git status" echo"git add -A" echo"git commit -m \"$COMMIT_MESSAGE\""
   if [[ "$NO_PUSH" -eq 0 ]]; then
     echo "git push $REMOTE $BRANCH"
   fi

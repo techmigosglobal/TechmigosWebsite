@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, memo, useState } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from '../../components/ui/AppIcon';
 
 const contactDetails = [
   {

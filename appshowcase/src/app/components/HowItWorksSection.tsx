@@ -36,7 +36,7 @@ export default function HowItWorksSection() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = containerRef?.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -51,8 +51,8 @@ export default function HowItWorksSection() {
       },
       { threshold: 0.1 }
     );
-    observer.observe(el);
-    return () => observer.disconnect();
+    observer?.observe(el);
+    return () => observer?.disconnect();
   }, []);
 
   return (
@@ -73,27 +73,27 @@ export default function HowItWorksSection() {
 
         {/* Steps — asymmetric bento layout */}
         <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          {steps.map((step, i) => (
+          {steps?.map((step, i) => (
             <div
-              key={step.number}
-              className={`reveal relative rounded-2xl border ${step.border} bg-gradient-to-br ${step.accent} p-6 sm:p-7 flex flex-col gap-4 overflow-hidden group hover:scale-[1.02] transition-transform duration-300`}
+              key={step?.number}
+              className={`reveal relative rounded-2xl border ${step?.border} bg-gradient-to-br ${step?.accent} p-6 sm:p-7 flex flex-col gap-4 overflow-hidden group hover:scale-[1.02] transition-transform duration-300`}
             >
               {/* Step number watermark */}
               <span className="absolute top-3 right-4 text-5xl font-black text-foreground/5 select-none pointer-events-none leading-none">
-                {step.number}
+                {step?.number}
               </span>
 
               {/* Emoji */}
-              <span className="text-3xl">{step.emoji}</span>
+              <span className="text-3xl">{step?.emoji}</span>
 
               {/* Content */}
               <div>
-                <h3 className="text-base font-bold text-foreground mb-1.5">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <h3 className="text-base font-bold text-foreground mb-1.5">{step?.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{step?.description}</p>
               </div>
 
               {/* Connector arrow (not on last) */}
-              {i < steps.length - 1 && (
+              {i < steps?.length - 1 && (
                 <div className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 items-center justify-center rounded-full bg-background border border-border text-muted-foreground text-xs">
                   →
                 </div>

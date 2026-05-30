@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '../lib/supabase/client';
 import type { AuthResponse, Session, User, UserResponse } from '@supabase/supabase-js';
 
 type SupabaseClient = ReturnType<typeof createClient>;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from './AppIcon';
 
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);

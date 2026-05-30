@@ -1,8 +1,8 @@
 'use client';
 
 import React, { memo } from 'react';
-import Icon from '@/components/ui/AppIcon';
-import { smoothScrollTo } from '@/lib/scroll-utils';
+import Icon from '../../components/ui/AppIcon';
+import { smoothScrollTo } from '../../lib/scroll-utils';
 
 const HeroSection = memo(function HeroSection() {
   return (
@@ -73,7 +73,7 @@ const HeroSection = memo(function HeroSection() {
           <a
             href="#demo"
             onClick={(e) => {
-              e.preventDefault();
+              e?.preventDefault();
               smoothScrollTo('demo', 64);
             }}
             className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all duration-200 hover:shadow-xl hover:shadow-primary/25 group"
@@ -89,7 +89,7 @@ const HeroSection = memo(function HeroSection() {
           <a
             href="#showcase"
             onClick={(e) => {
-              e.preventDefault();
+              e?.preventDefault();
               smoothScrollTo('showcase', 64);
             }}
             className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
@@ -114,7 +114,6 @@ const HeroSection = memo(function HeroSection() {
           <span>Trusted by pilot schools in Hyderabad &amp; Bengaluru</span>
         </div>
       </div>
-
       {/* Scroll indicator */}
       <button
         onClick={() => smoothScrollTo('showcase', 64)}
