@@ -1,6 +1,13 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient, type User } from "npm:@supabase/supabase-js@2";
 
+declare const Deno: {
+  env: {
+    get(name: string): string | undefined;
+  };
+  serve(handler: (req: Request) => Promise<Response> | Response): void;
+};
+
 type JsonRecord = Record<string, unknown>;
 type AdminRole = "super_admin" | "admin" | "sales";
 type LeadType = "contact" | "newsletter" | "careers" | "demo";
@@ -104,8 +111,7 @@ function allowedOrigin(origin: string | null) {
 function corsHeaders(req: Request) {
   return {
     "Access-Control-Allow-Origin": allowedOrigin(req.headers.get("origin")),
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-csrf-token",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-csrf-token",
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": "true",
     "Vary": "Origin",
@@ -165,7 +171,7 @@ function stringValue(value: unknown, maxLength = 2000) {
 }
 
 function emailValue(value: unknown) {
-  const email = stringValue(value, 255).toLowerCase();
+  let email = stringValue(value, 255).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "";
   return email;
 }
@@ -259,7 +265,7 @@ async function handleContact(req: Request) {
   const fieldErrors: Record<string, string> = {};
 
   const name = stringValue(body.name, 160);
-  const email = emailValue(body.email);
+  let email = emailValue(body.email);
   const message = stringValue(body.message, 5000);
 
   if (!name) fieldErrors.name = "Name is required.";
@@ -290,7 +296,7 @@ async function handleContact(req: Request) {
 async function handleNewsletter(req: Request) {
   await verifyCsrf(req);
   const body = await readJson(req);
-  const email = emailValue(body.email);
+  let email = emailValue(body.email);
   if (!email) throw new ApiError("A valid email is required.", 422, { email: "Invalid email." });
 
   const supabase = getAdminClient();
@@ -315,7 +321,7 @@ async function handleCareer(req: Request) {
   const fieldErrors: Record<string, string> = {};
   const jobTitle = stringValue(form.get("jobTitle"), 255);
   const name = stringValue(form.get("name"), 160);
-  const email = emailValue(form.get("email"));
+  let email = emailValue(form.get("email"));
   const coverLetter = stringValue(form.get("coverLetter"), 5000);
   const cv = form.get("cv");
 
@@ -411,7 +417,7 @@ function toAdminUser(profile: AdminProfile) {
 }
 
 async function ensureSuperAdminProfile(supabase: SupabaseClient, user: User) {
-  const email = user.email?.toLowerCase() || "";
+  let email = user.email?.toLowerCase() || "";
   if (email !== SUPER_ADMIN_EMAIL) return null;
 
   const { data, error } = await supabase
@@ -952,7 +958,7 @@ async function handleUsers(req: Request, route: string) {
 
   if (req.method === "POST" && !id) {
     const body = await readJson(req);
-    const email = emailValue(body.email);
+    let email = emailValue(body.email);
     const password = stringValue(body.password, 255);
     const fullName = stringValue(body.fullName, 255);
     const username = stringValue(body.username || email.split("@")[0], 120).toLowerCase();

@@ -24,8 +24,7 @@ function isWeakCredential(value: string) {
   return (
     !normalized ||
     normalized === 'admin' ||
-    normalized === 'admin123' ||
-    normalized.includes('replace-with')
+    normalized === 'admin123'|| normalized.includes('replace-with')
   );
 }
 

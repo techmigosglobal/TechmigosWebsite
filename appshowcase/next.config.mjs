@@ -1,8 +1,12 @@
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  basePath: '/showcase',
-  outputFileTracingRoot: new URL('.', import.meta.url).pathname,
+  outputFileTracingRoot: __dirname,
 
   // Remove X-Powered-By header to reduce response size
   poweredByHeader: false,
@@ -15,7 +19,6 @@ const nextConfig = {
   // Compress responses
   compress: true,
 
-  output: 'export',
   images: {
     unoptimized: true,
   },
@@ -23,6 +26,10 @@ const nextConfig = {
   // Optimize package imports to reduce bundle size
   experimental: {
     optimizePackageImports: ['@heroicons/react', 'recharts'],
+  },
+
+  turbopack: {
+    root: __dirname,
   },
 };
 

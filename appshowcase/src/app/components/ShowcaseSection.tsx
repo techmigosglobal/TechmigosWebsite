@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
-import Icon from '@/components/ui/AppIcon';
-import AppImage from '@/components/ui/AppImage';
+import Icon from '../../components/ui/AppIcon';
+import AppImage from '../../components/ui/AppImage';
 
 interface ShowcaseFeature {
   text: string;

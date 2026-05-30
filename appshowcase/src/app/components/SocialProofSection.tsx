@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, memo } from 'react';
-import Icon from '@/components/ui/AppIcon';
-// import AppImage from '@/components/ui/AppImage';
+import Icon from '../../components/ui/AppIcon';
+// import AppImage from '../../components/ui/AppImage';
 
 // const testimonials = [
 // {

@@ -52,8 +52,7 @@ log() {
 }
 
 require_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "Missing required command: $1" >&2
+  if ! command -v "$1" >/dev/null 2>&1; then echo"Missing required command: $1" >&2
     exit 1
   fi
 }
@@ -154,17 +153,13 @@ else
   RSYNC_FLAGS="-az --delete"
 fi
 
-log "Testing SSH connectivity to $REMOTE_ALIAS"
-ssh "$REMOTE_ALIAS" "whoami >/dev/null && pwd >/dev/null"
+log "Testing SSH connectivity to $REMOTE_ALIAS" ssh"$REMOTE_ALIAS" "whoami >/dev/null && pwd >/dev/null"
 
 if [[ "$CHECK_REMOTE_ENV" -eq 1 ]]; then
   log "Checking remote API environment file"
-  if ssh "$REMOTE_ALIAS" "test -f '$REMOTE_WEBROOT/api/.env.php'"; then
-    log "Found remote env file at $REMOTE_WEBROOT/api/.env.php"
+  if ssh "$REMOTE_ALIAS""test -f '$REMOTE_WEBROOT/api/.env.php'"; then log"Found remote env file at $REMOTE_WEBROOT/api/.env.php"
   else
-    echo "No remote $REMOTE_WEBROOT/api/.env.php file detected." >&2
-    echo "If you provide runtime env vars through cPanel/Apache SetEnv, rerun with --skip-env-check." >&2
-    echo "Otherwise create api/.env.php from php-backend/api/.env.php.example before deploying." >&2
+    echo "No remote $REMOTE_WEBROOT/api/.env.php file detected." >&2 echo"If you provide runtime env vars through cPanel/Apache SetEnv, rerun with --skip-env-check.">&2 echo"Otherwise create api/.env.php from php-backend/api/.env.php.example before deploying." >&2
     exit 1
   fi
 fi
@@ -175,16 +170,10 @@ if ssh "$REMOTE_ALIAS" "command -v rsync >/dev/null 2>&1"; then
 fi
 
 if [[ "$REMOTE_HAS_RSYNC" -eq 1 ]]; then
-  log "Remote rsync detected: using rsync sync mode"
-
-  log "Syncing static frontend to $REMOTE_ALIAS:$REMOTE_WEBROOT"
+  log "Remote rsync detected: using rsync sync mode" log"Syncing static frontend to $REMOTE_ALIAS:$REMOTE_WEBROOT"
   # Keep backend/runtime directories safe during static sync.
   rsync $RSYNC_FLAGS \
-    --exclude "api/" \
-    --exclude "storage/" \
-    "$STATIC_DIR/" "$REMOTE_ALIAS:$REMOTE_WEBROOT/"
-
-  log "Syncing PHP API backend"
+    --exclude "api/" --exclude"storage/" "$STATIC_DIR/""$REMOTE_ALIAS:$REMOTE_WEBROOT/" log"Syncing PHP API backend"
   rsync $RSYNC_FLAGS \
     php-backend/api/ "$REMOTE_ALIAS:$REMOTE_WEBROOT/api/"
 else
@@ -192,15 +181,10 @@ else
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "ssh $REMOTE_ALIAS \"mkdir -p '$REMOTE_WEBROOT' && find '$REMOTE_WEBROOT' -mindepth 1 -maxdepth 1 ! -name api ! -name storage -exec rm -rf {} +\""
-    echo "tar -C $STATIC_DIR -cf - . | ssh $REMOTE_ALIAS \"tar -C '$REMOTE_WEBROOT' -xf -\""
-    echo "ssh $REMOTE_ALIAS \"rm -rf '$REMOTE_WEBROOT/api' && mkdir -p '$REMOTE_WEBROOT/api'\""
-    echo "tar -C php-backend/api -cf - . | ssh $REMOTE_ALIAS \"tar -C '$REMOTE_WEBROOT/api' -xf -\""
+    echo "tar -C $STATIC_DIR -cf - . | ssh $REMOTE_ALIAS \"tar -C '$REMOTE_WEBROOT' -xf -\"" echo"ssh $REMOTE_ALIAS \"rm -rf '$REMOTE_WEBROOT/api' && mkdir -p '$REMOTE_WEBROOT/api'\"" echo"tar -C php-backend/api -cf - . | ssh $REMOTE_ALIAS \"tar -C '$REMOTE_WEBROOT/api' -xf -\""
   else
     ssh "$REMOTE_ALIAS" "mkdir -p '$REMOTE_WEBROOT' && find '$REMOTE_WEBROOT' -mindepth 1 -maxdepth 1 ! -name api ! -name storage -exec rm -rf {} +"
-    tar -C "$STATIC_DIR" -cf - . | ssh "$REMOTE_ALIAS" "tar -C '$REMOTE_WEBROOT' -xf -"
-
-    ssh "$REMOTE_ALIAS" "rm -rf '$REMOTE_WEBROOT/api' && mkdir -p '$REMOTE_WEBROOT/api'"
-    tar -C php-backend/api -cf - . | ssh "$REMOTE_ALIAS" "tar -C '$REMOTE_WEBROOT/api' -xf -"
+    tar -C "$STATIC_DIR"-cf - . | ssh "$REMOTE_ALIAS" "tar -C '$REMOTE_WEBROOT' -xf -" ssh"$REMOTE_ALIAS""rm -rf '$REMOTE_WEBROOT/api' && mkdir -p '$REMOTE_WEBROOT/api'" tar -C php-backend/api -cf - . | ssh"$REMOTE_ALIAS" "tar -C '$REMOTE_WEBROOT/api' -xf -"
   fi
 fi
 
@@ -231,8 +215,7 @@ if [[ "$IMPORT_SCHEMA" -eq 1 ]]; then
   if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "ssh -t $REMOTE_ALIAS mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p $DB_NAME < $SCHEMA_REMOTE"
   else
-    ssh -t "$REMOTE_ALIAS" "mysql -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p '$DB_NAME' < '$SCHEMA_REMOTE'"
-    ssh "$REMOTE_ALIAS" "rm -f '$SCHEMA_REMOTE'"
+    ssh -t "$REMOTE_ALIAS" "mysql -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p '$DB_NAME' < '$SCHEMA_REMOTE'" ssh"$REMOTE_ALIAS" "rm -f '$SCHEMA_REMOTE'"
   fi
 fi
 
@@ -266,8 +249,7 @@ if [[ "$RUN_SMOKE" -eq 1 ]]; then
 
     csrf_status="$(curl -sS -c "$cookie_file" -o "$csrf_response_file" -w '%{http_code}' "https://$DOMAIN/api/csrf")"
     if [[ "$csrf_status" != "200" ]]; then
-      echo "CSRF smoke check failed with status $csrf_status" >&2
-      cat "$csrf_response_file" >&2 || true
+      echo "CSRF smoke check failed with status $csrf_status">&2 cat"$csrf_response_file" >&2 || true
       exit 1
     fi
 
@@ -285,53 +267,45 @@ if [[ "$RUN_SMOKE" -eq 1 ]]; then
 
     csrf_token="$(sed -n 's/.*"token":"\([^"]*\)".*/\1/p' "$csrf_response_file" | head -n1)"
     if [[ -z "$csrf_token" ]]; then
-      echo "CSRF smoke check failed: token missing in response" >&2
-      cat "$csrf_response_file" >&2 || true
+      echo "CSRF smoke check failed: token missing in response">&2 cat"$csrf_response_file" >&2 || true
       exit 1
     fi
 
     contact_status="$(curl -sS -b "$cookie_file" -o "$contact_response_file" -w '%{http_code}' -X POST "https://$DOMAIN/api/leads/contact" -H "Content-Type: application/json" -H "x-csrf-token: $csrf_token" -d '{}')"
     if [[ "$contact_status" != "400" ]]; then
-      echo "Contact validation smoke check failed with status $contact_status" >&2
-      cat "$contact_response_file" >&2 || true
-      if grep -q "Database is not configured" "$contact_response_file"; then
-        echo "Hint: Configure DB env vars in cPanel or create $REMOTE_WEBROOT/api/.env.php from php-backend/api/.env.php.example" >&2
+      echo "Contact validation smoke check failed with status $contact_status">&2 cat"$contact_response_file" >&2 || true
+      if grep -q "Database is not configured""$contact_response_file"; then echo"Hint: Configure DB env vars in cPanel or create $REMOTE_WEBROOT/api/.env.php from php-backend/api/.env.php.example" >&2
       fi
       exit 1
     fi
 
     newsletter_status="$(curl -sS -b "$cookie_file" -o "$newsletter_response_file" -w '%{http_code}' -X POST "https://$DOMAIN/api/leads/newsletter" -H "Content-Type: application/json" -H "x-csrf-token: $csrf_token" -d '{}')"
     if [[ "$newsletter_status" != "400" ]]; then
-      echo "Newsletter validation smoke check failed with status $newsletter_status" >&2
-      cat "$newsletter_response_file" >&2 || true
+      echo "Newsletter validation smoke check failed with status $newsletter_status">&2 cat"$newsletter_response_file" >&2 || true
       exit 1
     fi
 
     careers_status="$(curl -sS -b "$cookie_file" -o "$careers_response_file" -w '%{http_code}' -X POST "https://$DOMAIN/api/leads/careers" -H "x-csrf-token: $csrf_token" -F "jobTitle=Backend Engineer" -F "name=Smoke Test" -F "email=smoke.test@example.com" -F "coverLetter=short")"
     if [[ "$careers_status" != "400" ]]; then
-      echo "Careers validation smoke check failed with status $careers_status" >&2
-      cat "$careers_response_file" >&2 || true
+      echo "Careers validation smoke check failed with status $careers_status">&2 cat"$careers_response_file" >&2 || true
       exit 1
     fi
 
     admin_me_status="$(curl -sS -o "$admin_me_response_file" -w '%{http_code}' "https://$DOMAIN/api/admin/auth/me")"
     if [[ "$admin_me_status" != "401" ]]; then
-      echo "Admin auth/me smoke check failed with status $admin_me_status (expected 401)" >&2
-      cat "$admin_me_response_file" >&2 || true
+      echo "Admin auth/me smoke check failed with status $admin_me_status (expected 401)">&2 cat"$admin_me_response_file" >&2 || true
       exit 1
     fi
 
     admin_leads_status="$(curl -sS -o "$admin_leads_response_file" -w '%{http_code}' "https://$DOMAIN/api/admin/leads")"
     if [[ "$admin_leads_status" != "401" ]]; then
-      echo "Admin leads auth smoke check failed with status $admin_leads_status (expected 401)" >&2
-      cat "$admin_leads_response_file" >&2 || true
+      echo "Admin leads auth smoke check failed with status $admin_leads_status (expected 401)">&2 cat"$admin_leads_response_file" >&2 || true
       exit 1
     fi
 
     admin_login_status="$(curl -sS -o "$admin_login_response_file" -w '%{http_code}' -X POST "https://$DOMAIN/api/admin/auth/login" -H "Content-Type: application/json" -d '{"username":"invalid","password":"invalid"}')"
     if [[ "$admin_login_status" != "401" ]]; then
-      echo "Admin login contract smoke check failed with status $admin_login_status (expected 401 for invalid credentials)" >&2
-      cat "$admin_login_response_file" >&2 || true
+      echo "Admin login contract smoke check failed with status $admin_login_status (expected 401 for invalid credentials)">&2 cat"$admin_login_response_file" >&2 || true
       exit 1
     fi
 

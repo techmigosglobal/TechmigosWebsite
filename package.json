@@ -3,16 +3,18 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "cd appshowcase && npm install && npm run dev",
+    "start": "cd appshowcase && npm run start",
+    "build": "cd appshowcase && npm install && npm run build",
+    "dev:astro": "astro dev",
     "dev:api": "supabase functions serve api --env-file supabase/.env.local",
     "dev:local-php": "LOCAL_PHP_BACKEND_URL=http://127.0.0.1:8080 astro dev --host 127.0.0.1",
     "dev:showcase": "npm run dev --prefix appshowcase",
-    "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:showcase\"",
-    "start": "astro preview",
-    "build": "astro build",
+    "dev:all": "npx concurrently \"npm run dev:astro\" \"npm run dev:showcase\"",
+    "build:astro": "astro build",
     "build:showcase": "npm ci --prefix appshowcase && npm run build --prefix appshowcase",
-    "build:vercel": "npm run build && npm run build:showcase && rm -rf dist/showcase && mkdir -p dist/showcase && cp -R appshowcase/out/. dist/showcase/ && for page in admin login privacy terms; do if [ -f dist/showcase/$page.html ]; then mkdir -p dist/showcase/$page && cp dist/showcase/$page.html dist/showcase/$page/index.html; fi; done",
-    "build:full": "npm run build && npm run build --prefix appshowcase && rm -rf dist/client/showcase && mkdir -p dist/client/showcase && cp -r appshowcase/out/* dist/client/showcase/",
+    "build:vercel": "astro build && npm run build:showcase && rm -rf dist/showcase && mkdir -p dist/showcase && cp -R appshowcase/out/. dist/showcase/ && for page in admin login privacy terms; do if [ -f dist/showcase/$page.html ]; then mkdir -p dist/showcase/$page && cp dist/showcase/$page.html dist/showcase/$page/index.html; fi; done",
+    "build:full": "astro build && npm run build --prefix appshowcase && rm -rf dist/client/showcase && mkdir -p dist/client/showcase && cp -r appshowcase/out/* dist/client/showcase/",
     "preview": "astro preview",
     "astro": "astro",
     "verify:content": "./scripts/verify-blog-content.sh",
@@ -36,18 +38,12 @@
     "release:github": "./scripts/release-github.sh"
   },
   "dependencies": {
-    "astro": "^6.3.3",
-    "astro-icon": "^1.1.0",
     "autoprefixer": "^10.5.0",
-    "lucide-react": "^0.372.0",
     "postcss": "^8.5.14",
-    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.3"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
     "@types/node": "^20.12.7",
-    "supabase": "^2.98.2",
     "typescript": "^5.9.3"
   },
   "overrides": {

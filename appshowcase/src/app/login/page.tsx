@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import AppLogo from '@/components/ui/AppLogo';
-import Icon from '@/components/ui/AppIcon';
+import { useAuth } from '../../contexts/AuthContext';
+import AppLogo from '../../components/ui/AppLogo';
+import Icon from '../../components/ui/AppIcon';
 
 export default function LoginPage() {
   const router = useRouter();

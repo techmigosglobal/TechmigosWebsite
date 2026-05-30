@@ -27,7 +27,7 @@ export default function PilotSchoolBadge() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = containerRef?.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -42,8 +42,8 @@ export default function PilotSchoolBadge() {
       },
       { threshold: 0.1 }
     );
-    observer.observe(el);
-    return () => observer.disconnect();
+    observer?.observe(el);
+    return () => observer?.disconnect();
   }, []);
 
   return (
@@ -67,27 +67,27 @@ export default function PilotSchoolBadge() {
 
         {/* Cards */}
         <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {pilots.map((pilot) => (
+          {pilots?.map((pilot) => (
             <div
-              key={pilot.school}
+              key={pilot?.school}
               className="reveal rounded-2xl border border-border bg-card p-5 sm:p-6 flex flex-col gap-4 hover:border-accent/40 transition-colors duration-300"
             >
               {/* Quote */}
               <p className="text-sm text-foreground leading-relaxed italic">
-                &ldquo;{pilot.quote}&rdquo;
+                &ldquo;{pilot?.quote}&rdquo;
               </p>
 
               {/* School info */}
               <div className="flex items-center gap-3 pt-1 border-t border-border/60">
                 <div
-                  className={`flex-shrink-0 w-9 h-9 rounded-xl border ${pilot.color} flex items-center justify-center text-xs font-bold`}
+                  className={`flex-shrink-0 w-9 h-9 rounded-xl border ${pilot?.color} flex items-center justify-center text-xs font-bold`}
                 >
-                  {pilot.initials}
+                  {pilot?.initials}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-foreground">{pilot.school}</p>
+                  <p className="text-xs font-semibold text-foreground">{pilot?.school}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {pilot.role} · {pilot.location}
+                    {pilot?.role} · {pilot?.location}
                   </p>
                 </div>
               </div>

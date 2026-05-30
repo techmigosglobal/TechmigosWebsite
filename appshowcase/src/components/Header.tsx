@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
-import AppLogo from '@/components/ui/AppLogo';
-import Icon from '@/components/ui/AppIcon';
-import { smoothScrollTo } from '@/lib/scroll-utils';
+import AppLogo from './ui/AppLogo';
+import Icon from './ui/AppIcon';
+import { smoothScrollTo } from '../lib/scroll-utils';
 
 // Static data outside component to prevent recreation on every render
 interface NavLink {
