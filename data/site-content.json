@@ -55,7 +55,7 @@
         "Android",
         "Web"
       ],
-      "image": "/images/portfolio/focus-today/cover-focus-today-updated.webp",
+      "image": "/images/portfolio/focus-today/cover-focus-today-no-discover.webp",
       "description": "A civic-first mobile news platform with multilingual onboarding, live updates, and cross-device access.",
       "result": "Live Web + Android Experience",
       "overview": "Focus Today is a Flutter + Firebase product designed to publish verified civic content, emergency updates, and public-interest stories for regional audiences.",
