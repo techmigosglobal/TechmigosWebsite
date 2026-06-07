@@ -8,6 +8,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   title="Company CRM Portal"
   description="TechMigos company CRM for leads, clients, projects, support, invoices, marketing, and team activity."
   noIndex={true}
+  hideNavbar={true}
 >
   <style is:global>
     .tm-crm-table {
@@ -80,9 +81,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
   </style>
 
-  <section class="min-h-screen bg-slate-100 pt-24 pb-10">
+  <section class="min-h-screen bg-slate-100 py-4 sm:py-6">
     <div class="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-8">
-      <aside class="lg:sticky lg:top-24 lg:h-[calc(100vh-7rem)] lg:w-72">
+      <aside class="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-72">
         <div class="h-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -368,7 +369,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function scrollWorkspaceTop() {
-      const offset = window.innerWidth < 768 ? 92 : 112;
+      const offset = window.innerWidth < 768 ? 16 : 24;
       const top = Math.max(0, els.title.getBoundingClientRect().top + window.scrollY - offset);
       window.scrollTo({ top, behavior: 'auto' });
     }

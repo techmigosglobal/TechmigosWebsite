@@ -9,6 +9,7 @@ interface Props {
   ogImage?: string;
   ogType?: string;
   noIndex?: boolean;
+  hideNavbar?: boolean;
 }
 
 const {
@@ -16,7 +17,8 @@ const {
   description = 'TechMigos - Building Tomorrow, Together. We partner with startups and enterprises to design, build, and ship world-class digital products.',
   ogImage = '/og-image.png',
   ogType = 'website',
-  noIndex = false
+  noIndex = false,
+  hideNavbar = false
 } = Astro.props;
 
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
@@ -141,7 +143,7 @@ const pageTitle = title === 'Home'
     <!-- Scroll Progress Bar -->
     <div id="page-progress" style="width:0%"></div>
 
-    <Navbar />
+    {!hideNavbar && <Navbar />}
 
     <main id="main-content">
       <slot />
