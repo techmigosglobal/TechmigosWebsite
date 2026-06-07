@@ -1,0 +1,136 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="TechMigos Secure Portal Login"
+  description="Secure TechMigos portal login for clients and company team members to access projects, support, invoices, leads, and CRM workflows."
+  noIndex={true}
+>
+  <section class="min-h-screen pt-28 pb-16 bg-slate-950 text-white overflow-hidden">
+    <div class="container-custom max-w-6xl">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center">
+        <div class="relative z-10">
+          <span class="section-eyebrow text-cyan-300">TechMigos Portal</span>
+          <h1 class="mt-5 max-w-3xl text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight">
+            One login for project clients and TechMigos teams.
+          </h1>
+          <p class="mt-5 max-w-2xl text-base sm:text-lg text-slate-300 leading-relaxed">
+            Sign in once and we will route your account to the right workspace: client projects, support and invoices, or the internal CRM for leads, follow-ups, sales and operations.
+          </p>
+
+          <div class="mt-8 grid gap-3 sm:grid-cols-2 max-w-3xl">
+            <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p class="text-sm font-bold text-white">Clients</p>
+              <p class="mt-1 text-sm text-slate-300">View projects, invoices, and support tickets.</p>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p class="text-sm font-bold text-white">TechMigos team</p>
+              <p class="mt-1 text-sm text-slate-300">Manage CRM, leads, follow-ups, campaigns, and work activity.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 bg-white text-slate-950 rounded-lg p-5 sm:p-7 shadow-2xl border border-slate-200">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-extrabold">Portal login</h2>
+              <p class="mt-2 text-sm text-slate-500">Use the credentials provided by TechMigos.</p>
+            </div>
+            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Secure</span>
+          </div>
+
+          <form id="portal-login-form" class="mt-7 space-y-5">
+            <label class="block" for="email">
+              <span class="form-label">Email address</span>
+              <input id="email" name="email" type="email" required class="form-input form-control" autocomplete="email" inputmode="email" placeholder="you@example.com" />
+            </label>
+            <label class="block" for="password">
+              <span class="form-label">Password</span>
+              <input id="password" name="password" type="password" required class="form-input form-control" autocomplete="current-password" placeholder="Enter your password" />
+            </label>
+            <button id="login-button" type="submit" class="btn-primary w-full justify-center min-h-[48px]">Login</button>
+            <p id="login-status" class="text-sm text-slate-500 min-h-[1.25rem]" role="status" aria-live="polite"></p>
+          </form>
+
+          <div class="mt-5 border-t border-slate-100 pt-4">
+            <p class="text-xs leading-relaxed text-slate-500">
+              Accounts are invite-only. If you need access, contact your TechMigos project owner or email info@techmigos.com.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline>
+    const form = document.getElementById('portal-login-form');
+    const statusEl = document.getElementById('login-status');
+    const button = document.getElementById('login-button');
+
+    function apiBase() {
+      return String(window.TechMigosConfig?.apiBaseUrl || 'https://n2hhxvw3.ap-southeast.insforge.app').replace(/\/$/, '');
+    }
+
+    function authUrl(path) {
+      const base = apiBase();
+      return `${base}${path}${path.includes('?') ? '&' : '?'}client_type=server`;
+    }
+
+    function setStatus(message, isError) {
+      statusEl.textContent = message || '';
+      statusEl.className = `text-sm min-h-[1.25rem] ${isError ? 'text-red-600' : 'text-slate-500'}`;
+    }
+
+    async function portalFetch(path, options = {}) {
+      const token = sessionStorage.getItem('tm_portal_access_token') || '';
+      const headers = new Headers(options.headers || {});
+      if (token) headers.set('authorization', `Bearer ${token}`);
+      return window.techmigosApiFetch(path, { ...options, headers });
+    }
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      setStatus('Signing in...', false);
+
+      try {
+        const data = Object.fromEntries(new FormData(form).entries());
+        const response = await fetch(authUrl('/api/auth/sessions'), {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: data.email, password: data.password }),
+        });
+        const result = await response.json().catch(() => null);
+        const accessToken = result?.accessToken || result?.data?.accessToken;
+        const refreshToken = result?.refreshToken || result?.data?.refreshToken;
+        const csrfToken = result?.csrfToken || result?.data?.csrfToken;
+
+        if (!response.ok || !accessToken) {
+          if (response.status === 401) {
+            throw new Error('Email or password is incorrect, or this account has not been created in InsForge Auth.');
+          }
+          if (response.status === 404) {
+            throw new Error('Login API was not found. Please refresh the page and confirm the InsForge API URL is configured.');
+          }
+          throw new Error(result?.message || result?.error || 'Could not sign in right now.');
+        }
+
+        sessionStorage.setItem('tm_portal_access_token', accessToken);
+        if (refreshToken) sessionStorage.setItem('tm_portal_refresh_token', refreshToken);
+        if (csrfToken) sessionStorage.setItem('tm_portal_csrf_token', csrfToken);
+
+        const meResponse = await portalFetch('/api/portal/me');
+        const me = await meResponse.json().catch(() => null);
+        if (!meResponse.ok || !me?.destination) throw new Error(me?.error || 'Portal access is not provisioned for this account.');
+        location.href = me.destination;
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not sign in.', true);
+        button.disabled = false;
+      }
+    });
+  </script>
+</BaseLayout>

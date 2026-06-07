@@ -1497,13 +1497,49 @@ const essentials = [
     try {
       const csrfToken = await getCsrfToken();
       const formData = new FormData(form);
+      formData.set('sourcePath', window.location.pathname || '/careers');
+      const apiBase = String(window.TechMigosConfig?.apiBaseUrl || '');
+      const isInsForge = apiBase.includes('.insforge.app');
+      let headers = { 'x-csrf-token': csrfToken };
+      let body = formData;
+
+      if (isInsForge) {
+        const cv = formData.get('cv');
+        if (!(cv instanceof File)) {
+          throw new Error('Resume file is required.');
+        }
+
+        const buffer = await cv.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        bytes.forEach((byte) => {
+          binary += String.fromCharCode(byte);
+        });
+
+        headers = {
+          ...headers,
+          'Content-Type': 'application/json',
+        };
+        body = JSON.stringify({
+          jobTitle: String(formData.get('jobTitle') || ''),
+          name: String(formData.get('name') || ''),
+          email: String(formData.get('email') || ''),
+          linkedin: String(formData.get('linkedin') || ''),
+          portfolio: String(formData.get('portfolio') || ''),
+          coverLetter: String(formData.get('coverLetter') || ''),
+          company_website: String(formData.get('company_website') || ''),
+          sourcePath: String(formData.get('sourcePath') || ''),
+          resumeName: cv.name,
+          resumeMimeType: cv.type || 'application/octet-stream',
+          resumeSize: cv.size,
+          resumeBase64: btoa(binary),
+        });
+      }
 
       const response = await window.techmigosApiFetch('/api/leads/careers', {
         method: 'POST',
-        headers: {
-          'x-csrf-token': csrfToken,
-        },
-        body: formData,
+        headers,
+        body,
       });
 
       const result = await response.json();

@@ -223,8 +223,7 @@ const DEFAULT_CONTENT: SiteContent = {
 const DATA_FILE = process.env.SITE_CONTENT_PATH ?? path.join(process.cwd(), 'data', 'site-content.json');
 const FEATURED_PROJECT_ORDER = new Map([
   ['focus-today', 0],
-  ['school-desk', 1],
-  ['focusflow', 2],
+  ['focusflow', 1],
 ]);
 
 function cleanString(value: unknown) {

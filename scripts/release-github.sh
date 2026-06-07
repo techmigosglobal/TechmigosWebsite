@@ -76,11 +76,6 @@ if [[ -z "$BRANCH" || -z "$COMMIT_MESSAGE" ]]; then
   exit 1
 fi
 
-if git ls-files --error-unmatch php-backend/api/.env.php >/dev/null 2>&1; then
-  echo "Refusing release: php-backend/api/.env.php is tracked. Remove it from git history/index first." >&2
-  exit 1
-fi
-
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [[ "$CURRENT_BRANCH" != "$BRANCH" ]]; then
   echo "Current branch is '$CURRENT_BRANCH'. Switch to '$BRANCH' before release." >&2

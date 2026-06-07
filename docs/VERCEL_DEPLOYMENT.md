@@ -21,15 +21,6 @@ This website is configured for deployment on Vercel with automatic builds from t
    - **Output Directory**: `dist`
    - **Install Command**: `npm install`
 
-### Option 2: Deploy the Next.js App (AppShowcase)
-
-For the `/showcase` sub-app in `appshowcase/`:
-
-1. Create a new Vercel project for the appshowcase folder
-2. Set **Root Directory** to `appshowcase`
-3. Framework: Next.js
-4. Build settings will auto-detect
-
 ## Environment Variables
 
 Set these in the Vercel project settings under "Environment Variables":
@@ -37,27 +28,15 @@ Set these in the Vercel project settings under "Environment Variables":
 ### Main Astro Site
 ```
 NODE_ENV=production
-ADMIN_USERNAME=your-secure-username
-ADMIN_PASSWORD=your-secure-password
-ADMIN_SESSION_SECRET=your-random-32-char-secret
-ADMIN_EMAIL=admin@techmigos.com
-ADMIN_NAME=Your Name
-```
-
-### AppShowcase (if deployed separately)
-```
-NEXT_PUBLIC_SUPABASE_URL=https://cuuexziubzpqzkbwhrag.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[from appshowcase/.env]
-NEXT_PUBLIC_GA_MEASUREMENT_ID=[your-ga-id]
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=[your-stripe-key]
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+PUBLIC_SITE_URL=https://www.techmigos.com
+PUBLIC_API_BASE_URL=https://n2hhxvw3.ap-southeast.insforge.app
 ```
 
 ## Build Configuration
 
 - **Node.js Version**: 20.x
-- **Output Mode**: Server-side rendering via Node adapter
-- **Max Function Duration**: 60 seconds
+- **Output Mode**: Static HTML generated into `dist`
+- **Runtime API**: Public forms call the InsForge backend directly
 
 ## Automatic Deployments
 
@@ -67,28 +46,27 @@ NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 
 ## Database & API Backend
 
-- Production API calls route to the PHP backend
-- Admin panel uses server-side validation via Astro API routes
-- Supabase integration for the showcase app (if enabled)
+- Production public form API calls route to InsForge.
+- The removed showcase sub-application is no longer part of this deployment.
 
 ## Monitoring
 
 After deployment:
 1. Check the deployment logs in Vercel
 2. Verify all pages load correctly
-3. Test admin login functionality
+3. Test contact, newsletter, and careers form submission
 4. Verify environment variables are loaded
 
 ## Troubleshooting
 
-**Build fails with adapter errors:**
-- Ensure `@astrojs/node` is installed: `npm install @astrojs/node`
-- Check astro.config.mjs uses `output: 'server'` and includes the Node adapter
+**Build fails after dependency changes:**
+- Run `npm install` locally to refresh `package-lock.json`.
+- Confirm `npm run validate` passes before deploying.
 
 **Environment variables not loading:**
 - Verify variables are set in Vercel project settings (not in .env file)
 - Redeploy after adding/changing environment variables
 
-**API routes not working:**
-- Check that the Node.js adapter is properly configured
-- Verify CORS and cookie handling in Astro API routes
+**Form submissions not working:**
+- Check that `PUBLIC_API_BASE_URL` points to the InsForge backend.
+- Confirm `INSFORGE_API_KEY` and `CSRF_SECRET` are configured in InsForge function secrets.

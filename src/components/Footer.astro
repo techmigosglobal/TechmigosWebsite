@@ -237,6 +237,7 @@ const socialLinks = [
     const payload = {
       email: String(formData.get('email') || ''),
       company_website: String(formData.get('company_website') || ''),
+      sourcePath: window.location.pathname || '/',
     };
 
     try {

@@ -22,7 +22,10 @@ const {
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
 const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
-const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/$/, '');
+const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || 'https://n2hhxvw3.ap-southeast.insforge.app').trim().replace(/\/$/, '');
+const pageTitle = title === 'Home'
+  ? 'TechMigos | Web, Mobile, AI & Backend Development'
+  : `${title} | TechMigos`;
 ---
 
 <!DOCTYPE html>
@@ -33,8 +36,8 @@ const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().repl
     <meta name="generator" content={Astro.generator} />
 
     <!-- Primary Meta Tags -->
-    <title>{title} | TechMigos</title>
-    <meta name="title" content={`${title} | TechMigos`} />
+    <title>{pageTitle}</title>
+    <meta name="title" content={pageTitle} />
     <meta name="description" content={description} />
     {noIndex && <meta name="robots" content="noindex, nofollow" />}
 
@@ -44,14 +47,14 @@ const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().repl
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:title" content={`${title} | TechMigos`} />
+    <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={absoluteOgImage} />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={`${title} | TechMigos`} />
+    <meta property="twitter:title" content={pageTitle} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={absoluteOgImage} />
 
@@ -86,60 +89,28 @@ const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().repl
     })} />
     <script is:inline>
       const apiBaseMeta = document.querySelector('meta[name="techmigos-api-base-url"]');
-      const publicApiBaseUrl = apiBaseMeta ? apiBaseMeta.getAttribute('content') || '' : '';
+      const publicApiBaseUrl = apiBaseMeta ? apiBaseMeta.getAttribute('content') || 'https://n2hhxvw3.ap-southeast.insforge.app' : 'https://n2hhxvw3.ap-southeast.insforge.app';
 
       window.TechMigosConfig = {
         apiBaseUrl: publicApiBaseUrl,
       };
 
-      const adminSessionKeys = {
-        accessToken: 'tm_admin_access_token',
-        refreshToken: 'tm_admin_refresh_token',
-        expiresAt: 'tm_admin_expires_at',
-      };
-
-      window.techmigosSetAdminSession = function techmigosSetAdminSession(session) {
-        if (!session) return;
-        try {
-          localStorage.setItem(adminSessionKeys.accessToken, String(session.accessToken || ''));
-          localStorage.setItem(adminSessionKeys.refreshToken, String(session.refreshToken || ''));
-          localStorage.setItem(adminSessionKeys.expiresAt, String(session.expiresAt || ''));
-        } catch {
-          // Local storage may be unavailable in hardened browsers.
-        }
-      };
-
-      window.techmigosClearAdminSession = function techmigosClearAdminSession() {
-        try {
-          localStorage.removeItem(adminSessionKeys.accessToken);
-          localStorage.removeItem(adminSessionKeys.refreshToken);
-          localStorage.removeItem(adminSessionKeys.expiresAt);
-        } catch {
-          // no-op
-        }
-      };
-
-      window.techmigosGetAdminAccessToken = function techmigosGetAdminAccessToken() {
-        try {
-          return localStorage.getItem(adminSessionKeys.accessToken) || '';
-        } catch {
-          return '';
-        }
-      };
-
       window.techmigosApiUrl = function techmigosApiUrl(path) {
         const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
         const base = String(window.TechMigosConfig?.apiBaseUrl || '').replace(/\/$/, '');
+        if (base.includes('.insforge.app')) {
+          return `${base}/functions/techmigos-api`;
+        }
         return base ? `${base}${normalizedPath}` : normalizedPath;
       };
 
       window.techmigosApiFetch = function techmigosApiFetch(path, options) {
         const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
         const headers = new Headers((options || {}).headers || {});
-        const accessToken = window.techmigosGetAdminAccessToken();
+        const base = String(window.TechMigosConfig?.apiBaseUrl || '').replace(/\/$/, '');
 
-        if (normalizedPath.startsWith('/api/admin') && accessToken && !headers.has('Authorization')) {
-          headers.set('Authorization', `Bearer ${accessToken}`);
+        if (base.includes('.insforge.app')) {
+          headers.set('x-techmigos-route', normalizedPath);
         }
 
         return fetch(window.techmigosApiUrl(path), {

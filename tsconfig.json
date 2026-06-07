@@ -5,5 +5,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["appshowcase", "dist", ".astro", "supabase/functions"]
+  "exclude": ["dist", ".astro"]
 }

@@ -5,7 +5,7 @@ import { loadSiteContent } from '../../lib/siteContent';
 
 export const getStaticPaths = (async () => {
   const { projects } = await loadSiteContent();
-  const customHandledSlugs = new Set(['focus-today', 'school-desk', 'focusflow', 'techmigos-hub', 'notiva', 'spendscanr']);
+  const customHandledSlugs = new Set(['focus-today', 'focusflow', 'techmigos-hub', 'notiva', 'spendscanr']);
 
   return projects.map((project) => ({
     params: { slug: project.slug },
@@ -22,7 +22,7 @@ if (!project) {
 ---
 
 <BaseLayout
-  title={project ? project.title : 'Project Not Found'}
+  title={project ? `${project.title} Software Case Study` : 'Project Not Found'}
   description={project ? `${project.title} - ${project.overview.slice(0, 150)}...` : 'The project you requested could not be found.'}
   ogImage={project?.image}
   ogType="article"

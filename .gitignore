@@ -7,17 +7,16 @@ dist/
 out/
 .next/
 .vercel/
+exports/
+reports/
 
 # Environment & secrets
 .env
 .env.*
 !.env.example
-php-backend/api/.env.php
-scripts/deploy-cpanel.env
-
-# Storage & uploads (runtime data)
-php-backend/storage/local.sqlite
-php-backend/storage/uploads/
+env.json
+env.*.json
+!env.example.json
 
 # OS files
 .DS_Store

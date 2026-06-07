@@ -1,5 +1,5 @@
 ---
-title: "Serverless Architecture: When to Go Serverless and When to Stay"
+title: "Serverless Architecture: When to Use It"
 description: "A practical guide to understanding serverless architecture, its benefits, trade-offs, and when it's the right choice for your project."
 pubDate: 2026-03-15
 author: "Ravali"

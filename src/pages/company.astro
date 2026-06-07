@@ -1,0 +1,425 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Company CRM Portal"
+  description="TechMigos company CRM for leads, clients, projects, support, invoices, marketing, and team activity."
+  noIndex={true}
+>
+  <section class="min-h-screen pt-28 pb-16 bg-slate-100">
+    <div class="container-custom">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <span class="section-eyebrow">Company CRM</span>
+          <h1 class="mt-3 text-4xl font-extrabold text-slate-950">TechMigos operations workspace</h1>
+          <p id="portal-user" class="mt-2 text-slate-600">Loading portal session...</p>
+        </div>
+        <button id="logout-button" class="btn-secondary">Sign out</button>
+      </div>
+
+      <div id="crm-status" class="mt-6 text-sm text-slate-600" role="status">Loading CRM data...</div>
+
+      <div id="kpis" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+
+      <div class="mt-8 flex flex-wrap gap-2" id="crm-tabs"></div>
+
+      <div class="mt-6 grid gap-6 xl:grid-cols-[360px_1fr]">
+        <aside class="bg-white rounded-lg border border-slate-200 p-5">
+          <h2 id="form-title" class="text-xl font-bold text-slate-950">Create lead</h2>
+          <form id="crm-form" class="mt-5 space-y-4"></form>
+        </aside>
+
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <div class="flex items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 id="table-title" class="text-xl font-bold text-slate-950">Leads</h2>
+              <p id="table-subtitle" class="text-sm text-slate-500">Manage pipeline records and follow-ups.</p>
+            </div>
+            <button id="refresh-button" class="btn-secondary">Refresh</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead id="crm-table-head" class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"></thead>
+              <tbody id="crm-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline>
+    const state = {
+      profile: null,
+      active: 'leads',
+      data: {
+        leads: [],
+        clients: [],
+        projects: [],
+        deals: [],
+        tickets: [],
+        followups: [],
+        invoices: [],
+        campaigns: [],
+        recipients: [],
+        activities: [],
+        profiles: [],
+      },
+    };
+
+    const modules = {
+      leads: {
+        label: 'Leads',
+        subtitle: 'Public form leads, sales status, priority, and conversion.',
+        columns: ['name', 'email', 'service', 'status', 'priority', 'created_at'],
+        fields: [
+          ['name', 'Name', 'text', true],
+          ['email', 'Email', 'email', true],
+          ['company', 'Company', 'text', false],
+          ['service', 'Service', 'text', false],
+          ['budget', 'Budget', 'text', false],
+          ['message', 'Message', 'textarea', false],
+          ['status', 'Status', 'select:new,qualified,proposal,converted,lost', false],
+          ['priority', 'Priority', 'select:low,medium,high,urgent', false],
+          ['marketing_opt_in', 'Marketing opt-in', 'checkbox', false],
+        ],
+      },
+      clients: {
+        label: 'Clients',
+        subtitle: 'Client records and marketing preferences.',
+        columns: ['name', 'company', 'email', 'status', 'marketing_opt_in', 'created_at'],
+        fields: [
+          ['name', 'Name', 'text', true],
+          ['company', 'Company', 'text', false],
+          ['email', 'Email', 'email', true],
+          ['phone', 'Phone', 'text', false],
+          ['status', 'Status', 'select:active,paused,archived', false],
+          ['marketing_opt_in', 'Marketing opt-in', 'checkbox', false],
+        ],
+      },
+      projects: {
+        label: 'Projects',
+        subtitle: 'Client project health, progress, owners, and dates.',
+        columns: ['name', 'client_id', 'status', 'health', 'progress', 'due_date'],
+        fields: [
+          ['client_id', 'Client ID', 'number', true],
+          ['name', 'Project name', 'text', true],
+          ['status', 'Status', 'select:planning,active,review,completed,on_hold', false],
+          ['health', 'Health', 'select:on_track,watch,at_risk', false],
+          ['progress', 'Progress %', 'number', false],
+          ['summary', 'Summary', 'textarea', false],
+          ['due_date', 'Due date', 'date', false],
+        ],
+      },
+      deals: {
+        label: 'Sales',
+        subtitle: 'Deal pipeline and expected close dates.',
+        columns: ['title', 'client_id', 'stage', 'value', 'currency', 'expected_close_date'],
+        fields: [
+          ['title', 'Deal title', 'text', true],
+          ['client_id', 'Client ID', 'number', false],
+          ['lead_id', 'Lead ID', 'number', false],
+          ['stage', 'Stage', 'select:qualified,proposal,negotiation,won,lost', false],
+          ['value', 'Value', 'number', false],
+          ['currency', 'Currency', 'text', false],
+          ['expected_close_date', 'Expected close date', 'date', false],
+        ],
+      },
+      tickets: {
+        label: 'Support',
+        subtitle: 'Support requests from clients and active projects.',
+        columns: ['subject', 'client_id', 'status', 'priority', 'created_at'],
+        fields: [
+          ['client_id', 'Client ID', 'number', true],
+          ['project_id', 'Project ID', 'number', false],
+          ['subject', 'Subject', 'text', true],
+          ['description', 'Description', 'textarea', true],
+          ['status', 'Status', 'select:open,in_progress,waiting,resolved,closed', false],
+          ['priority', 'Priority', 'select:low,medium,high,urgent', false],
+        ],
+      },
+      followups: {
+        label: 'Follow-ups',
+        subtitle: 'Scheduled follow-ups across leads, clients, deals, and tickets.',
+        columns: ['title', 'related_type', 'related_id', 'due_at', 'status', 'assigned_to'],
+        fields: [
+          ['related_type', 'Related type', 'select:lead,client,deal,ticket,invoice', true],
+          ['related_id', 'Related ID', 'number', false],
+          ['title', 'Title', 'text', true],
+          ['due_at', 'Due date/time', 'datetime-local', false],
+          ['status', 'Status', 'select:pending,done,cancelled', false],
+          ['notes', 'Notes', 'textarea', false],
+        ],
+      },
+      invoices: {
+        label: 'Invoices',
+        subtitle: 'Invoice records without online payment processing.',
+        columns: ['invoice_number', 'client_id', 'amount', 'currency', 'status', 'due_date'],
+        fields: [
+          ['client_id', 'Client ID', 'number', true],
+          ['project_id', 'Project ID', 'number', false],
+          ['invoice_number', 'Invoice number', 'text', true],
+          ['amount', 'Amount', 'number', true],
+          ['currency', 'Currency', 'text', false],
+          ['status', 'Status', 'select:draft,sent,paid,overdue,cancelled', false],
+          ['due_date', 'Due date', 'date', false],
+          ['file_url', 'PDF/link URL', 'url', false],
+          ['notes', 'Notes', 'textarea', false],
+        ],
+      },
+      campaigns: {
+        label: 'Marketing',
+        subtitle: 'MSG91 opt-in email campaigns and send status.',
+        columns: ['name', 'subject', 'status', 'scheduled_at', 'sent_at', 'created_at'],
+        fields: [
+          ['name', 'Campaign name', 'text', true],
+          ['subject', 'Subject', 'text', true],
+          ['body', 'Body', 'textarea', true],
+          ['msg91_template_id', 'MSG91 template ID', 'text', false],
+          ['scheduled_at', 'Scheduled date/time', 'datetime-local', false],
+          ['status', 'Status', 'select:draft,scheduled,template_pending,sent,failed', false],
+        ],
+      },
+      activities: {
+        label: 'Activity',
+        subtitle: 'Team actions across CRM records.',
+        columns: ['actor_name', 'action', 'entity_type', 'entity_id', 'summary', 'created_at'],
+        fields: [],
+      },
+      profiles: {
+        label: 'Users',
+        subtitle: 'Portal profiles. Company admins only.',
+        columns: ['name', 'email', 'role', 'status', 'client_id', 'created_at'],
+        fields: [
+          ['auth_user_id', 'Auth user ID', 'text', true],
+          ['name', 'Name', 'text', true],
+          ['email', 'Email', 'email', true],
+          ['role', 'Role', 'select:company_admin,company_member,client', true],
+          ['status', 'Status', 'select:active,disabled', false],
+          ['client_id', 'Client ID', 'number', false],
+        ],
+      },
+    };
+
+    const els = {
+      status: document.getElementById('crm-status'),
+      user: document.getElementById('portal-user'),
+      kpis: document.getElementById('kpis'),
+      tabs: document.getElementById('crm-tabs'),
+      form: document.getElementById('crm-form'),
+      formTitle: document.getElementById('form-title'),
+      tableTitle: document.getElementById('table-title'),
+      tableSubtitle: document.getElementById('table-subtitle'),
+      thead: document.getElementById('crm-table-head'),
+      tbody: document.getElementById('crm-table-body'),
+    };
+
+    function token() {
+      return sessionStorage.getItem('tm_portal_access_token') || '';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function setStatus(message, tone = 'neutral') {
+      els.status.textContent = message;
+      els.status.className = `mt-6 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
+    }
+
+    async function portal(path, options = {}) {
+      const headers = new Headers(options.headers || {});
+      headers.set('authorization', `Bearer ${token()}`);
+      if (options.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+      const response = await window.techmigosApiFetch(path, { ...options, headers });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || 'Portal request failed.');
+      return data;
+    }
+
+    function logout() {
+      sessionStorage.removeItem('tm_portal_access_token');
+      sessionStorage.removeItem('tm_portal_refresh_token');
+      sessionStorage.removeItem('tm_portal_csrf_token');
+      location.href = '/login';
+    }
+
+    function renderTabs() {
+      const names = Object.keys(modules).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
+      els.tabs.innerHTML = names.map((name) => `
+        <button class="px-4 py-2 rounded-md text-sm font-semibold border ${state.active === name ? 'bg-slate-950 text-white border-slate-950' : 'bg-white text-slate-700 border-slate-200'}" data-tab="${name}">
+          ${modules[name].label}
+        </button>
+      `).join('');
+      els.tabs.querySelectorAll('button').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.active = button.dataset.tab;
+          render();
+        });
+      });
+    }
+
+    function renderKpis() {
+      const items = [
+        ['Leads', state.data.leads.length],
+        ['Clients', state.data.clients.length],
+        ['Open Tickets', state.data.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length],
+        ['Invoices', state.data.invoices.length],
+      ];
+      els.kpis.innerHTML = items.map(([label, value]) => `
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <p class="text-sm text-slate-500">${label}</p>
+          <p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p>
+        </div>
+      `).join('');
+    }
+
+    function inputFor([name, label, type, required]) {
+      const value = type.startsWith('select:') ? type.slice(7).split(',') : null;
+      if (type === 'textarea') {
+        return `<label class="block"><span class="form-label">${label}</span><textarea name="${name}" ${required ? 'required' : ''} class="form-input form-control min-h-[96px]"></textarea></label>`;
+      }
+      if (type === 'checkbox') {
+        return `<label class="flex items-center gap-3 text-sm font-semibold text-slate-700"><input name="${name}" type="checkbox" class="h-4 w-4 rounded border-slate-300" />${label}</label>`;
+      }
+      if (value) {
+        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control">${value.map((item) => `<option value="${item}">${item.replace(/_/g, ' ')}</option>`).join('')}</select></label>`;
+      }
+      return `<label class="block"><span class="form-label">${label}</span><input name="${name}" type="${type}" ${required ? 'required' : ''} class="form-input form-control" /></label>`;
+    }
+
+    function renderForm() {
+      const config = modules[state.active];
+      els.formTitle.textContent = config.fields.length ? `Create ${config.label.slice(0, -1).toLowerCase() || config.label}` : config.label;
+      if (!config.fields.length) {
+        els.form.innerHTML = '<p class="text-sm text-slate-500">This module is read-only in the CRM screen.</p>';
+        return;
+      }
+      els.form.innerHTML = `${config.fields.map(inputFor).join('')}<button class="btn-primary w-full justify-center" type="submit">Save</button>`;
+    }
+
+    function serializeForm(form) {
+      const body = {};
+      new FormData(form).forEach((value, key) => {
+        body[key] = value;
+      });
+      form.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        body[input.name] = input.checked;
+      });
+      for (const key of ['client_id', 'project_id', 'lead_id', 'related_id', 'progress']) {
+        if (body[key] === '') delete body[key];
+        else if (body[key] !== undefined) body[key] = Number(body[key]);
+      }
+      if (body.amount !== undefined && body.amount !== '') body.amount = Number(body.amount);
+      return body;
+    }
+
+    function renderTable() {
+      const config = modules[state.active];
+      const rows = state.data[state.active] || [];
+      els.tableTitle.textContent = config.label;
+      els.tableSubtitle.textContent = config.subtitle;
+      const headers = ['id', ...config.columns, 'actions'];
+      els.thead.innerHTML = `<tr>${headers.map((head) => `<th class="px-4 py-3 font-bold">${head.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
+      els.tbody.innerHTML = rows.map((row) => `
+        <tr>
+          <td class="px-4 py-3 font-semibold text-slate-900">${escapeHtml(row.id)}</td>
+          ${config.columns.map((col) => `<td class="px-4 py-3 text-slate-600">${escapeHtml(row[col])}</td>`).join('')}
+          <td class="px-4 py-3 whitespace-nowrap">${actionsFor(row)}</td>
+        </tr>
+      `).join('') || `<tr><td class="px-4 py-8 text-slate-500" colspan="${headers.length}">No records yet.</td></tr>`;
+    }
+
+    function actionsFor(row) {
+      if (state.active === 'leads' && row.status !== 'converted') {
+        return `<button class="text-primary-700 font-semibold" data-convert="${row.id}">Convert</button>`;
+      }
+      if (state.active === 'campaigns') {
+        return `<button class="text-primary-700 font-semibold" data-send="${row.id}">Send</button>`;
+      }
+      return '<span class="text-slate-400">-</span>';
+    }
+
+    function bindTableActions() {
+      els.tbody.querySelectorAll('[data-convert]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const projectName = prompt('Project name for this converted client?') || '';
+          try {
+            await portal(`/api/portal/leads/${button.dataset.convert}/convert`, {
+              method: 'POST',
+              body: JSON.stringify({ projectName }),
+            });
+            setStatus('Lead converted to client.', 'success');
+            await loadData();
+          } catch (error) {
+            setStatus(error instanceof Error ? error.message : 'Could not convert lead.', 'error');
+          }
+        });
+      });
+      els.tbody.querySelectorAll('[data-send]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          try {
+            const result = await portal(`/api/portal/campaigns/${button.dataset.send}/send`, { method: 'POST', body: '{}' });
+            setStatus(result.message || `Campaign send finished. Sent ${result.sent || 0}.`, result.sent ? 'success' : 'neutral');
+            await loadData();
+          } catch (error) {
+            setStatus(error instanceof Error ? error.message : 'Could not send campaign.', 'error');
+          }
+        });
+      });
+    }
+
+    async function loadData() {
+      setStatus('Loading CRM data...');
+      const names = Object.keys(state.data).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
+      const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
+      results.forEach(([name, items]) => { state.data[name] = items; });
+      setStatus('CRM data loaded.', 'success');
+      render();
+    }
+
+    function render() {
+      renderTabs();
+      renderKpis();
+      renderForm();
+      renderTable();
+      bindTableActions();
+    }
+
+    async function boot() {
+      if (!token()) return logout();
+      try {
+        const me = await portal('/api/portal/me');
+        state.profile = me.profile;
+        if (me.destination !== '/company') location.href = me.destination;
+        els.user.textContent = `${me.profile.name} - ${me.profile.role.replace(/_/g, ' ')}`;
+        await loadData();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not load portal.', 'error');
+        setTimeout(logout, 1200);
+      }
+    }
+
+    els.form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await portal(`/api/portal/${state.active}`, {
+          method: 'POST',
+          body: JSON.stringify(serializeForm(els.form)),
+        });
+        els.form.reset();
+        setStatus('Record saved.', 'success');
+        await loadData();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not save record.', 'error');
+      }
+    });
+
+    document.getElementById('logout-button')?.addEventListener('click', logout);
+    document.getElementById('refresh-button')?.addEventListener('click', loadData);
+    boot();
+  </script>
+</BaseLayout>
