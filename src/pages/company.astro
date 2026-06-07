@@ -9,52 +9,109 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   description="TechMigos company CRM for leads, clients, projects, support, invoices, marketing, and team activity."
   noIndex={true}
 >
-  <section class="min-h-screen pt-28 pb-16 bg-slate-100">
-    <div class="container-custom">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <span class="section-eyebrow">Company CRM</span>
-          <h1 class="mt-3 text-4xl font-extrabold text-slate-950">TechMigos operations workspace</h1>
-          <p id="portal-user" class="mt-2 text-slate-600">Loading portal session...</p>
-        </div>
-        <button id="logout-button" class="btn-secondary">Sign out</button>
-      </div>
+  <style is:global>
+    @page {
+      size: A4;
+      margin: 12mm;
+    }
 
-      <div id="crm-status" class="mt-6 text-sm text-slate-600" role="status">Loading CRM data...</div>
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
 
-      <div id="kpis" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+      #invoice-modal,
+      #invoice-modal * {
+        visibility: visible !important;
+      }
 
-      <div class="mt-8 flex flex-wrap gap-2" id="crm-tabs"></div>
+      #invoice-modal {
+        position: static !important;
+        display: block !important;
+        background: #fff !important;
+        padding: 0 !important;
+      }
 
-      <div class="mt-6 grid gap-6 xl:grid-cols-[360px_1fr]">
-        <aside class="bg-white rounded-lg border border-slate-200 p-5">
-          <h2 id="form-title" class="text-xl font-bold text-slate-950">Create lead</h2>
-          <form id="crm-form" class="mt-5 space-y-4"></form>
-        </aside>
+      #invoice-modal > div {
+        max-width: 186mm !important;
+        max-height: none !important;
+        margin: 0 auto !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
 
-        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div class="flex items-center justify-between gap-4 border-b border-slate-200 p-5">
+      #invoice-preview {
+        padding: 0 !important;
+      }
+
+      .print\:hidden {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <section class="min-h-screen bg-slate-100 pt-24 pb-10">
+    <div class="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-8">
+      <aside class="lg:sticky lg:top-24 lg:h-[calc(100vh-7rem)] lg:w-72">
+        <div class="h-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-3">
             <div>
-              <h2 id="table-title" class="text-xl font-bold text-slate-950">Leads</h2>
-              <p id="table-subtitle" class="text-sm text-slate-500">Manage pipeline records and follow-ups.</p>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Company CRM</p>
+              <h1 class="mt-2 text-xl font-extrabold text-slate-950">Operations</h1>
             </div>
-            <button id="refresh-button" class="btn-secondary">Refresh</button>
+            <button id="logout-button" class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Sign out</button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead id="crm-table-head" class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"></thead>
-              <tbody id="crm-table-body" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
+          <p id="portal-user" class="mt-3 text-sm text-slate-500">Loading portal session...</p>
+          <nav id="crm-nav" class="mt-6 grid gap-1"></nav>
         </div>
+      </aside>
+
+      <div class="min-w-0 flex-1">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p id="crm-eyebrow" class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Dashboard</p>
+              <h2 id="crm-title" class="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">CRM command center</h2>
+              <p id="crm-subtitle" class="mt-2 max-w-3xl text-sm text-slate-500">Track leads, customer health, support, invoices, and team activity from one workspace.</p>
+            </div>
+            <div class="flex flex-col gap-2 sm:flex-row">
+              <input id="crm-search" type="search" class="form-input form-control min-h-[44px] sm:w-72" placeholder="Search CRM records" />
+              <button id="refresh-button" class="btn-secondary justify-center">Refresh</button>
+            </div>
+          </div>
+          <p id="crm-status" class="mt-4 text-sm text-slate-600" role="status">Loading CRM data...</p>
+        </div>
+
+        <div id="crm-view" class="mt-5"></div>
       </div>
     </div>
   </section>
 
+  <div id="invoice-modal" class="fixed inset-0 z-50 hidden bg-slate-950/70 p-4">
+    <div class="mx-auto max-h-[95vh] max-w-5xl overflow-auto rounded-lg bg-white shadow-2xl">
+      <div class="flex items-center justify-between gap-4 border-b border-slate-200 p-4 print:hidden">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600">Invoice Preview</p>
+          <h2 id="invoice-preview-title" class="mt-1 text-xl font-extrabold text-slate-950">Invoice</h2>
+        </div>
+        <div class="flex gap-2">
+          <button id="print-invoice" class="btn-primary">Print / Save PDF</button>
+          <button id="close-invoice" class="btn-secondary">Close</button>
+        </div>
+      </div>
+      <div id="invoice-preview" class="p-6 sm:p-10"></div>
+    </div>
+  </div>
+
   <script is:inline>
     const state = {
       profile: null,
-      active: 'leads',
+      active: 'dashboard',
+      search: '',
+      dashboard: null,
+      selectedClientId: null,
+      selectedTicketId: null,
       data: {
         leads: [],
         clients: [],
@@ -67,154 +124,160 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         recipients: [],
         activities: [],
         profiles: [],
+        finances: [],
       },
     };
 
-    const modules = {
+    const navItems = [
+      ['dashboard', 'Dashboard', 'KPIs and next actions'],
+      ['leads', 'Leads', 'Pipeline and conversion'],
+      ['clients', 'Clients', '360 customer view'],
+      ['projects', 'Projects', 'Delivery health'],
+      ['tickets', 'Support', 'Ticket queue'],
+      ['followups', 'Follow-ups', 'Tasks and reminders'],
+      ['invoices', 'Invoices', 'Builder and PDF preview'],
+      ['finances', 'Finance', 'Transactions and analytics'],
+      ['campaigns', 'Marketing', 'MSG91 campaigns'],
+      ['activities', 'Activity', 'Team timeline'],
+      ['profiles', 'Users', 'Admin access'],
+    ];
+
+    const resourceConfig = {
       leads: {
-        label: 'Leads',
-        subtitle: 'Public form leads, sales status, priority, and conversion.',
-        columns: ['name', 'email', 'service', 'status', 'priority', 'created_at'],
+        title: 'Lead pipeline',
+        subtitle: 'Qualify incoming leads, set priority, and convert the right ones into clients and projects.',
         fields: [
           ['name', 'Name', 'text', true],
           ['email', 'Email', 'email', true],
-          ['company', 'Company', 'text', false],
-          ['service', 'Service', 'text', false],
-          ['budget', 'Budget', 'text', false],
-          ['message', 'Message', 'textarea', false],
-          ['status', 'Status', 'select:new,qualified,proposal,converted,lost', false],
-          ['priority', 'Priority', 'select:low,medium,high,urgent', false],
-          ['marketing_opt_in', 'Marketing opt-in', 'checkbox', false],
+          ['company', 'Company', 'text'],
+          ['service', 'Service', 'text'],
+          ['budget', 'Budget', 'text'],
+          ['status', 'Status', 'select:new,qualified,proposal,converted,lost'],
+          ['priority', 'Priority', 'select:low,medium,high,urgent'],
+          ['next_followup_at', 'Next follow-up', 'datetime-local'],
+          ['message', 'Message', 'textarea'],
+          ['marketing_opt_in', 'Marketing opt-in', 'checkbox'],
         ],
       },
       clients: {
-        label: 'Clients',
-        subtitle: 'Client records and marketing preferences.',
-        columns: ['name', 'company', 'email', 'status', 'marketing_opt_in', 'created_at'],
+        title: 'Client 360',
+        subtitle: 'View each client with linked projects, tickets, invoices, and recent work.',
         fields: [
           ['name', 'Name', 'text', true],
-          ['company', 'Company', 'text', false],
+          ['company', 'Company', 'text'],
           ['email', 'Email', 'email', true],
-          ['phone', 'Phone', 'text', false],
-          ['status', 'Status', 'select:active,paused,archived', false],
-          ['marketing_opt_in', 'Marketing opt-in', 'checkbox', false],
+          ['phone', 'Phone', 'text'],
+          ['status', 'Status', 'select:active,paused,archived'],
+          ['marketing_opt_in', 'Marketing opt-in', 'checkbox'],
         ],
       },
       projects: {
-        label: 'Projects',
-        subtitle: 'Client project health, progress, owners, and dates.',
-        columns: ['name', 'client_id', 'status', 'health', 'progress', 'due_date'],
+        title: 'Project health',
+        subtitle: 'Track delivery, issues, budgets, expenses, revenue, and the client-visible project status.',
         fields: [
-          ['client_id', 'Client ID', 'number', true],
+          ['client_id', 'Client', 'client', true],
+          ['external_project_id', 'Project ID', 'text'],
           ['name', 'Project name', 'text', true],
-          ['status', 'Status', 'select:planning,active,review,completed,on_hold', false],
-          ['health', 'Health', 'select:on_track,watch,at_risk', false],
-          ['progress', 'Progress %', 'number', false],
-          ['summary', 'Summary', 'textarea', false],
-          ['due_date', 'Due date', 'date', false],
-        ],
-      },
-      deals: {
-        label: 'Sales',
-        subtitle: 'Deal pipeline and expected close dates.',
-        columns: ['title', 'client_id', 'stage', 'value', 'currency', 'expected_close_date'],
-        fields: [
-          ['title', 'Deal title', 'text', true],
-          ['client_id', 'Client ID', 'number', false],
-          ['lead_id', 'Lead ID', 'number', false],
-          ['stage', 'Stage', 'select:qualified,proposal,negotiation,won,lost', false],
-          ['value', 'Value', 'number', false],
-          ['currency', 'Currency', 'text', false],
-          ['expected_close_date', 'Expected close date', 'date', false],
+          ['client_name', 'Client display name', 'text'],
+          ['project_manager', 'Project manager', 'text'],
+          ['status', 'Status', 'select:planning,active,review,completed,on_hold'],
+          ['health', 'Health', 'select:on_track,watch,at_risk'],
+          ['priority', 'Priority', 'select:low,medium,high,urgent'],
+          ['progress', 'Progress %', 'number'],
+          ['budget', 'Budget', 'number'],
+          ['expenses', 'Expenses', 'number'],
+          ['revenue', 'Revenue', 'number'],
+          ['profit', 'Profit', 'number'],
+          ['team_members', 'Team members', 'text'],
+          ['start_date', 'Start date', 'date'],
+          ['due_date', 'Due date', 'date'],
+          ['summary', 'Summary', 'textarea'],
+          ['notes', 'Notes', 'textarea'],
         ],
       },
       tickets: {
-        label: 'Support',
-        subtitle: 'Support requests from clients and active projects.',
-        columns: ['subject', 'client_id', 'status', 'priority', 'created_at'],
+        title: 'Support queue',
+        subtitle: 'Prioritize client requests and keep shared ticket messages in one place.',
         fields: [
-          ['client_id', 'Client ID', 'number', true],
-          ['project_id', 'Project ID', 'number', false],
+          ['client_id', 'Client', 'client', true],
+          ['project_id', 'Project', 'project'],
           ['subject', 'Subject', 'text', true],
+          ['priority', 'Priority', 'select:low,medium,high,urgent'],
+          ['status', 'Status', 'select:open,in_progress,waiting,resolved,closed'],
           ['description', 'Description', 'textarea', true],
-          ['status', 'Status', 'select:open,in_progress,waiting,resolved,closed', false],
-          ['priority', 'Priority', 'select:low,medium,high,urgent', false],
         ],
       },
       followups: {
-        label: 'Follow-ups',
-        subtitle: 'Scheduled follow-ups across leads, clients, deals, and tickets.',
-        columns: ['title', 'related_type', 'related_id', 'due_at', 'status', 'assigned_to'],
+        title: 'Follow-up tasks',
+        subtitle: 'Plan the next action across leads, clients, deals, tickets, and invoices.',
         fields: [
           ['related_type', 'Related type', 'select:lead,client,deal,ticket,invoice', true],
-          ['related_id', 'Related ID', 'number', false],
+          ['related_id', 'Related ID', 'number'],
           ['title', 'Title', 'text', true],
-          ['due_at', 'Due date/time', 'datetime-local', false],
-          ['status', 'Status', 'select:pending,done,cancelled', false],
-          ['notes', 'Notes', 'textarea', false],
-        ],
-      },
-      invoices: {
-        label: 'Invoices',
-        subtitle: 'Invoice records without online payment processing.',
-        columns: ['invoice_number', 'client_id', 'amount', 'currency', 'status', 'due_date'],
-        fields: [
-          ['client_id', 'Client ID', 'number', true],
-          ['project_id', 'Project ID', 'number', false],
-          ['invoice_number', 'Invoice number', 'text', true],
-          ['amount', 'Amount', 'number', true],
-          ['currency', 'Currency', 'text', false],
-          ['status', 'Status', 'select:draft,sent,paid,overdue,cancelled', false],
-          ['due_date', 'Due date', 'date', false],
-          ['file_url', 'PDF/link URL', 'url', false],
-          ['notes', 'Notes', 'textarea', false],
+          ['due_at', 'Due date/time', 'datetime-local'],
+          ['status', 'Status', 'select:pending,done,cancelled'],
+          ['notes', 'Notes', 'textarea'],
         ],
       },
       campaigns: {
-        label: 'Marketing',
-        subtitle: 'MSG91 opt-in email campaigns and send status.',
-        columns: ['name', 'subject', 'status', 'scheduled_at', 'sent_at', 'created_at'],
+        title: 'Marketing campaigns',
+        subtitle: 'Send MSG91 campaigns only to opted-in leads and clients.',
         fields: [
           ['name', 'Campaign name', 'text', true],
           ['subject', 'Subject', 'text', true],
+          ['msg91_template_id', 'MSG91 template ID', 'text'],
+          ['scheduled_at', 'Scheduled date/time', 'datetime-local'],
+          ['status', 'Status', 'select:draft,scheduled,template_pending,sent,failed'],
           ['body', 'Body', 'textarea', true],
-          ['msg91_template_id', 'MSG91 template ID', 'text', false],
-          ['scheduled_at', 'Scheduled date/time', 'datetime-local', false],
-          ['status', 'Status', 'select:draft,scheduled,template_pending,sent,failed', false],
         ],
       },
-      activities: {
-        label: 'Activity',
-        subtitle: 'Team actions across CRM records.',
-        columns: ['actor_name', 'action', 'entity_type', 'entity_id', 'summary', 'created_at'],
-        fields: [],
+      finances: {
+        title: 'Company finance',
+        subtitle: 'Record income, expenses, revenue, and salary distribution like the TechMigos finance tracker.',
+        fields: [
+          ['transaction_date', 'Date', 'date', true],
+          ['transaction_type', 'Type', 'select:income,expense,revenue,salary', true],
+          ['reference_id', 'Reference ID', 'text'],
+          ['title', 'Purpose / title', 'text', true],
+          ['client', 'Client', 'text'],
+          ['project', 'Project', 'text'],
+          ['paid_by', 'Paid by', 'text'],
+          ['received_by', 'Received by', 'text'],
+          ['payment_method', 'Payment method', 'select:UPI,bank_transfer,cash,card,other'],
+          ['department', 'Department', 'text'],
+          ['region', 'Region', 'text'],
+          ['quarter', 'Quarter', 'text'],
+          ['status', 'Status', 'select:pending,paid,received,active,half_payment,cancelled'],
+          ['amount', 'Amount', 'number', true],
+          ['notes', 'Notes', 'textarea'],
+        ],
       },
       profiles: {
-        label: 'Users',
-        subtitle: 'Portal profiles. Company admins only.',
-        columns: ['name', 'email', 'role', 'status', 'client_id', 'created_at'],
+        title: 'Portal users',
+        subtitle: 'Manage provisioned portal profiles. Company admins only.',
         fields: [
           ['auth_user_id', 'Auth user ID', 'text', true],
           ['name', 'Name', 'text', true],
           ['email', 'Email', 'email', true],
           ['role', 'Role', 'select:company_admin,company_member,client', true],
-          ['status', 'Status', 'select:active,disabled', false],
-          ['client_id', 'Client ID', 'number', false],
+          ['status', 'Status', 'select:active,disabled'],
+          ['client_id', 'Linked client', 'client'],
         ],
       },
     };
 
     const els = {
+      nav: document.getElementById('crm-nav'),
+      view: document.getElementById('crm-view'),
       status: document.getElementById('crm-status'),
       user: document.getElementById('portal-user'),
-      kpis: document.getElementById('kpis'),
-      tabs: document.getElementById('crm-tabs'),
-      form: document.getElementById('crm-form'),
-      formTitle: document.getElementById('form-title'),
-      tableTitle: document.getElementById('table-title'),
-      tableSubtitle: document.getElementById('table-subtitle'),
-      thead: document.getElementById('crm-table-head'),
-      tbody: document.getElementById('crm-table-body'),
+      title: document.getElementById('crm-title'),
+      subtitle: document.getElementById('crm-subtitle'),
+      eyebrow: document.getElementById('crm-eyebrow'),
+      search: document.getElementById('crm-search'),
+      modal: document.getElementById('invoice-modal'),
+      invoicePreview: document.getElementById('invoice-preview'),
+      invoicePreviewTitle: document.getElementById('invoice-preview-title'),
     };
 
     function token() {
@@ -225,9 +288,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
+    function money(value, currency = 'INR') {
+      return `${escapeHtml(currency || 'INR')} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function nice(value) {
+      return escapeHtml(String(value || '').replace(/_/g, ' ') || '-');
+    }
+
+    function clientName(id) {
+      const client = state.data.clients.find((item) => String(item.id) === String(id));
+      return client ? `${client.name}${client.company ? `, ${client.company}` : ''}` : `Client #${id || '-'}`;
+    }
+
     function setStatus(message, tone = 'neutral') {
       els.status.textContent = message;
-      els.status.className = `mt-6 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
+      els.status.className = `mt-4 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
     }
 
     async function portal(path, options = {}) {
@@ -247,146 +323,557 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       location.href = '/login';
     }
 
-    function renderTabs() {
-      const names = Object.keys(modules).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
-      els.tabs.innerHTML = names.map((name) => `
-        <button class="px-4 py-2 rounded-md text-sm font-semibold border ${state.active === name ? 'bg-slate-950 text-white border-slate-950' : 'bg-white text-slate-700 border-slate-200'}" data-tab="${name}">
-          ${modules[name].label}
+    function visibleNavItems() {
+      return navItems.filter(([key]) => key !== 'profiles' || state.profile?.role === 'company_admin');
+    }
+
+    function renderShell() {
+      els.nav.innerHTML = visibleNavItems().map(([key, label, sub]) => `
+        <button class="w-full rounded-md px-3 py-3 text-left transition ${state.active === key ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'}" data-nav="${key}">
+          <span class="block text-sm font-extrabold">${label}</span>
+          <span class="block text-xs ${state.active === key ? 'text-slate-300' : 'text-slate-400'}">${sub}</span>
         </button>
       `).join('');
-      els.tabs.querySelectorAll('button').forEach((button) => {
+      els.nav.querySelectorAll('[data-nav]').forEach((button) => {
         button.addEventListener('click', () => {
-          state.active = button.dataset.tab;
+          state.active = button.dataset.nav;
           render();
         });
       });
     }
 
-    function renderKpis() {
-      const items = [
-        ['Leads', state.data.leads.length],
-        ['Clients', state.data.clients.length],
-        ['Open Tickets', state.data.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length],
-        ['Invoices', state.data.invoices.length],
-      ];
-      els.kpis.innerHTML = items.map(([label, value]) => `
-        <div class="bg-white border border-slate-200 rounded-lg p-5">
-          <p class="text-sm text-slate-500">${label}</p>
-          <p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p>
+    function setHeader(title, subtitle, eyebrow) {
+      els.title.textContent = title;
+      els.subtitle.textContent = subtitle;
+      els.eyebrow.textContent = eyebrow || 'Company CRM';
+    }
+
+    function cardMetric(label, value, hint) {
+      return `<article class="rounded-lg border border-slate-200 bg-white p-5">
+        <p class="text-sm font-semibold text-slate-500">${label}</p>
+        <p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p>
+        <p class="mt-2 text-xs text-slate-400">${hint}</p>
+      </article>`;
+    }
+
+    function badge(value, tone = 'slate') {
+      const tones = {
+        slate: 'bg-slate-100 text-slate-700',
+        green: 'bg-emerald-50 text-emerald-700',
+        yellow: 'bg-amber-50 text-amber-700',
+        red: 'bg-red-50 text-red-700',
+        blue: 'bg-blue-50 text-blue-700',
+      };
+      return `<span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone] || tones.slate}">${nice(value)}</span>`;
+    }
+
+    function priorityTone(priority) {
+      if (priority === 'urgent') return 'red';
+      if (priority === 'high') return 'yellow';
+      if (priority === 'low') return 'blue';
+      return 'slate';
+    }
+
+    function statusTone(status) {
+      if (['paid', 'received', 'active', 'completed', 'resolved', 'closed', 'on_track'].includes(status)) return 'green';
+      if (['overdue', 'urgent', 'at_risk', 'cancelled'].includes(status)) return 'red';
+      if (['sent', 'viewed', 'watch', 'high', 'half_payment', 'pending'].includes(status)) return 'yellow';
+      return 'slate';
+    }
+
+    function filtered(items, keys) {
+      const query = state.search.trim().toLowerCase();
+      if (!query) return items;
+      return items.filter((item) => keys.some((key) => String(item[key] || '').toLowerCase().includes(query)));
+    }
+
+    function renderDashboard() {
+      setHeader('CRM command center', 'A work-first view of pipeline, client health, support pressure, invoices, and upcoming tasks.', 'Dashboard');
+      const metrics = state.dashboard?.metrics || {};
+      const openInvoices = state.dashboard?.openInvoices || [];
+      const urgentTickets = state.dashboard?.urgentTickets || [];
+      const dueFollowups = state.dashboard?.dueFollowups || [];
+      els.view.innerHTML = `
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          ${cardMetric('Leads', metrics.leads || 0, `${metrics.qualifiedLeads || 0} qualified/proposal`)}
+          ${cardMetric('Active projects', metrics.activeProjects || 0, `${metrics.clients || 0} clients total`)}
+          ${cardMetric('Open tickets', metrics.openTickets || 0, 'High priority tickets surface below')}
+          ${cardMetric('Outstanding', money(metrics.invoiceOutstanding || 0), `${metrics.overdueInvoices || 0} overdue invoices`)}
         </div>
-      `).join('');
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+          ${cardMetric('Finance income', money(metrics.financeIncome || 0), 'Income + revenue tracker')}
+          ${cardMetric('Finance expenses', money(metrics.financeExpenses || 0), 'Expenses + salary tracker')}
+          ${cardMetric('Net profit', money(metrics.financeProfit || 0), 'Based on recorded transactions')}
+        </div>
+        <div class="mt-5 grid gap-5 xl:grid-cols-3">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Next follow-ups</h3>
+            <div class="mt-4 space-y-3">${dueFollowups.map((item) => rowLine(item.title, item.due_at || 'No due date', item.status)).join('') || empty('No pending follow-ups.')}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Support pressure</h3>
+            <div class="mt-4 space-y-3">${urgentTickets.map((item) => rowLine(item.subject, clientName(item.client_id), item.priority, priorityTone(item.priority))).join('') || empty('No urgent tickets.')}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Open invoices</h3>
+            <div class="mt-4 space-y-3">${openInvoices.map((item) => rowLine(item.invoice_number, money(item.total_amount || item.amount, item.currency), item.status)).join('') || empty('No open invoices.')}</div>
+          </section>
+        </div>
+        <div class="mt-5 grid gap-5 xl:grid-cols-2">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Project financial health</h3>
+            <div class="mt-4 space-y-3">${(state.dashboard?.finance?.projects || []).map((item) => `
+              <article class="rounded-md border border-slate-100 p-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div><p class="font-bold text-slate-900">${escapeHtml(item.name)}</p><p class="text-sm text-slate-500">Budget ${money(item.budget)} · Progress ${escapeHtml(item.progress)}%</p></div>
+                  ${badge(item.status)}
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  <span class="rounded bg-emerald-50 px-2 py-1 text-emerald-700">Revenue ${money(item.revenue)}</span>
+                  <span class="rounded bg-red-50 px-2 py-1 text-red-700">Expense ${money(item.expenses)}</span>
+                  <span class="rounded bg-slate-100 px-2 py-1 text-slate-700">Profit ${money(item.profit)}</span>
+                </div>
+              </article>
+            `).join('') || empty('No project finance data yet.')}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Recent company transactions</h3>
+            <div class="mt-4 space-y-3">${(state.dashboard?.finance?.recent || []).map((item) => rowLine(item.title, `${item.transaction_date || ''} · ${money(item.amount)} · ${item.project || item.client || ''}`, item.transaction_type)).join('') || empty('No finance transactions yet.')}</div>
+          </section>
+        </div>
+        <section class="mt-5 rounded-lg border border-slate-200 bg-white p-5">
+          <h3 class="text-lg font-extrabold text-slate-950">Recent activity</h3>
+          <div class="mt-4 grid gap-3">${(state.dashboard?.activities || []).map((item) => `
+            <article class="flex flex-col gap-1 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><p class="font-bold text-slate-900">${escapeHtml(item.summary || item.action)}</p><p class="text-sm text-slate-500">${escapeHtml(item.actor_name || 'System')} · ${nice(item.entity_type)}</p></div>
+              <p class="text-xs text-slate-400">${escapeHtml(item.created_at || '')}</p>
+            </article>
+          `).join('') || empty('No activity yet.')}</div>
+        </section>
+      `;
+    }
+
+    function rowLine(title, meta, status, tone = 'slate') {
+      return `<article class="rounded-md border border-slate-100 p-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0"><p class="truncate font-bold text-slate-900">${escapeHtml(title)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(meta)}</p></div>
+          ${badge(status || 'open', tone)}
+        </div>
+      </article>`;
+    }
+
+    function empty(text) {
+      return `<p class="rounded-md border border-dashed border-slate-200 p-4 text-sm text-slate-500">${text}</p>`;
     }
 
     function inputFor([name, label, type, required]) {
-      const value = type.startsWith('select:') ? type.slice(7).split(',') : null;
       if (type === 'textarea') {
-        return `<label class="block"><span class="form-label">${label}</span><textarea name="${name}" ${required ? 'required' : ''} class="form-input form-control min-h-[96px]"></textarea></label>`;
+        return `<label class="block md:col-span-2"><span class="form-label">${label}</span><textarea name="${name}" ${required ? 'required' : ''} class="form-input form-control min-h-[96px]"></textarea></label>`;
       }
       if (type === 'checkbox') {
-        return `<label class="flex items-center gap-3 text-sm font-semibold text-slate-700"><input name="${name}" type="checkbox" class="h-4 w-4 rounded border-slate-300" />${label}</label>`;
+        return `<label class="flex items-center gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700"><input name="${name}" type="checkbox" class="h-4 w-4 rounded border-slate-300" />${label}</label>`;
       }
-      if (value) {
-        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control">${value.map((item) => `<option value="${item}">${item.replace(/_/g, ' ')}</option>`).join('')}</select></label>`;
+      if (type === 'client') {
+        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select client</option>${state.data.clients.map((client) => `<option value="${client.id}">${escapeHtml(client.name)}${client.company ? ` · ${escapeHtml(client.company)}` : ''}</option>`).join('')}</select></label>`;
+      }
+      if (type === 'project') {
+        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select project</option>${state.data.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.name)}${project.client_id ? ` · ${escapeHtml(clientName(project.client_id))}` : ''}</option>`).join('')}</select></label>`;
+      }
+      if (type.startsWith('select:')) {
+        const values = type.slice(7).split(',');
+        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control">${values.map((item) => `<option value="${item}">${nice(item)}</option>`).join('')}</select></label>`;
       }
       return `<label class="block"><span class="form-label">${label}</span><input name="${name}" type="${type}" ${required ? 'required' : ''} class="form-input form-control" /></label>`;
     }
 
-    function renderForm() {
-      const config = modules[state.active];
-      els.formTitle.textContent = config.fields.length ? `Create ${config.label.slice(0, -1).toLowerCase() || config.label}` : config.label;
-      if (!config.fields.length) {
-        els.form.innerHTML = '<p class="text-sm text-slate-500">This module is read-only in the CRM screen.</p>';
-        return;
-      }
-      els.form.innerHTML = `${config.fields.map(inputFor).join('')}<button class="btn-primary w-full justify-center" type="submit">Save</button>`;
-    }
-
     function serializeForm(form) {
       const body = {};
-      new FormData(form).forEach((value, key) => {
-        body[key] = value;
-      });
-      form.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-        body[input.name] = input.checked;
-      });
-      for (const key of ['client_id', 'project_id', 'lead_id', 'related_id', 'progress']) {
+      new FormData(form).forEach((value, key) => { body[key] = value; });
+      form.querySelectorAll('input[type="checkbox"]').forEach((input) => { body[input.name] = input.checked; });
+      for (const key of ['client_id', 'project_id', 'lead_id', 'related_id', 'progress', 'value', 'budget', 'expenses', 'revenue', 'profit', 'amount']) {
         if (body[key] === '') delete body[key];
         else if (body[key] !== undefined) body[key] = Number(body[key]);
       }
-      if (body.amount !== undefined && body.amount !== '') body.amount = Number(body.amount);
       return body;
     }
 
-    function renderTable() {
-      const config = modules[state.active];
-      const rows = state.data[state.active] || [];
-      els.tableTitle.textContent = config.label;
-      els.tableSubtitle.textContent = config.subtitle;
-      const headers = ['id', ...config.columns, 'actions'];
-      els.thead.innerHTML = `<tr>${headers.map((head) => `<th class="px-4 py-3 font-bold">${head.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
-      els.tbody.innerHTML = rows.map((row) => `
-        <tr>
-          <td class="px-4 py-3 font-semibold text-slate-900">${escapeHtml(row.id)}</td>
-          ${config.columns.map((col) => `<td class="px-4 py-3 text-slate-600">${escapeHtml(row[col])}</td>`).join('')}
-          <td class="px-4 py-3 whitespace-nowrap">${actionsFor(row)}</td>
-        </tr>
-      `).join('') || `<tr><td class="px-4 py-8 text-slate-500" colspan="${headers.length}">No records yet.</td></tr>`;
+    function renderResource(key) {
+      const config = resourceConfig[key];
+      setHeader(config.title, config.subtitle, config.title);
+      const rows = filtered(state.data[key] || [], ['name', 'email', 'company', 'subject', 'title', 'status', 'priority']);
+      els.view.innerHTML = `
+        <div class="grid gap-5 xl:grid-cols-[380px_1fr]">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Create ${config.title.split(' ')[0].toLowerCase()}</h3>
+            <form id="resource-form" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">${config.fields.map(inputFor).join('')}<button class="btn-primary justify-center md:col-span-2 xl:col-span-1" type="submit">Save record</button></form>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            ${renderRecords(key, rows)}
+          </section>
+        </div>
+      `;
+      document.getElementById('resource-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await saveResource(key, serializeForm(event.currentTarget));
+      });
+      bindActions();
     }
 
-    function actionsFor(row) {
-      if (state.active === 'leads' && row.status !== 'converted') {
-        return `<button class="text-primary-700 font-semibold" data-convert="${row.id}">Convert</button>`;
-      }
-      if (state.active === 'campaigns') {
-        return `<button class="text-primary-700 font-semibold" data-send="${row.id}">Send</button>`;
-      }
-      return '<span class="text-slate-400">-</span>';
+    function renderRecords(key, rows) {
+      if (key === 'leads') return renderLeads(rows);
+      if (key === 'clients') return renderClients(rows);
+      if (key === 'projects') return renderProjects(rows);
+      if (key === 'tickets') return renderTickets(rows);
+      if (key === 'finances') return renderFinance(rows);
+      if (key === 'campaigns') return renderCampaigns(rows);
+      if (key === 'activities') return renderActivity();
+      if (key === 'profiles') return renderCompactTable(rows, ['name', 'email', 'role', 'status', 'client_id']);
+      return renderCompactTable(rows, ['title', 'related_type', 'related_id', 'due_at', 'status']);
     }
 
-    function bindTableActions() {
-      els.tbody.querySelectorAll('[data-convert]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          const projectName = prompt('Project name for this converted client?') || '';
-          try {
-            await portal(`/api/portal/leads/${button.dataset.convert}/convert`, {
-              method: 'POST',
-              body: JSON.stringify({ projectName }),
-            });
-            setStatus('Lead converted to client.', 'success');
-            await loadData();
-          } catch (error) {
-            setStatus(error instanceof Error ? error.message : 'Could not convert lead.', 'error');
-          }
-        });
+    function renderCompactTable(rows, columns) {
+      return `<div class="overflow-x-auto"><table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">ID</th>${columns.map((col) => `<th class="px-4 py-3">${nice(col)}</th>`).join('')}</tr></thead>
+        <tbody class="divide-y divide-slate-100">${rows.map((row) => `<tr><td class="px-4 py-3 font-bold text-slate-900">${row.id}</td>${columns.map((col) => `<td class="px-4 py-3 text-slate-600">${col === 'client_id' ? escapeHtml(clientName(row[col])) : escapeHtml(row[col])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length + 1}" class="px-4 py-8 text-slate-500">No records yet.</td></tr>`}</tbody>
+      </table></div>`;
+    }
+
+    function renderLeads(rows) {
+      const groups = ['new', 'qualified', 'proposal', 'converted', 'lost'];
+      return `<div class="grid gap-4 xl:grid-cols-5">${groups.map((stage) => `
+        <div class="rounded-lg bg-slate-50 p-3">
+          <div class="flex items-center justify-between"><h3 class="text-sm font-extrabold text-slate-800">${nice(stage)}</h3><span class="text-xs font-bold text-slate-400">${rows.filter((row) => row.status === stage).length}</span></div>
+          <div class="mt-3 space-y-3">${rows.filter((row) => row.status === stage).map((lead) => `
+            <article class="rounded-md border border-slate-200 bg-white p-3">
+              <p class="font-bold text-slate-950">${escapeHtml(lead.name)}</p>
+              <p class="mt-1 text-xs text-slate-500">${escapeHtml(lead.email)} · ${escapeHtml(lead.service || 'General')}</p>
+              <div class="mt-3 flex items-center justify-between gap-2">${badge(lead.priority, priorityTone(lead.priority))}<button class="text-xs font-bold text-primary-700" data-convert="${lead.id}">Convert</button></div>
+              <p class="mt-2 text-xs text-slate-400">${lead.next_followup_at ? `Next: ${escapeHtml(lead.next_followup_at)}` : 'No follow-up set'}</p>
+            </article>
+          `).join('') || empty('No leads')}</div>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    function renderClients(rows) {
+      const selected = rows.find((client) => String(client.id) === String(state.selectedClientId)) || rows[0];
+      if (selected) state.selectedClientId = selected.id;
+      const projects = state.data.projects.filter((item) => String(item.client_id) === String(state.selectedClientId));
+      const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(state.selectedClientId));
+      const tickets = state.data.tickets.filter((item) => String(item.client_id) === String(state.selectedClientId));
+      return `<div class="grid gap-5 xl:grid-cols-[300px_1fr]">
+        <div class="space-y-2">${rows.map((client) => `<button class="w-full rounded-md border px-3 py-3 text-left ${String(client.id) === String(state.selectedClientId) ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-700'}" data-client="${client.id}"><span class="block font-bold">${escapeHtml(client.name)}</span><span class="block text-xs opacity-75">${escapeHtml(client.company || client.email)}</span></button>`).join('') || empty('No clients yet.')}</div>
+        <div>${selected ? `
+          <div class="rounded-lg border border-slate-200 p-5">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 class="text-2xl font-extrabold text-slate-950">${escapeHtml(selected.name)}</h3><p class="text-sm text-slate-500">${escapeHtml(selected.company || '')} · ${escapeHtml(selected.email)}</p></div><div class="flex flex-wrap gap-2">${badge(selected.status, selected.status === 'active' ? 'green' : 'slate')}${state.profile?.role === 'company_admin' ? `<button class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-primary-700" data-client-invite="${selected.id}">Create client login</button>` : ''}</div></div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-3">${cardMetric('Projects', projects.length, 'Linked work')}${cardMetric('Invoices', invoices.length, money(invoices.reduce((sum, invoice) => sum + Number(invoice.total_amount || invoice.amount || 0), 0))}${cardMetric('Open tickets', tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length, 'Support')}</div>
+            <div class="mt-5 grid gap-4 lg:grid-cols-3">
+              <div><h4 class="font-bold text-slate-950">Projects</h4><div class="mt-2 space-y-2">${projects.map((project) => rowLine(project.name, `${project.progress || 0}% progress`, project.health)).join('') || empty('No projects')}</div></div>
+              <div><h4 class="font-bold text-slate-950">Invoices</h4><div class="mt-2 space-y-2">${invoices.map((invoice) => `<button class="w-full text-left" data-invoice-view="${invoice.id}">${rowLine(invoice.invoice_number, money(invoice.total_amount || invoice.amount, invoice.currency), invoice.status)}</button>`).join('') || empty('No invoices')}</div></div>
+              <div><h4 class="font-bold text-slate-950">Tickets</h4><div class="mt-2 space-y-2">${tickets.map((ticket) => rowLine(ticket.subject, ticket.created_at || '', ticket.status)).join('') || empty('No tickets')}</div></div>
+            </div>
+          </div>` : empty('No client selected.')}</div>
+      </div>`;
+    }
+
+    function renderProjects(rows) {
+      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((project) => `
+        <article class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-bold uppercase text-slate-400">${escapeHtml(project.external_project_id || `Project #${project.id}`)}</p>
+              <h3 class="mt-1 font-extrabold text-slate-950">${escapeHtml(project.name)}</h3>
+              <p class="mt-1 text-sm text-slate-500">${escapeHtml(project.client_name || clientName(project.client_id))} · Manager: ${escapeHtml(project.project_manager || '-')}</p>
+            </div>
+            ${badge(project.health, statusTone(project.health))}
+          </div>
+          <div class="mt-4 grid gap-2 text-xs sm:grid-cols-4">
+            <span class="rounded bg-slate-100 px-2 py-1 text-slate-700">Budget ${money(project.budget)}</span>
+            <span class="rounded bg-red-50 px-2 py-1 text-red-700">Expense ${money(project.expenses)}</span>
+            <span class="rounded bg-emerald-50 px-2 py-1 text-emerald-700">Revenue ${money(project.revenue)}</span>
+            <span class="rounded bg-blue-50 px-2 py-1 text-blue-700">Profit ${money(project.profit)}</span>
+          </div>
+          <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full bg-primary-600" style="width:${Math.max(0, Math.min(100, Number(project.progress || 0)))}%"></div></div>
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2"><p class="text-xs text-slate-500">${escapeHtml(project.status)} · ${escapeHtml(project.priority)} priority · Due ${escapeHtml(project.due_date || '-')}</p>${badge(`${project.progress || 0}%`)}</div>
+          <p class="mt-3 text-sm text-slate-600">${escapeHtml(project.summary || project.notes || 'No project notes added yet.')}</p>
+        </article>
+      `).join('') || empty('No projects yet.')}</div>`;
+    }
+
+    function renderTickets(rows) {
+      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((ticket) => `
+        <article class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-start justify-between gap-3"><div><p class="font-extrabold text-slate-950">${escapeHtml(ticket.subject)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(clientName(ticket.client_id))}</p></div>${badge(ticket.priority, priorityTone(ticket.priority))}</div>
+          <p class="mt-3 line-clamp-3 text-sm text-slate-600">${escapeHtml(ticket.description)}</p>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2"><div class="flex gap-2">${badge(ticket.status)}${ticket.project_id ? badge(`Project #${ticket.project_id}`) : ''}</div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-ticket="${ticket.id}">Reply</button>${!['resolved', 'closed'].includes(ticket.status) ? `<button class="text-sm font-bold text-emerald-700" data-ticket-status="${ticket.id}" data-status="resolved">Resolve</button>` : `<button class="text-sm font-bold text-primary-700" data-ticket-status="${ticket.id}" data-status="open">Reopen</button>`}</div></div>
+        </article>
+      `).join('') || empty('No tickets yet.')}</div>`;
+    }
+
+    function renderFinance(rows) {
+      const income = rows.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const expenses = rows.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      return `<div>
+        <div class="mb-5 grid gap-4 sm:grid-cols-3">
+          ${cardMetric('Income + revenue', money(income), 'Recorded receipts')}
+          ${cardMetric('Expenses + salary', money(expenses), 'Recorded outflow')}
+          ${cardMetric('Net profit', money(income - expenses), 'Tracker balance')}
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Reference</th><th class="px-4 py-3">Title</th><th class="px-4 py-3">Project</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Amount</th></tr></thead>
+            <tbody class="divide-y divide-slate-100">${rows.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.transaction_date || '')}</td><td class="px-4 py-3">${badge(item.transaction_type)}</td><td class="px-4 py-3 text-slate-500">${escapeHtml(item.reference_id || '')}</td><td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(item.title)}</td><td class="px-4 py-3 text-slate-600">${escapeHtml(item.project || item.client || '')}</td><td class="px-4 py-3">${badge(item.status)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount)}</td></tr>`).join('') || `<tr><td colspan="7" class="px-4 py-8 text-slate-500">No finance transactions yet.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+
+    function renderCampaigns(rows) {
+      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((campaign) => `
+        <article class="rounded-lg border border-slate-200 p-4">
+          <div class="flex items-start justify-between gap-3"><div><p class="font-extrabold text-slate-950">${escapeHtml(campaign.name)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(campaign.subject)}</p></div>${badge(campaign.status)}</div>
+          <p class="mt-3 line-clamp-3 text-sm text-slate-600">${escapeHtml(campaign.body)}</p>
+          <button class="mt-4 text-sm font-bold text-primary-700" data-send="${campaign.id}">Send to opted-in contacts</button>
+        </article>
+      `).join('') || empty('No campaigns yet.')}</div>`;
+    }
+
+    function renderActivity() {
+      setHeader('Activity timeline', 'A shared audit trail of CRM work across leads, invoices, tickets, campaigns, and clients.', 'Activity');
+      return `<div class="space-y-3">${state.data.activities.map((item) => rowLine(item.summary || item.action, `${item.actor_name || 'System'} · ${item.created_at || ''}`, item.entity_type)).join('') || empty('No activity yet.')}</div>`;
+    }
+
+    function renderInvoices() {
+      setHeader('Invoice center', 'Create branded invoices from clients and projects, preview them, send through MSG91, and print/save as PDF.', 'Invoices');
+      els.view.innerHTML = `
+        <div class="grid gap-5 xl:grid-cols-[430px_1fr]">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Invoice builder</h3>
+            <form id="invoice-form" class="mt-4 space-y-4">
+              <div class="grid gap-4 sm:grid-cols-2">
+                ${inputFor(['client_id', 'Client', 'client', true])}
+                ${inputFor(['project_id', 'Project', 'project'])}
+                <label class="block"><span class="form-label">Invoice number</span><input name="invoice_number" id="invoice-number" type="text" required class="form-input form-control" /></label>
+                <label class="block"><span class="form-label">Currency</span><input name="currency" value="INR" class="form-input form-control" /></label>
+                <label class="block"><span class="form-label">Invoice date</span><input name="invoice_date" type="date" class="form-input form-control" /></label>
+                <label class="block"><span class="form-label">Due date</span><input name="due_date" type="date" class="form-input form-control" /></label>
+                <label class="block"><span class="form-label">Discount</span><input name="discount_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
+                <label class="block"><span class="form-label">Tax amount</span><input name="tax_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
+              </div>
+              <div>
+                <div class="flex items-center justify-between"><span class="form-label">Line items</span><button id="add-line" type="button" class="text-sm font-bold text-primary-700">Add line</button></div>
+                <div id="line-items" class="mt-2 space-y-2"></div>
+              </div>
+              <label class="block"><span class="form-label">Terms</span><textarea name="terms" class="form-input form-control min-h-[80px]">Payment is due by the listed due date unless otherwise agreed in writing.</textarea></label>
+              <label class="block"><span class="form-label">Payment instructions</span><textarea name="payment_instructions" class="form-input form-control min-h-[80px]">Please use the payment instructions shared by TechMigos for this project.</textarea></label>
+              <label class="block"><span class="form-label">Notes</span><textarea name="notes" class="form-input form-control min-h-[80px]"></textarea></label>
+              <div id="invoice-total" class="rounded-md bg-slate-50 p-4 text-sm font-bold text-slate-900">Total: INR 0.00</div>
+              <button class="btn-primary w-full justify-center" type="submit">Create invoice</button>
+            </form>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <div class="flex items-center justify-between gap-3"><h3 class="text-lg font-extrabold text-slate-950">Recent invoices</h3><button id="refresh-invoice-number" class="text-sm font-bold text-primary-700">Next number</button></div>
+            <div class="mt-4 overflow-x-auto">${renderCompactTable(filtered(state.data.invoices, ['invoice_number', 'status']), ['invoice_number', 'client_id', 'total_amount', 'currency', 'status', 'due_date'])}</div>
+            <div class="mt-4 grid gap-3">${state.data.invoices.slice(0, 12).map((invoice) => `<article class="flex flex-col gap-3 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-bold text-slate-950">${escapeHtml(invoice.invoice_number)}</p><p class="text-sm text-slate-500">${escapeHtml(clientName(invoice.client_id))} · ${money(invoice.total_amount || invoice.amount, invoice.currency)}</p></div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-invoice-view="${invoice.id}">Preview</button><button class="text-sm font-bold text-primary-700" data-invoice-send="${invoice.id}">Send</button></div></article>`).join('') || empty('No invoices yet.')}</div>
+          </section>
+        </div>
+      `;
+      setupInvoiceBuilder();
+      bindActions();
+    }
+
+    async function saveResource(key, body) {
+      try {
+        await portal(`/api/portal/${key}`, { method: 'POST', body: JSON.stringify(body) });
+        setStatus('Record saved.', 'success');
+        await loadData();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not save record.', 'error');
+      }
+    }
+
+    async function loadNextInvoiceNumber() {
+      const result = await portal('/api/portal/invoices/next-number');
+      const input = document.getElementById('invoice-number');
+      if (input) input.value = result.invoice_number || '';
+    }
+
+    function setupInvoiceBuilder() {
+      const form = document.getElementById('invoice-form');
+      const lineItems = document.getElementById('line-items');
+      const addLine = () => {
+        const index = lineItems.children.length;
+        lineItems.insertAdjacentHTML('beforeend', `<div class="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-[1fr_82px_110px_32px]"><input name="description_${index}" required placeholder="Description" class="form-input form-control" /><input name="quantity_${index}" type="number" step="0.01" value="1" class="form-input form-control" /><input name="rate_${index}" type="number" step="0.01" value="0" class="form-input form-control" /><button type="button" class="rounded-md border border-slate-200 text-slate-500" data-remove-line>&times;</button></div>`);
+      };
+      addLine();
+      document.getElementById('add-line')?.addEventListener('click', addLine);
+      document.getElementById('refresh-invoice-number')?.addEventListener('click', loadNextInvoiceNumber);
+      lineItems.addEventListener('click', (event) => {
+        if (event.target.matches('[data-remove-line]')) event.target.closest('div')?.remove();
+        updateInvoiceTotal();
       });
-      els.tbody.querySelectorAll('[data-send]').forEach((button) => {
-        button.addEventListener('click', async () => {
-          try {
-            const result = await portal(`/api/portal/campaigns/${button.dataset.send}/send`, { method: 'POST', body: '{}' });
-            setStatus(result.message || `Campaign send finished. Sent ${result.sent || 0}.`, result.sent ? 'success' : 'neutral');
-            await loadData();
-          } catch (error) {
-            setStatus(error instanceof Error ? error.message : 'Could not send campaign.', 'error');
-          }
-        });
+      form?.addEventListener('input', updateInvoiceTotal);
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = invoiceBody(form);
+        await saveResource('invoices', body);
       });
+      loadNextInvoiceNumber().catch(() => {});
+      updateInvoiceTotal();
+    }
+
+    function invoiceBody(form) {
+      const data = Object.fromEntries(new FormData(form).entries());
+      const items = Array.from(document.querySelectorAll('#line-items > div')).map((row) => ({
+        description: row.querySelector('[name^="description_"]')?.value || '',
+        quantity: Number(row.querySelector('[name^="quantity_"]')?.value || 1),
+        rate: Number(row.querySelector('[name^="rate_"]')?.value || 0),
+      })).filter((item) => item.description);
+      return {
+        client_id: Number(data.client_id),
+        project_id: data.project_id ? Number(data.project_id) : null,
+        invoice_number: data.invoice_number,
+        currency: data.currency || 'INR',
+        invoice_date: data.invoice_date,
+        due_date: data.due_date,
+        discount_amount: Number(data.discount_amount || 0),
+        tax_amount: Number(data.tax_amount || 0),
+        terms: data.terms,
+        payment_instructions: data.payment_instructions,
+        notes: data.notes,
+        items,
+      };
+    }
+
+    function updateInvoiceTotal() {
+      const form = document.getElementById('invoice-form');
+      if (!form) return;
+      const body = invoiceBody(form);
+      const subtotal = body.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
+      const total = Math.max(subtotal - body.discount_amount + body.tax_amount, 0);
+      document.getElementById('invoice-total').textContent = `Subtotal: ${money(subtotal, body.currency)} · Total: ${money(total, body.currency)}`;
+    }
+
+    async function showInvoice(id) {
+      const result = await portal(`/api/portal/invoices/${id}`);
+      const detail = result.detail;
+      els.invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
+      els.invoicePreview.innerHTML = invoiceHtml(detail);
+      els.modal.classList.remove('hidden');
+    }
+
+    function invoiceHtml(detail) {
+      const invoice = detail.invoice;
+      return `<article class="mx-auto max-w-4xl bg-white text-slate-950">
+        <div class="flex flex-col gap-8 border-b-4 border-slate-950 pb-8 sm:flex-row sm:items-start sm:justify-between">
+          <div><p class="text-3xl font-extrabold text-primary-700">TechMigos</p><p class="mt-2 text-sm text-slate-500">Web, mobile, AI and backend engineering</p><p class="mt-1 text-sm text-slate-500">info@techmigos.com · www.techmigos.com</p></div>
+          <div class="text-left sm:text-right"><h1 class="text-4xl font-extrabold">INVOICE</h1><p class="mt-2 text-lg font-bold">${escapeHtml(invoice.invoice_number)}</p>${badge(invoice.status)}</div>
+        </div>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2">
+          <div><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Bill to</p><h2 class="mt-2 text-xl font-extrabold">${escapeHtml(detail.client?.name || '')}</h2><p class="text-sm text-slate-600">${escapeHtml(detail.client?.company || '')}</p><p class="text-sm text-slate-600">${escapeHtml(detail.client?.email || '')}</p></div>
+          <div class="grid gap-2 text-sm sm:text-right"><p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p><p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '')}</p><p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p></div>
+        </div>
+        <div class="mt-8 overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-950 text-left text-white"><tr><th class="px-4 py-3">Description</th><th class="px-4 py-3">Qty</th><th class="px-4 py-3">Rate</th><th class="px-4 py-3 text-right">Amount</th></tr></thead><tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.description)}</td><td class="px-4 py-3">${escapeHtml(item.quantity)}</td><td class="px-4 py-3">${money(item.rate, invoice.currency)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="mt-8 flex justify-end"><div class="w-full max-w-sm space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-3 text-xl"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2"><div><p class="font-bold">Terms</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
+      </article>`;
+    }
+
+    function bindActions() {
+      document.querySelectorAll('[data-convert]').forEach((button) => button.addEventListener('click', async () => {
+        const projectName = prompt('Project name for this converted client?') || '';
+        try {
+          await portal(`/api/portal/leads/${button.dataset.convert}/convert`, { method: 'POST', body: JSON.stringify({ projectName }) });
+          setStatus('Lead converted to client.', 'success');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not convert lead.', 'error');
+        }
+      }));
+      document.querySelectorAll('[data-client]').forEach((button) => button.addEventListener('click', () => {
+        state.selectedClientId = button.dataset.client;
+        render();
+      }));
+      document.querySelectorAll('[data-client-invite]').forEach((button) => button.addEventListener('click', async () => {
+        const password = prompt('Temporary password for this client login?');
+        if (!password) return;
+        try {
+          await portal(`/api/portal/clients/${button.dataset.clientInvite}/invite`, {
+            method: 'POST',
+            body: JSON.stringify({ password }),
+          });
+          setStatus('Client portal login created or linked.', 'success');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not create client login.', 'error');
+        }
+      }));
+      document.querySelectorAll('[data-ticket]').forEach((button) => button.addEventListener('click', async () => {
+        const body = prompt('Reply to this ticket') || '';
+        if (!body) return;
+        try {
+          await portal(`/api/portal/tickets/${button.dataset.ticket}/messages`, { method: 'POST', body: JSON.stringify({ body }) });
+          setStatus('Ticket reply saved.', 'success');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not reply.', 'error');
+        }
+      }));
+      document.querySelectorAll('[data-ticket-status]').forEach((button) => button.addEventListener('click', async () => {
+        try {
+          await portal(`/api/portal/tickets/${button.dataset.ticketStatus}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: button.dataset.status }),
+          });
+          setStatus(`Ticket marked ${button.dataset.status}.`, 'success');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not update ticket.', 'error');
+        }
+      }));
+      document.querySelectorAll('[data-send]').forEach((button) => button.addEventListener('click', async () => {
+        try {
+          const result = await portal(`/api/portal/campaigns/${button.dataset.send}/send`, { method: 'POST', body: '{}' });
+          setStatus(result.message || `Campaign send finished. Sent ${result.sent || 0}.`, result.sent ? 'success' : 'neutral');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not send campaign.', 'error');
+        }
+      }));
+      document.querySelectorAll('[data-invoice-view]').forEach((button) => button.addEventListener('click', () => showInvoice(button.dataset.invoiceView)));
+      document.querySelectorAll('[data-invoice-send]').forEach((button) => button.addEventListener('click', async () => {
+        try {
+          const result = await portal(`/api/portal/invoices/${button.dataset.invoiceSend}/send`, { method: 'POST', body: '{}' });
+          setStatus(result.message || 'Invoice sent.', result.sent ? 'success' : 'neutral');
+          await loadData();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Could not send invoice.', 'error');
+        }
+      }));
     }
 
     async function loadData() {
       setStatus('Loading CRM data...');
       const names = Object.keys(state.data).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
-      const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
+      const [dashboard, results] = await Promise.all([
+        portal('/api/portal/dashboard'),
+        Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []])),
+      ]);
+      state.dashboard = dashboard;
       results.forEach(([name, items]) => { state.data[name] = items; });
       setStatus('CRM data loaded.', 'success');
       render();
     }
 
     function render() {
-      renderTabs();
-      renderKpis();
-      renderForm();
-      renderTable();
-      bindTableActions();
+      renderShell();
+      if (state.active === 'dashboard') return renderDashboard();
+      if (state.active === 'invoices') return renderInvoices();
+      if (state.active === 'activities') {
+        els.view.innerHTML = renderActivity();
+        return;
+      }
+      return renderResource(state.active);
     }
 
     async function boot() {
@@ -395,7 +882,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const me = await portal('/api/portal/me');
         state.profile = me.profile;
         if (me.destination !== '/company') location.href = me.destination;
-        els.user.textContent = `${me.profile.name} - ${me.profile.role.replace(/_/g, ' ')}`;
+        els.user.textContent = `${me.profile.name} · ${me.profile.role.replace(/_/g, ' ')}`;
         await loadData();
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not load portal.', 'error');
@@ -403,23 +890,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     }
 
-    els.form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      try {
-        await portal(`/api/portal/${state.active}`, {
-          method: 'POST',
-          body: JSON.stringify(serializeForm(els.form)),
-        });
-        els.form.reset();
-        setStatus('Record saved.', 'success');
-        await loadData();
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Could not save record.', 'error');
-      }
+    els.search?.addEventListener('input', () => {
+      state.search = els.search.value;
+      render();
     });
-
     document.getElementById('logout-button')?.addEventListener('click', logout);
     document.getElementById('refresh-button')?.addEventListener('click', loadData);
+    document.getElementById('close-invoice')?.addEventListener('click', () => els.modal.classList.add('hidden'));
+    document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
+
     boot();
   </script>
 </BaseLayout>

@@ -11,6 +11,7 @@ const MSG91_EMAIL_TO_NAME = Deno.env.get("MSG91_EMAIL_TO_NAME") || "TechMigos";
 const MSG91_EMAIL_TEMPLATE_ID = Deno.env.get("MSG91_EMAIL_TEMPLATE_ID") || "";
 const MSG91_CLIENT_ACK_TEMPLATE_ID = Deno.env.get("MSG91_CLIENT_ACK_TEMPLATE_ID") || "";
 const MSG91_MARKETING_TEMPLATE_ID = Deno.env.get("MSG91_MARKETING_TEMPLATE_ID") || "";
+const MSG91_INVOICE_TEMPLATE_ID = Deno.env.get("MSG91_INVOICE_TEMPLATE_ID") || MSG91_MARKETING_TEMPLATE_ID;
 const LEAD_NOTIFICATION_WEBHOOK_URL = Deno.env.get("LEAD_NOTIFICATION_WEBHOOK_URL") || "";
 
 type JsonRecord = Record<string, unknown>;
@@ -107,6 +108,15 @@ function stringValue(value: unknown, maxLength = 2000) {
 function emailValue(value: unknown) {
   const email = stringValue(value, 255).toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
+}
+
+function numberValue(value: unknown, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function readJson(req: Request) {
@@ -638,7 +648,49 @@ const portalResources: Record<string, { table: string; fields: string[]; adminOn
   },
   projects: {
     table: "crm_projects",
-    fields: ["client_id", "name", "status", "health", "progress", "summary", "start_date", "due_date", "owner_user_id"],
+    fields: [
+      "client_id",
+      "external_project_id",
+      "name",
+      "client_name",
+      "project_manager",
+      "status",
+      "health",
+      "priority",
+      "progress",
+      "budget",
+      "expenses",
+      "revenue",
+      "profit",
+      "team_members",
+      "notes",
+      "summary",
+      "start_date",
+      "due_date",
+      "owner_user_id",
+    ],
+  },
+  finances: {
+    table: "crm_finance_transactions",
+    fields: [
+      "transaction_date",
+      "transaction_type",
+      "reference_id",
+      "title",
+      "client",
+      "project",
+      "paid_by",
+      "received_by",
+      "payment_method",
+      "department",
+      "region",
+      "quarter",
+      "status",
+      "amount",
+      "notes",
+      "source",
+      "source_ref",
+    ],
   },
   deals: {
     table: "crm_deals",
@@ -654,7 +706,39 @@ const portalResources: Record<string, { table: string; fields: string[]; adminOn
   },
   invoices: {
     table: "crm_invoices",
-    fields: ["client_id", "project_id", "invoice_number", "amount", "currency", "status", "due_date", "notes", "file_url"],
+    fields: [
+      "client_id",
+      "project_id",
+      "invoice_number",
+      "amount",
+      "currency",
+      "status",
+      "invoice_date",
+      "due_date",
+      "subtotal",
+      "tax_amount",
+      "discount_amount",
+      "total_amount",
+      "terms",
+      "payment_instructions",
+      "notes",
+      "file_url",
+      "sent_at",
+      "viewed_at",
+      "paid_at",
+    ],
+  },
+  invoice_items: {
+    table: "crm_invoice_items",
+    fields: ["invoice_id", "description", "quantity", "rate", "amount", "sort_order"],
+  },
+  invoice_events: {
+    table: "crm_invoice_events",
+    fields: ["invoice_id", "actor_user_id", "actor_name", "action", "summary"],
+  },
+  ticket_messages: {
+    table: "crm_ticket_messages",
+    fields: ["ticket_id", "author_user_id", "author_name", "author_role", "body", "visibility"],
   },
   notes: {
     table: "crm_notes",
@@ -690,6 +774,19 @@ async function getAuthenticatedUser(req: Request) {
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.user) throw new ApiError("Invalid or expired session.", 401);
   return data.user as JsonRecord;
+}
+
+async function createAuthUser(email: string, password: string, name: string) {
+  const response = await fetch(`${API_BASE_URL}/api/auth/users?client_type=server`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, name }),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.user?.id) {
+    throw new ApiError(data?.message || data?.error || "Could not create portal auth user.", response.status || 400);
+  }
+  return stringValue(data.user.id, 255);
 }
 
 async function getPortalProfile(req: Request, allowedRoles?: PortalProfile["role"][]) {
@@ -731,7 +828,7 @@ function sanitizeBody(body: JsonRecord, fields: string[]) {
 }
 
 function hasUpdatedAt(resource: string) {
-  return !["notes", "recipients", "activities"].includes(resource);
+  return !["notes", "recipients", "activities", "invoice_items", "invoice_events", "ticket_messages"].includes(resource);
 }
 
 async function recordActivity(profile: PortalProfile, action: string, entityType: string, entityId: unknown, summary: string) {
@@ -750,11 +847,89 @@ function resourceQuery(url: URL) {
   const limit = Math.min(Number(url.searchParams.get("limit") || 100), 250);
   query.set("order", url.searchParams.get("order") || "created_at.desc");
   query.set("limit", String(limit));
-  for (const key of ["id", "client_id", "lead_id", "project_id", "campaign_id", "status", "email", "role"]) {
+  for (const key of ["id", "client_id", "lead_id", "project_id", "campaign_id", "invoice_id", "ticket_id", "status", "email", "role"]) {
     const value = url.searchParams.get(key);
     if (value) query.set(key, value.includes(".") ? value : `eq.${value}`);
   }
   return query.toString();
+}
+
+async function invoiceSettings() {
+  const rows = await listRecords("crm_invoice_settings", "order=id.asc&limit=1");
+  if (rows[0]) return rows[0];
+  return {
+    prefix: "TMG",
+    starting_number: 1,
+    tax_label: "Tax",
+    tax_rate: 0,
+    default_terms: "Payment is due by the listed due date unless otherwise agreed in writing.",
+    default_payment_instructions: "Please use the payment instructions shared by TechMigos for this project.",
+  };
+}
+
+async function nextInvoiceNumber() {
+  const settings = await invoiceSettings();
+  const prefix = stringValue(settings.prefix, 16) || "TMG";
+  const year = new Date().getFullYear();
+  const existing = await listRecords("crm_invoices", `invoice_number=like.${encodeURIComponent(`${prefix}-${year}-%`)}&order=invoice_number.desc&limit=1`);
+  const last = stringValue(existing[0]?.invoice_number, 80);
+  const lastNumber = Number(last.match(/(\d+)$/)?.[1] || 0);
+  const start = numberValue(settings.starting_number, 1);
+  const next = Math.max(lastNumber + 1, start);
+  return `${prefix}-${year}-${String(next).padStart(4, "0")}`;
+}
+
+function normalizeLineItems(value: unknown) {
+  const source = Array.isArray(value) ? value : [];
+  const items = source
+    .map((item, index) => {
+      const row = (item || {}) as JsonRecord;
+      const description = stringValue(row.description, 500);
+      const quantity = Math.max(numberValue(row.quantity, 1), 0);
+      const rate = Math.max(numberValue(row.rate, 0), 0);
+      const amount = Math.round(quantity * rate * 100) / 100;
+      return { description, quantity, rate, amount, sort_order: index };
+    })
+    .filter((item) => item.description && item.amount >= 0);
+  if (!items.length) throw new ApiError("At least one invoice line item is required.", 422);
+  return items;
+}
+
+function invoiceTotals(items: JsonRecord[], body: JsonRecord, settings: JsonRecord) {
+  const subtotal = Math.round(items.reduce((sum, item) => sum + numberValue(item.amount), 0) * 100) / 100;
+  const discountAmount = Math.max(numberValue(body.discount_amount, 0), 0);
+  const defaultTaxRate = numberValue(settings.tax_rate, 0);
+  const taxRate = numberValue(body.tax_rate, defaultTaxRate);
+  const manualTax = body.tax_amount !== undefined && body.tax_amount !== "";
+  const taxable = Math.max(subtotal - discountAmount, 0);
+  const taxAmount = manualTax ? Math.max(numberValue(body.tax_amount, 0), 0) : Math.round(taxable * taxRate) / 100;
+  const totalAmount = Math.max(Math.round((subtotal - discountAmount + taxAmount) * 100) / 100, 0);
+  return { subtotal, discountAmount, taxAmount, totalAmount };
+}
+
+async function invoiceDetail(id: unknown, clientId?: unknown) {
+  const invoice = await getRecordById("crm_invoices", id);
+  if (!invoice) throw new ApiError("Invoice not found.", 404);
+  if (clientId && String(invoice.client_id) !== String(clientId)) throw new ApiError("Invoice not found.", 404);
+
+  const invoiceId = encodeURIComponent(String(invoice.id));
+  const [client, project, items, events] = await Promise.all([
+    getRecordById("crm_clients", invoice.client_id),
+    invoice.project_id ? getRecordById("crm_projects", invoice.project_id) : Promise.resolve(null),
+    listRecords("crm_invoice_items", `invoice_id=eq.${invoiceId}&order=sort_order.asc&limit=100`),
+    listRecords("crm_invoice_events", `invoice_id=eq.${invoiceId}&order=created_at.desc&limit=100`),
+  ]);
+  return { invoice, client, project, items, events };
+}
+
+async function recordInvoiceEvent(profile: PortalProfile | null, invoiceId: unknown, action: string, summary: string) {
+  await insertRecord("crm_invoice_events", {
+    invoice_id: Number(invoiceId),
+    actor_user_id: profile?.auth_user_id || null,
+    actor_name: profile?.name || "Client",
+    action,
+    summary,
+  });
 }
 
 async function handlePortalMe(req: Request) {
@@ -767,6 +942,185 @@ async function handlePortalMe(req: Request) {
     profile,
     destination: isCompanyRole(profile) ? "/company" : "/client",
   });
+}
+
+async function handleDashboard(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  const [leads, clients, projects, deals, tickets, invoices, followups, activities, finances] = await Promise.all([
+    listRecords("crm_leads", "order=created_at.desc&limit=250"),
+    listRecords("crm_clients", "order=created_at.desc&limit=250"),
+    listRecords("crm_projects", "order=created_at.desc&limit=250"),
+    listRecords("crm_deals", "order=created_at.desc&limit=250"),
+    listRecords("crm_support_tickets", "order=created_at.desc&limit=250"),
+    listRecords("crm_invoices", "order=created_at.desc&limit=250"),
+    listRecords("crm_followups", "order=due_at.asc&limit=250"),
+    listRecords("crm_team_activities", "order=created_at.desc&limit=20"),
+    listRecords("crm_finance_transactions", "order=transaction_date.desc&limit=500"),
+  ]);
+
+  const openTickets = tickets.filter((ticket) => !["resolved", "closed"].includes(stringValue(ticket.status)));
+  const openInvoices = invoices.filter((invoice) => !["paid", "void", "cancelled"].includes(stringValue(invoice.status)));
+  const pipelineValue = deals
+    .filter((deal) => !["won", "lost"].includes(stringValue(deal.stage)))
+    .reduce((sum, deal) => sum + numberValue(deal.value), 0);
+  const invoiceOutstanding = openInvoices.reduce((sum, invoice) => sum + numberValue(invoice.total_amount || invoice.amount), 0);
+  const financeIncome = finances
+    .filter((item) => ["income", "revenue"].includes(stringValue(item.transaction_type)))
+    .reduce((sum, item) => sum + numberValue(item.amount), 0);
+  const financeExpenses = finances
+    .filter((item) => ["expense", "salary"].includes(stringValue(item.transaction_type)))
+    .reduce((sum, item) => sum + numberValue(item.amount), 0);
+  const financeByType = finances.reduce((acc, item) => {
+    const type = stringValue(item.transaction_type) || "other";
+    acc[type] = (acc[type] || 0) + numberValue(item.amount);
+    return acc;
+  }, {} as Record<string, number>);
+  const today = todayIsoDate();
+
+  return ok(req, {
+    metrics: {
+      leads: leads.length,
+      qualifiedLeads: leads.filter((lead) => ["qualified", "proposal"].includes(stringValue(lead.status))).length,
+      clients: clients.length,
+      activeProjects: projects.filter((project) => stringValue(project.status) === "active").length,
+      openTickets: openTickets.length,
+      overdueInvoices: invoices.filter((invoice) => stringValue(invoice.status) !== "paid" && stringValue(invoice.due_date) && stringValue(invoice.due_date) < today).length,
+      pipelineValue,
+      invoiceOutstanding,
+      financeIncome,
+      financeExpenses,
+      financeProfit: financeIncome - financeExpenses,
+    },
+    finance: {
+      byType: financeByType,
+      recent: finances.slice(0, 12),
+      projects: projects
+        .map((project) => ({
+          id: project.id,
+          name: project.name,
+          budget: numberValue(project.budget),
+          expenses: numberValue(project.expenses),
+          revenue: numberValue(project.revenue),
+          profit: numberValue(project.profit || numberValue(project.revenue) - numberValue(project.expenses)),
+          progress: numberValue(project.progress),
+          status: project.status,
+        }))
+        .slice(0, 12),
+    },
+    recentLeads: leads.slice(0, 8),
+    urgentTickets: openTickets.filter((ticket) => ["high", "urgent"].includes(stringValue(ticket.priority))).slice(0, 8),
+    dueFollowups: followups.filter((followup) => stringValue(followup.status) === "pending").slice(0, 8),
+    openInvoices: openInvoices.slice(0, 8),
+    activities,
+  });
+}
+
+async function handleNextInvoiceNumber(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  return ok(req, { invoice_number: await nextInvoiceNumber(), settings: await invoiceSettings() });
+}
+
+async function handleCreateInvoice(req: Request) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const body = await readJson(req);
+  const clientId = Number(body.client_id);
+  if (!clientId) throw new ApiError("Client is required for an invoice.", 422);
+  const client = await getRecordById("crm_clients", clientId);
+  if (!client) throw new ApiError("Client not found.", 404);
+
+  const settings = await invoiceSettings();
+  const items = normalizeLineItems(body.items);
+  const totals = invoiceTotals(items, body, settings);
+  const invoiceNumber = stringValue(body.invoice_number, 80) || await nextInvoiceNumber();
+  const created = await insertRecord("crm_invoices", {
+    client_id: clientId,
+    project_id: body.project_id || null,
+    invoice_number: invoiceNumber,
+    amount: totals.totalAmount,
+    currency: stringValue(body.currency, 12) || "INR",
+    status: stringValue(body.status, 40) || "draft",
+    invoice_date: stringValue(body.invoice_date, 20) || todayIsoDate(),
+    due_date: stringValue(body.due_date, 20) || null,
+    subtotal: totals.subtotal,
+    tax_amount: totals.taxAmount,
+    discount_amount: totals.discountAmount,
+    total_amount: totals.totalAmount,
+    terms: stringValue(body.terms || settings.default_terms, 3000),
+    payment_instructions: stringValue(body.payment_instructions || settings.default_payment_instructions, 3000),
+    notes: stringValue(body.notes, 3000),
+    file_url: stringValue(body.file_url, 500),
+    created_at: new Date().toISOString(),
+  });
+
+  for (const item of items) {
+    await insertRecord("crm_invoice_items", { ...item, invoice_id: created?.id });
+  }
+  await recordInvoiceEvent(profile, created?.id, "created", `Created invoice ${invoiceNumber}`);
+  await recordActivity(profile, "created", "invoices", created?.id, `Created invoice ${invoiceNumber}`);
+  return ok(req, { item: (await invoiceDetail(created?.id)).invoice, detail: await invoiceDetail(created?.id) }, 201);
+}
+
+async function handleInvoiceDetail(req: Request, id: string) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  return ok(req, { detail: await invoiceDetail(id) });
+}
+
+async function handleInvoiceSend(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const detail = await invoiceDetail(id);
+  const clientEmail = emailValue(detail.client?.email);
+  const templateId = stringValue(MSG91_INVOICE_TEMPLATE_ID, 255);
+  if (!MSG91_AUTH_KEY || !templateId || !clientEmail) {
+    return ok(req, {
+      sent: false,
+      message: "MSG91 invoice template/auth or client email is not configured yet. Invoice was not emailed.",
+    });
+  }
+
+  await postMsg91TemplateEmail(clientEmail, stringValue(detail.client?.name, 160) || clientEmail, templateId, {
+    INVOICE_NUMBER: String(detail.invoice.invoice_number || ""),
+    INVOICE_TOTAL: String(detail.invoice.total_amount || detail.invoice.amount || ""),
+    INVOICE_CURRENCY: String(detail.invoice.currency || "INR"),
+    INVOICE_DUE_DATE: String(detail.invoice.due_date || ""),
+    CLIENT_NAME: String(detail.client?.name || "there"),
+    PROJECT_NAME: String(detail.project?.name || ""),
+  });
+
+  await updateRecord("crm_invoices", id, {
+    status: "sent",
+    sent_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  await recordInvoiceEvent(profile, id, "sent", `Sent invoice ${detail.invoice.invoice_number} to ${clientEmail}`);
+  await recordActivity(profile, "sent", "invoices", id, `Sent invoice ${detail.invoice.invoice_number}`);
+  return ok(req, { sent: true, detail: await invoiceDetail(id) });
+}
+
+async function handleTicketMessages(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const ticket = await getRecordById("crm_support_tickets", id);
+  if (!ticket) throw new ApiError("Ticket not found.", 404);
+
+  if (req.method === "GET") {
+    return ok(req, { messages: await listRecords("crm_ticket_messages", `ticket_id=eq.${encodeURIComponent(id)}&order=created_at.asc&limit=100`) });
+  }
+
+  if (req.method === "POST") {
+    const body = await readJson(req);
+    const message = await insertRecord("crm_ticket_messages", {
+      ticket_id: Number(id),
+      author_user_id: profile.auth_user_id,
+      author_name: profile.name,
+      author_role: "company",
+      body: stringValue(body.body, 5000),
+      visibility: "shared",
+    });
+    await updateRecord("crm_support_tickets", id, { updated_at: new Date().toISOString() });
+    await recordActivity(profile, "replied", "tickets", id, `Replied to ticket ${ticket.subject || id}`);
+    return ok(req, { message }, 201);
+  }
+
+  throw new ApiError("Unsupported ticket message operation.", 405);
 }
 
 async function handleCompanyResource(req: Request, resource: string, id?: string) {
@@ -782,6 +1136,7 @@ async function handleCompanyResource(req: Request, resource: string, id?: string
   }
 
   if (req.method === "POST") {
+    if (resource === "invoices") return await handleCreateInvoice(req);
     const body = await readJson(req);
     const row = sanitizeBody(body, config.fields);
     row.created_at = new Date().toISOString();
@@ -840,6 +1195,43 @@ async function handleLeadConvert(req: Request, id: string) {
   });
   await recordActivity(profile, "converted", "leads", id, `Converted lead ${lead.email || id} to client`);
   return ok(req, { client, project });
+}
+
+async function handleClientInvite(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin"]);
+  const client = await getRecordById("crm_clients", id);
+  if (!client) throw new ApiError("Client not found.", 404);
+  const body = await readJson(req);
+  const email = emailValue(body.email || client.email);
+  const name = stringValue(body.name || client.name || email, 160);
+  const password = stringValue(body.password, 255);
+  if (!email || !password) throw new ApiError("Client email and temporary password are required.", 422);
+
+  const existing = await listRecords("crm_profiles", `email=eq.${encodeURIComponent(email)}&limit=1`);
+  if (existing[0]) {
+    await updateRecord("crm_profiles", existing[0].id, {
+      name,
+      role: "client",
+      status: "active",
+      client_id: Number(id),
+      updated_at: new Date().toISOString(),
+    });
+    await recordActivity(profile, "updated", "profiles", existing[0].id, `Linked client portal account for ${email}`);
+    return ok(req, { profile: await getRecordById("crm_profiles", existing[0].id), createdAuthUser: false });
+  }
+
+  const authUserId = await createAuthUser(email, password, name);
+  const created = await insertRecord("crm_profiles", {
+    auth_user_id: authUserId,
+    email,
+    name,
+    role: "client",
+    status: "active",
+    client_id: Number(id),
+    created_at: new Date().toISOString(),
+  });
+  await recordActivity(profile, "created", "profiles", created?.id, `Created client portal account for ${email}`);
+  return ok(req, { profile: created, createdAuthUser: true }, 201);
 }
 
 async function ensureCampaignRecipients(campaignId: string) {
@@ -943,6 +1335,18 @@ async function handleClientOverview(req: Request) {
   return ok(req, { client, projects, invoices, tickets });
 }
 
+async function handleClientInvoiceDetail(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["client"]);
+  if (!profile.client_id) throw new ApiError("This client account is not linked to a client record.", 403);
+  const detail = await invoiceDetail(id, profile.client_id);
+  if (!detail.invoice.viewed_at && stringValue(detail.invoice.status) === "sent") {
+    await updateRecord("crm_invoices", id, { status: "viewed", viewed_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    await recordInvoiceEvent(null, id, "viewed", `Client viewed invoice ${detail.invoice.invoice_number}`);
+    return ok(req, { detail: await invoiceDetail(id, profile.client_id) });
+  }
+  return ok(req, { detail });
+}
+
 async function handleClientTicket(req: Request) {
   const { profile } = await getPortalProfile(req, ["client"]);
   if (!profile.client_id) throw new ApiError("This client account is not linked to a client record.", 403);
@@ -963,13 +1367,61 @@ async function handleClientTicket(req: Request) {
   return ok(req, { ticket }, 201);
 }
 
+async function handleClientTicketMessages(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["client"]);
+  if (!profile.client_id) throw new ApiError("This client account is not linked to a client record.", 403);
+  const ticket = await getRecordById("crm_support_tickets", id);
+  if (!ticket || String(ticket.client_id) !== String(profile.client_id)) throw new ApiError("Ticket not found.", 404);
+
+  if (req.method === "GET") {
+    return ok(req, { messages: await listRecords("crm_ticket_messages", `ticket_id=eq.${encodeURIComponent(id)}&order=created_at.asc&limit=100`) });
+  }
+
+  if (req.method === "POST") {
+    const body = await readJson(req);
+    const message = await insertRecord("crm_ticket_messages", {
+      ticket_id: Number(id),
+      author_user_id: profile.auth_user_id,
+      author_name: profile.name,
+      author_role: "client",
+      body: stringValue(body.body, 5000),
+      visibility: "shared",
+    });
+    await updateRecord("crm_support_tickets", id, { status: "open", updated_at: new Date().toISOString() });
+    await recordActivity(profile, "replied", "tickets", id, `Client replied to ticket ${ticket.subject || id}`);
+    return ok(req, { message }, 201);
+  }
+
+  throw new ApiError("Unsupported ticket message operation.", 405);
+}
+
 async function handlePortal(req: Request, route: string) {
   if (req.method === "GET" && route === "/api/portal/me") return await handlePortalMe(req);
+  if (req.method === "GET" && route === "/api/portal/dashboard") return await handleDashboard(req);
+  if (req.method === "GET" && route === "/api/portal/invoices/next-number") return await handleNextInvoiceNumber(req);
   if (req.method === "GET" && route === "/api/portal/client/overview") return await handleClientOverview(req);
   if (req.method === "POST" && route === "/api/portal/client/tickets") return await handleClientTicket(req);
 
+  const clientInvoiceMatch = route.match(/^\/api\/portal\/client\/invoices\/([^/]+)$/);
+  if (req.method === "GET" && clientInvoiceMatch) return await handleClientInvoiceDetail(req, clientInvoiceMatch[1]);
+
+  const clientTicketMessagesMatch = route.match(/^\/api\/portal\/client\/tickets\/([^/]+)\/messages$/);
+  if ((req.method === "GET" || req.method === "POST") && clientTicketMessagesMatch) return await handleClientTicketMessages(req, clientTicketMessagesMatch[1]);
+
+  const invoiceSendMatch = route.match(/^\/api\/portal\/invoices\/([^/]+)\/send$/);
+  if (req.method === "POST" && invoiceSendMatch) return await handleInvoiceSend(req, invoiceSendMatch[1]);
+
+  const invoiceDetailMatch = route.match(/^\/api\/portal\/invoices\/([^/]+)$/);
+  if (req.method === "GET" && invoiceDetailMatch) return await handleInvoiceDetail(req, invoiceDetailMatch[1]);
+
+  const ticketMessagesMatch = route.match(/^\/api\/portal\/tickets\/([^/]+)\/messages$/);
+  if ((req.method === "GET" || req.method === "POST") && ticketMessagesMatch) return await handleTicketMessages(req, ticketMessagesMatch[1]);
+
   const convertMatch = route.match(/^\/api\/portal\/leads\/([^/]+)\/convert$/);
   if (req.method === "POST" && convertMatch) return await handleLeadConvert(req, convertMatch[1]);
+
+  const clientInviteMatch = route.match(/^\/api\/portal\/clients\/([^/]+)\/invite$/);
+  if (req.method === "POST" && clientInviteMatch) return await handleClientInvite(req, clientInviteMatch[1]);
 
   const campaignSendMatch = route.match(/^\/api\/portal\/campaigns\/([^/]+)\/send$/);
   if (req.method === "POST" && campaignSendMatch) return await handleCampaignSend(req, campaignSendMatch[1]);

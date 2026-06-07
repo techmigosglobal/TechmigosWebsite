@@ -9,75 +9,175 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   description="TechMigos client portal for viewing project progress, invoice status, and support tickets in one secure customer workspace."
   noIndex={true}
 >
-  <section class="min-h-screen pt-28 pb-16 bg-slate-100">
-    <div class="container-custom">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <span class="section-eyebrow">Client Portal</span>
-          <h1 class="mt-3 text-4xl font-extrabold text-slate-950">Project workspace</h1>
-          <p id="client-user" class="mt-2 text-slate-600">Loading your workspace...</p>
+  <style is:global>
+    @page {
+      size: A4;
+      margin: 12mm;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      #invoice-modal,
+      #invoice-modal * {
+        visibility: visible !important;
+      }
+
+      #invoice-modal {
+        position: static !important;
+        display: block !important;
+        background: #fff !important;
+        padding: 0 !important;
+      }
+
+      #invoice-modal > div {
+        max-width: 186mm !important;
+        max-height: none !important;
+        margin: 0 auto !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+
+      #invoice-preview {
+        padding: 0 !important;
+      }
+
+      .print\:hidden {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <section class="min-h-screen bg-slate-100 pt-24 pb-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Client Portal</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-slate-950 sm:text-4xl">Project workspace</h1>
+            <p id="client-user" class="mt-2 text-slate-600">Loading your workspace...</p>
+          </div>
+          <button id="logout-button" class="btn-secondary">Sign out</button>
         </div>
-        <button id="logout-button" class="btn-secondary">Sign out</button>
+        <p id="client-status" class="mt-4 text-sm text-slate-600" role="status">Loading portal data...</p>
       </div>
 
-      <p id="client-status" class="mt-6 text-sm text-slate-600" role="status">Loading portal data...</p>
+      <div id="client-kpis" class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
 
-      <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div class="space-y-6">
-          <section class="bg-white rounded-lg border border-slate-200 p-5">
-            <h2 class="text-xl font-bold text-slate-950">Projects</h2>
-            <div id="projects-list" class="mt-4 grid gap-4"></div>
+      <div class="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
+        <div class="space-y-5">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-extrabold text-slate-950">Projects</h2>
+                <p class="mt-1 text-sm text-slate-500">Delivery status, progress, and current project health.</p>
+              </div>
+            </div>
+            <div id="projects-list" class="mt-4 grid gap-4 lg:grid-cols-2"></div>
           </section>
 
-          <section class="bg-white rounded-lg border border-slate-200 p-5">
-            <h2 class="text-xl font-bold text-slate-950">Invoices</h2>
-            <div id="invoices-list" class="mt-4 overflow-x-auto"></div>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-extrabold text-slate-950">Invoices</h2>
+                <p class="mt-1 text-sm text-slate-500">View invoice status and print or save copies as PDF.</p>
+              </div>
+            </div>
+            <div id="invoices-list" class="mt-4 grid gap-3"></div>
           </section>
 
-          <section class="bg-white rounded-lg border border-slate-200 p-5">
-            <h2 class="text-xl font-bold text-slate-950">Support Tickets</h2>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h2 class="text-xl font-extrabold text-slate-950">Support Tickets</h2>
             <div id="tickets-list" class="mt-4 grid gap-3"></div>
           </section>
         </div>
 
-        <aside class="bg-white rounded-lg border border-slate-200 p-5 h-fit">
-          <h2 class="text-xl font-bold text-slate-950">Open support ticket</h2>
-          <form id="ticket-form" class="mt-5 space-y-4">
-            <label class="block">
-              <span class="form-label">Project ID</span>
-              <input name="project_id" type="number" class="form-input form-control" placeholder="Optional" />
-            </label>
-            <label class="block">
-              <span class="form-label">Subject</span>
-              <input name="subject" type="text" required class="form-input form-control" />
-            </label>
-            <label class="block">
-              <span class="form-label">Priority</span>
-              <select name="priority" class="form-input form-control">
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="form-label">Description</span>
-              <textarea name="description" required class="form-input form-control min-h-[140px]"></textarea>
-            </label>
-            <button class="btn-primary w-full justify-center" type="submit">Submit ticket</button>
-          </form>
+        <aside class="space-y-5">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h2 class="text-xl font-extrabold text-slate-950">Open support ticket</h2>
+            <form id="ticket-form" class="mt-5 space-y-4">
+              <label class="block">
+                <span class="form-label">Project</span>
+                <select name="project_id" id="ticket-project" class="form-input form-control">
+                  <option value="">General support</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="form-label">Subject</span>
+                <input name="subject" type="text" required class="form-input form-control" />
+              </label>
+              <label class="block">
+                <span class="form-label">Priority</span>
+                <select name="priority" class="form-input form-control">
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="form-label">Description</span>
+                <textarea name="description" required class="form-input form-control min-h-[140px]"></textarea>
+              </label>
+              <button class="btn-primary w-full justify-center" type="submit">Submit ticket</button>
+            </form>
+          </section>
+
+          <section id="conversation-panel" class="hidden rounded-lg border border-slate-200 bg-white p-5">
+            <h2 id="conversation-title" class="text-xl font-extrabold text-slate-950">Ticket conversation</h2>
+            <div id="conversation-messages" class="mt-4 space-y-3"></div>
+            <form id="message-form" class="mt-4 space-y-3">
+              <textarea name="body" required class="form-input form-control min-h-[100px]" placeholder="Reply to this ticket"></textarea>
+              <button class="btn-primary w-full justify-center" type="submit">Send reply</button>
+            </form>
+          </section>
         </aside>
       </div>
     </div>
   </section>
 
+  <div id="invoice-modal" class="fixed inset-0 z-50 hidden bg-slate-950/70 p-4">
+    <div class="mx-auto max-h-[95vh] max-w-5xl overflow-auto rounded-lg bg-white shadow-2xl">
+      <div class="flex items-center justify-between gap-4 border-b border-slate-200 p-4 print:hidden">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600">Invoice Preview</p>
+          <h2 id="invoice-preview-title" class="mt-1 text-xl font-extrabold text-slate-950">Invoice</h2>
+        </div>
+        <div class="flex gap-2">
+          <button id="print-invoice" class="btn-primary">Print / Save PDF</button>
+          <button id="close-invoice" class="btn-secondary">Close</button>
+        </div>
+      </div>
+      <div id="invoice-preview" class="p-6 sm:p-10"></div>
+    </div>
+  </div>
+
   <script is:inline>
+    const state = {
+      client: null,
+      projects: [],
+      invoices: [],
+      tickets: [],
+      activeTicketId: null,
+    };
+
     const statusEl = document.getElementById('client-status');
     const userEl = document.getElementById('client-user');
+    const kpisEl = document.getElementById('client-kpis');
     const projectsEl = document.getElementById('projects-list');
     const invoicesEl = document.getElementById('invoices-list');
     const ticketsEl = document.getElementById('tickets-list');
     const ticketForm = document.getElementById('ticket-form');
+    const messageForm = document.getElementById('message-form');
+    const conversationPanel = document.getElementById('conversation-panel');
+    const conversationTitle = document.getElementById('conversation-title');
+    const conversationMessages = document.getElementById('conversation-messages');
+    const invoiceModal = document.getElementById('invoice-modal');
+    const invoicePreview = document.getElementById('invoice-preview');
+    const invoicePreviewTitle = document.getElementById('invoice-preview-title');
 
     function token() {
       return sessionStorage.getItem('tm_portal_access_token') || '';
@@ -87,16 +187,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
-    function logout() {
-      sessionStorage.removeItem('tm_portal_access_token');
-      sessionStorage.removeItem('tm_portal_refresh_token');
-      sessionStorage.removeItem('tm_portal_csrf_token');
-      location.href = '/login';
+    function money(value, currency = 'INR') {
+      return `${escapeHtml(currency || 'INR')} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function badge(value, tone = 'slate') {
+      const tones = {
+        slate: 'bg-slate-100 text-slate-700',
+        green: 'bg-emerald-50 text-emerald-700',
+        yellow: 'bg-amber-50 text-amber-700',
+        red: 'bg-red-50 text-red-700',
+        blue: 'bg-blue-50 text-blue-700',
+      };
+      return `<span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone] || tones.slate}">${escapeHtml(String(value || 'open').replace(/_/g, ' '))}</span>`;
+    }
+
+    function statusTone(status) {
+      if (['paid', 'completed', 'resolved', 'closed', 'on_track'].includes(status)) return 'green';
+      if (['overdue', 'urgent', 'at_risk'].includes(status)) return 'red';
+      if (['sent', 'viewed', 'watch', 'high'].includes(status)) return 'yellow';
+      return 'slate';
     }
 
     function setStatus(message, tone = 'neutral') {
       statusEl.textContent = message;
-      statusEl.className = `mt-6 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
+      statusEl.className = `mt-4 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
     }
 
     async function portal(path, options = {}) {
@@ -109,67 +224,136 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return data;
     }
 
-    function renderProjects(projects) {
-      projectsEl.innerHTML = projects.map((project) => `
-        <article class="border border-slate-200 rounded-lg p-4">
+    function logout() {
+      sessionStorage.removeItem('tm_portal_access_token');
+      sessionStorage.removeItem('tm_portal_refresh_token');
+      sessionStorage.removeItem('tm_portal_csrf_token');
+      location.href = '/login';
+    }
+
+    function renderKpis() {
+      const openTickets = state.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length;
+      const openInvoices = state.invoices.filter((invoice) => !['paid', 'void', 'cancelled'].includes(invoice.status));
+      const outstanding = openInvoices.reduce((sum, invoice) => sum + Number(invoice.total_amount || invoice.amount || 0), 0);
+      kpisEl.innerHTML = [
+        ['Projects', state.projects.length, 'Linked active work'],
+        ['Open tickets', openTickets, 'Support in progress'],
+        ['Open invoices', openInvoices.length, money(outstanding)],
+        ['Project progress', `${Math.round(state.projects.reduce((sum, project) => sum + Number(project.progress || 0), 0) / Math.max(state.projects.length, 1))}%`, 'Average completion'],
+      ].map(([label, value, hint]) => `<article class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-sm font-semibold text-slate-500">${label}</p><p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p><p class="mt-2 text-xs text-slate-400">${hint}</p></article>`).join('');
+    }
+
+    function renderProjects() {
+      projectsEl.innerHTML = state.projects.map((project) => `
+        <article class="rounded-lg border border-slate-200 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-xs font-bold uppercase text-slate-400">#${escapeHtml(project.id)}</p>
-              <h3 class="mt-1 text-lg font-bold text-slate-950">${escapeHtml(project.name)}</h3>
+              <p class="text-xs font-bold uppercase text-slate-400">Project #${escapeHtml(project.id)}</p>
+              <h3 class="mt-1 text-lg font-extrabold text-slate-950">${escapeHtml(project.name)}</h3>
               <p class="mt-2 text-sm text-slate-600">${escapeHtml(project.summary || 'No summary added yet.')}</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">${escapeHtml(project.status)}</span>
+            ${badge(project.health || project.status, statusTone(project.health || project.status))}
           </div>
           <div class="mt-4 h-2 rounded-full bg-slate-100 overflow-hidden">
             <div class="h-full bg-primary-600" style="width:${Math.max(0, Math.min(100, Number(project.progress || 0)))}%"></div>
           </div>
-          <p class="mt-2 text-xs text-slate-500">Progress: ${escapeHtml(project.progress || 0)}% ${project.due_date ? `- Due ${escapeHtml(project.due_date)}` : ''}</p>
+          <p class="mt-2 text-xs text-slate-500">Progress: ${escapeHtml(project.progress || 0)}% ${project.due_date ? `· Due ${escapeHtml(project.due_date)}` : ''}</p>
         </article>
       `).join('') || '<p class="text-sm text-slate-500">No projects are linked yet.</p>';
+
+      const projectSelect = document.getElementById('ticket-project');
+      projectSelect.innerHTML = '<option value="">General support</option>' + state.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.name)}</option>`).join('');
     }
 
-    function renderInvoices(invoices) {
-      invoicesEl.innerHTML = `
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr><th class="px-4 py-3">Invoice</th><th class="px-4 py-3">Amount</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Due</th></tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            ${invoices.map((invoice) => `
-              <tr>
-                <td class="px-4 py-3 font-semibold text-slate-950">${escapeHtml(invoice.invoice_number)}</td>
-                <td class="px-4 py-3 text-slate-600">${escapeHtml(invoice.currency || 'INR')} ${escapeHtml(invoice.amount || 0)}</td>
-                <td class="px-4 py-3 text-slate-600">${escapeHtml(invoice.status)}</td>
-                <td class="px-4 py-3 text-slate-600">${escapeHtml(invoice.due_date || '')}</td>
-              </tr>
-            `).join('') || '<tr><td class="px-4 py-6 text-slate-500" colspan="4">No invoices yet.</td></tr>'}
-          </tbody>
-        </table>
-      `;
+    function renderInvoices() {
+      invoicesEl.innerHTML = state.invoices.map((invoice) => `
+        <article class="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="font-extrabold text-slate-950">${escapeHtml(invoice.invoice_number)}</p>
+            <p class="mt-1 text-sm text-slate-500">${money(invoice.total_amount || invoice.amount, invoice.currency)} · Due ${escapeHtml(invoice.due_date || '-')}</p>
+          </div>
+          <div class="flex items-center gap-3">
+            ${badge(invoice.status, statusTone(invoice.status))}
+            <button class="text-sm font-bold text-primary-700" data-invoice="${invoice.id}">Preview</button>
+          </div>
+        </article>
+      `).join('') || '<p class="text-sm text-slate-500">No invoices yet.</p>';
+      invoicesEl.querySelectorAll('[data-invoice]').forEach((button) => button.addEventListener('click', () => showInvoice(button.dataset.invoice)));
     }
 
-    function renderTickets(tickets) {
-      ticketsEl.innerHTML = tickets.map((ticket) => `
-        <article class="border border-slate-200 rounded-lg p-4">
+    function renderTickets() {
+      ticketsEl.innerHTML = state.tickets.map((ticket) => `
+        <article class="rounded-lg border border-slate-200 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="font-bold text-slate-950">${escapeHtml(ticket.subject)}</h3>
-              <p class="mt-1 text-sm text-slate-600">${escapeHtml(ticket.description)}</p>
+              <h3 class="font-extrabold text-slate-950">${escapeHtml(ticket.subject)}</h3>
+              <p class="mt-1 line-clamp-2 text-sm text-slate-600">${escapeHtml(ticket.description)}</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">${escapeHtml(ticket.status)}</span>
+            ${badge(ticket.status, statusTone(ticket.status))}
           </div>
-          <p class="mt-3 text-xs text-slate-500">Priority: ${escapeHtml(ticket.priority)} - Created ${escapeHtml(ticket.created_at || '')}</p>
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <p class="text-xs text-slate-500">Priority: ${escapeHtml(ticket.priority)} · Created ${escapeHtml(ticket.created_at || '')}</p>
+            <button class="text-sm font-bold text-primary-700" data-ticket="${ticket.id}">Open conversation</button>
+          </div>
         </article>
       `).join('') || '<p class="text-sm text-slate-500">No support tickets yet.</p>';
+      ticketsEl.querySelectorAll('[data-ticket]').forEach((button) => button.addEventListener('click', () => openConversation(button.dataset.ticket)));
     }
 
-    async function loadOverview() {
+    async function showInvoice(id) {
+      const result = await portal(`/api/portal/client/invoices/${id}`);
+      const detail = result.detail;
+      invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
+      invoicePreview.innerHTML = invoiceHtml(detail);
+      invoiceModal.classList.remove('hidden');
+      await loadOverview(false);
+    }
+
+    function invoiceHtml(detail) {
+      const invoice = detail.invoice;
+      return `<article class="mx-auto max-w-4xl bg-white text-slate-950">
+        <div class="flex flex-col gap-8 border-b-4 border-slate-950 pb-8 sm:flex-row sm:items-start sm:justify-between">
+          <div><p class="text-3xl font-extrabold text-primary-700">TechMigos</p><p class="mt-2 text-sm text-slate-500">Web, mobile, AI and backend engineering</p><p class="mt-1 text-sm text-slate-500">info@techmigos.com · www.techmigos.com</p></div>
+          <div class="text-left sm:text-right"><h1 class="text-4xl font-extrabold">INVOICE</h1><p class="mt-2 text-lg font-bold">${escapeHtml(invoice.invoice_number)}</p>${badge(invoice.status, statusTone(invoice.status))}</div>
+        </div>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2">
+          <div><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Bill to</p><h2 class="mt-2 text-xl font-extrabold">${escapeHtml(detail.client?.name || '')}</h2><p class="text-sm text-slate-600">${escapeHtml(detail.client?.company || '')}</p><p class="text-sm text-slate-600">${escapeHtml(detail.client?.email || '')}</p></div>
+          <div class="grid gap-2 text-sm sm:text-right"><p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p><p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '')}</p><p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p></div>
+        </div>
+        <div class="mt-8 overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-950 text-left text-white"><tr><th class="px-4 py-3">Description</th><th class="px-4 py-3">Qty</th><th class="px-4 py-3">Rate</th><th class="px-4 py-3 text-right">Amount</th></tr></thead><tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.description)}</td><td class="px-4 py-3">${escapeHtml(item.quantity)}</td><td class="px-4 py-3">${money(item.rate, invoice.currency)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="mt-8 flex justify-end"><div class="w-full max-w-sm space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-3 text-xl"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2"><div><p class="font-bold">Terms</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
+      </article>`;
+    }
+
+    async function openConversation(id) {
+      state.activeTicketId = id;
+      const ticket = state.tickets.find((item) => String(item.id) === String(id));
+      conversationTitle.textContent = ticket ? ticket.subject : 'Ticket conversation';
+      conversationPanel.classList.remove('hidden');
+      const result = await portal(`/api/portal/client/tickets/${id}/messages`);
+      conversationMessages.innerHTML = (result.messages || []).map((message) => `
+        <article class="rounded-md border ${message.author_role === 'client' ? 'border-primary-100 bg-primary-50' : 'border-slate-200 bg-slate-50'} p-3">
+          <p class="text-sm font-bold text-slate-950">${escapeHtml(message.author_name || message.author_role)}</p>
+          <p class="mt-1 text-sm text-slate-600">${escapeHtml(message.body)}</p>
+          <p class="mt-2 text-xs text-slate-400">${escapeHtml(message.created_at || '')}</p>
+        </article>
+      `).join('') || '<p class="rounded-md border border-dashed border-slate-200 p-4 text-sm text-slate-500">No replies yet.</p>';
+    }
+
+    async function loadOverview(showStatus = true) {
+      if (showStatus) setStatus('Loading portal data...');
       const data = await portal('/api/portal/client/overview');
+      state.client = data.client;
+      state.projects = data.projects || [];
+      state.invoices = data.invoices || [];
+      state.tickets = data.tickets || [];
       userEl.textContent = `${data.client?.name || 'Client'} workspace`;
-      renderProjects(data.projects || []);
-      renderInvoices(data.invoices || []);
-      renderTickets(data.tickets || []);
-      setStatus('Workspace loaded.', 'success');
+      renderKpis();
+      renderProjects();
+      renderInvoices();
+      renderTickets();
+      if (showStatus) setStatus('Workspace loaded.', 'success');
     }
 
     async function boot() {
@@ -193,13 +377,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         await portal('/api/portal/client/tickets', { method: 'POST', body: JSON.stringify(body) });
         ticketForm.reset();
         setStatus('Support ticket created.', 'success');
-        await loadOverview();
+        await loadOverview(false);
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not create support ticket.', 'error');
       }
     });
 
+    messageForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!state.activeTicketId) return;
+      const body = Object.fromEntries(new FormData(messageForm).entries());
+      try {
+        await portal(`/api/portal/client/tickets/${state.activeTicketId}/messages`, { method: 'POST', body: JSON.stringify(body) });
+        messageForm.reset();
+        await openConversation(state.activeTicketId);
+        await loadOverview(false);
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not send reply.', 'error');
+      }
+    });
+
     document.getElementById('logout-button')?.addEventListener('click', logout);
+    document.getElementById('close-invoice')?.addEventListener('click', () => invoiceModal.classList.add('hidden'));
+    document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
     boot();
   </script>
 </BaseLayout>
