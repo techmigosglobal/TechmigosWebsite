@@ -10,6 +10,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   noIndex={true}
 >
   <style is:global>
+    .tm-crm-table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .tm-crm-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .tm-crm-sheet {
+      max-height: min(68vh, 760px);
+      overflow: auto;
+    }
+
+    .tm-crm-sheet td,
+    .tm-crm-sheet th {
+      white-space: nowrap;
+    }
+
+    @media (max-width: 767px) {
+      .tm-crm-sheet td,
+      .tm-crm-sheet th {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+      }
+    }
+
     @page {
       size: A4;
       margin: 12mm;
@@ -63,7 +92,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <button id="logout-button" class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Sign out</button>
           </div>
           <p id="portal-user" class="mt-3 text-sm text-slate-500">Loading portal session...</p>
-          <nav id="crm-nav" class="mt-6 grid gap-1"></nav>
+          <nav id="crm-nav" class="mt-6 flex gap-2 overflow-x-auto pb-1 lg:grid lg:max-h-[calc(100vh-15rem)] lg:overflow-y-auto lg:pb-0"></nav>
         </div>
       </aside>
 
@@ -112,6 +141,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       dashboard: null,
       selectedClientId: null,
       selectedTicketId: null,
+      financeSheet: 'all',
       data: {
         leads: [],
         clients: [],
@@ -137,6 +167,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       ['followups', 'Follow-ups', 'Tasks and reminders'],
       ['invoices', 'Invoices', 'Builder and PDF preview'],
       ['finances', 'Finance', 'Transactions and analytics'],
+      ['reports', 'Reports', 'ERP-style performance view'],
       ['campaigns', 'Marketing', 'MSG91 campaigns'],
       ['activities', 'Activity', 'Team timeline'],
       ['profiles', 'Users', 'Admin access'],
@@ -305,6 +336,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return `${name || client.email} · ${company}`;
     }
 
+    function projectName(id) {
+      const project = state.data.projects.find((item) => String(item.id) === String(id));
+      return project ? project.name : `Project #${id || '-'}`;
+    }
+
     function setStatus(message, tone = 'neutral') {
       els.status.textContent = message;
       els.status.className = `mt-4 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
@@ -331,9 +367,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return navItems.filter(([key]) => key !== 'profiles' || state.profile?.role === 'company_admin');
     }
 
+    function scrollWorkspaceTop() {
+      const offset = window.innerWidth < 768 ? 92 : 112;
+      const top = Math.max(0, els.title.getBoundingClientRect().top + window.scrollY - offset);
+      window.scrollTo({ top, behavior: 'auto' });
+    }
+
     function renderShell() {
       els.nav.innerHTML = visibleNavItems().map(([key, label, sub]) => `
-        <button class="w-full rounded-md px-3 py-3 text-left transition ${state.active === key ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'}" data-nav="${key}">
+        <button class="w-48 shrink-0 rounded-md px-3 py-3 text-left transition lg:w-full ${state.active === key ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'}" data-nav="${key}">
           <span class="block text-sm font-extrabold">${label}</span>
           <span class="block text-xs ${state.active === key ? 'text-slate-300' : 'text-slate-400'}">${sub}</span>
         </button>
@@ -342,6 +384,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         button.addEventListener('click', () => {
           state.active = button.dataset.nav;
           render();
+          scrollWorkspaceTop();
         });
       });
     }
@@ -357,6 +400,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <p class="text-sm font-semibold text-slate-500">${label}</p>
         <p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p>
         <p class="mt-2 text-xs text-slate-400">${hint}</p>
+      </article>`;
+    }
+
+    function compactMetric(label, value, hint, tone = 'slate') {
+      const tones = {
+        slate: 'border-slate-200 bg-white',
+        green: 'border-emerald-200 bg-emerald-50',
+        red: 'border-red-200 bg-red-50',
+        blue: 'border-blue-200 bg-blue-50',
+        yellow: 'border-amber-200 bg-amber-50',
+      };
+      return `<article class="rounded-lg border ${tones[tone] || tones.slate} p-4">
+        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">${label}</p>
+        <p class="mt-2 text-2xl font-extrabold text-slate-950">${value}</p>
+        <p class="mt-1 text-xs text-slate-500">${hint}</p>
       </article>`;
     }
 
@@ -391,13 +449,130 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return items.filter((item) => keys.some((key) => String(item[key] || '').toLowerCase().includes(query)));
     }
 
+    function sumBy(items, predicate) {
+      return items.filter(predicate).reduce((sum, item) => sum + Number(item.amount || item.total_amount || item.value || 0), 0);
+    }
+
+    function groupSum(items, key, valueKey = 'amount') {
+      return items.reduce((acc, item) => {
+        const label = String(item[key] || 'Unassigned');
+        acc[label] = (acc[label] || 0) + Number(item[valueKey] || 0);
+        return acc;
+      }, {});
+    }
+
+    function groupCount(items, key) {
+      return items.reduce((acc, item) => {
+        const label = String(item[key] || 'Unassigned');
+        acc[label] = (acc[label] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function barRows(groups, total, currency = 'INR') {
+      return Object.entries(groups)
+        .sort((a, b) => Number(b[1]) - Number(a[1]))
+        .slice(0, 8)
+        .map(([label, value]) => {
+          const percent = total ? Math.max(3, Math.round((Number(value) / total) * 100)) : 0;
+          return `<article class="rounded-md border border-slate-100 p-3">
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span class="truncate font-bold text-slate-800">${escapeHtml(label)}</span>
+              <span class="font-bold text-slate-950">${money(value, currency)}</span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-primary-600" style="width:${percent}%"></div></div>
+          </article>`;
+        })
+        .join('') || empty('No grouped data yet.');
+    }
+
+    function countRows(groups, total) {
+      return Object.entries(groups)
+        .sort((a, b) => Number(b[1]) - Number(a[1]))
+        .slice(0, 8)
+        .map(([label, value]) => {
+          const percent = total ? Math.max(3, Math.round((Number(value) / total) * 100)) : 0;
+          return `<article class="rounded-md border border-slate-100 p-3">
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span class="truncate font-bold text-slate-800">${escapeHtml(label)}</span>
+              <span class="font-bold text-slate-950">${escapeHtml(value)}</span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-950" style="width:${percent}%"></div></div>
+          </article>`;
+        })
+        .join('') || empty('No grouped data yet.');
+    }
+
+    function financeRows() {
+      const rows = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by', 'department']);
+      if (state.financeSheet === 'all') return rows;
+      return rows.filter((item) => item.transaction_type === state.financeSheet);
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? '');
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function exportRows(filename, rows, columns) {
+      const header = columns.map(([, label]) => csvEscape(label)).join(',');
+      const body = rows.map((row) => columns.map(([key]) => csvEscape(row[key])).join(',')).join('\n');
+      const blob = new Blob([`${header}\n${body}`], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
     function renderDashboard() {
       setHeader('CRM command center', 'A work-first view of pipeline, client health, support pressure, invoices, and upcoming tasks.', 'Dashboard');
       const metrics = state.dashboard?.metrics || {};
       const openInvoices = state.dashboard?.openInvoices || [];
       const urgentTickets = state.dashboard?.urgentTickets || [];
       const dueFollowups = state.dashboard?.dueFollowups || [];
+      const finances = state.data.finances || [];
+      const projects = state.data.projects || [];
+      const invoices = state.data.invoices || [];
+      const tickets = state.data.tickets || [];
+      const income = sumBy(finances, (item) => ['income', 'revenue'].includes(item.transaction_type));
+      const expenses = sumBy(finances, (item) => ['expense', 'salary'].includes(item.transaction_type));
+      const paidInvoices = invoices.filter((item) => item.status === 'paid').length;
+      const issueProjects = projects.filter((item) => ['at_risk', 'watch'].includes(item.health));
       els.view.innerHTML = `
+        <section class="rounded-lg border border-slate-200 bg-white p-5">
+          <div class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Today at TechMigos</p>
+              <h3 class="mt-2 text-2xl font-extrabold text-slate-950">Company operating picture</h3>
+              <p class="mt-2 text-sm text-slate-500">ERP-style snapshot inspired by Idurar: customers, invoices, payments, project health, support pressure, and finance tracker data in one view.</p>
+              <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                ${compactMetric('Net profit', money(income - expenses), `${finances.length} finance rows`, income - expenses >= 0 ? 'green' : 'red')}
+                ${compactMetric('Project risk', issueProjects.length, 'watch / at risk projects', issueProjects.length ? 'yellow' : 'green')}
+                ${compactMetric('Collections', `${paidInvoices}/${invoices.length}`, 'paid invoice records', 'blue')}
+              </div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p class="text-sm font-extrabold text-slate-950">Fast actions</p>
+              <div class="mt-3 grid gap-2">
+                <button class="rounded-md bg-slate-950 px-4 py-3 text-left text-sm font-bold text-white" data-jump="invoices">Create invoice</button>
+                <button class="rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-800" data-jump="finances">Record transaction</button>
+                <button class="rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-800" data-jump="reports">Open reports</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Finance by sheet</h3>
+            <div class="mt-4 space-y-3">${barRows(groupSum(finances, 'transaction_type'), Math.max(income, expenses, 1))}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Invoice status</h3>
+            <div class="mt-4 space-y-3">${barRows(groupSum(invoices, 'status', 'total_amount'), invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</div>
+          </section>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           ${cardMetric('Leads', metrics.leads || 0, `${metrics.qualifiedLeads || 0} qualified/proposal`)}
           ${cardMetric('Active projects', metrics.activeProjects || 0, `${metrics.clients || 0} clients total`)}
@@ -455,6 +630,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           `).join('') || empty('No activity yet.')}</div>
         </section>
       `;
+      document.querySelectorAll('[data-jump]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.active = button.dataset.jump;
+          render();
+          scrollWorkspaceTop();
+        });
+      });
     }
 
     function rowLine(title, meta, status, tone = 'slate') {
@@ -505,10 +687,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const config = resourceConfig[key];
       setHeader(config.title, config.subtitle, config.title);
       const rows = filtered(state.data[key] || [], ['name', 'email', 'company', 'subject', 'title', 'status', 'priority']);
+      const createLabels = {
+        finances: 'Record transaction',
+        tickets: 'Open support ticket',
+        followups: 'Schedule follow-up',
+        campaigns: 'Create campaign',
+        profiles: 'Create user profile',
+      };
       els.view.innerHTML = `
         <div class="grid gap-5 xl:grid-cols-[380px_1fr]">
           <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Create ${config.title.split(' ')[0].toLowerCase()}</h3>
+            <h3 class="text-lg font-extrabold text-slate-950">${createLabels[key] || `Create ${config.title.split(' ')[0].toLowerCase()}`}</h3>
             <form id="resource-form" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">${config.fields.map(inputFor).join('')}<button class="btn-primary justify-center md:col-span-2 xl:col-span-1" type="submit">Save record</button></form>
           </section>
           <section class="rounded-lg border border-slate-200 bg-white p-5">
@@ -615,19 +804,71 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function renderFinance(rows) {
-      const income = rows.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const expenses = rows.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const allRows = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by', 'department']);
+      const visibleRows = financeRows();
+      const income = allRows.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const expenses = allRows.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const visibleTotal = visibleRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const tabs = [
+        ['all', 'All Sheets', allRows.length],
+        ['income', 'Income', allRows.filter((item) => item.transaction_type === 'income').length],
+        ['expense', 'Expenses', allRows.filter((item) => item.transaction_type === 'expense').length],
+        ['revenue', 'Revenue', allRows.filter((item) => item.transaction_type === 'revenue').length],
+        ['salary', 'Salary', allRows.filter((item) => item.transaction_type === 'salary').length],
+      ];
+      const columns = [
+        ['transaction_date', 'Date'],
+        ['transaction_type', 'Sheet'],
+        ['reference_id', 'Ref'],
+        ['title', 'Purpose'],
+        ['client', 'Client'],
+        ['project', 'Project'],
+        ['payment_method', 'Mode'],
+        ['paid_by', 'Paid by'],
+        ['received_by', 'Received by'],
+        ['status', 'Status'],
+        ['amount', 'Amount'],
+      ];
       return `<div>
-        <div class="mb-5 grid gap-4 sm:grid-cols-3">
+        <div class="mb-5 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           ${cardMetric('Income + revenue', money(income), 'Recorded receipts')}
           ${cardMetric('Expenses + salary', money(expenses), 'Recorded outflow')}
           ${cardMetric('Net profit', money(income - expenses), 'Tracker balance')}
+          ${cardMetric('Visible sheet total', money(visibleTotal), `${visibleRows.length} visible rows`)}
         </div>
-        <div class="overflow-x-auto rounded-lg border border-slate-200">
-          <table class="min-w-full text-sm">
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Reference</th><th class="px-4 py-3">Title</th><th class="px-4 py-3">Project</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Amount</th></tr></thead>
-            <tbody class="divide-y divide-slate-100">${rows.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.transaction_date || '')}</td><td class="px-4 py-3">${badge(item.transaction_type)}</td><td class="px-4 py-3 text-slate-500">${escapeHtml(item.reference_id || '')}</td><td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(item.title)}</td><td class="px-4 py-3 text-slate-600">${escapeHtml(item.project || item.client || '')}</td><td class="px-4 py-3">${badge(item.status)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount)}</td></tr>`).join('') || `<tr><td colspan="7" class="px-4 py-8 text-slate-500">No finance transactions yet.</td></tr>`}</tbody>
-          </table>
+        <div class="grid gap-5 xl:grid-cols-[1fr_360px]">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-950">Finance workbook</h3>
+                <p class="mt-1 text-sm text-slate-500">Spreadsheet-style tracker view with live CRM search and sheet tabs.</p>
+              </div>
+              <button id="finance-export" class="btn-secondary justify-center">Export CSV</button>
+            </div>
+            <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
+              ${tabs.map(([key, label, count]) => `<button class="shrink-0 rounded-md border px-3 py-2 text-sm font-bold ${state.financeSheet === key ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-700'}" data-finance-sheet="${key}">${label} <span class="opacity-70">${count}</span></button>`).join('')}
+            </div>
+            <div class="tm-crm-sheet mt-4 rounded-lg border border-slate-200">
+              <table class="tm-crm-table min-w-[1080px] w-full text-sm">
+                <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>${columns.map(([, label]) => `<th class="border-b border-slate-200 bg-slate-50 px-4 py-3">${label}</th>`).join('')}</tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">${visibleRows.map((item) => `<tr class="hover:bg-slate-50">
+                  ${columns.map(([key]) => `<td class="px-4 py-3 ${key === 'amount' ? 'text-right font-bold text-slate-950' : key === 'title' ? 'font-semibold text-slate-900' : 'text-slate-600'}">${key === 'transaction_type' ? badge(item[key]) : key === 'status' ? badge(item[key], statusTone(item[key])) : key === 'amount' ? money(item[key]) : escapeHtml(item[key] || '')}</td>`).join('')}
+                </tr>`).join('') || `<tr><td colspan="${columns.length}" class="px-4 py-8 text-slate-500">No finance transactions match this sheet/search.</td></tr>`}</tbody>
+              </table>
+            </div>
+          </section>
+          <aside class="space-y-5">
+            <section class="rounded-lg border border-slate-200 bg-white p-5">
+              <h3 class="text-lg font-extrabold text-slate-950">By sheet</h3>
+              <div class="mt-4 space-y-3">${barRows(groupSum(allRows, 'transaction_type'), Math.max(income, expenses, 1))}</div>
+            </section>
+            <section class="rounded-lg border border-slate-200 bg-white p-5">
+              <h3 class="text-lg font-extrabold text-slate-950">By project/client</h3>
+              <div class="mt-4 space-y-3">${barRows(groupSum(allRows.map((row) => ({ ...row, bucket: row.project || row.client || row.department || 'General' })), 'bucket'), Math.max(income, expenses, 1))}</div>
+            </section>
+          </aside>
         </div>
       </div>`;
     }
@@ -645,6 +886,59 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function renderActivity() {
       setHeader('Activity timeline', 'A shared audit trail of CRM work across leads, invoices, tickets, campaigns, and clients.', 'Activity');
       return `<div class="space-y-3">${state.data.activities.map((item) => rowLine(item.summary || item.action, `${item.actor_name || 'System'} · ${item.created_at || ''}`, item.entity_type)).join('') || empty('No activity yet.')}</div>`;
+    }
+
+    function renderReports() {
+      setHeader('ERP reports', 'Analytical views for finance, invoices, projects, customers, leads, and support.', 'Reports');
+      const finances = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'department']);
+      const invoices = filtered(state.data.invoices || [], ['invoice_number', 'status', 'currency']);
+      const projects = filtered(state.data.projects || [], ['name', 'status', 'health', 'priority', 'project_manager', 'client_name']);
+      const leads = filtered(state.data.leads || [], ['name', 'email', 'status', 'priority', 'service']);
+      const tickets = filtered(state.data.tickets || [], ['subject', 'status', 'priority']);
+      const income = sumBy(finances, (item) => ['income', 'revenue'].includes(item.transaction_type));
+      const expenses = sumBy(finances, (item) => ['expense', 'salary'].includes(item.transaction_type));
+      const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+      const projectRevenue = projects.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+      const projectExpenses = projects.reduce((sum, item) => sum + Number(item.expenses || 0), 0);
+      els.view.innerHTML = `
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          ${compactMetric('P&L', money(income - expenses), `${money(income)} in · ${money(expenses)} out`, income - expenses >= 0 ? 'green' : 'red')}
+          ${compactMetric('Invoice book', money(invoiceTotal), `${invoices.length} invoices`, 'blue')}
+          ${compactMetric('Project margin', money(projectRevenue - projectExpenses), `${projects.length} projects`, projectRevenue - projectExpenses >= 0 ? 'green' : 'yellow')}
+          ${compactMetric('Lead funnel', leads.length, `${leads.filter((lead) => ['qualified', 'proposal'].includes(lead.status)).length} qualified/proposal`, 'slate')}
+          ${compactMetric('Support load', tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length, 'open tickets', tickets.some((ticket) => ticket.priority === 'urgent') ? 'red' : 'green')}
+        </div>
+        <div class="mt-5 grid gap-5 xl:grid-cols-2">
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Finance distribution</h3>
+            <div class="mt-4 space-y-3">${barRows(groupSum(finances, 'transaction_type'), Math.max(income, expenses, 1))}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Invoice collection status</h3>
+            <div class="mt-4 space-y-3">${barRows(groupSum(invoices, 'status', 'total_amount'), Math.max(invoiceTotal, 1))}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Project profitability</h3>
+            <div class="mt-4 space-y-3">${projects.map((project) => {
+              const profit = Number(project.profit || Number(project.revenue || 0) - Number(project.expenses || 0));
+              const basis = Math.max(Number(project.budget || 0), Number(project.revenue || 0), Number(project.expenses || 0), 1);
+              const percent = Math.max(3, Math.min(100, Math.round((Math.abs(profit) / basis) * 100)));
+              return `<article class="rounded-md border border-slate-100 p-3">
+                <div class="flex items-center justify-between gap-3 text-sm"><span class="font-bold text-slate-900">${escapeHtml(project.name)}</span><span class="font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-red-700'}">${money(profit)}</span></div>
+                <p class="mt-1 text-xs text-slate-500">${escapeHtml(project.client_name || clientName(project.client_id))} · ${escapeHtml(project.status)} · ${escapeHtml(project.progress || 0)}%</p>
+                <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full ${profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}" style="width:${percent}%"></div></div>
+              </article>`;
+            }).join('') || empty('No project report data yet.')}</div>
+          </section>
+          <section class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-lg font-extrabold text-slate-950">Operational issues</h3>
+            <div class="mt-4 space-y-3">
+              ${countRows(groupCount(tickets, 'status'), Math.max(tickets.length, 1))}
+              ${countRows(groupCount(leads, 'status'), Math.max(leads.length, 1))}
+            </div>
+          </section>
+        </div>
+      `;
     }
 
     function renderInvoices() {
@@ -797,6 +1091,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       document.querySelectorAll('[data-client]').forEach((button) => button.addEventListener('click', () => {
         state.selectedClientId = button.dataset.client;
         render();
+        scrollWorkspaceTop();
       }));
       document.querySelectorAll('[data-client-invite]').forEach((button) => button.addEventListener('click', async () => {
         const password = prompt('Temporary password for this client login?');
@@ -835,6 +1130,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           setStatus(error instanceof Error ? error.message : 'Could not update ticket.', 'error');
         }
       }));
+      document.querySelectorAll('[data-finance-sheet]').forEach((button) => button.addEventListener('click', () => {
+        state.financeSheet = button.dataset.financeSheet;
+        render();
+        scrollWorkspaceTop();
+      }));
+      document.getElementById('finance-export')?.addEventListener('click', () => {
+        exportRows(`techmigos-${state.financeSheet}-finance.csv`, financeRows(), [
+          ['transaction_date', 'Date'],
+          ['transaction_type', 'Sheet'],
+          ['reference_id', 'Reference'],
+          ['title', 'Purpose'],
+          ['client', 'Client'],
+          ['project', 'Project'],
+          ['payment_method', 'Payment Method'],
+          ['paid_by', 'Paid By'],
+          ['received_by', 'Received By'],
+          ['status', 'Status'],
+          ['amount', 'Amount'],
+        ]);
+      });
       document.querySelectorAll('[data-send]').forEach((button) => button.addEventListener('click', async () => {
         try {
           const result = await portal(`/api/portal/campaigns/${button.dataset.send}/send`, { method: 'POST', body: '{}' });
@@ -873,6 +1188,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       renderShell();
       if (state.active === 'dashboard') return renderDashboard();
       if (state.active === 'invoices') return renderInvoices();
+      if (state.active === 'reports') return renderReports();
       if (state.active === 'activities') {
         els.view.innerHTML = renderActivity();
         return;
