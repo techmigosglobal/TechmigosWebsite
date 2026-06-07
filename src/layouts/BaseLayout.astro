@@ -114,8 +114,8 @@ const pageTitle = title === 'Home'
         }
 
         return fetch(window.techmigosApiUrl(path), {
-          credentials: 'include',
           ...(options || {}),
+          credentials: base.includes('.insforge.app') ? 'omit' : 'include',
           headers,
         });
       };
