@@ -298,7 +298,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function clientName(id) {
       const client = state.data.clients.find((item) => String(item.id) === String(id));
-      return client ? `${client.name}${client.company ? `, ${client.company}` : ''}` : `Client #${id || '-'}`;
+      if (!client) return `Client #${id || '-'}`;
+      const name = String(client.name || '').trim();
+      const company = String(client.company || '').trim();
+      if (!company || company.toLowerCase() === name.toLowerCase()) return name || client.email || `Client #${id || '-'}`;
+      return `${name || client.email} · ${company}`;
     }
 
     function setStatus(message, tone = 'neutral') {
@@ -474,7 +478,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return `<label class="flex items-center gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700"><input name="${name}" type="checkbox" class="h-4 w-4 rounded border-slate-300" />${label}</label>`;
       }
       if (type === 'client') {
-        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select client</option>${state.data.clients.map((client) => `<option value="${client.id}">${escapeHtml(client.name)}${client.company ? ` · ${escapeHtml(client.company)}` : ''}</option>`).join('')}</select></label>`;
+        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select client</option>${state.data.clients.map((client) => `<option value="${client.id}">${escapeHtml(clientName(client.id))}</option>`).join('')}</select></label>`;
       }
       if (type === 'project') {
         return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select project</option>${state.data.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.name)}${project.client_id ? ` · ${escapeHtml(clientName(project.client_id))}` : ''}</option>`).join('')}</select></label>`;
