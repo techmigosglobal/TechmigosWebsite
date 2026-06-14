@@ -109,19 +109,24 @@ const services = [
     title: 'Tech Consulting',
     color: 'from-amber-500 to-orange-500',
     description: [
-      'Sometimes you need an outside perspective. Our consultants provide expert guidance on technology strategy, architecture decisions, and technical due diligence for investments.',
-      'We conduct comprehensive technical audits that identify vulnerabilities, inefficiencies, and opportunities for improvement — backed by data and actionable recommendations.',
-      'Whether planning a major technical migration, evaluating a new stack, or rescuing a struggling project, we bring expertise and fresh perspectives.',
+      'Sometimes you need an outside perspective. Our consultants provide expert guidance on technology strategy, architecture decisions, digital readiness, and practical technical education.',
+      'For schools and institutions, TechMigos supports teacher training, technology orientation, technical field guidance, and motivational sessions that help educators and students use modern tools with confidence.',
+      'Whether planning a migration, evaluating a stack, mentoring a team, or preparing teachers for digital classrooms, we bring clear guidance backed by real engineering practice.',
     ],
     deliverables: [
       'Technology stack assessment',
       'Architecture review and recommendations',
+      'School teacher training workshops',
+      'Curriculum and education technology orientation',
+      'Technical field and career guidance sessions',
+      'Motivational programs for teachers and students',
+      'Institutional digital-readiness consulting',
       'Technical due diligence for M&A',
       'Code audit and quality analysis',
       'Performance optimization roadmap',
       'Team augmentation and mentoring',
     ],
-    techStack: ['Technical Writing', 'Architecture Patterns', 'System Design', 'Security Best Practices'],
+    techStack: ['Technical Training', 'Education Technology', 'Architecture Patterns', 'System Design', 'Digital Readiness', 'Security Best Practices'],
   },
 ];
 
@@ -130,6 +135,7 @@ const faqs = [
   { question: 'What is your development process?', answer: 'We follow agile sprints (2 weeks), with regular standups, demos, and full transparency via project management tools. You\'ll always know where we stand.' },
   { question: 'Do you offer ongoing support after launch?', answer: 'Yes! We offer maintenance plans covering bug fixes, security updates, feature additions, and dedicated support. We want to be your long-term tech partner.' },
   { question: 'Can you work with our existing team?', answer: 'Absolutely. We frequently augment teams with specialized skills and integrate seamlessly with your existing workflows and tools.' },
+  { question: 'Do you provide teacher training or school technology guidance?', answer: 'Yes. Our consulting work includes teacher workshops, technical field guidance, digital classroom readiness, and motivational sessions for schools and education teams.' },
   { question: 'How do you handle scope changes?', answer: 'We use a structured change request process — all scope changes are documented, priced, and approved before work begins. Zero surprises.' },
   { question: 'What technologies do you specialize in?', answer: 'Our core strengths include React/Next.js, Node.js, Python, AWS/GCP, and mobile with React Native and Flutter. We stay current with AI/ML tooling.' },
   { question: 'Do you sign NDAs?', answer: 'Yes, always. We sign NDAs before any detailed discussions. Your IP and business ideas are treated with strict confidentiality.' },
@@ -139,7 +145,7 @@ const faqs = [
 
 <BaseLayout
   title="Software Development Services"
-  description="Comprehensive technology services from TechMigos — web development, mobile apps, QA/testing, backend development, AI/ML integration, and tech consulting."
+  description="TechMigos services include web development, mobile apps, QA/testing, backend development, AI/ML integration, tech consulting, school teacher training, and technical guidance."
 >
   <!-- HERO -->
   <section class="pt-36 pb-16 relative overflow-hidden">
@@ -301,6 +307,19 @@ const faqs = [
       </a>
     </div>
   </section>
+
+<script is:inline type="application/ld+json" set:html={JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: faq.answer,
+    },
+  })),
+})} />
 </BaseLayout>
 
 <script>

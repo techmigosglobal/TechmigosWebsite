@@ -50,29 +50,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         visibility: hidden !important;
       }
 
-      #invoice-modal,
-      #invoice-modal * {
+      #invoice-preview,
+      #invoice-preview * {
         visibility: visible !important;
       }
 
-      #invoice-modal {
-        position: static !important;
-        display: block !important;
-        background: #fff !important;
-        padding: 0 !important;
-      }
-
-      #invoice-modal > div {
-        max-width: 186mm !important;
-        max-height: none !important;
-        margin: 0 auto !important;
-        overflow: visible !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-      }
-
       #invoice-preview {
+        position: absolute !important;
+        inset: 0 auto auto 0 !important;
+        width: 186mm !important;
         padding: 0 !important;
+      }
+
+      .invoice-print-sheet {
+        width: 186mm !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 10.5px !important;
+        line-height: 1.35 !important;
+      }
+
+      .invoice-print-sheet table,
+      .invoice-print-sheet tr,
+      .invoice-print-sheet .avoid-print-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       .print\:hidden {
@@ -340,6 +343,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function projectName(id) {
       const project = state.data.projects.find((item) => String(item.id) === String(id));
       return project ? project.name : `Project #${id || '-'}`;
+    }
+
+    function clientById(id) {
+      return state.data.clients.find((item) => String(item.id) === String(id));
+    }
+
+    function projectById(id) {
+      return state.data.projects.find((item) => String(item.id) === String(id));
     }
 
     function setStatus(message, tone = 'neutral') {
@@ -945,35 +956,58 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function renderInvoices() {
       setHeader('Invoice center', 'Create branded invoices from clients and projects, preview them, send through MSG91, and print/save as PDF.', 'Invoices');
       els.view.innerHTML = `
-        <div class="grid gap-5 xl:grid-cols-[430px_1fr]">
+        <div class="grid gap-5 xl:grid-cols-[minmax(520px,0.95fr)_1fr]">
           <section class="rounded-lg border border-slate-200 bg-white p-5">
             <h3 class="text-lg font-extrabold text-slate-950">Invoice builder</h3>
-            <form id="invoice-form" class="mt-4 space-y-4">
-              <div class="grid gap-4 sm:grid-cols-2">
-                ${inputFor(['client_id', 'Client', 'client', true])}
-                ${inputFor(['project_id', 'Project', 'project'])}
-                <label class="block"><span class="form-label">Invoice number</span><input name="invoice_number" id="invoice-number" type="text" required class="form-input form-control" /></label>
-                <label class="block"><span class="form-label">Currency</span><input name="currency" value="INR" class="form-input form-control" /></label>
-                <label class="block"><span class="form-label">Invoice date</span><input name="invoice_date" type="date" class="form-input form-control" /></label>
-                <label class="block"><span class="form-label">Due date</span><input name="due_date" type="date" class="form-input form-control" /></label>
-                <label class="block"><span class="form-label">Discount</span><input name="discount_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
-                <label class="block"><span class="form-label">Tax amount</span><input name="tax_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
-              </div>
-              <div>
-                <div class="flex items-center justify-between"><span class="form-label">Line items</span><button id="add-line" type="button" class="text-sm font-bold text-primary-700">Add line</button></div>
+            <p class="mt-1 text-sm text-slate-500">Select a client to pre-fill printable customer details, then adjust anything needed for this invoice.</p>
+            <form id="invoice-form" class="mt-5 space-y-5">
+              <fieldset class="rounded-lg border border-slate-200 p-4">
+                <legend class="px-1 text-sm font-extrabold text-slate-950">Customer</legend>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  ${inputFor(['client_id', 'Client', 'client', true])}
+                  ${inputFor(['project_id', 'Project', 'project'])}
+                  <label class="block"><span class="form-label">Customer name</span><input name="customer_name" required class="form-input form-control" autocomplete="name" /></label>
+                  <label class="block"><span class="form-label">Customer company</span><input name="customer_company" class="form-input form-control" autocomplete="organization" /></label>
+                  <label class="block"><span class="form-label">Customer email</span><input name="customer_email" type="email" class="form-input form-control" autocomplete="email" /></label>
+                  <label class="block"><span class="form-label">Customer phone</span><input name="customer_phone" class="form-input form-control" autocomplete="tel" /></label>
+                  <label class="block sm:col-span-2"><span class="form-label">Billing address</span><textarea name="billing_address" class="form-input form-control min-h-[70px]"></textarea></label>
+                </div>
+              </fieldset>
+              <fieldset class="rounded-lg border border-slate-200 p-4">
+                <legend class="px-1 text-sm font-extrabold text-slate-950">Invoice details</legend>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="block"><span class="form-label">Invoice number</span><input name="invoice_number" id="invoice-number" type="text" required class="form-input form-control" /></label>
+                  <label class="block"><span class="form-label">Reference number</span><input name="reference_number" class="form-input form-control" placeholder="PO, quote, or work ref" /></label>
+                  <label class="block"><span class="form-label">Service title</span><input name="service_title" class="form-input form-control" placeholder="Website development, training, consulting..." /></label>
+                  <label class="block"><span class="form-label">Currency</span><input name="currency" value="INR" required class="form-input form-control" /></label>
+                  <label class="block"><span class="form-label">Invoice date</span><input name="invoice_date" type="date" class="form-input form-control" /></label>
+                  <label class="block"><span class="form-label">Print date</span><input name="print_date" type="date" class="form-input form-control" /></label>
+                  <label class="block"><span class="form-label">Due date</span><input name="due_date" type="date" class="form-input form-control" /></label>
+                </div>
+              </fieldset>
+              <fieldset class="rounded-lg border border-slate-200 p-4">
+                <legend class="px-1 text-sm font-extrabold text-slate-950">Line items</legend>
+                <div class="flex items-center justify-end"><button id="add-line" type="button" class="text-sm font-bold text-primary-700">Add line</button></div>
                 <div id="line-items" class="mt-2 space-y-2"></div>
-              </div>
-              <label class="block"><span class="form-label">Terms</span><textarea name="terms" class="form-input form-control min-h-[80px]">Payment is due by the listed due date unless otherwise agreed in writing.</textarea></label>
-              <label class="block"><span class="form-label">Payment instructions</span><textarea name="payment_instructions" class="form-input form-control min-h-[80px]">Please use the payment instructions shared by TechMigos for this project.</textarea></label>
-              <label class="block"><span class="form-label">Notes</span><textarea name="notes" class="form-input form-control min-h-[80px]"></textarea></label>
+              </fieldset>
+              <fieldset class="rounded-lg border border-slate-200 p-4">
+                <legend class="px-1 text-sm font-extrabold text-slate-950">Totals and notes</legend>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="block"><span class="form-label">Discount</span><input name="discount_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
+                  <label class="block"><span class="form-label">Tax amount</span><input name="tax_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
+                </div>
+                <label class="mt-4 block"><span class="form-label">Terms</span><textarea name="terms" class="form-input form-control min-h-[70px]">Payment is due by the listed due date unless otherwise agreed in writing.</textarea></label>
+                <label class="mt-4 block"><span class="form-label">Payment instructions</span><textarea name="payment_instructions" class="form-input form-control min-h-[70px]">Please use the payment instructions shared by TechMigos for this project.</textarea></label>
+                <label class="mt-4 block"><span class="form-label">Internal notes</span><textarea name="notes" class="form-input form-control min-h-[70px]"></textarea></label>
+              </fieldset>
               <div id="invoice-total" class="rounded-md bg-slate-50 p-4 text-sm font-bold text-slate-900">Total: INR 0.00</div>
               <button class="btn-primary w-full justify-center" type="submit">Create invoice</button>
             </form>
           </section>
           <section class="rounded-lg border border-slate-200 bg-white p-5">
             <div class="flex items-center justify-between gap-3"><h3 class="text-lg font-extrabold text-slate-950">Recent invoices</h3><button id="refresh-invoice-number" class="text-sm font-bold text-primary-700">Next number</button></div>
-            <div class="mt-4 overflow-x-auto">${renderCompactTable(filtered(state.data.invoices, ['invoice_number', 'status']), ['invoice_number', 'client_id', 'total_amount', 'currency', 'status', 'due_date'])}</div>
-            <div class="mt-4 grid gap-3">${state.data.invoices.slice(0, 12).map((invoice) => `<article class="flex flex-col gap-3 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-bold text-slate-950">${escapeHtml(invoice.invoice_number)}</p><p class="text-sm text-slate-500">${escapeHtml(clientName(invoice.client_id))} · ${money(invoice.total_amount || invoice.amount, invoice.currency)}</p></div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-invoice-view="${invoice.id}">Preview</button><button class="text-sm font-bold text-primary-700" data-invoice-send="${invoice.id}">Send</button></div></article>`).join('') || empty('No invoices yet.')}</div>
+            <div class="mt-4 overflow-x-auto">${renderCompactTable(filtered(state.data.invoices, ['invoice_number', 'customer_name', 'status']), ['invoice_number', 'customer_name', 'total_amount', 'currency', 'status', 'due_date'])}</div>
+            <div class="mt-4 grid gap-3">${state.data.invoices.slice(0, 12).map((invoice) => `<article class="flex flex-col gap-3 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-bold text-slate-950">${escapeHtml(invoice.invoice_number)}</p><p class="text-sm text-slate-500">${escapeHtml(invoice.customer_name || clientName(invoice.client_id))} · ${money(invoice.total_amount || invoice.amount, invoice.currency)}</p></div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-invoice-view="${invoice.id}">Preview</button><button class="text-sm font-bold text-primary-700" data-invoice-send="${invoice.id}">Send</button></div></article>`).join('') || empty('No invoices yet.')}</div>
           </section>
         </div>
       `;
@@ -983,11 +1017,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     async function saveResource(key, body) {
       try {
-        await portal(`/api/portal/${key}`, { method: 'POST', body: JSON.stringify(body) });
+        const result = await portal(`/api/portal/${key}`, { method: 'POST', body: JSON.stringify(body) });
         setStatus('Record saved.', 'success');
         await loadData();
+        return result;
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not save record.', 'error');
+        return null;
       }
     }
 
@@ -1002,11 +1038,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const lineItems = document.getElementById('line-items');
       const addLine = () => {
         const index = lineItems.children.length;
-        lineItems.insertAdjacentHTML('beforeend', `<div class="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-[1fr_82px_110px_32px]"><input name="description_${index}" required placeholder="Description" class="form-input form-control" /><input name="quantity_${index}" type="number" step="0.01" value="1" class="form-input form-control" /><input name="rate_${index}" type="number" step="0.01" value="0" class="form-input form-control" /><button type="button" class="rounded-md border border-slate-200 text-slate-500" data-remove-line>&times;</button></div>`);
+        lineItems.insertAdjacentHTML('beforeend', `<div class="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-[1fr_82px_110px_110px_36px]"><input name="description_${index}" required placeholder="Description" class="form-input form-control" /><input name="quantity_${index}" aria-label="Quantity" type="number" step="0.01" value="1" min="0" class="form-input form-control" /><input name="rate_${index}" aria-label="Rate" type="number" step="0.01" value="0" min="0" class="form-input form-control" /><input name="amount_${index}" aria-label="Amount" readonly value="0.00" class="form-input form-control bg-slate-50" /><button type="button" class="min-h-[44px] rounded-md border border-slate-200 text-slate-500" aria-label="Remove line" data-remove-line>&times;</button></div>`);
       };
       addLine();
       document.getElementById('add-line')?.addEventListener('click', addLine);
       document.getElementById('refresh-invoice-number')?.addEventListener('click', loadNextInvoiceNumber);
+      form?.querySelector('[name="client_id"]')?.addEventListener('change', prefillInvoiceCustomer);
+      form?.querySelector('[name="project_id"]')?.addEventListener('change', prefillInvoiceProject);
       lineItems.addEventListener('click', (event) => {
         if (event.target.matches('[data-remove-line]')) event.target.closest('div')?.remove();
         updateInvoiceTotal();
@@ -1015,10 +1053,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = invoiceBody(form);
-        await saveResource('invoices', body);
+        const result = await saveResource('invoices', body);
+        const newId = result?.detail?.invoice?.id || result?.item?.id;
+        if (newId) await showInvoice(newId);
       });
+      const today = new Date().toISOString().slice(0, 10);
+      form.querySelector('[name="invoice_date"]').value = today;
+      form.querySelector('[name="print_date"]').value = today;
       loadNextInvoiceNumber().catch(() => {});
       updateInvoiceTotal();
+    }
+
+    function setInvoiceField(form, name, value, overwrite = false) {
+      const input = form?.querySelector(`[name="${name}"]`);
+      if (!input) return;
+      if (overwrite || !input.value) input.value = value || '';
+    }
+
+    function prefillInvoiceCustomer() {
+      const form = document.getElementById('invoice-form');
+      const client = clientById(form?.querySelector('[name="client_id"]')?.value);
+      if (!form || !client) return;
+      setInvoiceField(form, 'customer_name', client.name, true);
+      setInvoiceField(form, 'customer_company', client.company, true);
+      setInvoiceField(form, 'customer_email', client.email, true);
+      setInvoiceField(form, 'customer_phone', client.phone, true);
+    }
+
+    function prefillInvoiceProject() {
+      const form = document.getElementById('invoice-form');
+      const project = projectById(form?.querySelector('[name="project_id"]')?.value);
+      if (!form || !project) return;
+      setInvoiceField(form, 'service_title', project.name);
+      if (project.client_id && !form.querySelector('[name="client_id"]')?.value) {
+        form.querySelector('[name="client_id"]').value = project.client_id;
+        prefillInvoiceCustomer();
+      }
     }
 
     function invoiceBody(form) {
@@ -1034,7 +1104,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         invoice_number: data.invoice_number,
         currency: data.currency || 'INR',
         invoice_date: data.invoice_date,
+        print_date: data.print_date,
         due_date: data.due_date,
+        customer_name: data.customer_name,
+        customer_company: data.customer_company,
+        customer_email: data.customer_email,
+        customer_phone: data.customer_phone,
+        billing_address: data.billing_address,
+        service_title: data.service_title,
+        reference_number: data.reference_number,
         discount_amount: Number(data.discount_amount || 0),
         tax_amount: Number(data.tax_amount || 0),
         terms: data.terms,
@@ -1048,6 +1126,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const form = document.getElementById('invoice-form');
       if (!form) return;
       const body = invoiceBody(form);
+      document.querySelectorAll('#line-items > div').forEach((row) => {
+        const quantity = Number(row.querySelector('[name^="quantity_"]')?.value || 0);
+        const rate = Number(row.querySelector('[name^="rate_"]')?.value || 0);
+        const amountInput = row.querySelector('[name^="amount_"]');
+        if (amountInput) amountInput.value = (quantity * rate).toFixed(2);
+      });
       const subtotal = body.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
       const total = Math.max(subtotal - body.discount_amount + body.tax_amount, 0);
       document.getElementById('invoice-total').textContent = `Subtotal: ${money(subtotal, body.currency)} · Total: ${money(total, body.currency)}`;
@@ -1063,18 +1147,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function invoiceHtml(detail) {
       const invoice = detail.invoice;
-      return `<article class="mx-auto max-w-4xl bg-white text-slate-950">
-        <div class="flex flex-col gap-8 border-b-4 border-slate-950 pb-8 sm:flex-row sm:items-start sm:justify-between">
-          <div><p class="text-3xl font-extrabold text-primary-700">TechMigos</p><p class="mt-2 text-sm text-slate-500">Web, mobile, AI and backend engineering</p><p class="mt-1 text-sm text-slate-500">info@techmigos.com · www.techmigos.com</p></div>
-          <div class="text-left sm:text-right"><h1 class="text-4xl font-extrabold">INVOICE</h1><p class="mt-2 text-lg font-bold">${escapeHtml(invoice.invoice_number)}</p>${badge(invoice.status)}</div>
+      const customerName = invoice.customer_name || detail.client?.name || '';
+      const customerCompany = invoice.customer_company || detail.client?.company || '';
+      const customerEmail = invoice.customer_email || detail.client?.email || '';
+      const customerPhone = invoice.customer_phone || detail.client?.phone || '';
+      const serviceTitle = invoice.service_title || detail.project?.name || 'TechMigos services';
+      return `<article class="invoice-print-sheet mx-auto max-w-4xl bg-white text-slate-950">
+        <div class="flex items-start justify-between gap-6 border-b-2 border-slate-950 pb-4">
+          <div>
+            <p class="text-2xl font-extrabold text-primary-700">TechMigos</p>
+            <p class="mt-1 text-xs text-slate-600">Web, mobile, AI, backend engineering, and technical consulting</p>
+            <p class="mt-1 text-xs text-slate-600">info@techmigos.com · www.techmigos.com · +91 9959703547</p>
+            <p class="mt-1 text-xs text-slate-600">Hyderabad, Telangana, India</p>
+          </div>
+          <div class="text-right">
+            <h1 class="text-3xl font-extrabold tracking-wide">INVOICE</h1>
+            <p class="mt-1 text-base font-bold">${escapeHtml(invoice.invoice_number)}</p>
+            <p class="mt-1 text-xs uppercase text-slate-500">${escapeHtml(invoice.status || 'draft')}</p>
+          </div>
         </div>
-        <div class="mt-8 grid gap-6 sm:grid-cols-2">
-          <div><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Bill to</p><h2 class="mt-2 text-xl font-extrabold">${escapeHtml(detail.client?.name || '')}</h2><p class="text-sm text-slate-600">${escapeHtml(detail.client?.company || '')}</p><p class="text-sm text-slate-600">${escapeHtml(detail.client?.email || '')}</p></div>
-          <div class="grid gap-2 text-sm sm:text-right"><p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p><p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '')}</p><p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p></div>
+        <div class="mt-5 grid grid-cols-2 gap-6">
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Bill to</p>
+            <h2 class="mt-1 text-lg font-extrabold">${escapeHtml(customerName)}</h2>
+            <p class="text-sm text-slate-700">${escapeHtml(customerCompany)}</p>
+            <p class="text-sm text-slate-700">${escapeHtml(customerEmail)}</p>
+            <p class="text-sm text-slate-700">${escapeHtml(customerPhone)}</p>
+            ${invoice.billing_address ? `<p class="mt-2 whitespace-pre-line text-sm text-slate-700">${escapeHtml(invoice.billing_address)}</p>` : ''}
+          </div>
+          <div class="grid gap-1.5 text-sm">
+            <p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p>
+            <p><strong>Print date:</strong> ${escapeHtml(invoice.print_date || '')}</p>
+            <p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '-')}</p>
+            <p><strong>Service:</strong> ${escapeHtml(serviceTitle)}</p>
+            <p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p>
+            <p><strong>Reference:</strong> ${escapeHtml(invoice.reference_number || '-')}</p>
+          </div>
         </div>
-        <div class="mt-8 overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-950 text-left text-white"><tr><th class="px-4 py-3">Description</th><th class="px-4 py-3">Qty</th><th class="px-4 py-3">Rate</th><th class="px-4 py-3 text-right">Amount</th></tr></thead><tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.description)}</td><td class="px-4 py-3">${escapeHtml(item.quantity)}</td><td class="px-4 py-3">${money(item.rate, invoice.currency)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody></table></div>
-        <div class="mt-8 flex justify-end"><div class="w-full max-w-sm space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-3 text-xl"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
-        <div class="mt-8 grid gap-4 sm:grid-cols-2"><div><p class="font-bold">Terms</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
+        <div class="mt-5 overflow-hidden rounded-md border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-950 text-left text-white"><tr><th class="px-3 py-2">Description</th><th class="px-3 py-2">Qty</th><th class="px-3 py-2">Rate</th><th class="px-3 py-2 text-right">Amount</th></tr></thead>
+            <tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-3 py-2">${escapeHtml(item.description)}</td><td class="px-3 py-2">${escapeHtml(item.quantity)}</td><td class="px-3 py-2">${money(item.rate, invoice.currency)}</td><td class="px-3 py-2 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="avoid-print-break mt-5 flex justify-end"><div class="w-full max-w-xs space-y-1.5 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-2 text-lg"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
+        <div class="avoid-print-break mt-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-4"><div><p class="font-bold">Terms</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
       </article>`;
     }
 

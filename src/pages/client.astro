@@ -20,29 +20,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         visibility: hidden !important;
       }
 
-      #invoice-modal,
-      #invoice-modal * {
+      #invoice-preview,
+      #invoice-preview * {
         visibility: visible !important;
       }
 
-      #invoice-modal {
-        position: static !important;
-        display: block !important;
-        background: #fff !important;
-        padding: 0 !important;
-      }
-
-      #invoice-modal > div {
-        max-width: 186mm !important;
-        max-height: none !important;
-        margin: 0 auto !important;
-        overflow: visible !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-      }
-
       #invoice-preview {
+        position: absolute !important;
+        inset: 0 auto auto 0 !important;
+        width: 186mm !important;
         padding: 0 !important;
+      }
+
+      .invoice-print-sheet {
+        width: 186mm !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 10.5px !important;
+        line-height: 1.35 !important;
+      }
+
+      .invoice-print-sheet table,
+      .invoice-print-sheet tr,
+      .invoice-print-sheet .avoid-print-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       .print\:hidden {
@@ -311,18 +314,51 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function invoiceHtml(detail) {
       const invoice = detail.invoice;
-      return `<article class="mx-auto max-w-4xl bg-white text-slate-950">
-        <div class="flex flex-col gap-8 border-b-4 border-slate-950 pb-8 sm:flex-row sm:items-start sm:justify-between">
-          <div><p class="text-3xl font-extrabold text-primary-700">TechMigos</p><p class="mt-2 text-sm text-slate-500">Web, mobile, AI and backend engineering</p><p class="mt-1 text-sm text-slate-500">info@techmigos.com · www.techmigos.com</p></div>
-          <div class="text-left sm:text-right"><h1 class="text-4xl font-extrabold">INVOICE</h1><p class="mt-2 text-lg font-bold">${escapeHtml(invoice.invoice_number)}</p>${badge(invoice.status, statusTone(invoice.status))}</div>
+      const customerName = invoice.customer_name || detail.client?.name || '';
+      const customerCompany = invoice.customer_company || detail.client?.company || '';
+      const customerEmail = invoice.customer_email || detail.client?.email || '';
+      const customerPhone = invoice.customer_phone || detail.client?.phone || '';
+      const serviceTitle = invoice.service_title || detail.project?.name || 'TechMigos services';
+      return `<article class="invoice-print-sheet mx-auto max-w-4xl bg-white text-slate-950">
+        <div class="flex items-start justify-between gap-6 border-b-2 border-slate-950 pb-4">
+          <div>
+            <p class="text-2xl font-extrabold text-primary-700">TechMigos</p>
+            <p class="mt-1 text-xs text-slate-600">Web, mobile, AI, backend engineering, and technical consulting</p>
+            <p class="mt-1 text-xs text-slate-600">info@techmigos.com · www.techmigos.com · +91 9959703547</p>
+            <p class="mt-1 text-xs text-slate-600">Hyderabad, Telangana, India</p>
+          </div>
+          <div class="text-right">
+            <h1 class="text-3xl font-extrabold tracking-wide">INVOICE</h1>
+            <p class="mt-1 text-base font-bold">${escapeHtml(invoice.invoice_number)}</p>
+            <p class="mt-1 text-xs uppercase text-slate-500">${escapeHtml(invoice.status || 'draft')}</p>
+          </div>
         </div>
-        <div class="mt-8 grid gap-6 sm:grid-cols-2">
-          <div><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Bill to</p><h2 class="mt-2 text-xl font-extrabold">${escapeHtml(detail.client?.name || '')}</h2><p class="text-sm text-slate-600">${escapeHtml(detail.client?.company || '')}</p><p class="text-sm text-slate-600">${escapeHtml(detail.client?.email || '')}</p></div>
-          <div class="grid gap-2 text-sm sm:text-right"><p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p><p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '')}</p><p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p></div>
+        <div class="mt-5 grid grid-cols-2 gap-6">
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Bill to</p>
+            <h2 class="mt-1 text-lg font-extrabold">${escapeHtml(customerName)}</h2>
+            <p class="text-sm text-slate-700">${escapeHtml(customerCompany)}</p>
+            <p class="text-sm text-slate-700">${escapeHtml(customerEmail)}</p>
+            <p class="text-sm text-slate-700">${escapeHtml(customerPhone)}</p>
+            ${invoice.billing_address ? `<p class="mt-2 whitespace-pre-line text-sm text-slate-700">${escapeHtml(invoice.billing_address)}</p>` : ''}
+          </div>
+          <div class="grid gap-1.5 text-sm">
+            <p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p>
+            <p><strong>Print date:</strong> ${escapeHtml(invoice.print_date || '')}</p>
+            <p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '-')}</p>
+            <p><strong>Service:</strong> ${escapeHtml(serviceTitle)}</p>
+            <p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p>
+            <p><strong>Reference:</strong> ${escapeHtml(invoice.reference_number || '-')}</p>
+          </div>
         </div>
-        <div class="mt-8 overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-950 text-left text-white"><tr><th class="px-4 py-3">Description</th><th class="px-4 py-3">Qty</th><th class="px-4 py-3">Rate</th><th class="px-4 py-3 text-right">Amount</th></tr></thead><tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-4 py-3">${escapeHtml(item.description)}</td><td class="px-4 py-3">${escapeHtml(item.quantity)}</td><td class="px-4 py-3">${money(item.rate, invoice.currency)}</td><td class="px-4 py-3 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody></table></div>
-        <div class="mt-8 flex justify-end"><div class="w-full max-w-sm space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-3 text-xl"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
-        <div class="mt-8 grid gap-4 sm:grid-cols-2"><div><p class="font-bold">Terms</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
+        <div class="mt-5 overflow-hidden rounded-md border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-950 text-left text-white"><tr><th class="px-3 py-2">Description</th><th class="px-3 py-2">Qty</th><th class="px-3 py-2">Rate</th><th class="px-3 py-2 text-right">Amount</th></tr></thead>
+            <tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-3 py-2">${escapeHtml(item.description)}</td><td class="px-3 py-2">${escapeHtml(item.quantity)}</td><td class="px-3 py-2">${money(item.rate, invoice.currency)}</td><td class="px-3 py-2 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="avoid-print-break mt-5 flex justify-end"><div class="w-full max-w-xs space-y-1.5 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-2 text-lg"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
+        <div class="avoid-print-break mt-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-4"><div><p class="font-bold">Terms</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
       </article>`;
     }
 

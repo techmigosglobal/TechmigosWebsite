@@ -13,6 +13,9 @@ const MSG91_CLIENT_ACK_TEMPLATE_ID = Deno.env.get("MSG91_CLIENT_ACK_TEMPLATE_ID"
 const MSG91_MARKETING_TEMPLATE_ID = Deno.env.get("MSG91_MARKETING_TEMPLATE_ID") || "";
 const MSG91_INVOICE_TEMPLATE_ID = Deno.env.get("MSG91_INVOICE_TEMPLATE_ID") || MSG91_MARKETING_TEMPLATE_ID;
 const LEAD_NOTIFICATION_WEBHOOK_URL = Deno.env.get("LEAD_NOTIFICATION_WEBHOOK_URL") || "";
+const SIMPLE_ADMIN_USERNAME = Deno.env.get("SIMPLE_ADMIN_USERNAME") || "vinay";
+const SIMPLE_ADMIN_PASSWORD = Deno.env.get("SIMPLE_ADMIN_PASSWORD") || "Vinay098";
+const SIMPLE_ADMIN_TOKEN = "simple-admin-vinay";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -715,6 +718,14 @@ const portalResources: Record<string, { table: string; fields: string[]; adminOn
       "status",
       "invoice_date",
       "due_date",
+      "customer_name",
+      "customer_company",
+      "customer_email",
+      "customer_phone",
+      "billing_address",
+      "print_date",
+      "service_title",
+      "reference_number",
       "subtotal",
       "tax_amount",
       "discount_amount",
@@ -767,6 +778,14 @@ function bearerToken(req: Request) {
 async function getAuthenticatedUser(req: Request) {
   const token = bearerToken(req);
   if (!token) throw new ApiError("Authentication required.", 401);
+  if (token === SIMPLE_ADMIN_TOKEN) {
+    return {
+      id: SIMPLE_ADMIN_TOKEN,
+      email: "vinay@techmigos.local",
+      name: "Vinay",
+      simple_username: SIMPLE_ADMIN_USERNAME,
+    };
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/auth/sessions/current`, {
     headers: { "Authorization": `Bearer ${token}` },
@@ -794,6 +813,20 @@ async function getPortalProfile(req: Request, allowedRoles?: PortalProfile["role
   const userId = stringValue(user.id || user.sub, 255);
   const email = emailValue(user.email);
   if (!userId && !email) throw new ApiError("Authenticated user is missing an id/email.", 401);
+
+  if (userId === SIMPLE_ADMIN_TOKEN) {
+    const profile: PortalProfile = {
+      id: 0,
+      auth_user_id: SIMPLE_ADMIN_TOKEN,
+      email: "vinay@techmigos.local",
+      name: "Vinay",
+      role: "company_admin",
+      status: "active",
+      client_id: null,
+    };
+    if (allowedRoles && !allowedRoles.includes(profile.role)) throw new ApiError("You do not have access to this portal area.", 403);
+    return { user, profile };
+  }
 
   let rows = userId
     ? await listRecords("crm_profiles", `auth_user_id=eq.${encodeURIComponent(userId)}&limit=1`)
@@ -944,6 +977,29 @@ async function handlePortalMe(req: Request) {
   });
 }
 
+async function handleSimplePortalLogin(req: Request) {
+  const body = await readJson(req);
+  const username = stringValue(body.username || body.email, 120).trim().toLowerCase();
+  const password = stringValue(body.password, 255).trim();
+  if (username !== SIMPLE_ADMIN_USERNAME.toLowerCase() || password !== SIMPLE_ADMIN_PASSWORD) {
+    throw new ApiError("Username or password is incorrect.", 401);
+  }
+  return ok(req, {
+    accessToken: SIMPLE_ADMIN_TOKEN,
+    user: {
+      id: SIMPLE_ADMIN_TOKEN,
+      email: "vinay@techmigos.local",
+      name: "Vinay",
+    },
+    profile: {
+      name: "Vinay",
+      role: "company_admin",
+      status: "active",
+    },
+    destination: "/company",
+  });
+}
+
 async function handleDashboard(req: Request) {
   await getPortalProfile(req, ["company_admin", "company_member"]);
   const [leads, clients, projects, deals, tickets, invoices, followups, activities, finances] = await Promise.all([
@@ -1041,6 +1097,14 @@ async function handleCreateInvoice(req: Request) {
     status: stringValue(body.status, 40) || "draft",
     invoice_date: stringValue(body.invoice_date, 20) || todayIsoDate(),
     due_date: stringValue(body.due_date, 20) || null,
+    customer_name: stringValue(body.customer_name || client.name, 180),
+    customer_company: stringValue(body.customer_company || client.company, 180),
+    customer_email: emailValue(body.customer_email) || emailValue(client.email),
+    customer_phone: stringValue(body.customer_phone || client.phone, 80),
+    billing_address: stringValue(body.billing_address, 1000),
+    print_date: stringValue(body.print_date, 20) || todayIsoDate(),
+    service_title: stringValue(body.service_title || body.invoice_title, 180),
+    reference_number: stringValue(body.reference_number, 120),
     subtotal: totals.subtotal,
     tax_amount: totals.taxAmount,
     discount_amount: totals.discountAmount,
@@ -1396,6 +1460,7 @@ async function handleClientTicketMessages(req: Request, id: string) {
 }
 
 async function handlePortal(req: Request, route: string) {
+  if (req.method === "POST" && route === "/api/portal/simple-login") return await handleSimplePortalLogin(req);
   if (req.method === "GET" && route === "/api/portal/me") return await handlePortalMe(req);
   if (req.method === "GET" && route === "/api/portal/dashboard") return await handleDashboard(req);
   if (req.method === "GET" && route === "/api/portal/invoices/next-number") return await handleNextInvoiceNumber(req);
