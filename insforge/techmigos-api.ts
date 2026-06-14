@@ -1,3 +1,5 @@
+declare const Deno: { env: { get(key: string): string | undefined } };
+
 const API_BASE_URL = Deno.env.get("INSFORGE_BASE_URL") || "https://n2hhxvw3.ap-southeast.insforge.app";
 const API_KEY = Deno.env.get("INSFORGE_API_KEY");
 const CSRF_SECRET = Deno.env.get("CSRF_SECRET") || API_KEY || "techmigos-insforge-csrf";
@@ -810,7 +812,8 @@ async function createAuthUser(email: string, password: string, name: string) {
 
 async function getPortalProfile(req: Request, allowedRoles?: PortalProfile["role"][]) {
   const user = await getAuthenticatedUser(req);
-  const userId = stringValue(user.id || user.sub, 255);
+  const authUser = user as JsonRecord;
+  const userId = stringValue(authUser.id || authUser.sub, 255);
   const email = emailValue(user.email);
   if (!userId && !email) throw new ApiError("Authenticated user is missing an id/email.", 401);
 
@@ -967,10 +970,11 @@ async function recordInvoiceEvent(profile: PortalProfile | null, invoiceId: unkn
 
 async function handlePortalMe(req: Request) {
   const { user, profile } = await getPortalProfile(req);
+  const authUser = user as JsonRecord;
   return ok(req, {
     user: {
-      id: user.id || user.sub,
-      email: user.email,
+      id: authUser.id || authUser.sub,
+      email: authUser.email,
     },
     profile,
     destination: isCompanyRole(profile) ? "/company" : "/client",
@@ -1203,6 +1207,9 @@ async function handleCompanyResource(req: Request, resource: string, id?: string
     if (resource === "invoices") return await handleCreateInvoice(req);
     const body = await readJson(req);
     const row = sanitizeBody(body, config.fields);
+    if (resource === "profiles" && row.email && body.temporary_password && !row.auth_user_id) {
+      row.auth_user_id = await createAuthUser(String(row.email), stringValue(body.temporary_password, 255), stringValue(row.name || row.email, 160));
+    }
     row.created_at = new Date().toISOString();
     if (resource === "tickets" && !row.created_by_user_id) row.created_by_user_id = profile.auth_user_id;
     if (resource === "campaigns" && !row.created_by_user_id) row.created_by_user_id = profile.auth_user_id;
@@ -1218,6 +1225,12 @@ async function handleCompanyResource(req: Request, resource: string, id?: string
     await updateRecord(config.table, id, row);
     await recordActivity(profile, "updated", resource, id, `Updated ${resource.slice(0, -1) || resource}`);
     return ok(req, { item: await getRecordById(config.table, id) });
+  }
+
+  if (req.method === "DELETE" && id) {
+    await insforge(`/api/database/records/${config.table}?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+    await recordActivity(profile, "deleted", resource, id, `Deleted ${resource.slice(0, -1) || resource}`);
+    return ok(req, { success: true });
   }
 
   throw new ApiError("Unsupported CRM operation.", 405);
@@ -1459,6 +1472,137 @@ async function handleClientTicketMessages(req: Request, id: string) {
   throw new ApiError("Unsupported ticket message operation.", 405);
 }
 
+async function handleFinanceTransactions(req: Request, id?: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const config = portalResources.finances;
+  const url = new URL(req.url);
+
+  if (req.method === "GET") {
+    if (id) return ok(req, { item: await getRecordById(config.table, id) });
+    const type = url.searchParams.get("type");
+    let query = resourceQuery(url);
+    if (type) {
+      const prefix = query ? "&" : "";
+      query = `${query}${prefix}transaction_type=eq.${encodeURIComponent(type)}`;
+    }
+    return ok(req, { items: await listRecords(config.table, query) });
+  }
+
+  if (req.method === "POST") {
+    const body = await readJson(req);
+    const row = sanitizeBody(body, config.fields);
+    row.created_at = new Date().toISOString();
+    row.source = row.source || "manual";
+    row.source_ref = row.source_ref || `${row.transaction_type}-${Date.now()}-${crypto.randomUUID()}`;
+    const created = await insertRecord(config.table, row);
+    await recordActivity(profile, "created", "finances", created?.id, `Created ${row.transaction_type} transaction`);
+    return ok(req, { item: created }, 201);
+  }
+
+  if (req.method === "PATCH" && id) {
+    const body = await readJson(req);
+    const row = sanitizeBody(body, config.fields);
+    row.updated_at = new Date().toISOString();
+    await updateRecord(config.table, id, row);
+    await recordActivity(profile, "updated", "finances", id, `Updated finance transaction`);
+    return ok(req, { item: await getRecordById(config.table, id) });
+  }
+
+  if (req.method === "DELETE" && id) {
+    await insforge(`/api/database/records/${config.table}?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+    await recordActivity(profile, "deleted", "finances", id, `Deleted finance transaction`);
+    return ok(req, { success: true });
+  }
+
+  throw new ApiError("Unsupported finance operation.", 405);
+}
+
+async function handleFinanceSummary(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  const data = await insforge("/api/database/rpc/get_finance_summary");
+  return ok(req, { summary: data });
+}
+
+async function handleProjectAnalytics(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  const data = await insforge("/api/database/rpc/get_project_analytics");
+  return ok(req, { analytics: data });
+}
+
+async function handlePersonAnalytics(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  const data = await insforge("/api/database/rpc/get_person_analytics");
+  return ok(req, { analytics: data });
+}
+
+async function handleFinanceImport(req: Request) {
+  const { profile } = await getPortalProfile(req, ["company_admin"]);
+  const body = await readJson(req);
+  const { transactions } = body;
+  
+  if (!Array.isArray(transactions) || !transactions.length) {
+    throw new ApiError("Transactions array is required.", 422);
+  }
+
+  const results = [];
+  for (const txn of transactions) {
+    const row = sanitizeBody(txn, portalResources.finances.fields);
+    row.created_at = new Date().toISOString();
+    row.source = row.source || "import";
+    row.source_ref = row.source_ref || `${row.transaction_type}-${Date.now()}-${crypto.randomUUID()}`;
+    const created = await insertRecord("crm_finance_transactions", row);
+    results.push(created);
+  }
+
+  await recordActivity(profile, "imported", "finances", null, `Imported ${results.length} finance transactions`);
+  return ok(req, { imported: results.length, items: results }, 201);
+}
+
+async function handleFinanceExport(req: Request) {
+  await getPortalProfile(req, ["company_admin", "company_member"]);
+  const url = new URL(req.url);
+  const type = url.searchParams.get("type") || "all";
+  const format = url.searchParams.get("format") || "json";
+
+  let query = "order=transaction_date.desc";
+  if (type !== "all") {
+    query += `&transaction_type=eq.${encodeURIComponent(type)}`;
+  }
+
+  const items = await listRecords("crm_finance_transactions", query);
+
+  if (format === "csv") {
+    const headers = ["Date", "Type", "Reference ID", "Title", "Client", "Project", "Paid By", "Received By", "Payment Method", "Department", "Region", "Quarter", "Status", "Amount", "Notes"];
+    const rows = items.map(item => [
+      item.transaction_date || "",
+      item.transaction_type || "",
+      item.reference_id || "",
+      item.title || "",
+      item.client || "",
+      item.project || "",
+      item.paid_by || "",
+      item.received_by || "",
+      item.payment_method || "",
+      item.department || "",
+      item.region || "",
+      item.quarter || "",
+      item.status || "",
+      item.amount || "",
+      item.notes || "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
+    return new Response(csv, {
+      headers: {
+        ...corsHeaders(req),
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="finance-${type}-${new Date().toISOString().slice(0,10)}.csv"`,
+      },
+    });
+  }
+
+  return ok(req, { items });
+}
+
 async function handlePortal(req: Request, route: string) {
   if (req.method === "POST" && route === "/api/portal/simple-login") return await handleSimplePortalLogin(req);
   if (req.method === "GET" && route === "/api/portal/me") return await handlePortalMe(req);
@@ -1466,6 +1610,11 @@ async function handlePortal(req: Request, route: string) {
   if (req.method === "GET" && route === "/api/portal/invoices/next-number") return await handleNextInvoiceNumber(req);
   if (req.method === "GET" && route === "/api/portal/client/overview") return await handleClientOverview(req);
   if (req.method === "POST" && route === "/api/portal/client/tickets") return await handleClientTicket(req);
+  if (req.method === "GET" && route === "/api/portal/finance/summary") return await handleFinanceSummary(req);
+  if (req.method === "GET" && route === "/api/portal/finance/project-analytics") return await handleProjectAnalytics(req);
+  if (req.method === "GET" && route === "/api/portal/finance/person-analytics") return await handlePersonAnalytics(req);
+  if (req.method === "POST" && route === "/api/portal/finance/import") return await handleFinanceImport(req);
+  if (req.method === "GET" && route === "/api/portal/finance/export") return await handleFinanceExport(req);
 
   const clientInvoiceMatch = route.match(/^\/api\/portal\/client\/invoices\/([^/]+)$/);
   if (req.method === "GET" && clientInvoiceMatch) return await handleClientInvoiceDetail(req, clientInvoiceMatch[1]);
@@ -1491,7 +1640,10 @@ async function handlePortal(req: Request, route: string) {
   const campaignSendMatch = route.match(/^\/api\/portal\/campaigns\/([^/]+)\/send$/);
   if (req.method === "POST" && campaignSendMatch) return await handleCampaignSend(req, campaignSendMatch[1]);
 
-  const match = route.match(/^\/api\/portal\/([a-z-]+)(?:\/([^/]+))?$/);
+  const financeMatch = route.match(/^\/api\/portal\/finance-transactions(?:\/([^/]+))?$/);
+  if (financeMatch) return await handleFinanceTransactions(req, financeMatch[1]);
+
+  const match = route.match(/^\/api\/portal\/([a-z_-]+)(?:\/([^/]+))?$/);
   if (!match) throw new ApiError("Unsupported portal route.", 404);
   return await handleCompanyResource(req, match[1], match[2]);
 }

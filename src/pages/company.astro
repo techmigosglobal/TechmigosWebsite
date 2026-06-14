@@ -5,314 +5,1310 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Company CRM Portal"
-  description="TechMigos company CRM for leads, clients, projects, support, invoices, marketing, and team activity."
+  title="TechMigos Company CRM"
+  description="TechMigos company CRM for projects, tickets, finance, analytics, clients, employees, and secure access management."
   noIndex={true}
   hideNavbar={true}
 >
   <style is:global>
-    .tm-crm-table {
-      border-collapse: separate;
-      border-spacing: 0;
+    :root {
+      --crm-blue: #1f7aff;
+      --crm-blue-dark: #0f5fe8;
+      --crm-navy: #081638;
+      --crm-text: #102047;
+      --crm-muted: #667599;
+      --crm-line: #dfe7f3;
+      --crm-bg: #f7faff;
+      --crm-green: #08a979;
+      --crm-red: #ff4d47;
+      --crm-orange: #ff9f1a;
+      --crm-purple: #8b5cf6;
     }
 
-    .tm-crm-table th {
+    body:has(.crm-app) {
+      background: var(--crm-bg);
+    }
+
+    .crm-app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 272px minmax(0, 1fr);
+      background: var(--crm-bg);
+      color: var(--crm-text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .crm-app.sidebar-collapsed {
+      grid-template-columns: 92px minmax(0, 1fr);
+    }
+
+    .crm-sidebar {
       position: sticky;
       top: 0;
-      z-index: 1;
+      height: 100vh;
+      border-right: 1px solid var(--crm-line);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
     }
 
-    .tm-crm-sheet {
-      max-height: min(68vh, 760px);
-      overflow: auto;
+    .crm-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 20px;
+      color: var(--crm-navy);
+      font-weight: 900;
+      font-size: 25px;
+      letter-spacing: -0.04em;
     }
 
-    .tm-crm-sheet td,
-    .tm-crm-sheet th {
+    .crm-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background:
+        linear-gradient(135deg, #1f7aff, #00c2a8 58%, #8b5cf6);
+      box-shadow: inset 0 0 0 7px rgba(255, 255, 255, 0.32), 0 12px 28px rgba(31, 122, 255, 0.22);
+    }
+
+    .crm-nav {
+      display: grid;
+      gap: 8px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .crm-nav button,
+    .crm-button,
+    .crm-icon-button {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    .crm-nav button {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      padding: 12px 14px;
+      text-align: left;
+      color: #26395e;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .crm-nav button[aria-current="page"] {
+      background: linear-gradient(135deg, var(--crm-blue), var(--crm-blue-dark));
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(31, 122, 255, 0.28);
+    }
+
+    .crm-nav button:hover:not([aria-current="page"]) {
+      background: #f2f6fd;
+      color: var(--crm-blue-dark);
+    }
+
+    .crm-nav-icon {
+      width: 23px;
+      text-align: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .crm-collapse {
+      margin-top: auto;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .sidebar-collapsed .crm-brand span,
+    .sidebar-collapsed .crm-nav-label {
+      display: none;
+    }
+
+    .sidebar-collapsed .crm-brand,
+    .sidebar-collapsed .crm-nav button {
+      justify-content: center;
+    }
+
+    .sidebar-collapsed .crm-nav button {
+      padding-inline: 10px;
+    }
+
+    .crm-main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .crm-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: minmax(260px, 560px) 1fr auto;
+      align-items: center;
+      gap: 18px;
+      min-height: 78px;
+      border-bottom: 1px solid var(--crm-line);
+      background: rgba(255, 255, 255, 0.94);
+      padding: 14px 28px;
+      backdrop-filter: blur(14px);
+    }
+
+    .crm-search {
+      position: relative;
+    }
+
+    .crm-search input {
+      width: 100%;
+      height: 48px;
+      border: 1px solid var(--crm-line);
+      border-radius: 9px;
+      background: #fff;
+      padding: 0 58px 0 44px;
+      color: var(--crm-text);
+      font-weight: 700;
+      box-shadow: 0 8px 28px rgba(14, 29, 64, 0.05);
+    }
+
+    .crm-search span:first-child {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7484a3;
+    }
+
+    .crm-search-kbd {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: 7px;
+      background: #f0f4fb;
+      padding: 4px 8px;
+      color: #62718f;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .crm-top-actions {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .crm-company-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 44px;
+      border-right: 1px solid var(--crm-line);
+      padding-right: 22px;
+      color: var(--crm-navy);
+      font-weight: 900;
       white-space: nowrap;
     }
 
-    @media (max-width: 767px) {
-      .tm-crm-sheet td,
-      .tm-crm-sheet th {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
+    .crm-icon-button {
+      position: relative;
+      width: 44px;
+      border: 1px solid var(--crm-line);
+      border-radius: 10px;
+      background: #fff;
+      color: #26395e;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .crm-badge-dot {
+      position: absolute;
+      right: 7px;
+      top: 7px;
+      width: 17px;
+      height: 17px;
+      border-radius: 999px;
+      background: #ff3b3b;
+      color: #fff;
+      font-size: 10px;
+      line-height: 17px;
+      text-align: center;
+    }
+
+    .crm-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 180px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .crm-avatar {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #e2e8f0, #bfdbfe);
+      display: grid;
+      place-items: center;
+      color: var(--crm-blue);
+      font-weight: 900;
+    }
+
+    .crm-avatar::after {
+      content: "";
+      position: absolute;
+      right: 1px;
+      bottom: 1px;
+      width: 11px;
+      height: 11px;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      background: #15b56d;
+    }
+
+    .crm-content {
+      min-width: 0;
+      padding: 28px;
+    }
+
+    .crm-page-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+
+    .crm-page-title {
+      margin: 0;
+      color: var(--crm-navy);
+      font-size: clamp(26px, 2.4vw, 36px);
+      line-height: 1.05;
+      font-weight: 950;
+      letter-spacing: -0.05em;
+    }
+
+    .crm-page-subtitle {
+      margin-top: 8px;
+      color: var(--crm-muted);
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .crm-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .crm-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid var(--crm-line);
+      border-radius: 9px;
+      background: #fff;
+      padding: 0 16px;
+      color: var(--crm-text);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(16, 32, 71, 0.05);
+    }
+
+    .crm-button.primary {
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--crm-blue), var(--crm-blue-dark));
+      color: #fff;
+      box-shadow: 0 16px 30px rgba(31, 122, 255, 0.28);
+    }
+
+    .crm-button.green {
+      border-color: transparent;
+      background: linear-gradient(135deg, #0ac391, #059669);
+      color: #fff;
+      box-shadow: 0 16px 30px rgba(8, 169, 121, 0.24);
+    }
+
+    .crm-button.danger {
+      border-color: #ffd7d4;
+      background: #fff;
+      color: #d9342e;
+    }
+
+    .crm-select,
+    .crm-input {
+      height: 44px;
+      border: 1px solid var(--crm-line);
+      border-radius: 9px;
+      background: #fff;
+      padding: 0 13px;
+      color: var(--crm-text);
+      font-weight: 750;
+    }
+
+    .crm-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .crm-kpis {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .crm-card {
+      border: 1px solid var(--crm-line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(16, 32, 71, 0.055);
+    }
+
+    .crm-kpi {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 14px;
+      align-items: center;
+      min-height: 112px;
+      padding: 20px;
+    }
+
+    .crm-kpi-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .blue-soft { background: #eaf3ff; color: var(--crm-blue); }
+    .green-soft { background: #ddfaef; color: var(--crm-green); }
+    .red-soft { background: #ffeded; color: var(--crm-red); }
+    .orange-soft { background: #fff3dc; color: var(--crm-orange); }
+    .purple-soft { background: #f1eaff; color: var(--crm-purple); }
+
+    .crm-kpi-label {
+      color: #506080;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .crm-kpi-value {
+      margin-top: 4px;
+      color: var(--crm-navy);
+      font-size: 25px;
+      font-weight: 950;
+      letter-spacing: -0.03em;
+    }
+
+    .crm-trend {
+      margin-top: 4px;
+      color: var(--crm-muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .crm-trend.up { color: var(--crm-green); }
+    .crm-trend.down { color: var(--crm-red); }
+
+    .crm-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+      border-bottom: 1px solid var(--crm-line);
+      padding: 0 18px;
+    }
+
+    .crm-card-title {
+      color: var(--crm-navy);
+      font-weight: 950;
+    }
+
+    .crm-link {
+      border: 0;
+      background: transparent;
+      color: var(--crm-blue);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .crm-sheet-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 14px;
+      scrollbar-width: thin;
+    }
+
+    .crm-sheet-tab {
+      flex: 0 0 auto;
+      min-height: 40px;
+      border: 1px solid var(--crm-line);
+      border-radius: 9px 9px 0 0;
+      background: #f7faff;
+      padding: 0 16px;
+      color: #52617f;
+      font-size: 13px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .crm-sheet-tab.active {
+      border-color: #b9d2ff;
+      border-bottom-color: #fff;
+      background: #fff;
+      color: var(--crm-blue-dark);
+      box-shadow: 0 -6px 18px rgba(31, 122, 255, 0.08);
+    }
+
+    .crm-table-wrap {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+      max-width: 100%;
+    }
+
+    .crm-table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      color: #26395e;
+      font-size: 13px;
+      font-weight: 720;
+    }
+
+    .crm-table th,
+    .crm-table td {
+      border-bottom: 1px solid #edf2f8;
+      padding: 13px 16px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .crm-table td::before {
+      display: none;
+    }
+
+    .crm-table th {
+      color: #4f5f80;
+      font-size: 12px;
+      font-weight: 950;
+      background: #fbfdff;
+    }
+
+    .crm-table tr:hover td {
+      background: #f8fbff;
+    }
+
+    .crm-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      border-radius: 6px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .crm-status.blue { background: #e9f3ff; color: var(--crm-blue); }
+    .crm-status.green { background: #e5f9f0; color: #05875f; }
+    .crm-status.red { background: #ffeded; color: var(--crm-red); }
+    .crm-status.orange { background: #fff3df; color: #c56b00; }
+    .crm-status.purple { background: #f1eaff; color: var(--crm-purple); }
+    .crm-status.gray { background: #eef3f9; color: #62718f; }
+
+    .crm-progress {
+      display: grid;
+      grid-template-columns: minmax(72px, 1fr) 38px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .crm-progress-track {
+      height: 7px;
+      border-radius: 999px;
+      background: #e8eef6;
+      overflow: hidden;
+    }
+
+    .crm-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: #0eb6a3;
+    }
+
+    .crm-two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 0.35fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .crm-three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .crm-chart {
+      height: 190px;
+      margin: 18px;
+      border-radius: 10px;
+      background:
+        linear-gradient(to top, transparent 23%, #edf2f8 24%, transparent 25%),
+        linear-gradient(to top, transparent 48%, #edf2f8 49%, transparent 50%),
+        linear-gradient(to top, transparent 73%, #edf2f8 74%, transparent 75%),
+        linear-gradient(135deg, rgba(31, 122, 255, 0.12), rgba(8, 169, 121, 0.12));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .crm-chart::before,
+    .crm-chart::after {
+      content: "";
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 4px;
+      border-radius: 999px;
+      transform-origin: left center;
+    }
+
+    .crm-chart::before {
+      bottom: 58px;
+      background: linear-gradient(90deg, var(--crm-green), #22d3ee);
+      transform: skewY(-9deg);
+      box-shadow: 70px -20px 0 -1px #16c79a, 150px 4px 0 -1px #16c79a, 245px -42px 0 -1px #16c79a;
+    }
+
+    .crm-chart::after {
+      bottom: 32px;
+      background: linear-gradient(90deg, var(--crm-red), #ff8a80);
+      transform: skewY(-6deg);
+      box-shadow: 85px 14px 0 -1px #ff6b67, 180px -8px 0 -1px #ff6b67, 275px 6px 0 -1px #ff6b67;
+    }
+
+    .crm-donut {
+      width: 156px;
+      height: 156px;
+      margin: 22px auto;
+      border-radius: 999px;
+      background: conic-gradient(var(--crm-blue) 0 38%, var(--crm-green) 38% 68%, var(--crm-purple) 68% 82%, var(--crm-orange) 82% 94%, var(--crm-red) 94% 100%);
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(8, 22, 56, 0.04), 0 18px 38px rgba(31, 122, 255, 0.12);
+    }
+
+    .crm-donut::after {
+      content: "";
+      position: absolute;
+      inset: 38px;
+      border-radius: inherit;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px #edf2f8;
+    }
+
+    .crm-detail {
+      position: sticky;
+      top: 94px;
+      padding: 20px;
+    }
+
+    .crm-detail-hero {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .crm-detail-icon {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--crm-blue), var(--crm-blue-dark));
+      color: #fff;
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .crm-list {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .crm-list-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid #edf2f8;
+      padding-bottom: 12px;
+      color: #26395e;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .crm-list-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .crm-actionbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #b9d2ff;
+      border-radius: 10px;
+      background: #eef5ff;
+      padding: 12px 14px;
+      color: #143a79;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .crm-actionbar.show {
+      display: flex;
+    }
+
+    .crm-row-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .crm-mini-action {
+      min-height: 34px;
+      border: 1px solid var(--crm-line);
+      border-radius: 7px;
+      background: #fff;
+      padding: 0 10px;
+      color: #26456f;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .crm-mini-action:hover {
+      border-color: #b9d2ff;
+      color: var(--crm-blue-dark);
+      box-shadow: 0 8px 18px rgba(31, 122, 255, 0.1);
+    }
+
+    .crm-mini-action.danger {
+      border-color: #ffd7d4;
+      color: #d9342e;
+    }
+
+    .crm-page {
+      display: none;
+    }
+
+    .crm-page.active {
+      display: block;
+    }
+
+    .crm-edit-input,
+    .crm-edit-select {
+      width: 100%;
+      min-width: 120px;
+      height: 34px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      padding: 0 8px;
+      color: inherit;
+      font: inherit;
+      font-weight: 760;
+    }
+
+    .crm-edit-input:hover,
+    .crm-edit-select:hover,
+    .crm-edit-input:focus,
+    .crm-edit-select:focus {
+      border-color: var(--crm-line);
+      background: #fff;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(31, 122, 255, 0.12);
+    }
+
+    .crm-dirty {
+      box-shadow: inset 3px 0 0 var(--crm-orange);
+    }
+
+    .crm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 22, 56, 0.55);
+      padding: 18px;
+    }
+
+    .crm-modal.open {
+      display: flex;
+    }
+
+    .crm-modal-panel {
+      width: min(940px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 24px 90px rgba(8, 22, 56, 0.28);
+    }
+
+    .crm-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .crm-form-grid label {
+      display: grid;
+      gap: 7px;
+      color: #52617f;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .crm-form-grid input,
+    .crm-form-grid select,
+    .crm-form-grid textarea {
+      border: 1px solid var(--crm-line);
+      border-radius: 9px;
+      padding: 12px;
+      color: var(--crm-text);
+      font-size: 14px;
+      font-weight: 750;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .crm-form-grid textarea,
+    .crm-form-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .crm-toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 120;
+      display: none;
+      border-radius: 10px;
+      background: #081638;
+      padding: 13px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 850;
+      box-shadow: 0 20px 44px rgba(8, 22, 56, 0.22);
+    }
+
+    .crm-toast.show {
+      display: block;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .crm-app button:focus-visible,
+    .crm-app input:focus-visible,
+    .crm-app select:focus-visible,
+    .crm-app textarea:focus-visible {
+      outline: 3px solid rgba(31, 122, 255, 0.32);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 1180px) {
+      .crm-app {
+        grid-template-columns: 92px minmax(0, 1fr);
+      }
+
+      .crm-brand span,
+      .crm-nav-label,
+      .crm-company-pill,
+      .crm-user-text {
+        display: none;
+      }
+
+      .crm-brand {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      .crm-nav button {
+        justify-content: center;
+        padding: 13px;
+      }
+
+      .crm-topbar {
+        grid-template-columns: minmax(220px, 1fr) auto;
+      }
+
+      .crm-two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-kpis {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 8px;
+      }
+
+      .crm-kpi {
+        min-width: 260px;
+        scroll-snap-align: start;
+      }
+
+      .crm-detail {
+        position: static;
       }
     }
 
-    @page {
-      size: A4;
-      margin: 12mm;
+    @media (max-width: 900px) {
+      .crm-app {
+        display: block;
+      }
+
+      .crm-sidebar {
+        position: sticky;
+        z-index: 40;
+        top: 0;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--crm-line);
+        padding: 12px;
+      }
+
+      .crm-brand {
+        justify-content: flex-start;
+        padding-bottom: 10px;
+      }
+
+      .crm-brand span {
+        display: inline;
+      }
+
+      .crm-nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 4px;
+        scroll-snap-type: x mandatory;
+      }
+
+      .crm-nav button {
+        flex: 0 0 auto;
+        width: auto;
+        scroll-snap-align: start;
+      }
+
+      .crm-nav-label {
+        display: inline;
+      }
+
+      .crm-collapse {
+        display: none;
+      }
+
+      .crm-topbar {
+        position: static;
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .crm-top-actions {
+        justify-self: stretch;
+        justify-content: space-between;
+      }
+
+      .crm-user {
+        min-width: auto;
+      }
+
+      .crm-content {
+        padding: 16px 12px 28px;
+      }
+
+      .crm-page-head {
+        display: grid;
+      }
+
+      .crm-toolbar {
+        justify-content: flex-start;
+      }
+
+      .crm-kpis,
+      .crm-three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-kpis {
+        display: flex;
+      }
+
+      .crm-card-head {
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .crm-actionbar {
+        position: sticky;
+        top: 0;
+        z-index: 35;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .crm-form-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
-    @media print {
-      body * {
-        visibility: hidden !important;
+    @media (max-width: 640px) {
+      .crm-app {
+        background: #fff;
       }
 
-      #invoice-preview,
-      #invoice-preview * {
-        visibility: visible !important;
+      .crm-sidebar {
+        padding: 10px 10px 8px;
       }
 
-      #invoice-preview {
-        position: absolute !important;
-        inset: 0 auto auto 0 !important;
-        width: 186mm !important;
-        padding: 0 !important;
+      .crm-brand {
+        font-size: 20px;
       }
 
-      .invoice-print-sheet {
-        width: 186mm !important;
-        min-height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-size: 10.5px !important;
-        line-height: 1.35 !important;
+      .crm-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
       }
 
-      .invoice-print-sheet table,
-      .invoice-print-sheet tr,
-      .invoice-print-sheet .avoid-print-break {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
+      .crm-nav button {
+        min-height: 40px;
+        padding: 9px 11px;
+        font-size: 13px;
       }
 
-      .print\:hidden {
-        display: none !important;
+      .crm-top-actions {
+        display: grid;
+        grid-template-columns: repeat(3, 44px) 1fr;
+        gap: 8px;
+      }
+
+      .crm-company-pill {
+        display: none;
+      }
+
+      .crm-user {
+        justify-content: flex-end;
+        padding-left: 0;
+      }
+
+      .crm-search input {
+        height: 44px;
+        font-size: 14px;
+      }
+
+      .crm-page-title {
+        font-size: 24px;
+      }
+
+      .crm-page-subtitle {
+        font-size: 14px;
+      }
+
+      .crm-toolbar {
+        width: 100%;
+      }
+
+      .crm-toolbar > * {
+        flex: 1 1 150px;
+      }
+
+      .crm-button,
+      .crm-select,
+      .crm-input {
+        width: 100%;
+      }
+
+      .crm-kpi {
+        min-width: 78vw;
+      }
+
+      .crm-card {
+        border-radius: 10px;
+      }
+
+      .crm-table-wrap {
+        overflow: visible;
+      }
+
+      .crm-table {
+        min-width: 0;
+        display: block;
+      }
+
+      .crm-table thead {
+        display: none;
+      }
+
+      .crm-table tbody,
+      .crm-table tr,
+      .crm-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .crm-table tr {
+        border-bottom: 1px solid #edf2f8;
+        padding: 12px 14px;
+      }
+
+      .crm-table td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 0;
+        padding: 8px 0;
+        white-space: normal;
+        text-align: right;
+      }
+
+      .crm-table td::before {
+        content: attr(data-label);
+        display: block;
+        min-width: 110px;
+        color: #667599;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 950;
+      }
+
+      .crm-table td:first-child::before {
+        content: "Select";
+      }
+
+      .crm-edit-input,
+      .crm-edit-select {
+        min-width: 0;
+        text-align: right;
+      }
+
+      .crm-row-actions {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .crm-detail {
+        padding: 16px;
+      }
+
+      .crm-list {
+        padding: 14px;
+      }
+
+      .crm-list-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .crm-modal {
+        align-items: stretch;
+        padding: 8px;
+      }
+
+      .crm-modal-panel {
+        max-height: calc(100vh - 16px);
+        border-radius: 10px;
+      }
+
+      .crm-actionbar.show {
+        position: fixed;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        top: auto;
+        z-index: 80;
+        box-shadow: 0 18px 46px rgba(8, 22, 56, 0.2);
+      }
+
+      .crm-toast {
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
       }
     }
   </style>
 
-  <section class="min-h-screen bg-slate-100 py-4 sm:py-6">
-    <div class="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 sm:px-6 lg:flex-row lg:px-8">
-      <aside class="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-72">
-        <div class="h-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Company CRM</p>
-              <h1 class="mt-2 text-xl font-extrabold text-slate-950">Operations</h1>
+  <div class="crm-app">
+    <aside class="crm-sidebar">
+      <div class="crm-brand"><div class="crm-logo"></div><span>TechMigos CRM</span></div>
+      <nav class="crm-nav" aria-label="Company CRM navigation" id="crm-nav"></nav>
+      <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
+    </aside>
+
+    <main class="crm-main">
+      <header class="crm-topbar">
+        <label class="crm-search">
+          <span>⌕</span>
+          <span class="sr-only">Search CRM</span>
+          <input id="crm-search" type="search" placeholder="Search across projects, clients, tickets..." />
+          <span class="crm-search-kbd">/</span>
+        </label>
+        <div></div>
+        <div class="crm-top-actions">
+          <div class="crm-company-pill"><span>▥</span><span>TechMigos Solutions</span></div>
+          <button id="crm-notifications" class="crm-icon-button" type="button" aria-label="Notifications">⌁<span class="crm-badge-dot">3</span></button>
+          <button class="crm-icon-button" type="button" aria-label="Help">?</button>
+          <button id="crm-profile-button" class="crm-user" type="button" aria-label="Open profile management">
+            <div class="crm-avatar">TM</div>
+            <div class="crm-user-text">
+              <p id="crm-user-name" class="font-black leading-tight text-slate-950">Loading...</p>
+              <p id="crm-user-role" class="text-sm font-semibold text-slate-500">Company</p>
             </div>
-            <button id="logout-button" class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Sign out</button>
+          </button>
+        </div>
+      </header>
+
+      <section class="crm-content">
+        <p id="crm-status" class="mb-4 text-sm font-bold text-slate-500" role="status">Loading CRM data...</p>
+        <div id="crm-actionbar" class="crm-actionbar">
+          <span id="crm-selected-count">0 selected</span>
+          <div class="crm-toolbar">
+            <button class="crm-button" type="button" data-bulk-export>Export Selected</button>
+            <button class="crm-button danger" type="button" data-bulk-delete>Delete Selected</button>
+            <button class="crm-button" type="button" data-clear-selection>Clear</button>
           </div>
-          <p id="portal-user" class="mt-3 text-sm text-slate-500">Loading portal session...</p>
-          <nav id="crm-nav" class="mt-6 flex gap-2 overflow-x-auto pb-1 lg:grid lg:max-h-[calc(100vh-15rem)] lg:overflow-y-auto lg:pb-0"></nav>
         </div>
-      </aside>
-
-      <div class="min-w-0 flex-1">
-        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <p id="crm-eyebrow" class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Dashboard</p>
-              <h2 id="crm-title" class="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">CRM command center</h2>
-              <p id="crm-subtitle" class="mt-2 max-w-3xl text-sm text-slate-500">Track leads, customer health, support, invoices, and team activity from one workspace.</p>
-            </div>
-            <div class="flex flex-col gap-2 sm:flex-row">
-              <input id="crm-search" type="search" class="form-input form-control min-h-[44px] sm:w-72" placeholder="Search CRM records" />
-              <button id="refresh-button" class="btn-secondary justify-center">Refresh</button>
-            </div>
-          </div>
-          <p id="crm-status" class="mt-4 text-sm text-slate-600" role="status">Loading CRM data...</p>
-        </div>
-
-        <div id="crm-view" class="mt-5"></div>
-      </div>
-    </div>
-  </section>
-
-  <div id="invoice-modal" class="fixed inset-0 z-50 hidden bg-slate-950/70 p-4">
-    <div class="mx-auto max-h-[95vh] max-w-5xl overflow-auto rounded-lg bg-white shadow-2xl">
-      <div class="flex items-center justify-between gap-4 border-b border-slate-200 p-4 print:hidden">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600">Invoice Preview</p>
-          <h2 id="invoice-preview-title" class="mt-1 text-xl font-extrabold text-slate-950">Invoice</h2>
-        </div>
-        <div class="flex gap-2">
-          <button id="print-invoice" class="btn-primary">Print / Save PDF</button>
-          <button id="close-invoice" class="btn-secondary">Close</button>
-        </div>
-      </div>
-      <div id="invoice-preview" class="p-6 sm:p-10"></div>
-    </div>
+        <div id="crm-view"></div>
+      </section>
+    </main>
   </div>
 
+  <div id="crm-modal" class="crm-modal" role="dialog" aria-modal="true">
+    <div class="crm-modal-panel">
+      <div class="crm-card-head">
+        <h2 id="crm-modal-title" class="crm-card-title">Create</h2>
+        <button id="crm-modal-close" class="crm-icon-button" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="crm-modal-body" class="p-5"></div>
+    </div>
+  </div>
+  <div id="invoice-modal" class="crm-modal" role="dialog" aria-modal="true">
+    <div class="crm-modal-panel">
+      <div class="crm-card-head">
+        <h2 id="invoice-preview-title" class="crm-card-title">Invoice</h2>
+        <div class="flex gap-2">
+          <button id="print-invoice" class="crm-button primary" type="button">Print PDF</button>
+          <button id="close-invoice" class="crm-icon-button" type="button" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div id="invoice-preview" class="p-5"></div>
+    </div>
+  </div>
+  <div id="crm-toast" class="crm-toast"></div>
+
   <script is:inline>
+    const navItems = [
+      ['dashboard', 'Dashboard', '⌂'],
+      ['leads', 'Leads', '◎'],
+      ['deals', 'Deals', '◈'],
+      ['projects', 'Projects', '▣'],
+      ['tickets', 'Support Tickets', '◴'],
+      ['finance', 'Finance', '▤'],
+      ['analytics', 'Analytics', '▥'],
+      ['clients', 'Clients', '○'],
+      ['employees', 'Employees', '♙'],
+      ['users', 'User Management', '♧'],
+      ['followups', 'Follow-ups', '⌁'],
+      ['campaigns', 'Campaigns', '✉'],
+      ['settings', 'Settings', '⚙'],
+    ];
+
     const state = {
-      profile: null,
       active: 'dashboard',
       search: '',
-      dashboard: null,
-      selectedClientId: null,
+      profile: null,
+      selectedProjectId: null,
       selectedTicketId: null,
+      selectedClientId: null,
+      selectedEmployeeId: null,
       financeSheet: 'all',
+      saveTimers: new Map(),
       data: {
         leads: [],
         clients: [],
         projects: [],
         deals: [],
         tickets: [],
-        followups: [],
         invoices: [],
+        finances: [],
+        followups: [],
         campaigns: [],
-        recipients: [],
         activities: [],
         profiles: [],
-        finances: [],
-      },
-    };
-
-    const navItems = [
-      ['dashboard', 'Dashboard', 'KPIs and next actions'],
-      ['leads', 'Leads', 'Pipeline and conversion'],
-      ['clients', 'Clients', '360 customer view'],
-      ['projects', 'Projects', 'Delivery health'],
-      ['tickets', 'Support', 'Ticket queue'],
-      ['followups', 'Follow-ups', 'Tasks and reminders'],
-      ['invoices', 'Invoices', 'Builder and PDF preview'],
-      ['finances', 'Finance', 'Transactions and analytics'],
-      ['reports', 'Reports', 'ERP-style performance view'],
-      ['campaigns', 'Marketing', 'MSG91 campaigns'],
-      ['activities', 'Activity', 'Team timeline'],
-      ['profiles', 'Users', 'Admin access'],
-    ];
-
-    const resourceConfig = {
-      leads: {
-        title: 'Lead pipeline',
-        subtitle: 'Qualify incoming leads, set priority, and convert the right ones into clients and projects.',
-        fields: [
-          ['name', 'Name', 'text', true],
-          ['email', 'Email', 'email', true],
-          ['company', 'Company', 'text'],
-          ['service', 'Service', 'text'],
-          ['budget', 'Budget', 'text'],
-          ['status', 'Status', 'select:new,qualified,proposal,converted,lost'],
-          ['priority', 'Priority', 'select:low,medium,high,urgent'],
-          ['next_followup_at', 'Next follow-up', 'datetime-local'],
-          ['message', 'Message', 'textarea'],
-          ['marketing_opt_in', 'Marketing opt-in', 'checkbox'],
-        ],
-      },
-      clients: {
-        title: 'Client 360',
-        subtitle: 'View each client with linked projects, tickets, invoices, and recent work.',
-        fields: [
-          ['name', 'Name', 'text', true],
-          ['company', 'Company', 'text'],
-          ['email', 'Email', 'email', true],
-          ['phone', 'Phone', 'text'],
-          ['status', 'Status', 'select:active,paused,archived'],
-          ['marketing_opt_in', 'Marketing opt-in', 'checkbox'],
-        ],
-      },
-      projects: {
-        title: 'Project health',
-        subtitle: 'Track delivery, issues, budgets, expenses, revenue, and the client-visible project status.',
-        fields: [
-          ['client_id', 'Client', 'client', true],
-          ['external_project_id', 'Project ID', 'text'],
-          ['name', 'Project name', 'text', true],
-          ['client_name', 'Client display name', 'text'],
-          ['project_manager', 'Project manager', 'text'],
-          ['status', 'Status', 'select:planning,active,review,completed,on_hold'],
-          ['health', 'Health', 'select:on_track,watch,at_risk'],
-          ['priority', 'Priority', 'select:low,medium,high,urgent'],
-          ['progress', 'Progress %', 'number'],
-          ['budget', 'Budget', 'number'],
-          ['expenses', 'Expenses', 'number'],
-          ['revenue', 'Revenue', 'number'],
-          ['profit', 'Profit', 'number'],
-          ['team_members', 'Team members', 'text'],
-          ['start_date', 'Start date', 'date'],
-          ['due_date', 'Due date', 'date'],
-          ['summary', 'Summary', 'textarea'],
-          ['notes', 'Notes', 'textarea'],
-        ],
-      },
-      tickets: {
-        title: 'Support queue',
-        subtitle: 'Prioritize client requests and keep shared ticket messages in one place.',
-        fields: [
-          ['client_id', 'Client', 'client', true],
-          ['project_id', 'Project', 'project'],
-          ['subject', 'Subject', 'text', true],
-          ['priority', 'Priority', 'select:low,medium,high,urgent'],
-          ['status', 'Status', 'select:open,in_progress,waiting,resolved,closed'],
-          ['description', 'Description', 'textarea', true],
-        ],
-      },
-      followups: {
-        title: 'Follow-up tasks',
-        subtitle: 'Plan the next action across leads, clients, deals, tickets, and invoices.',
-        fields: [
-          ['related_type', 'Related type', 'select:lead,client,deal,ticket,invoice', true],
-          ['related_id', 'Related ID', 'number'],
-          ['title', 'Title', 'text', true],
-          ['due_at', 'Due date/time', 'datetime-local'],
-          ['status', 'Status', 'select:pending,done,cancelled'],
-          ['notes', 'Notes', 'textarea'],
-        ],
-      },
-      campaigns: {
-        title: 'Marketing campaigns',
-        subtitle: 'Send MSG91 campaigns only to opted-in leads and clients.',
-        fields: [
-          ['name', 'Campaign name', 'text', true],
-          ['subject', 'Subject', 'text', true],
-          ['msg91_template_id', 'MSG91 template ID', 'text'],
-          ['scheduled_at', 'Scheduled date/time', 'datetime-local'],
-          ['status', 'Status', 'select:draft,scheduled,template_pending,sent,failed'],
-          ['body', 'Body', 'textarea', true],
-        ],
-      },
-      finances: {
-        title: 'Company finance',
-        subtitle: 'Record income, expenses, revenue, and salary distribution like the TechMigos finance tracker.',
-        fields: [
-          ['transaction_date', 'Date', 'date', true],
-          ['transaction_type', 'Type', 'select:income,expense,revenue,salary', true],
-          ['reference_id', 'Reference ID', 'text'],
-          ['title', 'Purpose / title', 'text', true],
-          ['client', 'Client', 'text'],
-          ['project', 'Project', 'text'],
-          ['paid_by', 'Paid by', 'text'],
-          ['received_by', 'Received by', 'text'],
-          ['payment_method', 'Payment method', 'select:UPI,bank_transfer,cash,card,other'],
-          ['department', 'Department', 'text'],
-          ['region', 'Region', 'text'],
-          ['quarter', 'Quarter', 'text'],
-          ['status', 'Status', 'select:pending,paid,received,active,half_payment,cancelled'],
-          ['amount', 'Amount', 'number', true],
-          ['notes', 'Notes', 'textarea'],
-        ],
-      },
-      profiles: {
-        title: 'Portal users',
-        subtitle: 'Manage provisioned portal profiles. Company admins only.',
-        fields: [
-          ['auth_user_id', 'Auth user ID', 'text', true],
-          ['name', 'Name', 'text', true],
-          ['email', 'Email', 'email', true],
-          ['role', 'Role', 'select:company_admin,company_member,client', true],
-          ['status', 'Status', 'select:active,disabled'],
-          ['client_id', 'Linked client', 'client'],
-        ],
       },
     };
 
     const els = {
       nav: document.getElementById('crm-nav'),
       view: document.getElementById('crm-view'),
-      status: document.getElementById('crm-status'),
-      user: document.getElementById('portal-user'),
-      title: document.getElementById('crm-title'),
-      subtitle: document.getElementById('crm-subtitle'),
-      eyebrow: document.getElementById('crm-eyebrow'),
       search: document.getElementById('crm-search'),
-      modal: document.getElementById('invoice-modal'),
+      status: document.getElementById('crm-status'),
+      toast: document.getElementById('crm-toast'),
+      modal: document.getElementById('crm-modal'),
+      modalTitle: document.getElementById('crm-modal-title'),
+      modalBody: document.getElementById('crm-modal-body'),
+      invoiceModal: document.getElementById('invoice-modal'),
       invoicePreview: document.getElementById('invoice-preview'),
       invoicePreviewTitle: document.getElementById('invoice-preview-title'),
+      actionbar: document.getElementById('crm-actionbar'),
+      selectedCount: document.getElementById('crm-selected-count'),
     };
 
     function token() {
@@ -324,38 +1320,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function money(value, currency = 'INR') {
-      return `${escapeHtml(currency || 'INR')} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `${currency} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function compactMoney(value) {
+      return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
     }
 
     function nice(value) {
       return escapeHtml(String(value || '').replace(/_/g, ' ') || '-');
     }
 
-    function clientName(id) {
-      const client = state.data.clients.find((item) => String(item.id) === String(id));
-      if (!client) return `Client #${id || '-'}`;
-      const name = String(client.name || '').trim();
-      const company = String(client.company || '').trim();
-      if (!company || company.toLowerCase() === name.toLowerCase()) return name || client.email || `Client #${id || '-'}`;
-      return `${name || client.email} · ${company}`;
-    }
-
-    function projectName(id) {
-      const project = state.data.projects.find((item) => String(item.id) === String(id));
-      return project ? project.name : `Project #${id || '-'}`;
-    }
-
-    function clientById(id) {
-      return state.data.clients.find((item) => String(item.id) === String(id));
-    }
-
-    function projectById(id) {
-      return state.data.projects.find((item) => String(item.id) === String(id));
+    function toast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => els.toast.classList.remove('show'), 2400);
     }
 
     function setStatus(message, tone = 'neutral') {
       els.status.textContent = message;
-      els.status.className = `mt-4 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
+      els.status.style.color = tone === 'error' ? 'var(--crm-red)' : tone === 'success' ? 'var(--crm-green)' : '#667599';
     }
 
     async function portal(path, options = {}) {
@@ -375,161 +1360,825 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       location.href = '/login';
     }
 
-    function visibleNavItems() {
-      return navItems.filter(([key]) => key !== 'profiles' || state.profile?.role === 'company_admin');
+    function clientName(id) {
+      const client = state.data.clients.find((item) => String(item.id) === String(id));
+      return client?.company || client?.name || `Client #${id || '-'}`;
     }
 
-    function scrollWorkspaceTop() {
-      const offset = window.innerWidth < 768 ? 16 : 24;
-      const top = Math.max(0, els.title.getBoundingClientRect().top + window.scrollY - offset);
-      window.scrollTo({ top, behavior: 'auto' });
-    }
-
-    function renderShell() {
-      els.nav.innerHTML = visibleNavItems().map(([key, label, sub]) => `
-        <button class="w-48 shrink-0 rounded-md px-3 py-3 text-left transition lg:w-full ${state.active === key ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'}" data-nav="${key}">
-          <span class="block text-sm font-extrabold">${label}</span>
-          <span class="block text-xs ${state.active === key ? 'text-slate-300' : 'text-slate-400'}">${sub}</span>
-        </button>
-      `).join('');
-      els.nav.querySelectorAll('[data-nav]').forEach((button) => {
-        button.addEventListener('click', () => {
-          state.active = button.dataset.nav;
-          render();
-          scrollWorkspaceTop();
-        });
-      });
-    }
-
-    function setHeader(title, subtitle, eyebrow) {
-      els.title.textContent = title;
-      els.subtitle.textContent = subtitle;
-      els.eyebrow.textContent = eyebrow || 'Company CRM';
-    }
-
-    function cardMetric(label, value, hint) {
-      return `<article class="rounded-lg border border-slate-200 bg-white p-5">
-        <p class="text-sm font-semibold text-slate-500">${label}</p>
-        <p class="mt-2 text-3xl font-extrabold text-slate-950">${value}</p>
-        <p class="mt-2 text-xs text-slate-400">${hint}</p>
-      </article>`;
-    }
-
-    function compactMetric(label, value, hint, tone = 'slate') {
-      const tones = {
-        slate: 'border-slate-200 bg-white',
-        green: 'border-emerald-200 bg-emerald-50',
-        red: 'border-red-200 bg-red-50',
-        blue: 'border-blue-200 bg-blue-50',
-        yellow: 'border-amber-200 bg-amber-50',
-      };
-      return `<article class="rounded-lg border ${tones[tone] || tones.slate} p-4">
-        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">${label}</p>
-        <p class="mt-2 text-2xl font-extrabold text-slate-950">${value}</p>
-        <p class="mt-1 text-xs text-slate-500">${hint}</p>
-      </article>`;
-    }
-
-    function badge(value, tone = 'slate') {
-      const tones = {
-        slate: 'bg-slate-100 text-slate-700',
-        green: 'bg-emerald-50 text-emerald-700',
-        yellow: 'bg-amber-50 text-amber-700',
-        red: 'bg-red-50 text-red-700',
-        blue: 'bg-blue-50 text-blue-700',
-      };
-      return `<span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone] || tones.slate}">${nice(value)}</span>`;
-    }
-
-    function priorityTone(priority) {
-      if (priority === 'urgent') return 'red';
-      if (priority === 'high') return 'yellow';
-      if (priority === 'low') return 'blue';
-      return 'slate';
+    function filtered(rows, keys) {
+      const query = state.search.trim().toLowerCase();
+      if (!query) return rows;
+      return rows.filter((row) => keys.some((key) => String(row[key] || '').toLowerCase().includes(query)));
     }
 
     function statusTone(status) {
       if (['paid', 'received', 'active', 'completed', 'resolved', 'closed', 'on_track'].includes(status)) return 'green';
       if (['overdue', 'urgent', 'at_risk', 'cancelled'].includes(status)) return 'red';
-      if (['sent', 'viewed', 'watch', 'high', 'half_payment', 'pending'].includes(status)) return 'yellow';
-      return 'slate';
+      if (['sent', 'viewed', 'watch', 'high', 'half_payment', 'pending', 'on_hold'].includes(status)) return 'orange';
+      if (['planning', 'proposal'].includes(status)) return 'purple';
+      return 'blue';
     }
 
-    function filtered(items, keys) {
-      const query = state.search.trim().toLowerCase();
-      if (!query) return items;
-      return items.filter((item) => keys.some((key) => String(item[key] || '').toLowerCase().includes(query)));
+    function badge(value, tone = statusTone(value)) {
+      return `<span class="crm-status ${tone}">${nice(value)}</span>`;
     }
 
-    function sumBy(items, predicate) {
-      return items.filter(predicate).reduce((sum, item) => sum + Number(item.amount || item.total_amount || item.value || 0), 0);
+    function rowActions(resource, id, options = {}) {
+      const view = options.view ? `<button class="crm-mini-action" ${options.viewAttr || ''} type="button">View</button>` : '';
+      const invoice = resource === 'invoices' ? `<button class="crm-mini-action" data-invoice-view="${id}" type="button">Invoice</button>` : '';
+      return `<div class="crm-row-actions">
+        ${view}${invoice}
+        <button class="crm-mini-action" data-edit-resource="${resource}" data-edit-id="${id}" type="button">Edit</button>
+        <button class="crm-mini-action" data-duplicate-resource="${resource}" data-duplicate-id="${id}" type="button">Duplicate</button>
+        <button class="crm-mini-action danger" data-delete-resource="${resource}" data-delete-id="${id}" type="button">Delete</button>
+      </div>`;
     }
 
-    function groupSum(items, key, valueKey = 'amount') {
-      return items.reduce((acc, item) => {
-        const label = String(item[key] || 'Unassigned');
-        acc[label] = (acc[label] || 0) + Number(item[valueKey] || 0);
-        return acc;
-      }, {});
+    function metric(label, value, icon, color = 'blue', trend = 'up 12% vs last month') {
+      return `<article class="crm-card crm-kpi">
+        <div class="crm-kpi-icon ${color}-soft">${icon}</div>
+        <div><p class="crm-kpi-label">${label}</p><p class="crm-kpi-value">${value}</p><p class="crm-trend ${trend.startsWith('down') ? 'down' : 'up'}">${trend}</p></div>
+      </article>`;
     }
 
-    function groupCount(items, key) {
-      return items.reduce((acc, item) => {
-        const label = String(item[key] || 'Unassigned');
+    function progress(value) {
+      const safe = Math.max(0, Math.min(100, Number(value || 0)));
+      return `<div class="crm-progress"><div class="crm-progress-track"><div class="crm-progress-fill" style="width:${safe}%"></div></div><strong>${safe}%</strong></div>`;
+    }
+
+    function renderShell() {
+      els.nav.innerHTML = navItems.map(([key, label, icon]) => `
+        <button type="button" data-nav="${key}" aria-current="${state.active === key ? 'page' : 'false'}">
+          <span class="crm-nav-icon">${icon}</span><span class="crm-nav-label">${label}</span>
+        </button>
+      `).join('');
+      els.nav.querySelectorAll('[data-nav]').forEach((button) => button.addEventListener('click', () => {
+        state.active = button.dataset.nav;
+        render();
+      }));
+      document.querySelectorAll('[data-jump]').forEach((button) => button.addEventListener('click', () => {
+        state.active = button.dataset.jump;
+        render();
+      }));
+    }
+
+    function pageHead(title, subtitle, actions = '') {
+      return `<div class="crm-page-head"><div><h1 class="crm-page-title">${title}</h1><p class="crm-page-subtitle">${subtitle}</p></div><div class="crm-toolbar">${actions}</div></div>`;
+    }
+
+    function table(headers, rows, empty = 'No records yet.') {
+      table.labelIndex = 0;
+      const labeledRows = rows ? rows.replace(/<td(?![^>]*data-label=)([^>]*)>/g, (match, attrs) => {
+        const index = table.labelIndex % headers.length;
+        table.labelIndex += 1;
+        return `<td data-label="${escapeHtml(headers[index] || '')}"${attrs}>`;
+      }) : '';
+      return `<div class="crm-table-wrap"><table class="crm-table"><thead><tr>${headers.map((item) => `<th>${item}</th>`).join('')}</tr></thead><tbody>${labeledRows || `<tr><td data-label="" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table></div>`;
+    }
+    table.labelIndex = 0;
+
+    function renderDashboard() {
+      const projects = state.data.projects;
+      const tickets = state.data.tickets;
+      const clients = state.data.clients;
+      const finances = state.data.finances;
+      const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const openTickets = tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
+      const projectRows = filtered(projects, ['name', 'client_name', 'status', 'project_manager']).slice(0, 5).map((project) => `
+        <tr><td><strong>${escapeHtml(project.name)}</strong></td><td>${escapeHtml(project.client_name || clientName(project.client_id))}</td><td>${badge(project.status)}</td><td>${compactMoney(project.budget)}</td><td>${progress(project.progress)}</td></tr>
+      `).join('');
+      const ticketRows = filtered(tickets, ['subject', 'priority', 'assigned_to', 'status']).slice(0, 5).map((ticket) => `
+        <tr><td>#TIC-${ticket.id}</td><td>${badge(ticket.priority, statusTone(ticket.priority))}</td><td>${escapeHtml(ticket.assigned_to || 'Unassigned')}</td><td>${badge(ticket.status)}</td></tr>
+      `).join('');
+      els.view.innerHTML = `
+        ${pageHead(`Welcome back, ${escapeHtml(state.profile?.name || 'Team')}`, "Here's what's happening with your company today.", '<button class="crm-button" type="button">May 20 - May 26, 2025</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Total Projects', projects.length, '▣', 'blue')}
+          ${metric('Active Clients', clients.filter((item) => item.status !== 'archived').length, '○', 'green')}
+          ${metric('Open Tickets', openTickets.length, '◴', 'red', openTickets.length ? 'down 5% vs last month' : 'up 0% vs last month')}
+          ${metric('Monthly Revenue', compactMoney(income), '₹', 'green')}
+          ${metric('Active Employees', Math.max(state.data.profiles.length, 1), '♙', 'purple')}
+        </div>
+        <div class="crm-two-col mt-5">
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Projects Overview</h2><button class="crm-link" data-jump="projects">View all projects</button></div>
+            ${table(['Project Name', 'Client', 'Status', 'Budget', 'Progress'], projectRows)}
+          </section>
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Financial Summary</h2><button class="crm-link" data-jump="finance">View full report</button></div>
+            <div class="crm-list">
+              <div class="crm-list-row"><span>Revenue</span><strong>${compactMoney(income)}</strong></div>
+              <div class="crm-list-row"><span>Expenses</span><strong>${compactMoney(expenses)}</strong></div>
+              <div class="crm-list-row"><span>Invoices Due</span><strong>${compactMoney(state.data.invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</strong></div>
+              <div class="crm-list-row"><span>Net Cash Flow</span><strong>${compactMoney(income - expenses)}</strong></div>
+            </div>
+            <div class="crm-chart" aria-hidden="true"></div>
+          </section>
+        </div>
+        <div class="crm-three-col mt-5">
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Support Tickets</h2><button class="crm-link" data-jump="tickets">View all tickets</button></div>${table(['Ticket ID', 'Priority', 'Assigned Agent', 'Status'], ticketRows)}</section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">User Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Secure Role-Based Access</h2></div><div class="crm-list"><p class="text-sm font-semibold leading-6 text-slate-600">Separate workspaces for clients and employees keep project, finance, and support data controlled.</p><div class="crm-list-row"><span>Clients</span><strong>Project visibility</strong></div><div class="crm-list-row"><span>Employees</span><strong>Company operations</strong></div></div></section>
+        </div>
+      `;
+    }
+
+    function projectRows() {
+      return filtered(state.data.projects, ['name', 'client_name', 'status', 'project_manager']).map((project) => `
+        <tr data-resource="projects" data-row-id="${project.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select project ${escapeHtml(project.name)}" /></td>
+          <td><input class="crm-edit-input" data-field="name" value="${escapeHtml(project.name)}" /></td>
+          <td><input class="crm-edit-input" data-field="client_name" value="${escapeHtml(project.client_name || clientName(project.client_id))}" /></td>
+          <td><input class="crm-edit-input" data-field="project_manager" value="${escapeHtml(project.project_manager || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="budget" type="number" value="${escapeHtml(project.budget || 0)}" /></td>
+          <td><input class="crm-edit-input" data-field="due_date" type="date" value="${escapeHtml(project.due_date || '')}" /></td>
+          <td><select class="crm-edit-select" data-field="status">${['planning', 'active', 'review', 'completed', 'on_hold'].map((item) => `<option value="${item}" ${project.status === item ? 'selected' : ''}>${nice(item)}</option>`).join('')}</select></td>
+          <td>${badge(project.health, statusTone(project.health))}</td>
+          <td>${progress(project.progress)}</td>
+          <td>${rowActions('projects', project.id, { view: true, viewAttr: `data-project-detail="${project.id}"` })}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderProjects() {
+      const selected = state.data.projects.find((item) => String(item.id) === String(state.selectedProjectId)) || state.data.projects[0];
+      state.selectedProjectId = selected?.id || null;
+      els.view.innerHTML = `
+        ${pageHead('Projects Management', 'Manage all projects, track progress, budgets, and project health.', '<button class="crm-button primary" data-create="projects" type="button">+ Create Project</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Total Projects', state.data.projects.length, '▣', 'blue')}
+          ${metric('At-Risk Projects', state.data.projects.filter((item) => ['watch', 'at_risk'].includes(item.health)).length, '!', 'orange', 'up 3 vs last month')}
+          ${metric('Open Support Tickets', state.data.tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, '◴', 'red', 'down 8 vs last month')}
+          ${metric('Resolved Tickets', state.data.tickets.filter((item) => ['resolved', 'closed'].includes(item.status)).length, '✓', 'green')}
+        </div>
+        <div class="crm-two-col mt-5">
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Projects</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><button class="crm-button" data-export="projects">Export</button></div></div>
+            ${table(['', 'Project Name', 'Client', 'Project Manger', 'Budget', 'Deadline', 'Status', 'Health', 'Progress', 'Actions'], projectRows())}
+          </section>
+          <aside class="crm-card crm-detail">${projectDetail(selected)}</aside>
+        </div>
+      `;
+    }
+
+    function projectDetail(project) {
+      if (!project) return '<p class="text-sm font-bold text-slate-500">No project selected.</p>';
+      const spent = Number(project.expenses || 0);
+      const budget = Number(project.budget || 0);
+      const used = budget ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+      return `<div class="crm-detail-hero"><div class="crm-detail-icon">▣</div><div><h2 class="text-xl font-black text-slate-950">${escapeHtml(project.name)}</h2><p class="font-semibold text-slate-500">${escapeHtml(project.client_name || clientName(project.client_id))}</p></div></div>
+        <div class="crm-list">
+          <div class="crm-list-row"><span>Project Manager</span><strong>${escapeHtml(project.project_manager || '-')}</strong></div>
+          <div class="crm-list-row"><span>Deadline</span><strong>${escapeHtml(project.due_date || '-')}</strong></div>
+          <div class="crm-list-row"><span>Status</span>${badge(project.status)}</div>
+          <div class="crm-list-row"><span>Budget used</span><strong>${compactMoney(spent)} of ${compactMoney(budget)}</strong></div>
+          <div>${progress(used)}</div>
+          <p class="text-sm font-semibold leading-6 text-slate-600">${escapeHtml(project.summary || project.notes || 'No project overview added yet.')}</p>
+        </div>`;
+    }
+
+    function renderTickets() {
+      const selected = state.data.tickets.find((item) => String(item.id) === String(state.selectedTicketId)) || state.data.tickets[0];
+      state.selectedTicketId = selected?.id || null;
+      const open = state.data.tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
+      const high = state.data.tickets.filter((item) => ['high', 'urgent'].includes(item.priority));
+      const rows = filtered(state.data.tickets, ['subject', 'status', 'priority', 'assigned_to']).map((ticket) => `
+        <tr data-resource="tickets" data-row-id="${ticket.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select ticket ${ticket.id}" /></td>
+          <td>#TIC-${ticket.id}</td><td><input class="crm-edit-input" data-field="subject" value="${escapeHtml(ticket.subject)}" /></td><td>${escapeHtml(clientName(ticket.client_id))}</td>
+          <td>${escapeHtml(projectName(ticket.project_id))}</td>
+          <td><select class="crm-edit-select" data-field="priority">${['low', 'medium', 'high', 'urgent'].map((item) => `<option value="${item}" ${ticket.priority === item ? 'selected' : ''}>${nice(item)}</option>`).join('')}</select></td>
+          <td><input class="crm-edit-input" data-field="assigned_to" value="${escapeHtml(ticket.assigned_to || '')}" /></td>
+          <td>${ticket.priority === 'urgent' ? badge('breached', 'red') : ticket.priority === 'high' ? badge('at_risk', 'orange') : badge('on_track', 'green')}</td>
+          <td><select class="crm-edit-select" data-field="status">${['open', 'in_progress', 'waiting', 'resolved', 'closed'].map((item) => `<option value="${item}" ${ticket.status === item ? 'selected' : ''}>${nice(item)}</option>`).join('')}</select></td>
+          <td>${rowActions('tickets', ticket.id, { view: true, viewAttr: `data-ticket-detail="${ticket.id}"` })}</td>
+        </tr>`).join('');
+      els.view.innerHTML = `
+        ${pageHead('Support Ticketing', 'Track, assign, prioritize, and resolve client support requests.', '<button class="crm-button primary" data-create="tickets" type="button">+ Create Ticket</button><button class="crm-button" data-export="tickets" type="button">Export</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Open Tickets', open.length, '◴', 'blue', open.length ? 'down 8% vs last week' : 'up 0% vs last week')}
+          ${metric('High Priority', high.length, '!', 'red', 'up 17% vs last week')}
+          ${metric('SLA Breaches', state.data.tickets.filter((item) => item.priority === 'urgent').length, '△', 'orange', 'up 50% vs last week')}
+          ${metric('Resolved Today', state.data.tickets.filter((item) => ['resolved', 'closed'].includes(item.status)).length, '✓', 'green', 'up 23% vs yesterday')}
+        </div>
+        <div class="crm-two-col mt-5">
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Tickets Queue</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><select class="crm-select"><option>All Priorities</option></select><button class="crm-button">Clear Filters</button></div></div>
+            ${table(['', 'Ticket ID', 'Subject', 'Client', 'Linked Project', 'Priority', 'Assigned Agent', 'SLA Status', 'Current Status', 'Actions'], rows)}
+          </section>
+          <aside class="crm-card crm-detail">${ticketDetail(selected)}</aside>
+        </div>
+        <div class="crm-three-col mt-5">
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Ticket Categories</h2></div><div class="crm-donut"></div><div class="crm-list"><div class="crm-list-row"><span>Technical Issue</span><strong>${open.length}</strong></div><div class="crm-list-row"><span>Billing & Payments</span><strong>${state.data.tickets.filter((item) => /pay|bill|invoice/i.test(item.subject || '')).length}</strong></div></div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Resolution Performance</h2></div><div class="crm-chart"></div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">SLA Compliance</h2></div><div class="crm-donut"></div><div class="crm-list"><div class="crm-list-row"><span>On Time</span><strong>${state.data.tickets.length - high.length}</strong></div><div class="crm-list-row"><span>At Risk</span><strong>${high.length}</strong></div></div></section>
+        </div>`;
+    }
+
+    function ticketDetail(ticket) {
+      if (!ticket) return '<p class="text-sm font-bold text-slate-500">No ticket selected.</p>';
+      return `<div class="crm-detail-hero"><div class="crm-detail-icon">◴</div><div><h2 class="text-xl font-black text-slate-950">#TIC-${ticket.id}</h2><p class="font-semibold text-slate-500">${escapeHtml(ticket.subject || 'Untitled ticket')}</p></div></div>
+        <div class="crm-list">
+          <div class="crm-list-row"><span>Client</span><strong>${escapeHtml(clientName(ticket.client_id))}</strong></div>
+          <div class="crm-list-row"><span>Linked project</span><strong>${escapeHtml(projectName(ticket.project_id))}</strong></div>
+          <div class="crm-list-row"><span>Assigned agent</span><strong>${escapeHtml(ticket.assigned_to || 'Unassigned')}</strong></div>
+          <div class="crm-list-row"><span>Priority</span>${badge(ticket.priority, statusTone(ticket.priority))}</div>
+          <div class="crm-list-row"><span>Status</span>${badge(ticket.status)}</div>
+          <p class="text-sm font-semibold leading-6 text-slate-600">${escapeHtml(ticket.description || 'No issue summary added yet.')}</p>
+          <div class="crm-toolbar"><button class="crm-button primary" data-create="ticket_messages" type="button">Reply</button><button class="crm-button" data-edit-resource="tickets" data-edit-id="${ticket.id}" type="button">Reassign</button><button class="crm-button green" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="resolved" type="button">Resolve</button></div>
+        </div>`;
+    }
+
+    function financeSheetRows() {
+      const invoices = state.data.invoices.map((invoice) => ({
+        ...invoice,
+        id: invoice.id,
+        transaction_date: invoice.invoice_date || invoice.created_at?.slice(0, 10),
+        reference_id: invoice.invoice_number,
+        client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
+        project: projectName(invoice.project_id),
+        transaction_type: 'invoice',
+        amount: invoice.total_amount || invoice.amount,
+        notes: invoice.notes,
+      }));
+      if (state.financeSheet === 'invoices') return invoices;
+      return state.data.finances.filter((item) => {
+        if (state.financeSheet === 'all') return true;
+        if (state.financeSheet === 'income') return ['income', 'revenue'].includes(item.transaction_type);
+        if (state.financeSheet === 'expenses') return item.transaction_type === 'expense';
+        if (state.financeSheet === 'salary') return item.transaction_type === 'salary';
+        if (state.financeSheet === 'pending') return ['pending', 'half_payment', 'sent'].includes(item.status);
+        if (state.financeSheet === 'paid') return ['paid', 'received'].includes(item.status);
+        return true;
+      });
+    }
+
+    function financeRows() {
+      const resource = state.financeSheet === 'invoices' ? 'invoices' : 'finances';
+      return filtered(financeSheetRows(), ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by']).map((item) => `
+        <tr data-resource="${resource}" data-row-id="${item.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select finance record ${item.id}" /></td>
+          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'invoice_date' : 'transaction_date'}" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'invoice_number' : 'reference_id'}" value="${escapeHtml(item.reference_id || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'customer_name' : 'client'}" value="${escapeHtml(item.client || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'service_title' : 'project'}" value="${escapeHtml(item.project || '')}" /></td>
+          <td>${state.financeSheet === 'invoices' ? badge('invoice', 'blue') : `<select class="crm-edit-select" data-field="transaction_type">${['income', 'expense', 'revenue', 'salary'].map((type) => `<option value="${type}" ${item.transaction_type === type ? 'selected' : ''}>${nice(type)}</option>`).join('')}</select>`}</td>
+          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'amount' : 'amount'}" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+          <td><select class="crm-edit-select" data-field="status">${['pending', 'paid', 'received', 'sent', 'overdue', 'active', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${item.status === status ? 'selected' : ''}>${nice(status)}</option>`).join('')}</select></td>
+          <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
+          <td>${rowActions(resource, item.id)}</td>
+        </tr>`).join('');
+    }
+
+    function financeSheetTabs() {
+      const sheets = [
+        ['all', 'All Records'],
+        ['income', 'Income'],
+        ['expenses', 'Expenses'],
+        ['salary', 'Salary'],
+        ['pending', 'Pending'],
+        ['paid', 'Paid / Received'],
+        ['invoices', 'Invoices'],
+      ];
+      return `<div class="crm-sheet-tabs" role="tablist" aria-label="Finance sheets">${sheets.map(([key, label]) => `<button class="crm-sheet-tab ${state.financeSheet === key ? 'active' : ''}" data-finance-sheet="${key}" type="button" role="tab" aria-selected="${state.financeSheet === key}">${label}</button>`).join('')}</div>`;
+    }
+
+    function oldFinanceRowsUnused() {
+      return filtered(state.data.finances, ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by']).map((item) => `
+        <tr data-resource="finances" data-row-id="${item.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select finance record ${item.id}" /></td>
+          <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="reference_id" value="${escapeHtml(item.reference_id || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="client" value="${escapeHtml(item.client || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="project" value="${escapeHtml(item.project || '')}" /></td>
+          <td><select class="crm-edit-select" data-field="transaction_type">${['income', 'expense', 'revenue', 'salary'].map((type) => `<option value="${type}" ${item.transaction_type === type ? 'selected' : ''}>${nice(type)}</option>`).join('')}</select></td>
+          <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+          <td><select class="crm-edit-select" data-field="status">${['pending', 'paid', 'received', 'active', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${item.status === status ? 'selected' : ''}>${nice(status)}</option>`).join('')}</select></td>
+          <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
+          <td>${rowActions('finances', item.id)}</td>
+        </tr>`).join('');
+    }
+
+    function renderFinance() {
+      const income = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const expenses = state.data.finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      els.view.innerHTML = `
+        ${pageHead('Financial Management', 'Manage invoices, expenses, payments, and cash flow in one place.', '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-export="finance" type="button">Export</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Total Revenue', compactMoney(income), '₹', 'green')}
+          ${metric('Total Expenses', compactMoney(expenses), '▵', 'red', 'down 7% vs last month')}
+          ${metric('Outstanding Invoices', compactMoney(state.data.invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0)), '▱', 'orange')}
+          ${metric('Profit This Month', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
+          ${metric('Cash Balance', compactMoney(income - expenses), '▤', 'blue')}
+        </div>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Financial Records</h2><div class="crm-toolbar"><button class="crm-button" data-export="finance">Export Sheet</button><input class="crm-input" placeholder="Search records..." /></div></div>${financeSheetTabs()}${table(['', 'Date', 'Reference', 'Client', 'Project / Service', 'Sheet Type', 'Amount', 'Payment Status', 'Notes', 'Actions'], financeRows())}</section>
+        <div class="crm-three-col mt-5">
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong>${compactMoney(item.amount)}</strong></div>`).join('')}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div class="crm-chart"></div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Invoice Aging</h2></div><div class="crm-list"><div class="crm-list-row"><span>0-30 Days</span><strong>${compactMoney(48500)}</strong></div><div class="crm-list-row"><span>31-60 Days</span><strong>${compactMoney(41250)}</strong></div><div class="crm-list-row"><span>90+ Days</span><strong>${compactMoney(24000)}</strong></div></div></section>
+        </div>`;
+    }
+
+    function renderAnalytics() {
+      const clients = state.data.clients.length;
+      const projects = state.data.projects.length;
+      const revenue = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      els.view.innerHTML = `${pageHead('Analytics & User Access', 'Track performance, analyze trends, and manage secure logins for clients and employees.', '<button class="crm-button">May 20 - May 26, 2025</button>')}
+        <div class="crm-grid crm-kpis">${metric('Client Retention', '92%', '○', 'blue')}${metric('Employee Utilization', '78%', '♙', 'blue')}${metric('Ticket Resolution Rate', '96%', '◴', 'red')}${metric('Revenue by Client', compactMoney(revenue), '₹', 'green')}${metric('Login Activity 7D', Math.max(clients + projects, 1), '▥', 'purple')}</div>
+        <div class="crm-three-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Revenue</h2></div><div class="crm-chart"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Support Performance</h2></div><div class="crm-chart"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Project Status Distribution</h2></div><div class="crm-list">${Object.entries(groupCount(state.data.projects, 'status')).map(([key, count]) => `<div class="crm-list-row"><span>${nice(key)}</span><strong>${count}</strong></div>`).join('')}</div></section></div>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">User Management</h2><div class="crm-toolbar"><button class="crm-button primary" data-create="profiles">+ Create Login</button><button class="crm-button">Assign Role</button><button class="crm-button">Reset Password</button></div></div>${table(['', 'Name', 'Role', 'User Type', 'Company', 'Access Level', 'Status', 'Actions'], userRows())}</section>`;
+    }
+
+    function projectName(id) {
+      const project = state.data.projects.find((item) => String(item.id) === String(id));
+      return project?.name || 'Unlinked';
+    }
+
+    function groupCount(rows, key) {
+      return rows.reduce((acc, row) => {
+        const label = row[key] || 'Unassigned';
         acc[label] = (acc[label] || 0) + 1;
         return acc;
       }, {});
     }
 
-    function barRows(groups, total, currency = 'INR') {
-      return Object.entries(groups)
-        .sort((a, b) => Number(b[1]) - Number(a[1]))
-        .slice(0, 8)
-        .map(([label, value]) => {
-          const percent = total ? Math.max(3, Math.round((Number(value) / total) * 100)) : 0;
-          return `<article class="rounded-md border border-slate-100 p-3">
-            <div class="flex items-center justify-between gap-3 text-sm">
-              <span class="truncate font-bold text-slate-800">${escapeHtml(label)}</span>
-              <span class="font-bold text-slate-950">${money(value, currency)}</span>
-            </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-primary-600" style="width:${percent}%"></div></div>
-          </article>`;
-        })
-        .join('') || empty('No grouped data yet.');
+    function userRows() {
+      const profiles = state.data.profiles.length ? state.data.profiles : [{ name: state.profile?.name || 'Admin', role: state.profile?.role || 'company_admin', status: 'active', email: state.profile?.email || '' }];
+      return profiles.map((item) => `<tr data-resource="profiles" data-row-id="${item.id || ''}"><td><input type="checkbox" data-row-select aria-label="Select user ${escapeHtml(item.name || item.email)}" /></td><td><strong>${escapeHtml(item.name || item.email)}</strong><br><small>${escapeHtml(item.email || '')}</small></td><td>${badge(item.role, item.role === 'client' ? 'green' : 'blue')}</td><td>${item.role === 'client' ? 'Client' : 'Employee'}</td><td>${escapeHtml(clientName(item.client_id) || 'TechMigos')}</td><td>${item.role === 'company_admin' ? 'Full Access' : item.role === 'client' ? 'Client Portal' : 'Standard Access'}</td><td>${badge(item.status || 'active', 'green')}</td><td>${item.id ? rowActions('profiles', item.id) : '<span class="text-sm font-bold text-slate-400">Session user</span>'}</td></tr>`).join('');
     }
 
-    function countRows(groups, total) {
-      return Object.entries(groups)
-        .sort((a, b) => Number(b[1]) - Number(a[1]))
-        .slice(0, 8)
-        .map(([label, value]) => {
-          const percent = total ? Math.max(3, Math.round((Number(value) / total) * 100)) : 0;
-          return `<article class="rounded-md border border-slate-100 p-3">
-            <div class="flex items-center justify-between gap-3 text-sm">
-              <span class="truncate font-bold text-slate-800">${escapeHtml(label)}</span>
-              <span class="font-bold text-slate-950">${escapeHtml(value)}</span>
-            </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-slate-950" style="width:${percent}%"></div></div>
-          </article>`;
-        })
-        .join('') || empty('No grouped data yet.');
+    function renderClients() {
+      const selected = state.data.clients.find((item) => String(item.id) === String(state.selectedClientId)) || state.data.clients[0];
+      state.selectedClientId = selected?.id || null;
+      const rows = filtered(state.data.clients, ['name', 'company', 'email', 'phone', 'status']).map((client) => {
+        const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
+        const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
+        return `<tr data-resource="clients" data-row-id="${client.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select client ${escapeHtml(client.company || client.name)}" /></td>
+          <td><strong><input class="crm-edit-input" data-field="company" value="${escapeHtml(client.company || client.name || '')}" /></strong><br><small>${escapeHtml(client.name || '')}</small></td>
+          <td><input class="crm-edit-input" data-field="name" value="${escapeHtml(client.name || '')}" /></td>
+          <td>${projects.length}</td>
+          <td>${compactMoney(projects.reduce((sum, item) => sum + Number(item.revenue || item.budget || 0), 0))}</td>
+          <td>${compactMoney(invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</td>
+          <td>${badge(client.status || 'active')}</td>
+          <td><input class="crm-edit-input" data-field="email" value="${escapeHtml(client.email || '')}" /></td>
+          <td>${rowActions('clients', client.id, { view: true, viewAttr: `data-client-detail="${client.id}"` })}</td>
+        </tr>`;
+      }).join('');
+      els.view.innerHTML = `
+        ${pageHead('Client Management', 'Manage client companies, relationships, project portfolio, billing health, and portal access.', '<button class="crm-button primary" data-create="clients" type="button">+ Add Client</button><button class="crm-button" data-export="clients" type="button">Export</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Total Clients', state.data.clients.length, '○', 'blue')}
+          ${metric('Active Contracts', state.data.projects.filter((item) => item.status !== 'completed').length, '▱', 'green')}
+          ${metric('Avg. MRR per Client', compactMoney(state.data.clients.length ? state.data.finances.reduce((sum, item) => sum + Number(item.amount || 0), 0) / state.data.clients.length : 0), '₹', 'purple')}
+          ${metric('At-Risk Accounts', state.data.projects.filter((item) => item.health === 'at_risk').length, '!', 'orange', 'up 2 vs last month')}
+        </div>
+        <div class="crm-two-col mt-5">
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Clients</h2><div class="crm-toolbar"><select class="crm-select"><option>All Industries</option></select><input class="crm-input" placeholder="Search clients..." /></div></div>${table(['', 'Client Name', 'Primary Contact', 'Active Projects', 'Total Revenue', 'Outstanding Invoices', 'Portal Access', 'Email', 'Actions'], rows)}</section>
+          <aside class="crm-card crm-detail">${clientDetail(selected)}</aside>
+        </div>
+        <div class="crm-three-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Client Retention</h2></div><div class="crm-donut"></div><div class="crm-list"><div class="crm-list-row"><span>Retained</span><strong>92%</strong></div><div class="crm-list-row"><span>At Risk</span><strong>${state.data.projects.filter((item) => item.health === 'at_risk').length}</strong></div></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Client Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Client Satisfaction</h2></div><div class="crm-list"><div class="crm-list-row"><span>CSAT</span><strong>4.6 / 5</strong></div><div class="crm-list-row"><span>Response quality</span><strong>Excellent</strong></div></div></section></div>`;
     }
 
-    function financeRows() {
-      const rows = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by', 'department']);
-      if (state.financeSheet === 'all') return rows;
-      return rows.filter((item) => item.transaction_type === state.financeSheet);
+    function clientDetail(client) {
+      if (!client) return '<p class="text-sm font-bold text-slate-500">No client selected.</p>';
+      const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
+      const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
+      return `<div class="crm-detail-hero"><div class="crm-detail-icon">${escapeHtml((client.company || client.name || 'C').slice(0, 1))}</div><div><h2 class="text-xl font-black text-slate-950">${escapeHtml(client.company || client.name)}</h2><p class="font-semibold text-slate-500">${badge(client.status || 'active')}</p></div></div>
+        <div class="crm-list">
+          <div class="crm-list-row"><span>Primary contact</span><strong>${escapeHtml(client.name || '-')}</strong></div>
+          <div class="crm-list-row"><span>Email</span><strong>${escapeHtml(client.email || '-')}</strong></div>
+          <div class="crm-list-row"><span>Phone</span><strong>${escapeHtml(client.phone || '-')}</strong></div>
+          <div class="crm-toolbar"><button class="crm-button">Email</button><button class="crm-button">Call</button><button class="crm-button" data-create="invoices">New Invoice</button></div>
+          <div class="crm-list-row"><span>Active projects</span><strong>${projects.length}</strong></div>
+          ${projects.slice(0, 4).map((project) => `<div class="crm-list-row"><span>${escapeHtml(project.name)}</span><strong>${compactMoney(project.budget)}</strong></div>`).join('')}
+          <div class="crm-list-row"><span>Recent invoices</span><strong>${invoices.length}</strong></div>
+        </div>`;
     }
 
-    function csvEscape(value) {
-      const text = String(value ?? '');
-      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    function employeeSeed() {
+      const profiles = state.data.profiles.filter((item) => item.role !== 'client');
+      if (profiles.length) return profiles;
+      return [{ id: 'me', name: state.profile?.name || 'Company Admin', email: state.profile?.email || '', role: state.profile?.role || 'company_admin', status: 'active' }];
     }
 
-    function exportRows(filename, rows, columns) {
-      const header = columns.map(([, label]) => csvEscape(label)).join(',');
-      const body = rows.map((row) => columns.map(([key]) => csvEscape(row[key])).join(',')).join('\n');
-      const blob = new Blob([`${header}\n${body}`], { type: 'text/csv;charset=utf-8' });
+    function renderEmployees() {
+      const employees = employeeSeed();
+      const selected = employees.find((item) => String(item.id) === String(state.selectedEmployeeId)) || employees[0];
+      state.selectedEmployeeId = selected?.id || null;
+      const rows = employees.map((employee, index) => {
+        const assignedProjects = state.data.projects.filter((item) => String(item.owner_user_id) === String(employee.auth_user_id) || item.project_manager === employee.name);
+        const assignedTickets = state.data.tickets.filter((item) => item.assigned_to === employee.name);
+        const util = Math.min(98, 58 + (assignedProjects.length * 8) + (assignedTickets.length * 5) + index);
+        return `<tr data-resource="profiles" data-row-id="${employee.id || ''}"><td><input type="checkbox" data-row-select aria-label="Select employee ${escapeHtml(employee.name || '')}" /></td><td><strong>${escapeHtml(employee.name || employee.email)}</strong><br><small>${escapeHtml(employee.email || '')}</small></td><td>${escapeHtml(employee.department || 'Operations')}</td><td>${badge(employee.role || 'employee')}</td><td>${assignedProjects.length}</td><td>${assignedTickets.length}</td><td>${progress(util)}</td><td>${escapeHtml(String(employee.last_login || 'Today'))}</td><td>${badge(employee.status || 'active', 'green')}</td><td>${employee.id ? rowActions('profiles', employee.id, { view: true, viewAttr: `data-employee-detail="${employee.id}"` }) : '<span class="text-sm font-bold text-slate-400">Current session</span>'}</td></tr>`;
+      }).join('');
+      els.view.innerHTML = `
+        ${pageHead('Employee Management', 'Manage employees, departments, utilization, assignments, and access status.', '<button class="crm-button primary" data-create="profiles" type="button">+ Add Employee</button><button class="crm-button" data-export="employees" type="button">Export</button>')}
+        <div class="crm-grid crm-kpis">${metric('Total Employees', employees.length, '♙', 'blue')}${metric('Support Agents Active', employees.filter((item) => /support/i.test(item.role || '')).length, '+', 'green')}${metric('Project Utilization', '78%', '◷', 'purple')}${metric('New Hires This Month', '0', '+', 'orange', 'up 0% vs last month')}</div>
+        <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Employees</h2><div class="crm-toolbar"><select class="crm-select"><option>All Departments</option></select><input class="crm-input" placeholder="Search employees..." /></div></div>${table(['', 'Employee', 'Department', 'Role', 'Assigned Projects', 'Open Tickets', 'Utilization', 'Last Login', 'Status', 'Actions'], rows)}</section><aside class="crm-card crm-detail">${employeeDetail(selected)}</aside></div>
+        <div class="crm-three-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Department Distribution</h2></div><div class="crm-donut"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Workload Balance</h2></div><div class="crm-chart"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Employee Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section></div>`;
+    }
+
+    function employeeDetail(employee) {
+      if (!employee) return '<p class="text-sm font-bold text-slate-500">No employee selected.</p>';
+      const assignedProjects = state.data.projects.filter((item) => String(item.owner_user_id) === String(employee.auth_user_id) || item.project_manager === employee.name);
+      const assignedTickets = state.data.tickets.filter((item) => item.assigned_to === employee.name);
+      return `<div class="crm-detail-hero"><div class="crm-detail-icon">${escapeHtml((employee.name || employee.email || 'E').slice(0, 1))}</div><div><h2 class="text-xl font-black text-slate-950">${escapeHtml(employee.name || employee.email)}</h2><p class="font-semibold text-slate-500">${nice(employee.role || 'employee')}</p></div></div><div class="crm-list"><div class="crm-list-row"><span>Email</span><strong>${escapeHtml(employee.email || '-')}</strong></div><div class="crm-list-row"><span>Status</span>${badge(employee.status || 'active', 'green')}</div><div class="crm-list-row"><span>Assigned projects</span><strong>${assignedProjects.length}</strong></div><div class="crm-list-row"><span>Open tickets</span><strong>${assignedTickets.length}</strong></div>${progress(Math.min(100, 60 + assignedProjects.length * 8 + assignedTickets.length * 5))}<div class="crm-toolbar"><button class="crm-button">Message</button><button class="crm-button">Assign Work</button><button class="crm-button primary">Edit Profile</button></div></div>`;
+    }
+
+    function renderUsers() {
+      const profiles = state.data.profiles.length ? state.data.profiles : employeeSeed();
+      els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" type="button">Invite User</button><button class="crm-button" data-export="users" type="button">Export</button>')}
+        <div class="crm-grid crm-kpis">${metric('Total Users', profiles.length, '♧', 'blue')}${metric('Client Logins', profiles.filter((item) => item.role === 'client').length, '○', 'green')}${metric('Employee Logins', profiles.filter((item) => item.role !== 'client').length, '♙', 'purple')}${metric('Pending Invites', profiles.filter((item) => item.status === 'pending').length, '▹', 'orange', 'down 12% vs last month')}</div>
+        <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Access Directory</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><input class="crm-input" placeholder="Search users..." /></div></div>${table(['', 'Name', 'Role', 'User Type', 'Company', 'Access Level', 'Status', 'Actions'], userRows())}</section><aside class="crm-card crm-detail"><div class="crm-detail-hero"><div class="crm-detail-icon">♧</div><div><h2 class="text-xl font-black text-slate-950">Role Details</h2><p class="font-semibold text-slate-500">Permissions and module access</p></div></div><div class="crm-list"><div class="crm-list-row"><span>Projects</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Clients</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Finance</span><strong>Restricted by role</strong></div><div class="crm-list-row"><span>Analytics</span><strong>Enabled</strong></div><div class="crm-list-row"><span>MFA</span><strong>Recommended</strong></div></div></aside></div>
+        <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Login Activity</h2></div><div class="crm-list">${profiles.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || item.email)}</span>${badge(item.status || 'success', item.status === 'inactive' ? 'red' : 'green')}</div>`).join('')}</div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Alerts</h2></div><div class="crm-list"><div class="crm-list-row"><span>Role permissions reviewed</span>${badge('low', 'blue')}</div><div class="crm-list-row"><span>Inactive accounts</span><strong>${profiles.filter((item) => item.status === 'inactive').length}</strong></div></div></section></div>`;
+    }
+
+    function renderCrudResource(resource, title, subtitle, columns) {
+      const rows = filtered(state.data[resource] || [], columns.map(([field]) => field)).map((item) => `<tr data-resource="${resource}" data-row-id="${item.id}">
+        <td><input type="checkbox" data-row-select aria-label="Select ${resource} ${item.id}" /></td>
+        ${columns.map(([field, , type]) => {
+          if (field === 'status' || field === 'priority' || field === 'stage') return `<td>${badge(item[field])}</td>`;
+          if (type === 'number') return `<td><input class="crm-edit-input" data-field="${field}" type="number" value="${escapeHtml(item[field] || 0)}" /></td>`;
+          if (type === 'date') return `<td><input class="crm-edit-input" data-field="${field}" type="date" value="${escapeHtml(String(item[field] || '').slice(0, 10))}" /></td>`;
+          return `<td><input class="crm-edit-input" data-field="${field}" value="${escapeHtml(item[field] || '')}" /></td>`;
+        }).join('')}
+        <td>${rowActions(resource, item.id)}</td>
+      </tr>`).join('');
+      els.view.innerHTML = `${pageHead(title, subtitle, `<button class="crm-button primary" data-create="${resource}" type="button">+ Create</button><button class="crm-button" data-export="${resource}" type="button">Export</button>`)}
+        <div class="crm-grid crm-kpis">${metric(`Total ${title}`, (state.data[resource] || []).length, '◎', 'blue')}${metric('Active', (state.data[resource] || []).filter((item) => !['closed', 'completed', 'sent'].includes(item.status || item.stage)).length, '✓', 'green')}${metric('Pending', (state.data[resource] || []).filter((item) => ['pending', 'new', 'scheduled'].includes(item.status || item.stage)).length, '⌁', 'orange')}${metric('Updated Today', state.data.activities.filter((item) => item.entity_type === resource).length, '▥', 'purple')}</div>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">${title} Queue</h2><div class="crm-toolbar"><input class="crm-input" placeholder="Search ${title.toLowerCase()}..." /></div></div>${table(['', ...columns.map(([, label]) => label), 'Actions'], rows)}</section>`;
+    }
+
+    function renderSettings() {
+      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, branding, notifications, security, integrations, and billing preferences.', '<button class="crm-button primary" type="button" data-save-settings>Save Changes</button>')}
+        <div class="crm-two-col"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Company Profile</h2><button class="crm-button primary" data-save-settings type="button">Save Changes</button></div><form class="crm-form-grid"><label>Company Name<input value="TechMigos" /></label><label>Industry<input value="Software & IT Services" /></label><label>Company Email<input value="info@techmigos.com" /></label><label>Phone Number<input value="+91 9959703547" /></label><label>Timezone<input value="Asia/Kolkata" /></label><label>Date Format<input value="14 Jun 2026" /></label></form></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Settings</h2></div><div class="crm-list"><div class="crm-list-row"><span>Two-Factor Authentication</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Password Policy</span><strong>Strong</strong></div><div class="crm-list-row"><span>Session Timeout</span><strong>30 minutes</strong></div><div class="crm-list-row"><span>IP Restriction</span><strong>Configurable</strong></div></div></section></div>
+        <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Operational Defaults</h2></div><form class="crm-form-grid"><label>Default Project Status<input value="In Progress" /></label><label>Default Priority<input value="Medium" /></label><label>Default SLA<input value="48 Hours - Standard" /></label><label>Invoice Prefix<input value="TM/INV" /></label><label>Currency<input value="INR" /></label><label>Payment Terms<input value="Net 30" /></label></form></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Connected Integrations</h2></div><div class="crm-list"><div class="crm-list-row"><span>InsForge</span>${badge('connected', 'green')}</div><div class="crm-list-row"><span>MSG91</span>${badge('ready', 'blue')}</div><div class="crm-list-row"><span>Exports</span><strong>Excel, CSV, PDF</strong></div></div></section></div>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Notification Rules</h2></div>${table(['Notification Type', 'Email', 'In-App', 'Frequency', 'Recipients'], '<tr><td>New Support Ticket</td><td>Enabled</td><td>Enabled</td><td>Instant</td><td>Support Team</td></tr><tr><td>Ticket Assigned</td><td>Enabled</td><td>Enabled</td><td>Instant</td><td>Assignee Only</td></tr><tr><td>Invoice Created</td><td>Enabled</td><td>Optional</td><td>Daily Digest</td><td>Finance Team, Client</td></tr>')}</section>`;
+    }
+
+    function render() {
+      renderShell();
+      if (state.active === 'dashboard') renderDashboard();
+      if (state.active === 'leads') renderCrudResource('leads', 'Leads', 'Capture, qualify, assign, and convert incoming opportunities.', [['name', 'Name'], ['company', 'Company'], ['email', 'Email'], ['service', 'Service'], ['budget', 'Budget'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned To']]);
+      if (state.active === 'deals') renderCrudResource('deals', 'Deals', 'Track pipeline value, stages, owners, and expected close dates.', [['title', 'Title'], ['stage', 'Stage'], ['value', 'Value', 'number'], ['currency', 'Currency'], ['expected_close_date', 'Close Date', 'date']]);
+      if (state.active === 'projects') renderProjects();
+      if (state.active === 'tickets') renderTickets();
+      if (state.active === 'finance') renderFinance();
+      if (state.active === 'analytics') renderAnalytics();
+      if (state.active === 'clients') renderClients();
+      if (state.active === 'employees') renderEmployees();
+      if (state.active === 'users') renderUsers();
+      if (state.active === 'followups') renderCrudResource('followups', 'Follow-ups', 'Schedule next actions and keep client work moving.', [['title', 'Title'], ['related_type', 'Related Type'], ['related_id', 'Related ID', 'number'], ['due_at', 'Due Date'], ['status', 'Status'], ['assigned_to', 'Assigned To'], ['notes', 'Notes']]);
+      if (state.active === 'campaigns') renderCrudResource('campaigns', 'Campaigns', 'Create, schedule, and track client communication campaigns.', [['name', 'Name'], ['subject', 'Subject'], ['status', 'Status'], ['scheduled_at', 'Scheduled At'], ['sent_at', 'Sent At']]);
+      if (state.active === 'settings') renderSettings();
+      bindActions();
+    }
+
+    function bindActions() {
+      document.querySelectorAll('[data-project-detail]').forEach((button) => button.addEventListener('click', () => {
+        state.selectedProjectId = button.dataset.projectDetail;
+        renderProjects();
+      }));
+      document.querySelectorAll('[data-ticket-detail]').forEach((button) => button.addEventListener('click', () => {
+        state.selectedTicketId = button.dataset.ticketDetail;
+        renderTickets();
+      }));
+      document.querySelectorAll('[data-client-detail]').forEach((button) => button.addEventListener('click', () => {
+        state.selectedClientId = button.dataset.clientDetail;
+        renderClients();
+      }));
+      document.querySelectorAll('[data-employee-detail]').forEach((button) => button.addEventListener('click', () => {
+        state.selectedEmployeeId = button.dataset.employeeDetail;
+        renderEmployees();
+      }));
+      document.querySelectorAll('[data-row-id] [data-field]').forEach((input) => {
+        input.addEventListener('input', () => scheduleSave(input));
+        input.addEventListener('change', () => scheduleSave(input));
+      });
+      document.querySelectorAll('[data-create]').forEach((button) => button.addEventListener('click', () => openCreate(button.dataset.create)));
+      document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportRows(button.dataset.export)));
+      document.querySelectorAll('[data-save-settings]').forEach((button) => button.addEventListener('click', saveSettings));
+      document.querySelectorAll('[data-finance-sheet]').forEach((button) => button.addEventListener('click', () => {
+        state.financeSheet = button.dataset.financeSheet;
+        renderFinance();
+        bindActions();
+      }));
+      document.getElementById('crm-collapse')?.addEventListener('click', toggleSidebar);
+      document.getElementById('crm-notifications')?.addEventListener('click', openNotifications);
+      document.getElementById('crm-profile-button')?.addEventListener('click', openProfileManagement);
+      document.querySelectorAll('[data-edit-resource]').forEach((button) => button.addEventListener('click', () => openEdit(button.dataset.editResource, button.dataset.editId)));
+      document.querySelectorAll('[data-duplicate-resource]').forEach((button) => button.addEventListener('click', () => duplicateRecord(button.dataset.duplicateResource, button.dataset.duplicateId)));
+      document.querySelectorAll('[data-delete-resource]').forEach((button) => button.addEventListener('click', () => deleteRecord(button.dataset.deleteResource, button.dataset.deleteId)));
+      document.querySelectorAll('[data-quick-patch]').forEach((button) => button.addEventListener('click', () => quickPatch(button)));
+      document.querySelectorAll('[data-row-select]').forEach((checkbox) => checkbox.addEventListener('change', updateSelectionBar));
+      document.querySelector('[data-bulk-delete]')?.addEventListener('click', bulkDelete);
+      document.querySelector('[data-bulk-export]')?.addEventListener('click', bulkExport);
+      document.querySelector('[data-clear-selection]')?.addEventListener('click', clearSelection);
+      document.querySelectorAll('[data-invoice-view]').forEach((button) => button.addEventListener('click', () => showInvoice(button.dataset.invoiceView)));
+      document.querySelectorAll('[data-jump]').forEach((button) => button.addEventListener('click', () => {
+        state.active = button.dataset.jump;
+        render();
+      }));
+      updateSelectionBar();
+    }
+
+    function toggleSidebar() {
+      const app = document.querySelector('.crm-app');
+      app.classList.toggle('sidebar-collapsed');
+      const collapsed = app.classList.contains('sidebar-collapsed');
+      localStorage.setItem('tm_crm_sidebar_collapsed', collapsed ? '1' : '0');
+      document.getElementById('crm-collapse').textContent = collapsed ? '⇥' : '⇤';
+    }
+
+    function openNotifications() {
+      const items = [
+        ...state.data.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).slice(0, 4).map((ticket) => ({ title: ticket.subject, meta: `Ticket #TIC-${ticket.id} is ${nice(ticket.status)}`, tone: statusTone(ticket.priority) })),
+        ...state.data.invoices.filter((invoice) => ['pending', 'sent', 'overdue'].includes(invoice.status)).slice(0, 3).map((invoice) => ({ title: invoice.invoice_number || 'Invoice', meta: `${compactMoney(invoice.total_amount || invoice.amount)} ${nice(invoice.status)}`, tone: statusTone(invoice.status) })),
+        ...state.data.followups.filter((item) => item.status !== 'completed').slice(0, 3).map((item) => ({ title: item.title, meta: `Follow-up due ${String(item.due_at || '').slice(0, 10) || 'soon'}`, tone: 'orange' })),
+      ];
+      els.modalTitle.textContent = 'Notifications';
+      els.modalBody.innerHTML = `<div class="crm-list">${items.map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || 'Notification')}</span>${badge(item.meta || 'new', item.tone)}</div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No pending notifications.</p>'}</div><div class="crm-toolbar p-5 pt-0"><button class="crm-button primary" data-jump="tickets" type="button">Open Tickets</button><button class="crm-button" data-jump="finance" type="button">Open Finance</button></div>`;
+      els.modal.classList.add('open');
+      bindActions();
+    }
+
+    function openProfileManagement() {
+      const profile = state.profile || {};
+      els.modalTitle.textContent = 'Profile Management';
+      els.modalBody.innerHTML = `<form id="crm-profile-form" class="crm-form-grid">
+        <label>Name<input name="name" value="${escapeHtml(profile.name || '')}" /></label>
+        <label>Email<input name="email" type="email" value="${escapeHtml(profile.email || '')}" /></label>
+        <label>Role<input name="role" value="${escapeHtml(profile.role || '')}" disabled /></label>
+        <label>Status<input name="status" value="${escapeHtml(profile.status || 'active')}" /></label>
+        <label class="wide">Notification Preference<select name="notification_preference"><option>Email and in-app</option><option>In-app only</option><option>Critical only</option></select></label>
+        <button class="crm-button primary wide" type="submit">Update Profile</button>
+      </form>`;
+      els.modal.classList.add('open');
+      document.getElementById('crm-profile-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!profile.id) return toast('Profile is not loaded yet');
+        const body = normalizePayload('profiles', Object.fromEntries(new FormData(event.currentTarget).entries()));
+        try {
+          await portal(`/api/portal/profiles/${profile.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+          els.modal.classList.remove('open');
+          toast('Profile updated in InsForge');
+          await loadData();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Profile update failed');
+        }
+      });
+    }
+
+    function rowPayload(row, resource) {
+      const body = {};
+      row.querySelectorAll('[data-field]').forEach((input) => { body[input.dataset.field] = input.value; });
+      for (const key of ['amount', 'budget', 'progress', 'expenses', 'revenue', 'profit']) {
+        if (body[key] === '') delete body[key];
+        else if (body[key] !== undefined) body[key] = Number(body[key]);
+      }
+      return body;
+    }
+
+    function scheduleSave(input) {
+      const row = input.closest('[data-row-id]');
+      if (!row) return;
+      row.classList.add('crm-dirty');
+      const key = `${row.dataset.resource}:${row.dataset.rowId}`;
+      clearTimeout(state.saveTimers.get(key));
+      state.saveTimers.set(key, setTimeout(() => saveRow(row), 850));
+    }
+
+    async function saveRow(row) {
+      try {
+        await portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'PATCH', body: JSON.stringify(rowPayload(row, row.dataset.resource)) });
+        row.classList.remove('crm-dirty');
+        toast('Saved to InsForge');
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Save failed');
+      }
+    }
+
+    async function saveSettings() {
+      const values = Array.from(document.querySelectorAll('.crm-form-grid input')).reduce((acc, input) => {
+        const label = input.closest('label')?.childNodes?.[0]?.textContent?.trim() || input.name || 'Setting';
+        acc[label] = input.value;
+        return acc;
+      }, {});
+      try {
+        await portal('/api/portal/activities', {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updated_settings',
+            entity_type: 'company_settings',
+            summary: `Updated company settings: ${Object.keys(values).join(', ')}`,
+          }),
+        });
+        toast('Settings update recorded in InsForge');
+        await loadData();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Settings save failed');
+      }
+    }
+
+    function dataKey(resource) {
+      return resource === 'finance' ? 'finances' : resource;
+    }
+
+    function findRecord(resource, id) {
+      return (state.data[dataKey(resource)] || []).find((item) => String(item.id) === String(id));
+    }
+
+    function createFields(resource) {
+      const configs = {
+        projects: [['client_id', 'Client ID', 'number'], ['name', 'Project name', 'text'], ['client_name', 'Client name', 'text'], ['project_manager', 'Project manager', 'text'], ['budget', 'Budget', 'number'], ['status', 'Status', 'text'], ['summary', 'Summary', 'textarea']],
+        tickets: [['client_id', 'Client ID', 'number'], ['subject', 'Subject', 'text'], ['priority', 'Priority', 'text'], ['status', 'Status', 'text'], ['description', 'Description', 'textarea']],
+        finances: [['transaction_date', 'Date', 'date'], ['transaction_type', 'Type', 'text'], ['reference_id', 'Reference', 'text'], ['title', 'Title', 'text'], ['client', 'Client', 'text'], ['project', 'Project', 'text'], ['amount', 'Amount', 'number'], ['status', 'Status', 'text'], ['notes', 'Notes', 'textarea']],
+        invoices: [['client_id', 'Client ID', 'number'], ['project_id', 'Project ID', 'number'], ['invoice_number', 'Invoice number', 'text'], ['currency', 'Currency', 'text'], ['customer_name', 'Customer name', 'text'], ['customer_email', 'Customer email', 'email'], ['service_title', 'Service title', 'text'], ['amount', 'Amount', 'number'], ['due_date', 'Due date', 'date'], ['notes', 'Notes', 'textarea']],
+        clients: [['name', 'Name', 'text'], ['company', 'Company', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone', 'text'], ['status', 'Status', 'text']],
+        profiles: [['auth_user_id', 'Auth user ID', 'text'], ['email', 'Email', 'email'], ['name', 'Name', 'text'], ['role', 'Role', 'text'], ['status', 'Status', 'text'], ['client_id', 'Client ID for client users', 'number'], ['temporary_password', 'Temporary password for new login', 'text']],
+        leads: [['name', 'Name', 'text'], ['email', 'Email', 'email'], ['company', 'Company', 'text'], ['service', 'Service', 'text'], ['budget', 'Budget', 'text'], ['priority', 'Priority', 'text'], ['assigned_to', 'Assigned To', 'text'], ['message', 'Message', 'textarea']],
+        deals: [['client_id', 'Client ID', 'number'], ['lead_id', 'Lead ID', 'number'], ['title', 'Title', 'text'], ['stage', 'Stage', 'text'], ['value', 'Value', 'number'], ['currency', 'Currency', 'text'], ['expected_close_date', 'Expected Close Date', 'date']],
+        followups: [['related_type', 'Related Type', 'text'], ['related_id', 'Related ID', 'number'], ['title', 'Title', 'text'], ['due_at', 'Due At', 'date'], ['status', 'Status', 'text'], ['assigned_to', 'Assigned To', 'text'], ['notes', 'Notes', 'textarea']],
+        campaigns: [['name', 'Name', 'text'], ['subject', 'Subject', 'text'], ['body', 'Body', 'textarea'], ['status', 'Status', 'text'], ['msg91_template_id', 'MSG91 Template ID', 'text'], ['scheduled_at', 'Scheduled At', 'date']],
+        ticket_messages: [['ticket_id', 'Ticket ID', 'number'], ['body', 'Reply', 'textarea'], ['visibility', 'Visibility', 'text']],
+      };
+      return configs[resource] || configs.clients;
+    }
+
+    function formMarkup(resource, values = {}, submitLabel = 'Save to InsForge') {
+      return `<form id="crm-edit-form" class="crm-form-grid">${createFields(resource).map(([name, label, type]) => {
+        const value = escapeHtml(values[name] ?? '');
+        return `<label class="${type === 'textarea' ? 'wide' : ''}">${label}${type === 'textarea' ? `<textarea name="${name}">${value}</textarea>` : `<input name="${name}" type="${type}" value="${value}" />`}</label>`;
+      }).join('')}<button class="crm-button primary wide" type="submit">${submitLabel}</button></form>`;
+    }
+
+    function openCreate(resource) {
+      els.modalTitle.textContent = `Create ${resource}`;
+      els.modalBody.innerHTML = formMarkup(resource, smartDefaults(resource), 'Create in InsForge');
+      els.modal.classList.add('open');
+      document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()));
+        if (resource === 'invoices') {
+          body.items = [{ description: body.service_title || 'TechMigos service', quantity: 1, rate: Number(body.amount || 0) }];
+        }
+        try {
+          await portal(`/api/portal/${resource}`, { method: 'POST', body: JSON.stringify(body) });
+          els.modal.classList.remove('open');
+          toast('Created in InsForge');
+          await loadData();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Create failed');
+        }
+      });
+    }
+
+    function smartDefaults(resource) {
+      const today = new Date().toISOString().slice(0, 10);
+      const defaults = {
+        projects: { status: 'planning', budget: 0 },
+        tickets: { priority: 'medium', status: 'open' },
+        finances: { transaction_date: today, transaction_type: 'expense', status: 'pending', amount: 0, source: 'manual' },
+        invoices: { currency: 'INR', due_date: today, amount: 0 },
+        clients: { status: 'active' },
+        profiles: { role: 'company_member', status: 'active' },
+        ticket_messages: { ticket_id: state.selectedTicketId || '', visibility: 'internal' },
+      };
+      return defaults[resource] || {};
+    }
+
+    function normalizePayload(resource, body) {
+      Object.keys(body).forEach((key) => {
+        if (typeof body[key] === 'string') body[key] = body[key].trim();
+        if (body[key] === '') delete body[key];
+      });
+      for (const key of ['client_id', 'project_id', 'ticket_id', 'amount', 'budget', 'progress', 'expenses', 'revenue', 'profit']) {
+        if (body[key] !== undefined) body[key] = Number(body[key]);
+      }
+      return body;
+    }
+
+    function openEdit(resource, id) {
+      const item = findRecord(resource, id);
+      if (!item) return toast('Record not found');
+      els.modalTitle.textContent = `Edit ${resource}`;
+      els.modalBody.innerHTML = formMarkup(resource, item, 'Update in InsForge');
+      els.modal.classList.add('open');
+      document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          await portal(`/api/portal/${resource}/${id}`, { method: 'PATCH', body: JSON.stringify(normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()))) });
+          els.modal.classList.remove('open');
+          toast('Updated in InsForge');
+          await loadData();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Update failed');
+        }
+      });
+    }
+
+    async function duplicateRecord(resource, id) {
+      const item = findRecord(resource, id);
+      if (!item) return toast('Record not found');
+      const body = { ...item };
+      ['id', 'created_at', 'updated_at', 'sent_at', 'viewed_at', 'paid_at'].forEach((key) => delete body[key]);
+      if (body.name) body.name = `${body.name} Copy`;
+      if (body.subject) body.subject = `${body.subject} Copy`;
+      if (body.reference_id) body.reference_id = `${body.reference_id}-COPY`;
+      if (body.invoice_number) delete body.invoice_number;
+      try {
+        await portal(`/api/portal/${resource}`, { method: 'POST', body: JSON.stringify(normalizePayload(resource, body)) });
+        toast('Duplicated in InsForge');
+        await loadData();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Duplicate failed');
+      }
+    }
+
+    async function deleteRecord(resource, id) {
+      if (!id || !confirm(`Delete this ${resource.slice(0, -1) || resource}? This cannot be undone.`)) return;
+      try {
+        await portal(`/api/portal/${resource}/${id}`, { method: 'DELETE' });
+        toast('Deleted from InsForge');
+        await loadData();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Delete failed');
+      }
+    }
+
+    async function quickPatch(button) {
+      try {
+        await portal(`/api/portal/${button.dataset.quickPatch}/${button.dataset.quickId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ [button.dataset.quickField]: button.dataset.quickValue }),
+        });
+        toast('Updated in InsForge');
+        await loadData();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Update failed');
+      }
+    }
+
+    function selectedRows() {
+      return Array.from(document.querySelectorAll('[data-row-select]:checked')).map((input) => input.closest('[data-row-id]')).filter(Boolean);
+    }
+
+    function updateSelectionBar() {
+      const rows = selectedRows();
+      els.selectedCount.textContent = `${rows.length} selected`;
+      els.actionbar.classList.toggle('show', rows.length > 0);
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('[data-row-select]').forEach((input) => { input.checked = false; });
+      updateSelectionBar();
+    }
+
+    async function bulkDelete() {
+      const rows = selectedRows();
+      if (!rows.length || !confirm(`Delete ${rows.length} selected records?`)) return;
+      try {
+        await Promise.all(rows.map((row) => portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'DELETE' })));
+        toast(`Deleted ${rows.length} records`);
+        await loadData();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Bulk delete failed');
+      }
+    }
+
+    function bulkExport() {
+      const rows = selectedRows().map((row) => findRecord(row.dataset.resource, row.dataset.rowId)).filter(Boolean);
+      if (!rows.length) return;
+      const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row)))).filter((key) => !String(key).endsWith('_at'));
+      const csv = [keys.join(','), ...rows.map((row) => keys.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      downloadCsv(csv, 'techmigos-selected-records.csv');
+    }
+
+    function exportRows(kind) {
+      const configs = {
+        projects: { rows: state.data.projects, keys: ['external_project_id', 'name', 'client_name', 'project_manager', 'status', 'budget', 'progress'] },
+        finance: { rows: state.data.finances, keys: ['transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'amount'] },
+        finances: { rows: state.data.finances, keys: ['transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'amount'] },
+        tickets: { rows: state.data.tickets, keys: ['id', 'subject', 'client_id', 'project_id', 'priority', 'assigned_to', 'status'] },
+        clients: { rows: state.data.clients, keys: ['name', 'company', 'email', 'phone', 'status'] },
+        leads: { rows: state.data.leads, keys: ['name', 'email', 'company', 'service', 'budget', 'priority', 'assigned_to', 'status'] },
+        deals: { rows: state.data.deals, keys: ['client_id', 'lead_id', 'title', 'stage', 'value', 'currency', 'expected_close_date'] },
+        followups: { rows: state.data.followups, keys: ['related_type', 'related_id', 'title', 'due_at', 'status', 'assigned_to', 'notes'] },
+        campaigns: { rows: state.data.campaigns, keys: ['name', 'subject', 'status', 'msg91_template_id', 'scheduled_at', 'sent_at'] },
+        employees: { rows: employeeSeed(), keys: ['name', 'email', 'role', 'status'] },
+        users: { rows: state.data.profiles.length ? state.data.profiles : employeeSeed(), keys: ['name', 'email', 'role', 'status', 'client_id'] },
+      };
+      const config = configs[kind] || configs.finance;
+      const rows = config.rows;
+      const keys = config.keys;
+      const csv = [keys.join(','), ...rows.map((row) => keys.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      downloadCsv(csv, `techmigos-${kind}.csv`);
+    }
+
+    function downloadCsv(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -538,803 +2187,54 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       URL.revokeObjectURL(url);
     }
 
-    function renderDashboard() {
-      setHeader('CRM command center', 'A work-first view of pipeline, client health, support pressure, invoices, and upcoming tasks.', 'Dashboard');
-      const metrics = state.dashboard?.metrics || {};
-      const openInvoices = state.dashboard?.openInvoices || [];
-      const urgentTickets = state.dashboard?.urgentTickets || [];
-      const dueFollowups = state.dashboard?.dueFollowups || [];
-      const finances = state.data.finances || [];
-      const projects = state.data.projects || [];
-      const invoices = state.data.invoices || [];
-      const tickets = state.data.tickets || [];
-      const income = sumBy(finances, (item) => ['income', 'revenue'].includes(item.transaction_type));
-      const expenses = sumBy(finances, (item) => ['expense', 'salary'].includes(item.transaction_type));
-      const paidInvoices = invoices.filter((item) => item.status === 'paid').length;
-      const issueProjects = projects.filter((item) => ['at_risk', 'watch'].includes(item.health));
-      els.view.innerHTML = `
-        <section class="rounded-lg border border-slate-200 bg-white p-5">
-          <div class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary-600">Today at TechMigos</p>
-              <h3 class="mt-2 text-2xl font-extrabold text-slate-950">Company operating picture</h3>
-              <p class="mt-2 text-sm text-slate-500">ERP-style snapshot inspired by Idurar: customers, invoices, payments, project health, support pressure, and finance tracker data in one view.</p>
-              <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                ${compactMetric('Net profit', money(income - expenses), `${finances.length} finance rows`, income - expenses >= 0 ? 'green' : 'red')}
-                ${compactMetric('Project risk', issueProjects.length, 'watch / at risk projects', issueProjects.length ? 'yellow' : 'green')}
-                ${compactMetric('Collections', `${paidInvoices}/${invoices.length}`, 'paid invoice records', 'blue')}
-              </div>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p class="text-sm font-extrabold text-slate-950">Fast actions</p>
-              <div class="mt-3 grid gap-2">
-                <button class="rounded-md bg-slate-950 px-4 py-3 text-left text-sm font-bold text-white" data-jump="invoices">Create invoice</button>
-                <button class="rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-800" data-jump="finances">Record transaction</button>
-                <button class="rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-800" data-jump="reports">Open reports</button>
-              </div>
-            </div>
-          </div>
-        </section>
-        <div class="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Finance by sheet</h3>
-            <div class="mt-4 space-y-3">${barRows(groupSum(finances, 'transaction_type'), Math.max(income, expenses, 1))}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Invoice status</h3>
-            <div class="mt-4 space-y-3">${barRows(groupSum(invoices, 'status', 'total_amount'), invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</div>
-          </section>
-        </div>
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          ${cardMetric('Leads', metrics.leads || 0, `${metrics.qualifiedLeads || 0} qualified/proposal`)}
-          ${cardMetric('Active projects', metrics.activeProjects || 0, `${metrics.clients || 0} clients total`)}
-          ${cardMetric('Open tickets', metrics.openTickets || 0, 'High priority tickets surface below')}
-          ${cardMetric('Outstanding', money(metrics.invoiceOutstanding || 0), `${metrics.overdueInvoices || 0} overdue invoices`)}
-        </div>
-        <div class="mt-5 grid gap-4 sm:grid-cols-3">
-          ${cardMetric('Finance income', money(metrics.financeIncome || 0), 'Income + revenue tracker')}
-          ${cardMetric('Finance expenses', money(metrics.financeExpenses || 0), 'Expenses + salary tracker')}
-          ${cardMetric('Net profit', money(metrics.financeProfit || 0), 'Based on recorded transactions')}
-        </div>
-        <div class="mt-5 grid gap-5 xl:grid-cols-3">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Next follow-ups</h3>
-            <div class="mt-4 space-y-3">${dueFollowups.map((item) => rowLine(item.title, item.due_at || 'No due date', item.status)).join('') || empty('No pending follow-ups.')}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Support pressure</h3>
-            <div class="mt-4 space-y-3">${urgentTickets.map((item) => rowLine(item.subject, clientName(item.client_id), item.priority, priorityTone(item.priority))).join('') || empty('No urgent tickets.')}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Open invoices</h3>
-            <div class="mt-4 space-y-3">${openInvoices.map((item) => rowLine(item.invoice_number, money(item.total_amount || item.amount, item.currency), item.status)).join('') || empty('No open invoices.')}</div>
-          </section>
-        </div>
-        <div class="mt-5 grid gap-5 xl:grid-cols-2">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Project financial health</h3>
-            <div class="mt-4 space-y-3">${(state.dashboard?.finance?.projects || []).map((item) => `
-              <article class="rounded-md border border-slate-100 p-3">
-                <div class="flex items-start justify-between gap-3">
-                  <div><p class="font-bold text-slate-900">${escapeHtml(item.name)}</p><p class="text-sm text-slate-500">Budget ${money(item.budget)} · Progress ${escapeHtml(item.progress)}%</p></div>
-                  ${badge(item.status)}
-                </div>
-                <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <span class="rounded bg-emerald-50 px-2 py-1 text-emerald-700">Revenue ${money(item.revenue)}</span>
-                  <span class="rounded bg-red-50 px-2 py-1 text-red-700">Expense ${money(item.expenses)}</span>
-                  <span class="rounded bg-slate-100 px-2 py-1 text-slate-700">Profit ${money(item.profit)}</span>
-                </div>
-              </article>
-            `).join('') || empty('No project finance data yet.')}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Recent company transactions</h3>
-            <div class="mt-4 space-y-3">${(state.dashboard?.finance?.recent || []).map((item) => rowLine(item.title, `${item.transaction_date || ''} · ${money(item.amount)} · ${item.project || item.client || ''}`, item.transaction_type)).join('') || empty('No finance transactions yet.')}</div>
-          </section>
-        </div>
-        <section class="mt-5 rounded-lg border border-slate-200 bg-white p-5">
-          <h3 class="text-lg font-extrabold text-slate-950">Recent activity</h3>
-          <div class="mt-4 grid gap-3">${(state.dashboard?.activities || []).map((item) => `
-            <article class="flex flex-col gap-1 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><p class="font-bold text-slate-900">${escapeHtml(item.summary || item.action)}</p><p class="text-sm text-slate-500">${escapeHtml(item.actor_name || 'System')} · ${nice(item.entity_type)}</p></div>
-              <p class="text-xs text-slate-400">${escapeHtml(item.created_at || '')}</p>
-            </article>
-          `).join('') || empty('No activity yet.')}</div>
-        </section>
-      `;
-      document.querySelectorAll('[data-jump]').forEach((button) => {
-        button.addEventListener('click', () => {
-          state.active = button.dataset.jump;
-          render();
-          scrollWorkspaceTop();
-        });
-      });
-    }
-
-    function rowLine(title, meta, status, tone = 'slate') {
-      return `<article class="rounded-md border border-slate-100 p-3">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0"><p class="truncate font-bold text-slate-900">${escapeHtml(title)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(meta)}</p></div>
-          ${badge(status || 'open', tone)}
-        </div>
-      </article>`;
-    }
-
-    function empty(text) {
-      return `<p class="rounded-md border border-dashed border-slate-200 p-4 text-sm text-slate-500">${text}</p>`;
-    }
-
-    function inputFor([name, label, type, required]) {
-      if (type === 'textarea') {
-        return `<label class="block md:col-span-2"><span class="form-label">${label}</span><textarea name="${name}" ${required ? 'required' : ''} class="form-input form-control min-h-[96px]"></textarea></label>`;
-      }
-      if (type === 'checkbox') {
-        return `<label class="flex items-center gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700"><input name="${name}" type="checkbox" class="h-4 w-4 rounded border-slate-300" />${label}</label>`;
-      }
-      if (type === 'client') {
-        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select client</option>${state.data.clients.map((client) => `<option value="${client.id}">${escapeHtml(clientName(client.id))}</option>`).join('')}</select></label>`;
-      }
-      if (type === 'project') {
-        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control"><option value="">Select project</option>${state.data.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.name)}${project.client_id ? ` · ${escapeHtml(clientName(project.client_id))}` : ''}</option>`).join('')}</select></label>`;
-      }
-      if (type.startsWith('select:')) {
-        const values = type.slice(7).split(',');
-        return `<label class="block"><span class="form-label">${label}</span><select name="${name}" ${required ? 'required' : ''} class="form-input form-control">${values.map((item) => `<option value="${item}">${nice(item)}</option>`).join('')}</select></label>`;
-      }
-      return `<label class="block"><span class="form-label">${label}</span><input name="${name}" type="${type}" ${required ? 'required' : ''} class="form-input form-control" /></label>`;
-    }
-
-    function serializeForm(form) {
-      const body = {};
-      new FormData(form).forEach((value, key) => { body[key] = value; });
-      form.querySelectorAll('input[type="checkbox"]').forEach((input) => { body[input.name] = input.checked; });
-      for (const key of ['client_id', 'project_id', 'lead_id', 'related_id', 'progress', 'value', 'budget', 'expenses', 'revenue', 'profit', 'amount']) {
-        if (body[key] === '') delete body[key];
-        else if (body[key] !== undefined) body[key] = Number(body[key]);
-      }
-      return body;
-    }
-
-    function renderResource(key) {
-      const config = resourceConfig[key];
-      setHeader(config.title, config.subtitle, config.title);
-      const rows = filtered(state.data[key] || [], ['name', 'email', 'company', 'subject', 'title', 'status', 'priority']);
-      const createLabels = {
-        finances: 'Record transaction',
-        tickets: 'Open support ticket',
-        followups: 'Schedule follow-up',
-        campaigns: 'Create campaign',
-        profiles: 'Create user profile',
-      };
-      els.view.innerHTML = `
-        <div class="grid gap-5 xl:grid-cols-[380px_1fr]">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">${createLabels[key] || `Create ${config.title.split(' ')[0].toLowerCase()}`}</h3>
-            <form id="resource-form" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">${config.fields.map(inputFor).join('')}<button class="btn-primary justify-center md:col-span-2 xl:col-span-1" type="submit">Save record</button></form>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            ${renderRecords(key, rows)}
-          </section>
-        </div>
-      `;
-      document.getElementById('resource-form')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        await saveResource(key, serializeForm(event.currentTarget));
-      });
-      bindActions();
-    }
-
-    function renderRecords(key, rows) {
-      if (key === 'leads') return renderLeads(rows);
-      if (key === 'clients') return renderClients(rows);
-      if (key === 'projects') return renderProjects(rows);
-      if (key === 'tickets') return renderTickets(rows);
-      if (key === 'finances') return renderFinance(rows);
-      if (key === 'campaigns') return renderCampaigns(rows);
-      if (key === 'activities') return renderActivity();
-      if (key === 'profiles') return renderCompactTable(rows, ['name', 'email', 'role', 'status', 'client_id']);
-      return renderCompactTable(rows, ['title', 'related_type', 'related_id', 'due_at', 'status']);
-    }
-
-    function renderCompactTable(rows, columns) {
-      return `<div class="overflow-x-auto"><table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">ID</th>${columns.map((col) => `<th class="px-4 py-3">${nice(col)}</th>`).join('')}</tr></thead>
-        <tbody class="divide-y divide-slate-100">${rows.map((row) => `<tr><td class="px-4 py-3 font-bold text-slate-900">${row.id}</td>${columns.map((col) => `<td class="px-4 py-3 text-slate-600">${col === 'client_id' ? escapeHtml(clientName(row[col])) : escapeHtml(row[col])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length + 1}" class="px-4 py-8 text-slate-500">No records yet.</td></tr>`}</tbody>
-      </table></div>`;
-    }
-
-    function renderLeads(rows) {
-      const groups = ['new', 'qualified', 'proposal', 'converted', 'lost'];
-      return `<div class="grid gap-4 xl:grid-cols-5">${groups.map((stage) => `
-        <div class="rounded-lg bg-slate-50 p-3">
-          <div class="flex items-center justify-between"><h3 class="text-sm font-extrabold text-slate-800">${nice(stage)}</h3><span class="text-xs font-bold text-slate-400">${rows.filter((row) => row.status === stage).length}</span></div>
-          <div class="mt-3 space-y-3">${rows.filter((row) => row.status === stage).map((lead) => `
-            <article class="rounded-md border border-slate-200 bg-white p-3">
-              <p class="font-bold text-slate-950">${escapeHtml(lead.name)}</p>
-              <p class="mt-1 text-xs text-slate-500">${escapeHtml(lead.email)} · ${escapeHtml(lead.service || 'General')}</p>
-              <div class="mt-3 flex items-center justify-between gap-2">${badge(lead.priority, priorityTone(lead.priority))}<button class="text-xs font-bold text-primary-700" data-convert="${lead.id}">Convert</button></div>
-              <p class="mt-2 text-xs text-slate-400">${lead.next_followup_at ? `Next: ${escapeHtml(lead.next_followup_at)}` : 'No follow-up set'}</p>
-            </article>
-          `).join('') || empty('No leads')}</div>
-        </div>
-      `).join('')}</div>`;
-    }
-
-    function renderClients(rows) {
-      const selected = rows.find((client) => String(client.id) === String(state.selectedClientId)) || rows[0];
-      if (selected) state.selectedClientId = selected.id;
-      const projects = state.data.projects.filter((item) => String(item.client_id) === String(state.selectedClientId));
-      const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(state.selectedClientId));
-      const tickets = state.data.tickets.filter((item) => String(item.client_id) === String(state.selectedClientId));
-      return `<div class="grid gap-5 xl:grid-cols-[300px_1fr]">
-        <div class="space-y-2">${rows.map((client) => `<button class="w-full rounded-md border px-3 py-3 text-left ${String(client.id) === String(state.selectedClientId) ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-700'}" data-client="${client.id}"><span class="block font-bold">${escapeHtml(client.name)}</span><span class="block text-xs opacity-75">${escapeHtml(client.company || client.email)}</span></button>`).join('') || empty('No clients yet.')}</div>
-        <div>${selected ? `
-          <div class="rounded-lg border border-slate-200 p-5">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h3 class="text-2xl font-extrabold text-slate-950">${escapeHtml(selected.name)}</h3><p class="text-sm text-slate-500">${escapeHtml(selected.company || '')} · ${escapeHtml(selected.email)}</p></div><div class="flex flex-wrap gap-2">${badge(selected.status, selected.status === 'active' ? 'green' : 'slate')}${state.profile?.role === 'company_admin' ? `<button class="rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-primary-700" data-client-invite="${selected.id}">Create client login</button>` : ''}</div></div>
-            <div class="mt-5 grid gap-3 sm:grid-cols-3">${cardMetric('Projects', projects.length, 'Linked work')}${cardMetric('Invoices', invoices.length, money(invoices.reduce((sum, invoice) => sum + Number(invoice.total_amount || invoice.amount || 0), 0)))}${cardMetric('Open tickets', tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length, 'Support')}</div>
-            <div class="mt-5 grid gap-4 lg:grid-cols-3">
-              <div><h4 class="font-bold text-slate-950">Projects</h4><div class="mt-2 space-y-2">${projects.map((project) => rowLine(project.name, `${project.progress || 0}% progress`, project.health)).join('') || empty('No projects')}</div></div>
-              <div><h4 class="font-bold text-slate-950">Invoices</h4><div class="mt-2 space-y-2">${invoices.map((invoice) => `<button class="w-full text-left" data-invoice-view="${invoice.id}">${rowLine(invoice.invoice_number, money(invoice.total_amount || invoice.amount, invoice.currency), invoice.status)}</button>`).join('') || empty('No invoices')}</div></div>
-              <div><h4 class="font-bold text-slate-950">Tickets</h4><div class="mt-2 space-y-2">${tickets.map((ticket) => rowLine(ticket.subject, ticket.created_at || '', ticket.status)).join('') || empty('No tickets')}</div></div>
-            </div>
-          </div>` : empty('No client selected.')}</div>
-      </div>`;
-    }
-
-    function renderProjects(rows) {
-      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((project) => `
-        <article class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-bold uppercase text-slate-400">${escapeHtml(project.external_project_id || `Project #${project.id}`)}</p>
-              <h3 class="mt-1 font-extrabold text-slate-950">${escapeHtml(project.name)}</h3>
-              <p class="mt-1 text-sm text-slate-500">${escapeHtml(project.client_name || clientName(project.client_id))} · Manager: ${escapeHtml(project.project_manager || '-')}</p>
-            </div>
-            ${badge(project.health, statusTone(project.health))}
-          </div>
-          <div class="mt-4 grid gap-2 text-xs sm:grid-cols-4">
-            <span class="rounded bg-slate-100 px-2 py-1 text-slate-700">Budget ${money(project.budget)}</span>
-            <span class="rounded bg-red-50 px-2 py-1 text-red-700">Expense ${money(project.expenses)}</span>
-            <span class="rounded bg-emerald-50 px-2 py-1 text-emerald-700">Revenue ${money(project.revenue)}</span>
-            <span class="rounded bg-blue-50 px-2 py-1 text-blue-700">Profit ${money(project.profit)}</span>
-          </div>
-          <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full bg-primary-600" style="width:${Math.max(0, Math.min(100, Number(project.progress || 0)))}%"></div></div>
-          <div class="mt-3 flex flex-wrap items-center justify-between gap-2"><p class="text-xs text-slate-500">${escapeHtml(project.status)} · ${escapeHtml(project.priority)} priority · Due ${escapeHtml(project.due_date || '-')}</p>${badge(`${project.progress || 0}%`)}</div>
-          <p class="mt-3 text-sm text-slate-600">${escapeHtml(project.summary || project.notes || 'No project notes added yet.')}</p>
-        </article>
-      `).join('') || empty('No projects yet.')}</div>`;
-    }
-
-    function renderTickets(rows) {
-      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((ticket) => `
-        <article class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-start justify-between gap-3"><div><p class="font-extrabold text-slate-950">${escapeHtml(ticket.subject)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(clientName(ticket.client_id))}</p></div>${badge(ticket.priority, priorityTone(ticket.priority))}</div>
-          <p class="mt-3 line-clamp-3 text-sm text-slate-600">${escapeHtml(ticket.description)}</p>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-2"><div class="flex gap-2">${badge(ticket.status)}${ticket.project_id ? badge(`Project #${ticket.project_id}`) : ''}</div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-ticket="${ticket.id}">Reply</button>${!['resolved', 'closed'].includes(ticket.status) ? `<button class="text-sm font-bold text-emerald-700" data-ticket-status="${ticket.id}" data-status="resolved">Resolve</button>` : `<button class="text-sm font-bold text-primary-700" data-ticket-status="${ticket.id}" data-status="open">Reopen</button>`}</div></div>
-        </article>
-      `).join('') || empty('No tickets yet.')}</div>`;
-    }
-
-    function renderFinance(rows) {
-      const allRows = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by', 'department']);
-      const visibleRows = financeRows();
-      const income = allRows.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const expenses = allRows.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const visibleTotal = visibleRows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const tabs = [
-        ['all', 'All Sheets', allRows.length],
-        ['income', 'Income', allRows.filter((item) => item.transaction_type === 'income').length],
-        ['expense', 'Expenses', allRows.filter((item) => item.transaction_type === 'expense').length],
-        ['revenue', 'Revenue', allRows.filter((item) => item.transaction_type === 'revenue').length],
-        ['salary', 'Salary', allRows.filter((item) => item.transaction_type === 'salary').length],
-      ];
-      const columns = [
-        ['transaction_date', 'Date'],
-        ['transaction_type', 'Sheet'],
-        ['reference_id', 'Ref'],
-        ['title', 'Purpose'],
-        ['client', 'Client'],
-        ['project', 'Project'],
-        ['payment_method', 'Mode'],
-        ['paid_by', 'Paid by'],
-        ['received_by', 'Received by'],
-        ['status', 'Status'],
-        ['amount', 'Amount'],
-      ];
-      return `<div>
-        <div class="mb-5 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-          ${cardMetric('Income + revenue', money(income), 'Recorded receipts')}
-          ${cardMetric('Expenses + salary', money(expenses), 'Recorded outflow')}
-          ${cardMetric('Net profit', money(income - expenses), 'Tracker balance')}
-          ${cardMetric('Visible sheet total', money(visibleTotal), `${visibleRows.length} visible rows`)}
-        </div>
-        <div class="grid gap-5 xl:grid-cols-[1fr_360px]">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h3 class="text-lg font-extrabold text-slate-950">Finance workbook</h3>
-                <p class="mt-1 text-sm text-slate-500">Spreadsheet-style tracker view with live CRM search and sheet tabs.</p>
-              </div>
-              <button id="finance-export" class="btn-secondary justify-center">Export CSV</button>
-            </div>
-            <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
-              ${tabs.map(([key, label, count]) => `<button class="shrink-0 rounded-md border px-3 py-2 text-sm font-bold ${state.financeSheet === key ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-700'}" data-finance-sheet="${key}">${label} <span class="opacity-70">${count}</span></button>`).join('')}
-            </div>
-            <div class="tm-crm-sheet mt-4 rounded-lg border border-slate-200">
-              <table class="tm-crm-table min-w-[1080px] w-full text-sm">
-                <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>${columns.map(([, label]) => `<th class="border-b border-slate-200 bg-slate-50 px-4 py-3">${label}</th>`).join('')}</tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">${visibleRows.map((item) => `<tr class="hover:bg-slate-50">
-                  ${columns.map(([key]) => `<td class="px-4 py-3 ${key === 'amount' ? 'text-right font-bold text-slate-950' : key === 'title' ? 'font-semibold text-slate-900' : 'text-slate-600'}">${key === 'transaction_type' ? badge(item[key]) : key === 'status' ? badge(item[key], statusTone(item[key])) : key === 'amount' ? money(item[key]) : escapeHtml(item[key] || '')}</td>`).join('')}
-                </tr>`).join('') || `<tr><td colspan="${columns.length}" class="px-4 py-8 text-slate-500">No finance transactions match this sheet/search.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </section>
-          <aside class="space-y-5">
-            <section class="rounded-lg border border-slate-200 bg-white p-5">
-              <h3 class="text-lg font-extrabold text-slate-950">By sheet</h3>
-              <div class="mt-4 space-y-3">${barRows(groupSum(allRows, 'transaction_type'), Math.max(income, expenses, 1))}</div>
-            </section>
-            <section class="rounded-lg border border-slate-200 bg-white p-5">
-              <h3 class="text-lg font-extrabold text-slate-950">By project/client</h3>
-              <div class="mt-4 space-y-3">${barRows(groupSum(allRows.map((row) => ({ ...row, bucket: row.project || row.client || row.department || 'General' })), 'bucket'), Math.max(income, expenses, 1))}</div>
-            </section>
-          </aside>
-        </div>
-      </div>`;
-    }
-
-    function renderCampaigns(rows) {
-      return `<div class="grid gap-4 lg:grid-cols-2">${rows.map((campaign) => `
-        <article class="rounded-lg border border-slate-200 p-4">
-          <div class="flex items-start justify-between gap-3"><div><p class="font-extrabold text-slate-950">${escapeHtml(campaign.name)}</p><p class="mt-1 text-sm text-slate-500">${escapeHtml(campaign.subject)}</p></div>${badge(campaign.status)}</div>
-          <p class="mt-3 line-clamp-3 text-sm text-slate-600">${escapeHtml(campaign.body)}</p>
-          <button class="mt-4 text-sm font-bold text-primary-700" data-send="${campaign.id}">Send to opted-in contacts</button>
-        </article>
-      `).join('') || empty('No campaigns yet.')}</div>`;
-    }
-
-    function renderActivity() {
-      setHeader('Activity timeline', 'A shared audit trail of CRM work across leads, invoices, tickets, campaigns, and clients.', 'Activity');
-      return `<div class="space-y-3">${state.data.activities.map((item) => rowLine(item.summary || item.action, `${item.actor_name || 'System'} · ${item.created_at || ''}`, item.entity_type)).join('') || empty('No activity yet.')}</div>`;
-    }
-
-    function renderReports() {
-      setHeader('ERP reports', 'Analytical views for finance, invoices, projects, customers, leads, and support.', 'Reports');
-      const finances = filtered(state.data.finances || [], ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'department']);
-      const invoices = filtered(state.data.invoices || [], ['invoice_number', 'status', 'currency']);
-      const projects = filtered(state.data.projects || [], ['name', 'status', 'health', 'priority', 'project_manager', 'client_name']);
-      const leads = filtered(state.data.leads || [], ['name', 'email', 'status', 'priority', 'service']);
-      const tickets = filtered(state.data.tickets || [], ['subject', 'status', 'priority']);
-      const income = sumBy(finances, (item) => ['income', 'revenue'].includes(item.transaction_type));
-      const expenses = sumBy(finances, (item) => ['expense', 'salary'].includes(item.transaction_type));
-      const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
-      const projectRevenue = projects.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
-      const projectExpenses = projects.reduce((sum, item) => sum + Number(item.expenses || 0), 0);
-      els.view.innerHTML = `
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          ${compactMetric('P&L', money(income - expenses), `${money(income)} in · ${money(expenses)} out`, income - expenses >= 0 ? 'green' : 'red')}
-          ${compactMetric('Invoice book', money(invoiceTotal), `${invoices.length} invoices`, 'blue')}
-          ${compactMetric('Project margin', money(projectRevenue - projectExpenses), `${projects.length} projects`, projectRevenue - projectExpenses >= 0 ? 'green' : 'yellow')}
-          ${compactMetric('Lead funnel', leads.length, `${leads.filter((lead) => ['qualified', 'proposal'].includes(lead.status)).length} qualified/proposal`, 'slate')}
-          ${compactMetric('Support load', tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length, 'open tickets', tickets.some((ticket) => ticket.priority === 'urgent') ? 'red' : 'green')}
-        </div>
-        <div class="mt-5 grid gap-5 xl:grid-cols-2">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Finance distribution</h3>
-            <div class="mt-4 space-y-3">${barRows(groupSum(finances, 'transaction_type'), Math.max(income, expenses, 1))}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Invoice collection status</h3>
-            <div class="mt-4 space-y-3">${barRows(groupSum(invoices, 'status', 'total_amount'), Math.max(invoiceTotal, 1))}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Project profitability</h3>
-            <div class="mt-4 space-y-3">${projects.map((project) => {
-              const profit = Number(project.profit || Number(project.revenue || 0) - Number(project.expenses || 0));
-              const basis = Math.max(Number(project.budget || 0), Number(project.revenue || 0), Number(project.expenses || 0), 1);
-              const percent = Math.max(3, Math.min(100, Math.round((Math.abs(profit) / basis) * 100)));
-              return `<article class="rounded-md border border-slate-100 p-3">
-                <div class="flex items-center justify-between gap-3 text-sm"><span class="font-bold text-slate-900">${escapeHtml(project.name)}</span><span class="font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-red-700'}">${money(profit)}</span></div>
-                <p class="mt-1 text-xs text-slate-500">${escapeHtml(project.client_name || clientName(project.client_id))} · ${escapeHtml(project.status)} · ${escapeHtml(project.progress || 0)}%</p>
-                <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full ${profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}" style="width:${percent}%"></div></div>
-              </article>`;
-            }).join('') || empty('No project report data yet.')}</div>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Operational issues</h3>
-            <div class="mt-4 space-y-3">
-              ${countRows(groupCount(tickets, 'status'), Math.max(tickets.length, 1))}
-              ${countRows(groupCount(leads, 'status'), Math.max(leads.length, 1))}
-            </div>
-          </section>
-        </div>
-      `;
-    }
-
-    function renderInvoices() {
-      setHeader('Invoice center', 'Create branded invoices from clients and projects, preview them, send through MSG91, and print/save as PDF.', 'Invoices');
-      els.view.innerHTML = `
-        <div class="grid gap-5 xl:grid-cols-[minmax(520px,0.95fr)_1fr]">
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 class="text-lg font-extrabold text-slate-950">Invoice builder</h3>
-            <p class="mt-1 text-sm text-slate-500">Select a client to pre-fill printable customer details, then adjust anything needed for this invoice.</p>
-            <form id="invoice-form" class="mt-5 space-y-5">
-              <fieldset class="rounded-lg border border-slate-200 p-4">
-                <legend class="px-1 text-sm font-extrabold text-slate-950">Customer</legend>
-                <div class="grid gap-4 sm:grid-cols-2">
-                  ${inputFor(['client_id', 'Client', 'client', true])}
-                  ${inputFor(['project_id', 'Project', 'project'])}
-                  <label class="block"><span class="form-label">Customer name</span><input name="customer_name" required class="form-input form-control" autocomplete="name" /></label>
-                  <label class="block"><span class="form-label">Customer company</span><input name="customer_company" class="form-input form-control" autocomplete="organization" /></label>
-                  <label class="block"><span class="form-label">Customer email</span><input name="customer_email" type="email" class="form-input form-control" autocomplete="email" /></label>
-                  <label class="block"><span class="form-label">Customer phone</span><input name="customer_phone" class="form-input form-control" autocomplete="tel" /></label>
-                  <label class="block sm:col-span-2"><span class="form-label">Billing address</span><textarea name="billing_address" class="form-input form-control min-h-[70px]"></textarea></label>
-                </div>
-              </fieldset>
-              <fieldset class="rounded-lg border border-slate-200 p-4">
-                <legend class="px-1 text-sm font-extrabold text-slate-950">Invoice details</legend>
-                <div class="grid gap-4 sm:grid-cols-2">
-                  <label class="block"><span class="form-label">Invoice number</span><input name="invoice_number" id="invoice-number" type="text" required class="form-input form-control" /></label>
-                  <label class="block"><span class="form-label">Reference number</span><input name="reference_number" class="form-input form-control" placeholder="PO, quote, or work ref" /></label>
-                  <label class="block"><span class="form-label">Service title</span><input name="service_title" class="form-input form-control" placeholder="Website development, training, consulting..." /></label>
-                  <label class="block"><span class="form-label">Currency</span><input name="currency" value="INR" required class="form-input form-control" /></label>
-                  <label class="block"><span class="form-label">Invoice date</span><input name="invoice_date" type="date" class="form-input form-control" /></label>
-                  <label class="block"><span class="form-label">Print date</span><input name="print_date" type="date" class="form-input form-control" /></label>
-                  <label class="block"><span class="form-label">Due date</span><input name="due_date" type="date" class="form-input form-control" /></label>
-                </div>
-              </fieldset>
-              <fieldset class="rounded-lg border border-slate-200 p-4">
-                <legend class="px-1 text-sm font-extrabold text-slate-950">Line items</legend>
-                <div class="flex items-center justify-end"><button id="add-line" type="button" class="text-sm font-bold text-primary-700">Add line</button></div>
-                <div id="line-items" class="mt-2 space-y-2"></div>
-              </fieldset>
-              <fieldset class="rounded-lg border border-slate-200 p-4">
-                <legend class="px-1 text-sm font-extrabold text-slate-950">Totals and notes</legend>
-                <div class="grid gap-4 sm:grid-cols-2">
-                  <label class="block"><span class="form-label">Discount</span><input name="discount_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
-                  <label class="block"><span class="form-label">Tax amount</span><input name="tax_amount" type="number" step="0.01" value="0" class="form-input form-control" /></label>
-                </div>
-                <label class="mt-4 block"><span class="form-label">Terms</span><textarea name="terms" class="form-input form-control min-h-[70px]">Payment is due by the listed due date unless otherwise agreed in writing.</textarea></label>
-                <label class="mt-4 block"><span class="form-label">Payment instructions</span><textarea name="payment_instructions" class="form-input form-control min-h-[70px]">Please use the payment instructions shared by TechMigos for this project.</textarea></label>
-                <label class="mt-4 block"><span class="form-label">Internal notes</span><textarea name="notes" class="form-input form-control min-h-[70px]"></textarea></label>
-              </fieldset>
-              <div id="invoice-total" class="rounded-md bg-slate-50 p-4 text-sm font-bold text-slate-900">Total: INR 0.00</div>
-              <button class="btn-primary w-full justify-center" type="submit">Create invoice</button>
-            </form>
-          </section>
-          <section class="rounded-lg border border-slate-200 bg-white p-5">
-            <div class="flex items-center justify-between gap-3"><h3 class="text-lg font-extrabold text-slate-950">Recent invoices</h3><button id="refresh-invoice-number" class="text-sm font-bold text-primary-700">Next number</button></div>
-            <div class="mt-4 overflow-x-auto">${renderCompactTable(filtered(state.data.invoices, ['invoice_number', 'customer_name', 'status']), ['invoice_number', 'customer_name', 'total_amount', 'currency', 'status', 'due_date'])}</div>
-            <div class="mt-4 grid gap-3">${state.data.invoices.slice(0, 12).map((invoice) => `<article class="flex flex-col gap-3 rounded-md border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-bold text-slate-950">${escapeHtml(invoice.invoice_number)}</p><p class="text-sm text-slate-500">${escapeHtml(invoice.customer_name || clientName(invoice.client_id))} · ${money(invoice.total_amount || invoice.amount, invoice.currency)}</p></div><div class="flex gap-3"><button class="text-sm font-bold text-primary-700" data-invoice-view="${invoice.id}">Preview</button><button class="text-sm font-bold text-primary-700" data-invoice-send="${invoice.id}">Send</button></div></article>`).join('') || empty('No invoices yet.')}</div>
-          </section>
-        </div>
-      `;
-      setupInvoiceBuilder();
-      bindActions();
-    }
-
-    async function saveResource(key, body) {
-      try {
-        const result = await portal(`/api/portal/${key}`, { method: 'POST', body: JSON.stringify(body) });
-        setStatus('Record saved.', 'success');
-        await loadData();
-        return result;
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Could not save record.', 'error');
-        return null;
-      }
-    }
-
-    async function loadNextInvoiceNumber() {
-      const result = await portal('/api/portal/invoices/next-number');
-      const input = document.getElementById('invoice-number');
-      if (input) input.value = result.invoice_number || '';
-    }
-
-    function setupInvoiceBuilder() {
-      const form = document.getElementById('invoice-form');
-      const lineItems = document.getElementById('line-items');
-      const addLine = () => {
-        const index = lineItems.children.length;
-        lineItems.insertAdjacentHTML('beforeend', `<div class="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-[1fr_82px_110px_110px_36px]"><input name="description_${index}" required placeholder="Description" class="form-input form-control" /><input name="quantity_${index}" aria-label="Quantity" type="number" step="0.01" value="1" min="0" class="form-input form-control" /><input name="rate_${index}" aria-label="Rate" type="number" step="0.01" value="0" min="0" class="form-input form-control" /><input name="amount_${index}" aria-label="Amount" readonly value="0.00" class="form-input form-control bg-slate-50" /><button type="button" class="min-h-[44px] rounded-md border border-slate-200 text-slate-500" aria-label="Remove line" data-remove-line>&times;</button></div>`);
-      };
-      addLine();
-      document.getElementById('add-line')?.addEventListener('click', addLine);
-      document.getElementById('refresh-invoice-number')?.addEventListener('click', loadNextInvoiceNumber);
-      form?.querySelector('[name="client_id"]')?.addEventListener('change', prefillInvoiceCustomer);
-      form?.querySelector('[name="project_id"]')?.addEventListener('change', prefillInvoiceProject);
-      lineItems.addEventListener('click', (event) => {
-        if (event.target.matches('[data-remove-line]')) event.target.closest('div')?.remove();
-        updateInvoiceTotal();
-      });
-      form?.addEventListener('input', updateInvoiceTotal);
-      form?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const body = invoiceBody(form);
-        const result = await saveResource('invoices', body);
-        const newId = result?.detail?.invoice?.id || result?.item?.id;
-        if (newId) await showInvoice(newId);
-      });
-      const today = new Date().toISOString().slice(0, 10);
-      form.querySelector('[name="invoice_date"]').value = today;
-      form.querySelector('[name="print_date"]').value = today;
-      loadNextInvoiceNumber().catch(() => {});
-      updateInvoiceTotal();
-    }
-
-    function setInvoiceField(form, name, value, overwrite = false) {
-      const input = form?.querySelector(`[name="${name}"]`);
-      if (!input) return;
-      if (overwrite || !input.value) input.value = value || '';
-    }
-
-    function prefillInvoiceCustomer() {
-      const form = document.getElementById('invoice-form');
-      const client = clientById(form?.querySelector('[name="client_id"]')?.value);
-      if (!form || !client) return;
-      setInvoiceField(form, 'customer_name', client.name, true);
-      setInvoiceField(form, 'customer_company', client.company, true);
-      setInvoiceField(form, 'customer_email', client.email, true);
-      setInvoiceField(form, 'customer_phone', client.phone, true);
-    }
-
-    function prefillInvoiceProject() {
-      const form = document.getElementById('invoice-form');
-      const project = projectById(form?.querySelector('[name="project_id"]')?.value);
-      if (!form || !project) return;
-      setInvoiceField(form, 'service_title', project.name);
-      if (project.client_id && !form.querySelector('[name="client_id"]')?.value) {
-        form.querySelector('[name="client_id"]').value = project.client_id;
-        prefillInvoiceCustomer();
-      }
-    }
-
-    function invoiceBody(form) {
-      const data = Object.fromEntries(new FormData(form).entries());
-      const items = Array.from(document.querySelectorAll('#line-items > div')).map((row) => ({
-        description: row.querySelector('[name^="description_"]')?.value || '',
-        quantity: Number(row.querySelector('[name^="quantity_"]')?.value || 1),
-        rate: Number(row.querySelector('[name^="rate_"]')?.value || 0),
-      })).filter((item) => item.description);
-      return {
-        client_id: Number(data.client_id),
-        project_id: data.project_id ? Number(data.project_id) : null,
-        invoice_number: data.invoice_number,
-        currency: data.currency || 'INR',
-        invoice_date: data.invoice_date,
-        print_date: data.print_date,
-        due_date: data.due_date,
-        customer_name: data.customer_name,
-        customer_company: data.customer_company,
-        customer_email: data.customer_email,
-        customer_phone: data.customer_phone,
-        billing_address: data.billing_address,
-        service_title: data.service_title,
-        reference_number: data.reference_number,
-        discount_amount: Number(data.discount_amount || 0),
-        tax_amount: Number(data.tax_amount || 0),
-        terms: data.terms,
-        payment_instructions: data.payment_instructions,
-        notes: data.notes,
-        items,
-      };
-    }
-
-    function updateInvoiceTotal() {
-      const form = document.getElementById('invoice-form');
-      if (!form) return;
-      const body = invoiceBody(form);
-      document.querySelectorAll('#line-items > div').forEach((row) => {
-        const quantity = Number(row.querySelector('[name^="quantity_"]')?.value || 0);
-        const rate = Number(row.querySelector('[name^="rate_"]')?.value || 0);
-        const amountInput = row.querySelector('[name^="amount_"]');
-        if (amountInput) amountInput.value = (quantity * rate).toFixed(2);
-      });
-      const subtotal = body.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
-      const total = Math.max(subtotal - body.discount_amount + body.tax_amount, 0);
-      document.getElementById('invoice-total').textContent = `Subtotal: ${money(subtotal, body.currency)} · Total: ${money(total, body.currency)}`;
-    }
-
     async function showInvoice(id) {
       const result = await portal(`/api/portal/invoices/${id}`);
       const detail = result.detail;
       els.invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
-      els.invoicePreview.innerHTML = invoiceHtml(detail);
-      els.modal.classList.remove('hidden');
-    }
-
-    function invoiceHtml(detail) {
-      const invoice = detail.invoice;
-      const customerName = invoice.customer_name || detail.client?.name || '';
-      const customerCompany = invoice.customer_company || detail.client?.company || '';
-      const customerEmail = invoice.customer_email || detail.client?.email || '';
-      const customerPhone = invoice.customer_phone || detail.client?.phone || '';
-      const serviceTitle = invoice.service_title || detail.project?.name || 'TechMigos services';
-      return `<article class="invoice-print-sheet mx-auto max-w-4xl bg-white text-slate-950">
-        <div class="flex items-start justify-between gap-6 border-b-2 border-slate-950 pb-4">
-          <div>
-            <p class="text-2xl font-extrabold text-primary-700">TechMigos</p>
-            <p class="mt-1 text-xs text-slate-600">Web, mobile, AI, backend engineering, and technical consulting</p>
-            <p class="mt-1 text-xs text-slate-600">info@techmigos.com · www.techmigos.com · +91 9959703547</p>
-            <p class="mt-1 text-xs text-slate-600">Hyderabad, Telangana, India</p>
-          </div>
-          <div class="text-right">
-            <h1 class="text-3xl font-extrabold tracking-wide">INVOICE</h1>
-            <p class="mt-1 text-base font-bold">${escapeHtml(invoice.invoice_number)}</p>
-            <p class="mt-1 text-xs uppercase text-slate-500">${escapeHtml(invoice.status || 'draft')}</p>
-          </div>
-        </div>
-        <div class="mt-5 grid grid-cols-2 gap-6">
-          <div>
-            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Bill to</p>
-            <h2 class="mt-1 text-lg font-extrabold">${escapeHtml(customerName)}</h2>
-            <p class="text-sm text-slate-700">${escapeHtml(customerCompany)}</p>
-            <p class="text-sm text-slate-700">${escapeHtml(customerEmail)}</p>
-            <p class="text-sm text-slate-700">${escapeHtml(customerPhone)}</p>
-            ${invoice.billing_address ? `<p class="mt-2 whitespace-pre-line text-sm text-slate-700">${escapeHtml(invoice.billing_address)}</p>` : ''}
-          </div>
-          <div class="grid gap-1.5 text-sm">
-            <p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p>
-            <p><strong>Print date:</strong> ${escapeHtml(invoice.print_date || '')}</p>
-            <p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '-')}</p>
-            <p><strong>Service:</strong> ${escapeHtml(serviceTitle)}</p>
-            <p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p>
-            <p><strong>Reference:</strong> ${escapeHtml(invoice.reference_number || '-')}</p>
-          </div>
-        </div>
-        <div class="mt-5 overflow-hidden rounded-md border border-slate-200">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-950 text-left text-white"><tr><th class="px-3 py-2">Description</th><th class="px-3 py-2">Qty</th><th class="px-3 py-2">Rate</th><th class="px-3 py-2 text-right">Amount</th></tr></thead>
-            <tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-3 py-2">${escapeHtml(item.description)}</td><td class="px-3 py-2">${escapeHtml(item.quantity)}</td><td class="px-3 py-2">${money(item.rate, invoice.currency)}</td><td class="px-3 py-2 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody>
-          </table>
-        </div>
-        <div class="avoid-print-break mt-5 flex justify-end"><div class="w-full max-w-xs space-y-1.5 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-2 text-lg"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
-        <div class="avoid-print-break mt-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-4"><div><p class="font-bold">Terms</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
-      </article>`;
-    }
-
-    function bindActions() {
-      document.querySelectorAll('[data-convert]').forEach((button) => button.addEventListener('click', async () => {
-        const projectName = prompt('Project name for this converted client?') || '';
-        try {
-          await portal(`/api/portal/leads/${button.dataset.convert}/convert`, { method: 'POST', body: JSON.stringify({ projectName }) });
-          setStatus('Lead converted to client.', 'success');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not convert lead.', 'error');
-        }
-      }));
-      document.querySelectorAll('[data-client]').forEach((button) => button.addEventListener('click', () => {
-        state.selectedClientId = button.dataset.client;
-        render();
-        scrollWorkspaceTop();
-      }));
-      document.querySelectorAll('[data-client-invite]').forEach((button) => button.addEventListener('click', async () => {
-        const password = prompt('Temporary password for this client login?');
-        if (!password) return;
-        try {
-          await portal(`/api/portal/clients/${button.dataset.clientInvite}/invite`, {
-            method: 'POST',
-            body: JSON.stringify({ password }),
-          });
-          setStatus('Client portal login created or linked.', 'success');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not create client login.', 'error');
-        }
-      }));
-      document.querySelectorAll('[data-ticket]').forEach((button) => button.addEventListener('click', async () => {
-        const body = prompt('Reply to this ticket') || '';
-        if (!body) return;
-        try {
-          await portal(`/api/portal/tickets/${button.dataset.ticket}/messages`, { method: 'POST', body: JSON.stringify({ body }) });
-          setStatus('Ticket reply saved.', 'success');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not reply.', 'error');
-        }
-      }));
-      document.querySelectorAll('[data-ticket-status]').forEach((button) => button.addEventListener('click', async () => {
-        try {
-          await portal(`/api/portal/tickets/${button.dataset.ticketStatus}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: button.dataset.status }),
-          });
-          setStatus(`Ticket marked ${button.dataset.status}.`, 'success');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not update ticket.', 'error');
-        }
-      }));
-      document.querySelectorAll('[data-finance-sheet]').forEach((button) => button.addEventListener('click', () => {
-        state.financeSheet = button.dataset.financeSheet;
-        render();
-        scrollWorkspaceTop();
-      }));
-      document.getElementById('finance-export')?.addEventListener('click', () => {
-        exportRows(`techmigos-${state.financeSheet}-finance.csv`, financeRows(), [
-          ['transaction_date', 'Date'],
-          ['transaction_type', 'Sheet'],
-          ['reference_id', 'Reference'],
-          ['title', 'Purpose'],
-          ['client', 'Client'],
-          ['project', 'Project'],
-          ['payment_method', 'Payment Method'],
-          ['paid_by', 'Paid By'],
-          ['received_by', 'Received By'],
-          ['status', 'Status'],
-          ['amount', 'Amount'],
-        ]);
-      });
-      document.querySelectorAll('[data-send]').forEach((button) => button.addEventListener('click', async () => {
-        try {
-          const result = await portal(`/api/portal/campaigns/${button.dataset.send}/send`, { method: 'POST', body: '{}' });
-          setStatus(result.message || `Campaign send finished. Sent ${result.sent || 0}.`, result.sent ? 'success' : 'neutral');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not send campaign.', 'error');
-        }
-      }));
-      document.querySelectorAll('[data-invoice-view]').forEach((button) => button.addEventListener('click', () => showInvoice(button.dataset.invoiceView)));
-      document.querySelectorAll('[data-invoice-send]').forEach((button) => button.addEventListener('click', async () => {
-        try {
-          const result = await portal(`/api/portal/invoices/${button.dataset.invoiceSend}/send`, { method: 'POST', body: '{}' });
-          setStatus(result.message || 'Invoice sent.', result.sent ? 'success' : 'neutral');
-          await loadData();
-        } catch (error) {
-          setStatus(error instanceof Error ? error.message : 'Could not send invoice.', 'error');
-        }
-      }));
+      els.invoicePreview.innerHTML = `<pre class="whitespace-pre-wrap text-sm">${escapeHtml(JSON.stringify(detail, null, 2))}</pre>`;
+      els.invoiceModal.classList.add('open');
     }
 
     async function loadData() {
       setStatus('Loading CRM data...');
       const names = Object.keys(state.data).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
-      const [dashboard, results] = await Promise.all([
-        portal('/api/portal/dashboard'),
-        Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []])),
-      ]);
-      state.dashboard = dashboard;
+      const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
       results.forEach(([name, items]) => { state.data[name] = items; });
-      setStatus('CRM data loaded.', 'success');
+      setStatus('CRM data synced with InsForge.', 'success');
       render();
-    }
-
-    function render() {
-      renderShell();
-      if (state.active === 'dashboard') return renderDashboard();
-      if (state.active === 'invoices') return renderInvoices();
-      if (state.active === 'reports') return renderReports();
-      if (state.active === 'activities') {
-        els.view.innerHTML = renderActivity();
-        return;
-      }
-      return renderResource(state.active);
     }
 
     async function boot() {
       if (!token()) return logout();
       try {
+        if (localStorage.getItem('tm_crm_sidebar_collapsed') === '1') {
+          document.querySelector('.crm-app')?.classList.add('sidebar-collapsed');
+          document.getElementById('crm-collapse').textContent = '⇥';
+        }
         const me = await portal('/api/portal/me');
         state.profile = me.profile;
         if (me.destination !== '/company') location.href = me.destination;
-        els.user.textContent = `${me.profile.name} · ${me.profile.role.replace(/_/g, ' ')}`;
+        document.getElementById('crm-user-name').textContent = me.profile.name || 'TechMigos';
+        document.getElementById('crm-user-role').textContent = String(me.profile.role || 'company').replace(/_/g, ' ');
         await loadData();
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Could not load portal.', 'error');
+        setStatus(error instanceof Error ? error.message : 'Could not load CRM.', 'error');
         setTimeout(logout, 1200);
       }
     }
 
-    els.search?.addEventListener('input', () => {
+    els.search.addEventListener('input', () => {
       state.search = els.search.value;
       render();
     });
-    document.getElementById('logout-button')?.addEventListener('click', logout);
-    document.getElementById('refresh-button')?.addEventListener('click', loadData);
-    document.getElementById('close-invoice')?.addEventListener('click', () => els.modal.classList.add('hidden'));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === '/' && document.activeElement !== els.search) {
+        event.preventDefault();
+        els.search.focus();
+      }
+    });
+    document.getElementById('crm-modal-close')?.addEventListener('click', () => els.modal.classList.remove('open'));
+    document.getElementById('close-invoice')?.addEventListener('click', () => els.invoiceModal.classList.remove('open'));
     document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
 
     boot();
