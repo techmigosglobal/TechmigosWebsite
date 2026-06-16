@@ -67,10 +67,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     .crm-logo {
       width: 38px;
       height: 38px;
-      border-radius: 11px;
-      background:
-        linear-gradient(135deg, #1f7aff, #00c2a8 58%, #8b5cf6);
-      box-shadow: inset 0 0 0 7px rgba(255, 255, 255, 0.32), 0 12px 28px rgba(31, 122, 255, 0.22);
+      border-radius: 8px;
+      object-fit: contain;
+      flex-shrink: 0;
     }
 
     .crm-nav {
@@ -132,9 +131,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       display: none;
     }
 
-    .sidebar-collapsed .crm-brand,
-    .sidebar-collapsed .crm-nav button {
+    .sidebar-collapsed .crm-brand {
       justify-content: center;
+      padding-bottom: 12px;
+    }
+
+    .sidebar-collapsed .crm-logo {
+      width: 28px;
+      height: 28px;
     }
 
     .sidebar-collapsed .crm-nav button {
@@ -1183,11 +1187,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         left: 10px;
       }
     }
+
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    @media print {
+      body * { visibility: hidden !important; }
+
+      #invoice-modal,
+      #invoice-modal * { visibility: visible !important; }
+
+      #invoice-modal {
+        position: fixed !important;
+        inset: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        z-index: 9999 !important;
+        overflow: visible !important;
+      }
+
+      .invoice-print-sheet {
+        width: 190mm !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        font-size: 9.5px !important;
+        line-height: 1.4 !important;
+        font-family: Arial, sans-serif !important;
+        color: #000 !important;
+      }
+
+      .invoice-print-sheet * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .invoice-print-sheet table { border-collapse: collapse !important; }
+
+      .inv-no-break { break-inside: avoid !important; page-break-inside: avoid !important; }
+
+      .print\:hidden, [type="button"], .crm-icon-button, .crm-button, #invoice-modal > div > div:first-child { display: none !important; }
+
+      .inv-logo { display: block !important; }
+    }
   </style>
 
   <div class="crm-app">
     <aside class="crm-sidebar">
-      <div class="crm-brand"><div class="crm-logo"></div><span>TechMigos CRM</span></div>
+      <div class="crm-brand"><img src="/icon.png" class="crm-logo" alt="TechMigos" /><span>TechMigos CRM</span></div>
       <nav class="crm-nav" aria-label="Company CRM navigation" id="crm-nav"></nav>
       <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
     </aside>
@@ -1248,7 +1296,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <button id="close-invoice" class="crm-icon-button" type="button" aria-label="Close">×</button>
         </div>
       </div>
-      <div id="invoice-preview" class="p-5"></div>
+        <div id="invoice-preview" class="p-5"></div>
+        <div class="pt-4 flex justify-end gap-2 border-t border-slate-200">
+          <button id="download-pdf-invoice" class="crm-button" type="button">Download PDF</button>
+        </div>
     </div>
   </div>
   <div id="crm-toast" class="crm-toast"></div>
@@ -1543,17 +1594,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       state.selectedTicketId = selected?.id || null;
       const open = state.data.tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
       const high = state.data.tickets.filter((item) => ['high', 'urgent'].includes(item.priority));
-      const rows = filtered(state.data.tickets, ['subject', 'status', 'priority', 'assigned_to']).map((ticket) => `
-        <tr data-resource="tickets" data-row-id="${ticket.id}">
+      const rows = filtered(state.data.tickets, ['subject', 'status', 'priority', 'assigned_to']).map((ticket) => {
+        const employeeOpts = employeeSeed().map((e) => `<option value="${escapeHtml(e.name)}" ${ticket.assigned_to === e.name ? 'selected' : ''}>${escapeHtml(e.name)}</option>`).join('');
+        return `<tr data-resource="tickets" data-row-id="${ticket.id}">
           <td><input type="checkbox" data-row-select aria-label="Select ticket ${ticket.id}" /></td>
-          <td>#TIC-${ticket.id}</td><td><input class="crm-edit-input" data-field="subject" value="${escapeHtml(ticket.subject)}" /></td><td>${escapeHtml(clientName(ticket.client_id))}</td>
-          <td>${escapeHtml(projectName(ticket.project_id))}</td>
-          <td><select class="crm-edit-select" data-field="priority">${['low', 'medium', 'high', 'urgent'].map((item) => `<option value="${item}" ${ticket.priority === item ? 'selected' : ''}>${nice(item)}</option>`).join('')}</select></td>
-          <td><input class="crm-edit-input" data-field="assigned_to" value="${escapeHtml(ticket.assigned_to || '')}" /></td>
+          <td>#TIC-${ticket.id}</td>
+          <td><input class="crm-edit-input" data-field="subject" value="${escapeHtml(ticket.subject)}" /></td>
+          <td>${escapeHtml(clientName(ticket.client_id))}</td>
+          <td class="crm-desc-cell" title="${escapeHtml(ticket.description || '')}">${escapeHtml((ticket.description || '').slice(0, 60))}${(ticket.description || '').length > 60 ? '…' : ''}</td>
+          <td><select class="crm-edit-select" data-field="priority">${['low','medium','high','urgent'].map((p) => `<option value="${p}" ${ticket.priority === p ? 'selected' : ''}>${nice(p)}</option>`).join('')}</select></td>
+          <td><select class="crm-edit-select" data-field="assigned_to"><option value="">Unassigned</option>${employeeOpts}</select></td>
           <td>${ticket.priority === 'urgent' ? badge('breached', 'red') : ticket.priority === 'high' ? badge('at_risk', 'orange') : badge('on_track', 'green')}</td>
-          <td><select class="crm-edit-select" data-field="status">${['open', 'in_progress', 'waiting', 'resolved', 'closed'].map((item) => `<option value="${item}" ${ticket.status === item ? 'selected' : ''}>${nice(item)}</option>`).join('')}</select></td>
+          <td><select class="crm-edit-select" data-field="status">${['open','in_progress','waiting','resolved','closed'].map((s) => `<option value="${s}" ${ticket.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
           <td>${rowActions('tickets', ticket.id, { view: true, viewAttr: `data-ticket-detail="${ticket.id}"` })}</td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
       els.view.innerHTML = `
         ${pageHead('Support Ticketing', 'Track, assign, prioritize, and resolve client support requests.', '<button class="crm-button primary" data-create="tickets" type="button">+ Create Ticket</button><button class="crm-button" data-export="tickets" type="button">Export</button>')}
         <div class="crm-grid crm-kpis">
@@ -1565,7 +1620,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="crm-two-col mt-5">
           <section class="crm-card">
             <div class="crm-card-head"><h2 class="crm-card-title">Tickets Queue</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><select class="crm-select"><option>All Priorities</option></select><button class="crm-button">Clear Filters</button></div></div>
-            ${table(['', 'Ticket ID', 'Subject', 'Client', 'Linked Project', 'Priority', 'Assigned Agent', 'SLA Status', 'Current Status', 'Actions'], rows)}
+            ${table(['', 'Ticket ID', 'Subject', 'Client', 'Description', 'Priority', 'Assigned Agent', 'SLA Status', 'Status', 'Actions'], rows)}
           </section>
           <aside class="crm-card crm-detail">${ticketDetail(selected)}</aside>
         </div>
@@ -1614,21 +1669,131 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
     }
 
+    function proofCell(item) {
+      const id = item.id;
+      if (item.proof_url) {
+        return `<div style="display:flex;align-items:center;gap:4px;">
+          <a href="${escapeHtml(item.proof_url)}" target="_blank" rel="noopener" class="crm-mini-action" title="View proof" style="text-decoration:none;">📎 View</a>
+          <label class="crm-mini-action" style="cursor:pointer;" title="Replace proof">↑<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+        </div>`;
+      }
+      return `<label class="crm-mini-action" style="cursor:pointer;" title="Upload proof">+ Proof<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>`;
+    }
+
     function financeRows() {
       const resource = state.financeSheet === 'invoices' ? 'invoices' : 'finances';
-      return filtered(financeSheetRows(), ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by']).map((item) => `
-        <tr data-resource="${resource}" data-row-id="${item.id}">
-          <td><input type="checkbox" data-row-select aria-label="Select finance record ${item.id}" /></td>
-          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'invoice_date' : 'transaction_date'}" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
-          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'invoice_number' : 'reference_id'}" value="${escapeHtml(item.reference_id || '')}" /></td>
-          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'customer_name' : 'client'}" value="${escapeHtml(item.client || '')}" /></td>
-          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'service_title' : 'project'}" value="${escapeHtml(item.project || '')}" /></td>
-          <td>${state.financeSheet === 'invoices' ? badge('invoice', 'blue') : `<select class="crm-edit-select" data-field="transaction_type">${['income', 'expense', 'revenue', 'salary'].map((type) => `<option value="${type}" ${item.transaction_type === type ? 'selected' : ''}>${nice(type)}</option>`).join('')}</select>`}</td>
-          <td><input class="crm-edit-input" data-field="${state.financeSheet === 'invoices' ? 'amount' : 'amount'}" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
-          <td><select class="crm-edit-select" data-field="status">${['pending', 'paid', 'received', 'sent', 'overdue', 'active', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${item.status === status ? 'selected' : ''}>${nice(status)}</option>`).join('')}</select></td>
+      const rows = filtered(financeSheetRows(), ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by']);
+
+      if (state.financeSheet === 'invoices') {
+        return rows.map((item) => {
+          const total = Number(item.total_amount || item.amount || 0);
+          const received = Number(item.received_amount || (item.status === 'paid' ? total : 0));
+          return `<tr data-resource="invoices" data-row-id="${item.id}">
+            <td><input type="checkbox" data-row-select aria-label="Select invoice ${item.id}" /></td>
+            <td><input class="crm-edit-input" data-field="invoice_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="invoice_number" value="${escapeHtml(item.reference_id || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="customer_name" value="${escapeHtml(item.client || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="service_title" value="${escapeHtml(item.project || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="due_date" type="date" value="${escapeHtml(item.due_date || '')}" /></td>
+            <td><strong>${compactMoney(total)}</strong></td>
+            <td>${compactMoney(received)}</td>
+            <td>${compactMoney(Math.max(total - received, 0))}</td>
+            <td><select class="crm-edit-select" data-field="status">${['draft','sent','paid','overdue','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td>${rowActions('invoices', item.id)}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      if (state.financeSheet === 'income') {
+        return rows.map((item) => `
+          <tr data-resource="finances" data-row-id="${item.id}">
+            <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
+            <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="client" value="${escapeHtml(item.client || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="project" value="${escapeHtml(item.project || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="received_by" value="${escapeHtml(item.received_by || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td><select class="crm-edit-select" data-field="status">${['pending','received','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
+            <td>${proofCell(item)}</td>
+            <td>${rowActions('finances', item.id)}</td>
+          </tr>`).join('');
+      }
+
+      if (state.financeSheet === 'expenses') {
+        return rows.map((item) => `
+          <tr data-resource="finances" data-row-id="${item.id}">
+            <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
+            <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="reference_id" value="${escapeHtml(item.reference_id || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="paid_by" value="${escapeHtml(item.paid_by || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td><select class="crm-edit-select" data-field="status">${['pending','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
+            <td>${proofCell(item)}</td>
+            <td>${rowActions('finances', item.id)}</td>
+          </tr>`).join('');
+      }
+
+      if (state.financeSheet === 'salary') {
+        return rows.map((item) => `
+          <tr data-resource="finances" data-row-id="${item.id}">
+            <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
+            <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="title" placeholder="Employee name" value="${escapeHtml(item.title || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="department" value="${escapeHtml(item.department || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="paid_by" placeholder="Role" value="${escapeHtml(item.paid_by || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="received_by" placeholder="Bank name" value="${escapeHtml(item.received_by || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="payment_method" placeholder="Account no." value="${escapeHtml(item.payment_method || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td><select class="crm-edit-select" data-field="status">${['pending','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td>${rowActions('finances', item.id)}</td>
+          </tr>`).join('');
+      }
+
+      if (state.financeSheet === 'pending' || state.financeSheet === 'paid') {
+        return rows.map((item) => `
+          <tr data-resource="finances" data-row-id="${item.id}">
+            <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
+            <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+            <td>${badge(item.transaction_type, 'blue')}</td>
+            <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || item.reference_id || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="client" value="${escapeHtml(item.client || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
+            <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td>${rowActions('finances', item.id)}</td>
+          </tr>`).join('');
+      }
+
+      // 'all' sheet
+      return rows.map((item) => `
+        <tr data-resource="finances" data-row-id="${item.id}">
+          <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
+          <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
+          <td>${badge(item.transaction_type, 'blue')}</td>
+          <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || '')}" /></td>
+          <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+          <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','sent','overdue','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
           <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
-          <td>${rowActions(resource, item.id)}</td>
+          <td>${rowActions('finances', item.id)}</td>
         </tr>`).join('');
+    }
+
+    function financeSheetHeaders() {
+      const h = {
+        all:      ['', 'Date', 'Type', 'Title', 'Amount', 'Status', 'Notes', 'Actions'],
+        income:   ['', 'Date', 'Client', 'Project / Service', 'Received By', 'Payment Method', 'Amount', 'Status', 'Notes', 'Proof', 'Actions'],
+        expenses: ['', 'Date', 'Expense ID', 'Purpose', 'Paid By', 'Payment Method', 'Amount', 'Status', 'Notes', 'Proof', 'Actions'],
+        salary:   ['', 'Date', 'Employee', 'Department', 'Role', 'Bank Name', 'Account No.', 'Amount', 'Status', 'Actions'],
+        pending:  ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Actions'],
+        paid:     ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Actions'],
+        invoices: ['', 'Date', 'Invoice No.', 'Client', 'Service', 'Due Date', 'Total', 'Paid', 'Balance', 'Status', 'Actions'],
+      };
+      return h[state.financeSheet] || h.all;
     }
 
     function financeSheetTabs() {
@@ -1664,7 +1829,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const income = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const expenses = state.data.finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       els.view.innerHTML = `
-        ${pageHead('Financial Management', 'Manage invoices, expenses, payments, and cash flow in one place.', '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-export="finance" type="button">Export</button>')}
+        ${pageHead('Financial Management', 'Manage invoices, expenses, payments, and cash flow in one place.', '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-create="salary" type="button">+ Add Salary</button><button class="crm-button" data-export="finance" type="button">Export</button>')}
         <div class="crm-grid crm-kpis">
           ${metric('Total Revenue', compactMoney(income), '₹', 'green')}
           ${metric('Total Expenses', compactMoney(expenses), '▵', 'red', 'down 7% vs last month')}
@@ -1672,7 +1837,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           ${metric('Profit This Month', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
           ${metric('Cash Balance', compactMoney(income - expenses), '▤', 'blue')}
         </div>
-        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Financial Records</h2><div class="crm-toolbar"><button class="crm-button" data-export="finance">Export Sheet</button><input class="crm-input" placeholder="Search records..." /></div></div>${financeSheetTabs()}${table(['', 'Date', 'Reference', 'Client', 'Project / Service', 'Sheet Type', 'Amount', 'Payment Status', 'Notes', 'Actions'], financeRows())}</section>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Financial Records</h2><div class="crm-toolbar"><button class="crm-button" data-export="finance">Export Sheet</button><input class="crm-input" placeholder="Search records..." /></div></div>${financeSheetTabs()}${table(financeSheetHeaders(), financeRows())}</section>
         <div class="crm-three-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong>${compactMoney(item.amount)}</strong></div>`).join('')}</div></section>
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div class="crm-chart"></div></section>
@@ -1746,14 +1911,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
       const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
       return `<div class="crm-detail-hero"><div class="crm-detail-icon">${escapeHtml((client.company || client.name || 'C').slice(0, 1))}</div><div><h2 class="text-xl font-black text-slate-950">${escapeHtml(client.company || client.name)}</h2><p class="font-semibold text-slate-500">${badge(client.status || 'active')}</p></div></div>
-        <div class="crm-list">
+        <div class="crm-list" data-client-id="${client.id}">
           <div class="crm-list-row"><span>Primary contact</span><strong>${escapeHtml(client.name || '-')}</strong></div>
-          <div class="crm-list-row"><span>Email</span><strong>${escapeHtml(client.email || '-')}</strong></div>
-          <div class="crm-list-row"><span>Phone</span><strong>${escapeHtml(client.phone || '-')}</strong></div>
-          <div class="crm-toolbar"><button class="crm-button">Email</button><button class="crm-button">Call</button><button class="crm-button" data-create="invoices">New Invoice</button></div>
+          <div class="crm-list-row"><span>Email</span><input class="crm-edit-input" data-resource="clients" data-row-id="${client.id}" data-field="email" value="${escapeHtml(client.email || '')}" placeholder="Email" /></div>
+          <div class="crm-list-row"><span>Phone</span><input class="crm-edit-input" data-resource="clients" data-row-id="${client.id}" data-field="phone" value="${escapeHtml(client.phone || '')}" placeholder="Phone" /></div>
+          <div class="crm-toolbar"><button class="crm-button" data-create="invoices">New Invoice</button></div>
           <div class="crm-list-row"><span>Active projects</span><strong>${projects.length}</strong></div>
           ${projects.slice(0, 4).map((project) => `<div class="crm-list-row"><span>${escapeHtml(project.name)}</span><strong>${compactMoney(project.budget)}</strong></div>`).join('')}
-          <div class="crm-list-row"><span>Recent invoices</span><strong>${invoices.length}</strong></div>
+          <div class="crm-list-row"><span>Invoices</span><strong>${invoices.length}</strong></div>
+          ${invoices.slice(0, 5).map((inv) => {
+            const total = Number(inv.total_amount || inv.amount || 0);
+            const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
+            return `<div class="crm-list-row" style="cursor:pointer;" data-invoice-view="${inv.id}">
+              <span>${escapeHtml(inv.invoice_number || '-')} ${badge(inv.status)}</span>
+              <strong>${compactMoney(total)}</strong>
+            </div>`;
+          }).join('')}
         </div>`;
     }
 
@@ -1811,14 +1984,103 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">${title} Queue</h2><div class="crm-toolbar"><input class="crm-input" placeholder="Search ${title.toLowerCase()}..." /></div></div>${table(['', ...columns.map(([, label]) => label), 'Actions'], rows)}</section>`;
     }
 
-    function renderSettings() {
-      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, branding, notifications, security, integrations, and billing preferences.', '<button class="crm-button primary" type="button" data-save-settings>Save Changes</button>')}
-        <div class="crm-two-col"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Company Profile</h2><button class="crm-button primary" data-save-settings type="button">Save Changes</button></div><form class="crm-form-grid"><label>Company Name<input value="TechMigos" /></label><label>Industry<input value="Software & IT Services" /></label><label>Company Email<input value="info@techmigos.com" /></label><label>Phone Number<input value="+91 9959703547" /></label><label>Timezone<input value="Asia/Kolkata" /></label><label>Date Format<input value="14 Jun 2026" /></label></form></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Settings</h2></div><div class="crm-list"><div class="crm-list-row"><span>Two-Factor Authentication</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Password Policy</span><strong>Strong</strong></div><div class="crm-list-row"><span>Session Timeout</span><strong>30 minutes</strong></div><div class="crm-list-row"><span>IP Restriction</span><strong>Configurable</strong></div></div></section></div>
-        <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Operational Defaults</h2></div><form class="crm-form-grid"><label>Default Project Status<input value="In Progress" /></label><label>Default Priority<input value="Medium" /></label><label>Default SLA<input value="48 Hours - Standard" /></label><label>Invoice Prefix<input value="TM/INV" /></label><label>Currency<input value="INR" /></label><label>Payment Terms<input value="Net 30" /></label></form></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Connected Integrations</h2></div><div class="crm-list"><div class="crm-list-row"><span>InsForge</span>${badge('connected', 'green')}</div><div class="crm-list-row"><span>MSG91</span>${badge('ready', 'blue')}</div><div class="crm-list-row"><span>Exports</span><strong>Excel, CSV, PDF</strong></div></div></section></div>
-        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Notification Rules</h2></div>${table(['Notification Type', 'Email', 'In-App', 'Frequency', 'Recipients'], '<tr><td>New Support Ticket</td><td>Enabled</td><td>Enabled</td><td>Instant</td><td>Support Team</td></tr><tr><td>Ticket Assigned</td><td>Enabled</td><td>Enabled</td><td>Instant</td><td>Assignee Only</td></tr><tr><td>Invoice Created</td><td>Enabled</td><td>Optional</td><td>Daily Digest</td><td>Finance Team, Client</td></tr>')}</section>`;
+    async function renderSettings() {
+      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, invoice defaults, and integrations.', '<button class="crm-button primary" type="button" id="settings-save-btn">Save Changes</button>')}
+        <p class="text-sm text-slate-500 mb-4" id="settings-status">Loading settings...</p>
+        <div class="crm-two-col">
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Company Profile</h2></div>
+            <form class="crm-form-grid" id="form-company">
+              <label>Company Name<input name="company_name" value="TechMigos" /></label>
+              <label>Company Email<input name="company_email" type="email" value="info@techmigos.com" /></label>
+              <label>Phone Number<input name="company_phone" value="+91 9959703547" /></label>
+              <label>Timezone<input name="timezone" value="Asia/Kolkata" /></label>
+              <label>Currency<input name="currency" value="INR" /></label>
+              <label class="wide">Address<input name="company_address" value="Hyderabad, Telangana, India" /></label>
+            </form>
+          </section>
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Invoice Settings</h2></div>
+            <form class="crm-form-grid" id="form-invoice">
+              <label>Invoice Prefix<input name="prefix" value="TMG" placeholder="e.g. TMG" /></label>
+              <label>Starting Number<input name="starting_number" type="number" value="1" min="1" /></label>
+              <label>Tax Label<input name="tax_label" value="Tax" /></label>
+              <label>Default Tax Rate (%)<input name="tax_rate" type="number" value="0" min="0" step="0.01" /></label>
+              <label class="wide">Default Terms<textarea name="default_terms" rows="3"></textarea></label>
+              <label class="wide">Default Payment Instructions<textarea name="default_payment_instructions" rows="2"></textarea></label>
+            </form>
+          </section>
+        </div>
+        <div class="crm-two-col mt-5">
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Connected Integrations</h2></div>
+            <div class="crm-list">
+              <div class="crm-list-row"><span>InsForge</span>${badge('connected', 'green')}</div>
+              <div class="crm-list-row"><span>MSG91</span>${badge('ready', 'blue')}</div>
+              <div class="crm-list-row"><span>Exports</span><strong>Excel, CSV, PDF</strong></div>
+            </div>
+          </section>
+          <section class="crm-card">
+            <div class="crm-card-head"><h2 class="crm-card-title">Security</h2></div>
+            <div class="crm-list">
+              <div class="crm-list-row"><span>Session Timeout</span><strong>30 minutes</strong></div>
+              <div class="crm-list-row"><span>Access Control</span><strong>Role-based</strong></div>
+            </div>
+          </section>
+        </div>`;
+
+      // Load real data into forms
+      try {
+        const [companyRes, invoiceRes] = await Promise.all([
+          portal('/api/portal/settings/company'),
+          portal('/api/portal/settings/invoice'),
+        ]);
+        const cs = companyRes.settings || {};
+        const inv = invoiceRes.settings || {};
+        const cf = document.getElementById('form-company');
+        const inf = document.getElementById('form-invoice');
+        if (cf) {
+          ['company_name','company_email','company_phone','timezone','currency','company_address'].forEach((k) => {
+            const el = cf.querySelector(`[name="${k}"]`);
+            if (el && cs[k]) el.value = cs[k];
+          });
+        }
+        if (inf) {
+          ['prefix','starting_number','tax_label','tax_rate','default_terms','default_payment_instructions'].forEach((k) => {
+            const el = inf.querySelector(`[name="${k}"]`);
+            if (el && inv[k] !== undefined) el.value = inv[k];
+          });
+        }
+        document.getElementById('settings-status').textContent = '';
+      } catch (e) {
+        document.getElementById('settings-status').textContent = 'Could not load settings.';
+      }
+
+      document.getElementById('settings-save-btn')?.addEventListener('click', saveSettings);
     }
 
-    function render() {
+    async function saveSettings() {
+      const cf = document.getElementById('form-company');
+      const inf = document.getElementById('form-invoice');
+      const statusEl = document.getElementById('settings-status');
+      if (statusEl) statusEl.textContent = 'Saving...';
+      try {
+        const tasks = [];
+        if (cf) tasks.push(portal('/api/portal/settings/company', { method: 'PATCH', body: JSON.stringify(Object.fromEntries(new FormData(cf).entries())) }));
+        if (inf) {
+          const invData = Object.fromEntries(new FormData(inf).entries());
+          invData.starting_number = Number(invData.starting_number);
+          invData.tax_rate = Number(invData.tax_rate);
+          tasks.push(portal('/api/portal/settings/invoice', { method: 'PATCH', body: JSON.stringify(invData) }));
+        }
+        await Promise.all(tasks);
+        if (statusEl) { statusEl.textContent = 'Settings saved.'; statusEl.style.color = 'var(--crm-green)'; }
+        toast('Settings saved');
+      } catch (error) {
+        if (statusEl) { statusEl.textContent = error instanceof Error ? error.message : 'Save failed'; statusEl.style.color = 'var(--crm-red)'; }
+        toast(error instanceof Error ? error.message : 'Settings save failed');
+      }
+    }
       renderShell();
       if (state.active === 'dashboard') renderDashboard();
       if (state.active === 'leads') renderCrudResource('leads', 'Leads', 'Capture, qualify, assign, and convert incoming opportunities.', [['name', 'Name'], ['company', 'Company'], ['email', 'Email'], ['service', 'Service'], ['budget', 'Budget'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned To']]);
@@ -1859,7 +2121,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
       document.querySelectorAll('[data-create]').forEach((button) => button.addEventListener('click', () => openCreate(button.dataset.create)));
       document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportRows(button.dataset.export)));
-      document.querySelectorAll('[data-save-settings]').forEach((button) => button.addEventListener('click', saveSettings));
       document.querySelectorAll('[data-finance-sheet]').forEach((button) => button.addEventListener('click', () => {
         state.financeSheet = button.dataset.financeSheet;
         renderFinance();
@@ -1910,21 +2171,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       els.modalBody.innerHTML = `<form id="crm-profile-form" class="crm-form-grid">
         <label>Name<input name="name" value="${escapeHtml(profile.name || '')}" /></label>
         <label>Email<input name="email" type="email" value="${escapeHtml(profile.email || '')}" /></label>
-        <label>Role<input name="role" value="${escapeHtml(profile.role || '')}" disabled /></label>
-        <label>Status<input name="status" value="${escapeHtml(profile.status || 'active')}" /></label>
-        <label class="wide">Notification Preference<select name="notification_preference"><option>Email and in-app</option><option>In-app only</option><option>Critical only</option></select></label>
+        <label>Role<input value="${escapeHtml(profile.role || '')}" disabled /></label>
+        <label>Status<input value="${escapeHtml(profile.status || 'active')}" disabled /></label>
         <button class="crm-button primary wide" type="submit">Update Profile</button>
       </form>`;
       els.modal.classList.add('open');
       document.getElementById('crm-profile-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!profile.id) return toast('Profile is not loaded yet');
-        const body = normalizePayload('profiles', Object.fromEntries(new FormData(event.currentTarget).entries()));
+        const body = { name: event.currentTarget.querySelector('[name="name"]').value.trim(), email: event.currentTarget.querySelector('[name="email"]').value.trim() };
         try {
-          await portal(`/api/portal/profiles/${profile.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+          if (profile.id) {
+            await portal(`/api/portal/profiles/${profile.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+          } else {
+            // Simple admin session — update local state only (no DB row)
+            state.profile = { ...state.profile, ...body };
+            document.getElementById('crm-user-name').textContent = body.name || state.profile.name;
+          }
           els.modal.classList.remove('open');
-          toast('Profile updated in InsForge');
-          await loadData();
+          toast('Profile updated');
+          if (profile.id) await loadData();
         } catch (error) {
           toast(error instanceof Error ? error.message : 'Profile update failed');
         }
@@ -1993,9 +2258,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function createFields(resource) {
       const configs = {
         projects: [['client_id', 'Client ID', 'number'], ['name', 'Project name', 'text'], ['client_name', 'Client name', 'text'], ['project_manager', 'Project manager', 'text'], ['budget', 'Budget', 'number'], ['status', 'Status', 'text'], ['summary', 'Summary', 'textarea']],
-        tickets: [['client_id', 'Client ID', 'number'], ['subject', 'Subject', 'text'], ['priority', 'Priority', 'text'], ['status', 'Status', 'text'], ['description', 'Description', 'textarea']],
+        tickets: null, // handled by openTicketCreate()
         finances: [['transaction_date', 'Date', 'date'], ['transaction_type', 'Type', 'text'], ['reference_id', 'Reference', 'text'], ['title', 'Title', 'text'], ['client', 'Client', 'text'], ['project', 'Project', 'text'], ['amount', 'Amount', 'number'], ['status', 'Status', 'text'], ['notes', 'Notes', 'textarea']],
-        invoices: [['client_id', 'Client ID', 'number'], ['project_id', 'Project ID', 'number'], ['invoice_number', 'Invoice number', 'text'], ['currency', 'Currency', 'text'], ['customer_name', 'Customer name', 'text'], ['customer_email', 'Customer email', 'email'], ['service_title', 'Service title', 'text'], ['amount', 'Amount', 'number'], ['due_date', 'Due date', 'date'], ['notes', 'Notes', 'textarea']],
+        invoices: null, // handled by openInvoiceCreate()
         clients: [['name', 'Name', 'text'], ['company', 'Company', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone', 'text'], ['status', 'Status', 'text']],
         profiles: [['auth_user_id', 'Auth user ID', 'text'], ['email', 'Email', 'email'], ['name', 'Name', 'text'], ['role', 'Role', 'text'], ['status', 'Status', 'text'], ['client_id', 'Client ID for client users', 'number'], ['temporary_password', 'Temporary password for new login', 'text']],
         leads: [['name', 'Name', 'text'], ['email', 'Email', 'email'], ['company', 'Company', 'text'], ['service', 'Service', 'text'], ['budget', 'Budget', 'text'], ['priority', 'Priority', 'text'], ['assigned_to', 'Assigned To', 'text'], ['message', 'Message', 'textarea']],
@@ -2014,18 +2279,307 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }).join('')}<button class="crm-button primary wide" type="submit">${submitLabel}</button></form>`;
     }
 
-    function openCreate(resource) {
-      els.modalTitle.textContent = `Create ${resource}`;
-      els.modalBody.innerHTML = formMarkup(resource, smartDefaults(resource), 'Create in InsForge');
+    function invoiceLineItemsHtml(items) {
+      return items.map((item, i) => `
+        <div class="inv-line-item" style="display:grid;grid-template-columns:1fr 70px 90px 90px 28px;gap:4px;align-items:start;margin-bottom:4px;">
+          <input class="crm-input" placeholder="Service description" name="item_desc_${i}" value="${escapeHtml(item.description || '')}" required />
+          <input class="crm-input" type="number" placeholder="Qty" name="item_qty_${i}" value="${escapeHtml(item.quantity || 1)}" min="0" step="any" />
+          <input class="crm-input" type="number" placeholder="Rate per unit" name="item_rate_${i}" value="${escapeHtml(item.rate || 0)}" min="0" step="any" />
+          <input class="crm-input" type="number" placeholder="= Qty × Rate" name="item_amount_${i}" value="${escapeHtml(item.amount || 0)}" min="0" step="any" readonly style="background:#f8faff;" />
+          <button type="button" class="crm-icon-button inv-remove-item" title="Remove" style="color:#f44;">×</button>
+        </div>`).join('');
+    }
+
+    function buildInvoiceFormHtml(inv, items, submitLabel) {
+      const today = new Date().toISOString().slice(0, 10);
+      const clientOptions = state.data.clients.map((c) => `<option value="${c.id}" ${inv && String(inv.client_id) === String(c.id) ? 'selected' : ''}>${escapeHtml(c.company || c.name)}</option>`).join('');
+      const projectOptions = `<option value="">— None —</option>` + state.data.projects.map((p) => `<option value="${p.id}" ${inv && String(inv.project_id) === String(p.id) ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+      const sel = (name, val) => `selected="${val}"`;
+      const cur = inv?.currency || 'INR';
+      const statusVal = inv?.status || 'draft';
+
+      return `<form id="crm-invoice-form" class="crm-form-grid" autocomplete="off">
+        <label>Client *
+          <select name="client_id" id="inv-client" required>
+            <option value="">— Select client —</option>${clientOptions}
+          </select>
+        </label>
+        <label>Project
+          <select name="project_id" id="inv-project">${projectOptions}</select>
+        </label>
+        <label>Invoice Number
+          <input name="invoice_number" placeholder="Auto-generated if empty" value="${escapeHtml(inv?.invoice_number || '')}" />
+        </label>
+        <label>Invoice Date
+          <input name="invoice_date" type="date" value="${escapeHtml(inv?.invoice_date || today)}" required />
+        </label>
+        <label>Due Date
+          <input name="due_date" type="date" value="${escapeHtml(inv?.due_date || today)}" />
+        </label>
+        <label>Currency
+          <select name="currency">
+            <option value="INR" ${cur === 'INR' ? 'selected' : ''}>INR (₹)</option>
+            <option value="USD" ${cur === 'USD' ? 'selected' : ''}>USD ($)</option>
+            <option value="EUR" ${cur === 'EUR' ? 'selected' : ''}>EUR (€)</option>
+          </select>
+        </label>
+        <label>Customer Name
+          <input name="customer_name" id="inv-cname" placeholder="Auto-filled from client" value="${escapeHtml(inv?.customer_name || '')}" />
+        </label>
+        <label>Customer Phone
+          <input name="customer_phone" id="inv-cphone" placeholder="Auto-filled from client" value="${escapeHtml(inv?.customer_phone || '')}" />
+        </label>
+        <label class="wide">Customer Email
+          <input name="customer_email" id="inv-cemail" type="email" placeholder="Auto-filled from client" value="${escapeHtml(inv?.customer_email || '')}" />
+        </label>
+        <label class="wide">Billing Address
+          <textarea name="billing_address" rows="2" placeholder="Optional">${escapeHtml(inv?.billing_address || '')}</textarea>
+        </label>
+
+        <div class="wide">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <strong>Services / Line Items</strong>
+            <button type="button" id="inv-add-item" class="crm-button" style="padding:4px 10px;font-size:12px;">+ Add Item</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 70px 90px 90px 28px;gap:4px;margin-bottom:4px;font-size:11px;font-weight:700;color:#667599;padding:0 2px;">
+            <span>Description</span><span>Qty</span><span>Rate (unit price)</span><span>Amount (auto)</span><span></span>
+          </div>
+          <div id="inv-items-list">${invoiceLineItemsHtml(items && items.length ? items : [{ description: '', quantity: 1, rate: 0, amount: 0 }])}</div>
+        </div>
+
+        <label>Discount (₹)
+          <input name="discount_amount" type="number" value="${escapeHtml(inv?.discount_amount || 0)}" min="0" step="any" />
+        </label>
+        <label>Tax (₹)
+          <input name="tax_amount" type="number" value="${escapeHtml(inv?.tax_amount || 0)}" min="0" step="any" />
+        </label>
+
+        <label style="grid-column:1/-1;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;">
+          <span style="font-weight:700;font-size:12px;">Amount Paid so far (₹)</span>
+          <span style="display:block;font-size:10px;color:#555;margin-bottom:4px;">The total invoice amount is auto-calculated from line items. Enter how much has already been received — the balance will show on the invoice.</span>
+          <input name="received_amount" type="number" value="${escapeHtml(inv?.received_amount || 0)}" min="0" step="any" style="margin-top:4px;" />
+        </label>
+
+        <label>Status
+          <select name="status">
+            ${['draft','sent','paid','overdue','cancelled'].map((s) => `<option value="${s}" ${statusVal === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="wide">Notes
+          <input name="notes" placeholder="e.g. Services for May 2026" value="${escapeHtml(inv?.notes || '')}" />
+        </label>
+        <label class="wide">Payment Details
+          <input name="payment_instructions" placeholder="e.g. UPI: techmigos@upi" value="${escapeHtml(inv?.payment_instructions || '')}" />
+        </label>
+        <label class="wide">Terms and Conditions
+          <textarea name="terms" rows="3" placeholder="e.g. 1. Goods once sold will not be taken back&#10;2. All disputes subject to Hyderabad jurisdiction">${escapeHtml(inv?.terms || '')}</textarea>
+        </label>
+
+        <div class="wide" style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;">
+          <strong style="font-size:12px;">Authorised Signatory Image</strong>
+          <span style="display:block;font-size:10px;color:#667599;margin-bottom:6px;">Upload a signature image (PNG/JPG, max 2 MB) — it will appear on the printed invoice.</span>
+          ${inv?.sign_url ? `<img src="${escapeHtml(inv.sign_url)}" style="max-height:48px;margin-bottom:6px;border:1px solid #e2e8f0;border-radius:4px;" alt="Current signature" />` : ''}
+          <input type="file" id="inv-sign-file" accept="image/png,image/jpeg,image/jpg" style="display:block;" />
+          ${inv?.sign_url ? `<input type="hidden" name="sign_url" id="inv-sign-url" value="${escapeHtml(inv.sign_url)}" />` : `<input type="hidden" name="sign_url" id="inv-sign-url" value="" />`}
+          <span id="inv-sign-status" style="font-size:10px;color:#667599;"></span>
+        </div>
+
+        <button class="crm-button primary wide" type="submit">${submitLabel}</button>
+      </form>`;
+    }
+
+    function bindInvoiceFormEvents(invoiceId) {
+      // Auto-fill from client
+      document.getElementById('inv-client')?.addEventListener('change', function () {
+        const client = state.data.clients.find((c) => String(c.id) === this.value);
+        if (!client) return;
+        document.getElementById('inv-cname').value = client.name || '';
+        document.getElementById('inv-cemail').value = client.email || '';
+        document.getElementById('inv-cphone').value = client.phone || '';
+      });
+
+      // qty × rate = amount
+      els.modalBody.addEventListener('input', (e) => {
+        const item = e.target.closest('.inv-line-item');
+        if (!item) return;
+        const qty = parseFloat(item.querySelector('[name^="item_qty"]')?.value || 1);
+        const rate = parseFloat(item.querySelector('[name^="item_rate"]')?.value || 0);
+        const amountInput = item.querySelector('[name^="item_amount"]');
+        if (amountInput) amountInput.value = (qty * rate).toFixed(2);
+      });
+
+      // Add item row
+      document.getElementById('inv-add-item')?.addEventListener('click', () => {
+        const list = document.getElementById('inv-items-list');
+        const count = list.querySelectorAll('.inv-line-item').length;
+        const div = document.createElement('div');
+        div.innerHTML = invoiceLineItemsHtml([{ description: '', quantity: 1, rate: 0, amount: 0 }])
+          .replace(/item_desc_0/g, `item_desc_${count}`)
+          .replace(/item_qty_0/g, `item_qty_${count}`)
+          .replace(/item_rate_0/g, `item_rate_${count}`)
+          .replace(/item_amount_0/g, `item_amount_${count}`);
+        list.appendChild(div.firstElementChild);
+      });
+
+      // Remove item row
+      els.modalBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('inv-remove-item')) {
+          if (els.modalBody.querySelectorAll('.inv-line-item').length > 1) e.target.closest('.inv-line-item').remove();
+        }
+      });
+
+      // Signature upload — upload immediately on file pick if editing an existing invoice
+      document.getElementById('inv-sign-file')?.addEventListener('change', async function () {
+        const file = this.files?.[0];
+        if (!file) return;
+        const statusEl = document.getElementById('inv-sign-status');
+        const urlInput = document.getElementById('inv-sign-url');
+        if (!invoiceId) {
+          // For new invoices, store as object URL temporarily; real upload happens on create (not supported without id)
+          statusEl.textContent = 'Signature will be uploaded after invoice is created. Re-open to add it.';
+          return;
+        }
+        statusEl.textContent = 'Uploading...';
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          const res = await portal(`/api/portal/invoices/${invoiceId}/upload-sign`, { method: 'POST', body: fd, headers: {} });
+          urlInput.value = res.sign_url || '';
+          statusEl.textContent = '✓ Signature uploaded';
+          statusEl.style.color = '#16a34a';
+        } catch (err) {
+          statusEl.textContent = err instanceof Error ? err.message : 'Upload failed';
+          statusEl.style.color = '#dc2626';
+        }
+      });
+    }
+
+    function collectInvoiceBody(data) {
+      const itemEls = els.modalBody.querySelectorAll('.inv-line-item');
+      const items = Array.from(itemEls).map((el, i) => ({
+        description: (el.querySelector(`[name="item_desc_${i}"]`)?.value || '').trim(),
+        quantity: parseFloat(el.querySelector(`[name="item_qty_${i}"]`)?.value || 1),
+        rate: parseFloat(el.querySelector(`[name="item_rate_${i}"]`)?.value || 0),
+      })).filter((x) => x.description);
+      return {
+        client_id: Number(data.client_id),
+        project_id: data.project_id ? Number(data.project_id) : undefined,
+        invoice_number: data.invoice_number?.trim() || undefined,
+        invoice_date: data.invoice_date,
+        due_date: data.due_date || undefined,
+        currency: data.currency || 'INR',
+        customer_name: data.customer_name?.trim() || undefined,
+        customer_email: data.customer_email?.trim() || undefined,
+        customer_phone: data.customer_phone?.trim() || undefined,
+        billing_address: data.billing_address?.trim() || undefined,
+        discount_amount: parseFloat(data.discount_amount || 0),
+        tax_amount: parseFloat(data.tax_amount || 0),
+        received_amount: parseFloat(data.received_amount || 0),
+        status: data.status || 'draft',
+        notes: data.notes?.trim() || undefined,
+        payment_instructions: data.payment_instructions?.trim() || undefined,
+        terms: data.terms?.trim() || undefined,
+        sign_url: data.sign_url?.trim() || undefined,
+        items,
+      };
+    }
+
+    function openInvoiceCreate() {
+      els.modalTitle.textContent = 'New Invoice';
+      els.modalBody.innerHTML = buildInvoiceFormHtml(null, [], 'Create Invoice');
+      els.modal.classList.add('open');
+      bindInvoiceFormEvents(null);
+
+      document.getElementById('crm-invoice-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = collectInvoiceBody(Object.fromEntries(new FormData(event.currentTarget).entries()));
+        if (!body.items.length) return toast('Add at least one line item');
+        Object.keys(body).forEach((k) => body[k] === undefined && delete body[k]);
+        try {
+          const result = await portal('/api/portal/invoices', { method: 'POST', body: JSON.stringify(body) });
+          els.modal.classList.remove('open');
+          toast('Invoice created');
+          await loadData();
+          if (result?.item?.id) showInvoice(result.item.id);
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Invoice creation failed');
+        }
+      });
+    }
+
+    async function openInvoiceEdit(id) {
+      els.modalTitle.textContent = 'Edit Invoice';
+      els.modalBody.innerHTML = `<p class="p-4 text-sm text-slate-500">Loading invoice...</p>`;
+      els.modal.classList.add('open');
+      try {
+        const result = await portal(`/api/portal/invoices/${id}`);
+        const { invoice, items } = result.detail;
+        els.modalBody.innerHTML = buildInvoiceFormHtml(invoice, items, 'Save Changes');
+        bindInvoiceFormEvents(id);
+
+        document.getElementById('crm-invoice-form')?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const body = collectInvoiceBody(Object.fromEntries(new FormData(event.currentTarget).entries()));
+          if (!body.items.length) return toast('Add at least one line item');
+          Object.keys(body).forEach((k) => body[k] === undefined && delete body[k]);
+          try {
+            await portal(`/api/portal/invoices/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+            els.modal.classList.remove('open');
+            toast('Invoice updated');
+            await loadData();
+            showInvoice(id);
+          } catch (error) {
+            toast(error instanceof Error ? error.message : 'Invoice update failed');
+          }
+        });
+      } catch (error) {
+        els.modalBody.innerHTML = `<p class="p-4 text-sm text-red-600">${escapeHtml(error instanceof Error ? error.message : 'Could not load invoice')}</p>`;
+      }
+    }
+
+    function openTicketCreate() {
+      const clientOpts = state.data.clients.map((c) => `<option value="${c.id}">${escapeHtml(c.company || c.name)}</option>`).join('');
+      const empOpts = employeeSeed().map((e) => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+      els.modalTitle.textContent = 'Create Support Ticket';
+      els.modalBody.innerHTML = `<form id="crm-edit-form" class="crm-form-grid">
+        <label>Client *<select name="client_id" required><option value="">— Select client —</option>${clientOpts}</select></label>
+        <label>Priority<select name="priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+        <label class="wide">Subject *<input name="subject" required placeholder="Brief description of the issue" /></label>
+        <label class="wide">Description<textarea name="description" rows="3" placeholder="Detailed description..."></textarea></label>
+        <label>Assigned To<select name="assigned_to"><option value="">Unassigned</option>${empOpts}</select></label>
+        <label>Status<select name="status"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="waiting">Waiting</option></select></label>
+        <button class="crm-button primary wide" type="submit">Create Ticket</button>
+      </form>`;
       els.modal.classList.add('open');
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const body = normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()));
-        if (resource === 'invoices') {
+        const body = normalizePayload('tickets', Object.fromEntries(new FormData(event.currentTarget).entries()));
+        try {
+          await portal('/api/portal/tickets', { method: 'POST', body: JSON.stringify(body) });
+          els.modal.classList.remove('open');
+          toast('Ticket created');
+          await loadData();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Create failed');
+        }
+      });
+    }
+
+    function openCreate(resource) {
+      if (resource === 'invoices') return openInvoiceCreate();
+      if (resource === 'tickets') return openTicketCreate();
+      const actualResource = resource === 'salary' ? 'finances' : resource;
+      els.modalTitle.textContent = resource === 'salary' ? 'Add Salary' : `Create ${resource}`;
+      els.modalBody.innerHTML = formMarkup(actualResource, smartDefaults(resource), resource === 'salary' ? 'Add Salary to InsForge' : 'Create in InsForge');
+      els.modal.classList.add('open');
+      document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = normalizePayload(actualResource, Object.fromEntries(new FormData(event.currentTarget).entries()));
+        if (actualResource === 'invoices') {
           body.items = [{ description: body.service_title || 'TechMigos service', quantity: 1, rate: Number(body.amount || 0) }];
         }
         try {
-          await portal(`/api/portal/${resource}`, { method: 'POST', body: JSON.stringify(body) });
+          await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
           toast('Created in InsForge');
           await loadData();
@@ -2041,6 +2595,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         projects: { status: 'planning', budget: 0 },
         tickets: { priority: 'medium', status: 'open' },
         finances: { transaction_date: today, transaction_type: 'expense', status: 'pending', amount: 0, source: 'manual' },
+        salary: { transaction_date: today, transaction_type: 'salary', status: 'pending', amount: 0, source: 'manual' },
         invoices: { currency: 'INR', due_date: today, amount: 0 },
         clients: { status: 'active' },
         profiles: { role: 'company_member', status: 'active' },
@@ -2061,6 +2616,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function openEdit(resource, id) {
+      if (resource === 'invoices') return openInvoiceEdit(id);
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
       els.modalTitle.textContent = `Edit ${resource}`;
@@ -2187,11 +2743,153 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       URL.revokeObjectURL(url);
     }
 
+    function invoiceHtml(detail) {
+      const inv = detail.invoice;
+      const cur = inv.currency || 'INR';
+      const sym = cur === 'INR' ? '₹' : cur;
+      const fmt = (v) => `${sym} ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+      const fmtNum = (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      const esc = escapeHtml;
+
+      const billName = inv.customer_name || detail.client?.name || '';
+      const billCompany = inv.customer_company || detail.client?.company || '';
+      const billPhone = inv.customer_phone || detail.client?.phone || '';
+      const billEmail = inv.customer_email || detail.client?.email || '';
+      const billAddr = inv.billing_address || '';
+
+      const total = Number(inv.total_amount || inv.amount || 0);
+      const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
+      const balance = Math.max(total - received, 0);
+
+      const statusLabel = String(inv.status || 'draft').toUpperCase().replace(/_/g, ' ');
+
+      const items = detail.items || [];
+      const itemRows = items.map((item, i) => `
+        <tr>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${i + 1}</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;vertical-align:top;">
+            <strong>${esc(item.description)}</strong>
+            ${item.notes ? `<br><span style="color:#666;font-size:9px;">${esc(item.notes)}</span>` : ''}
+            ${inv.service_title && i === 0 && item.description !== inv.service_title ? `<br><span style="color:#888;font-size:9px;">${esc(inv.service_title)}</span>` : ''}
+          </td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${fmtNum(item.quantity)} SERVICE</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.rate)}</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.amount)}</td>
+        </tr>`).join('');
+
+      return `<article class="invoice-print-sheet" style="width:100%;max-width:780px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+
+        <!-- BILL OF SUPPLY header bar -->
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0 8px;border-bottom:1px solid #333;">
+          <span style="font-weight:900;font-size:13px;letter-spacing:0.03em;">BILL OF SUPPLY</span>
+          <span style="border:1px solid #888;padding:2px 8px;font-size:9px;font-weight:700;color:#555;">ORIGINAL FOR RECIPIENT</span>
+          <span style="background:#22c55e;color:#fff;padding:2px 8px;font-size:9px;font-weight:700;">${esc(statusLabel)}</span>
+        </div>
+
+        <!-- Company header box with logo -->
+        <div style="border:1px solid #ccc;margin-top:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="/icon.png" class="inv-logo" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" />
+            <div>
+              <div style="font-size:18px;font-weight:900;letter-spacing:-0.01em;">TechMigos</div>
+              <div style="font-size:10px;color:#555;">Hyderabad, Hyderabad, Telangana, 500097</div>
+              <div style="font-size:10px;color:#555;"><strong>Mobile:</strong> 9959703547 &nbsp; <strong>Email:</strong> info@techmigos.com</div>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:10px;color:#555;">
+            <div style="font-weight:700;color:#111;">${esc(statusLabel)}</div>
+            <div>Due: ${sym} ${fmtNum(balance)}</div>
+            ${inv.due_date ? `<div>Due Date: ${esc(inv.due_date)}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- BILL TO + Invoice meta table -->
+        <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px 10px;width:45%;vertical-align:top;">
+              <div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;">Bill To</div>
+              <div style="font-size:13px;font-weight:900;margin-top:3px;">${esc(billName)}${billCompany && billCompany !== billName ? `<br><span style="font-size:11px;font-weight:600;">${esc(billCompany)}</span>` : ''}</div>
+              ${billPhone ? `<div style="font-size:10px;margin-top:2px;"><strong>Mobile:</strong> ${esc(billPhone)}</div>` : ''}
+              ${billEmail ? `<div style="font-size:10px;"><strong>Email:</strong> ${esc(billEmail)}</div>` : ''}
+              ${billAddr ? `<div style="font-size:10px;margin-top:2px;white-space:pre-line;">${esc(billAddr)}</div>` : ''}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
+              <strong>Invoice No.</strong><br>${esc(inv.invoice_number)}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
+              <strong>Invoice Date</strong><br>${esc(inv.invoice_date || '')}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
+              <strong>Due Date</strong><br>${esc(inv.due_date || '-')}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Line items table -->
+        <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
+          <thead>
+            <tr style="background:#f3f4f6;">
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:40px;">S.NO.</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;">SERVICES</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:90px;">QTY.</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:70px;">RATE</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:80px;">AMOUNT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows || `<tr><td colspan="5" style="border:1px solid #ccc;padding:6px 8px;text-align:center;color:#999;">No line items</td></tr>`}
+            <!-- spacer rows for consistent height -->
+            <tr style="height:30px;"><td colspan="5" style="border-left:1px solid #ccc;border-right:1px solid #ccc;"></td></tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f3f4f6;">
+              <td colspan="2" style="border:1px solid #ccc;padding:6px 8px;"></td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:700;">TOTAL</td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:900;">${fmt(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Received / Balance / Status row -->
+        <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
+          <tr>
+            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Received Amount: ${fmt(received)}</strong></td>
+            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
+            <td style="border:1px solid #ccc;padding:6px 10px;"><strong>Status: ${esc(statusLabel)}</strong></td>
+          </tr>
+        </table>
+
+        <!-- Notes -->
+        ${inv.notes ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
+
+        <!-- Payment Details -->
+        ${inv.payment_instructions ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Payment Details:</strong> ${esc(inv.payment_instructions)}</div>` : ''}
+
+        <!-- Terms + Signatory -->
+        <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;width:55%;">
+              ${inv.terms ? `<div><strong>Terms and Conditions</strong><div style="margin-top:4px;font-size:10px;white-space:pre-line;">${esc(inv.terms)}</div></div>` : ''}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;text-align:center;vertical-align:bottom;">
+              ${inv.sign_url ? `<img src="${esc(inv.sign_url)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" />` : '<div style="height:44px;"></div>'}
+              <div style="border-top:1px solid #555;padding-top:4px;font-size:10px;font-weight:700;">Authorised Signatory For<br>TechMigos</div>
+            </td>
+          </tr>
+        </table>
+      </article>`;
+    }
+
+    function downloadInvoicePdf(id) {
+      window.print();
+    }
+
     async function showInvoice(id) {
       const result = await portal(`/api/portal/invoices/${id}`);
       const detail = result.detail;
       els.invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
-      els.invoicePreview.innerHTML = `<pre class="whitespace-pre-wrap text-sm">${escapeHtml(JSON.stringify(detail, null, 2))}</pre>`;
+      els.invoicePreview.innerHTML = invoiceHtml(detail);
       els.invoiceModal.classList.add('open');
     }
 
@@ -2236,6 +2934,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.getElementById('crm-modal-close')?.addEventListener('click', () => els.modal.classList.remove('open'));
     document.getElementById('close-invoice')?.addEventListener('click', () => els.invoiceModal.classList.remove('open'));
     document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
+    document.getElementById('download-pdf-invoice')?.addEventListener('click', () => {
+      const invoiceNumber = document.querySelector('#invoice-preview h1, #invoice-preview-title')?.textContent || 'invoice';
+      const idMatch = String(invoiceNumber).match(/[\w-]+$/);
+      const id = idMatch ? idMatch[0] : 'unknown';
+      downloadInvoicePdf(id);
+    });
 
     boot();
   </script>

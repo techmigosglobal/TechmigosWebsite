@@ -10,47 +10,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   noIndex={true}
 >
   <style is:global>
-    @page {
-      size: A4;
-      margin: 12mm;
-    }
+    @page { size: A4; margin: 10mm; }
 
     @media print {
-      body * {
-        visibility: hidden !important;
-      }
+      body * { visibility: hidden !important; }
 
       #invoice-preview,
-      #invoice-preview * {
-        visibility: visible !important;
-      }
+      #invoice-preview * { visibility: visible !important; }
 
       #invoice-preview {
-        position: absolute !important;
-        inset: 0 auto auto 0 !important;
-        width: 186mm !important;
+        position: fixed !important;
+        inset: 0 !important;
         padding: 0 !important;
+        background: white !important;
+        overflow: visible !important;
       }
 
       .invoice-print-sheet {
-        width: 186mm !important;
-        min-height: auto !important;
-        margin: 0 !important;
+        width: 190mm !important;
+        margin: 0 auto !important;
         padding: 0 !important;
-        font-size: 10.5px !important;
-        line-height: 1.35 !important;
+        font-size: 9.5px !important;
+        line-height: 1.4 !important;
+        font-family: Arial, sans-serif !important;
+        color: #000 !important;
       }
 
-      .invoice-print-sheet table,
-      .invoice-print-sheet tr,
-      .invoice-print-sheet .avoid-print-break {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
+      .invoice-print-sheet * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
-      .print\:hidden {
-        display: none !important;
-      }
+      .print\:hidden { display: none !important; }
     }
   </style>
 
@@ -150,7 +141,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <h2 id="invoice-preview-title" class="mt-1 text-xl font-extrabold text-slate-950">Invoice</h2>
         </div>
         <div class="flex gap-2">
-          <button id="print-invoice" class="btn-primary">Print / Save PDF</button>
+          <button id="download-pdf-invoice" class="btn-secondary">Download PDF</button>
+          <button id="print-invoice" class="btn-primary">Print</button>
           <button id="close-invoice" class="btn-secondary">Close</button>
         </div>
       </div>
@@ -313,53 +305,115 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function invoiceHtml(detail) {
-      const invoice = detail.invoice;
-      const customerName = invoice.customer_name || detail.client?.name || '';
-      const customerCompany = invoice.customer_company || detail.client?.company || '';
-      const customerEmail = invoice.customer_email || detail.client?.email || '';
-      const customerPhone = invoice.customer_phone || detail.client?.phone || '';
-      const serviceTitle = invoice.service_title || detail.project?.name || 'TechMigos services';
-      return `<article class="invoice-print-sheet mx-auto max-w-4xl bg-white text-slate-950">
-        <div class="flex items-start justify-between gap-6 border-b-2 border-slate-950 pb-4">
-          <div>
-            <p class="text-2xl font-extrabold text-primary-700">TechMigos</p>
-            <p class="mt-1 text-xs text-slate-600">Web, mobile, AI, backend engineering, and technical consulting</p>
-            <p class="mt-1 text-xs text-slate-600">info@techmigos.com · www.techmigos.com · +91 9959703547</p>
-            <p class="mt-1 text-xs text-slate-600">Hyderabad, Telangana, India</p>
+      const inv = detail.invoice;
+      const cur = inv.currency || 'INR';
+      const sym = cur === 'INR' ? '₹' : cur;
+      const fmt = (v) => `${sym} ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+      const fmtNum = (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      const esc = escapeHtml;
+
+      const billName = inv.customer_name || detail.client?.name || '';
+      const billCompany = inv.customer_company || detail.client?.company || '';
+      const billPhone = inv.customer_phone || detail.client?.phone || '';
+      const billEmail = inv.customer_email || detail.client?.email || '';
+
+      const total = Number(inv.total_amount || inv.amount || 0);
+      const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
+      const balance = Math.max(total - received, 0);
+      const statusLabel = String(inv.status || 'draft').toUpperCase().replace(/_/g, ' ');
+      const items = detail.items || [];
+
+      const itemRows = items.map((item, i) => `
+        <tr>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${i + 1}</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;vertical-align:top;"><strong>${esc(item.description)}</strong></td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${fmtNum(item.quantity)} SERVICE</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.rate)}</td>
+          <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.amount)}</td>
+        </tr>`).join('');
+
+      return `<article class="invoice-print-sheet" style="width:100%;max-width:780px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0 8px;border-bottom:1px solid #333;">
+          <span style="font-weight:900;font-size:13px;">BILL OF SUPPLY</span>
+          <span style="border:1px solid #888;padding:2px 8px;font-size:9px;font-weight:700;color:#555;">ORIGINAL FOR RECIPIENT</span>
+          <span style="background:#22c55e;color:#fff;padding:2px 8px;font-size:9px;font-weight:700;">${esc(statusLabel)}</span>
+        </div>
+        <div style="border:1px solid #ccc;margin-top:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="/icon.png" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
+            <div>
+              <div style="font-size:18px;font-weight:900;">TechMigos</div>
+              <div style="font-size:10px;color:#555;">Hyderabad, Hyderabad, Telangana, 500097</div>
+              <div style="font-size:10px;color:#555;"><strong>Mobile:</strong> 9959703547 &nbsp; <strong>Email:</strong> info@techmigos.com</div>
+            </div>
           </div>
-          <div class="text-right">
-            <h1 class="text-3xl font-extrabold tracking-wide">INVOICE</h1>
-            <p class="mt-1 text-base font-bold">${escapeHtml(invoice.invoice_number)}</p>
-            <p class="mt-1 text-xs uppercase text-slate-500">${escapeHtml(invoice.status || 'draft')}</p>
+          <div style="text-align:right;font-size:10px;color:#555;">
+            <div style="font-weight:700;color:#111;">${esc(statusLabel)}</div>
+            <div>Due: ${sym} ${fmtNum(balance)}</div>
+            ${inv.due_date ? `<div>Due Date: ${esc(inv.due_date)}</div>` : ''}
           </div>
         </div>
-        <div class="mt-5 grid grid-cols-2 gap-6">
-          <div>
-            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Bill to</p>
-            <h2 class="mt-1 text-lg font-extrabold">${escapeHtml(customerName)}</h2>
-            <p class="text-sm text-slate-700">${escapeHtml(customerCompany)}</p>
-            <p class="text-sm text-slate-700">${escapeHtml(customerEmail)}</p>
-            <p class="text-sm text-slate-700">${escapeHtml(customerPhone)}</p>
-            ${invoice.billing_address ? `<p class="mt-2 whitespace-pre-line text-sm text-slate-700">${escapeHtml(invoice.billing_address)}</p>` : ''}
-          </div>
-          <div class="grid gap-1.5 text-sm">
-            <p><strong>Invoice date:</strong> ${escapeHtml(invoice.invoice_date || '')}</p>
-            <p><strong>Print date:</strong> ${escapeHtml(invoice.print_date || '')}</p>
-            <p><strong>Due date:</strong> ${escapeHtml(invoice.due_date || '-')}</p>
-            <p><strong>Service:</strong> ${escapeHtml(serviceTitle)}</p>
-            <p><strong>Project:</strong> ${escapeHtml(detail.project?.name || '-')}</p>
-            <p><strong>Reference:</strong> ${escapeHtml(invoice.reference_number || '-')}</p>
-          </div>
-        </div>
-        <div class="mt-5 overflow-hidden rounded-md border border-slate-200">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-950 text-left text-white"><tr><th class="px-3 py-2">Description</th><th class="px-3 py-2">Qty</th><th class="px-3 py-2">Rate</th><th class="px-3 py-2 text-right">Amount</th></tr></thead>
-            <tbody class="divide-y divide-slate-100">${detail.items.map((item) => `<tr><td class="px-3 py-2">${escapeHtml(item.description)}</td><td class="px-3 py-2">${escapeHtml(item.quantity)}</td><td class="px-3 py-2">${money(item.rate, invoice.currency)}</td><td class="px-3 py-2 text-right font-bold">${money(item.amount, invoice.currency)}</td></tr>`).join('')}</tbody>
-          </table>
-        </div>
-        <div class="avoid-print-break mt-5 flex justify-end"><div class="w-full max-w-xs space-y-1.5 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(invoice.subtotal, invoice.currency)}</strong></div><div class="flex justify-between"><span>Discount</span><strong>${money(invoice.discount_amount, invoice.currency)}</strong></div><div class="flex justify-between"><span>Tax</span><strong>${money(invoice.tax_amount, invoice.currency)}</strong></div><div class="flex justify-between border-t border-slate-200 pt-2 text-lg"><span>Total</span><strong>${money(invoice.total_amount || invoice.amount, invoice.currency)}</strong></div></div></div>
-        <div class="avoid-print-break mt-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-4"><div><p class="font-bold">Terms</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.terms || '')}</p></div><div><p class="font-bold">Payment instructions</p><p class="mt-1 whitespace-pre-line text-xs text-slate-600">${escapeHtml(invoice.payment_instructions || '')}</p></div></div>
+        <table style="width:100%;border-collapse:collapse;margin-top:0;">
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px 10px;width:45%;vertical-align:top;">
+              <div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;">Bill To</div>
+              <div style="font-size:13px;font-weight:900;margin-top:3px;">${esc(billName)}${billCompany && billCompany !== billName ? `<br><span style="font-size:11px;font-weight:600;">${esc(billCompany)}</span>` : ''}</div>
+              ${billPhone ? `<div style="font-size:10px;margin-top:2px;"><strong>Mobile:</strong> ${esc(billPhone)}</div>` : ''}
+              ${billEmail ? `<div style="font-size:10px;"><strong>Email:</strong> ${esc(billEmail)}</div>` : ''}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Invoice No.</strong><br>${esc(inv.invoice_number)}</td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Invoice Date</strong><br>${esc(inv.invoice_date || '')}</td>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Due Date</strong><br>${esc(inv.due_date || '-')}</td>
+          </tr>
+        </table>
+        <table style="width:100%;border-collapse:collapse;margin-top:0;">
+          <thead>
+            <tr style="background:#f3f4f6;">
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:40px;">S.NO.</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;">SERVICES</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:90px;">QTY.</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:70px;">RATE</th>
+              <th style="border:1px solid #ccc;padding:6px 8px;text-align:center;width:80px;">AMOUNT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+            <tr style="height:30px;"><td colspan="5" style="border-left:1px solid #ccc;border-right:1px solid #ccc;"></td></tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f3f4f6;">
+              <td colspan="2" style="border:1px solid #ccc;padding:6px 8px;"></td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:700;">TOTAL</td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
+              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:900;">${fmt(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+        <table style="width:100%;border-collapse:collapse;margin-top:0;">
+          <tr>
+            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Received Amount: ${fmt(received)}</strong></td>
+            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
+            <td style="border:1px solid #ccc;padding:6px 10px;"><strong>Status: ${esc(statusLabel)}</strong></td>
+          </tr>
+        </table>
+        ${inv.notes ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
+        ${inv.payment_instructions ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Payment Details:</strong> ${esc(inv.payment_instructions)}</div>` : ''}
+        <table style="width:100%;border-collapse:collapse;margin-top:0;">
+          <tr>
+            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;width:55%;">
+              ${inv.terms ? `<strong>Terms and Conditions</strong><div style="margin-top:4px;font-size:10px;white-space:pre-line;">${esc(inv.terms)}</div>` : ''}
+            </td>
+            <td style="border:1px solid #ccc;padding:8px 10px;text-align:center;vertical-align:bottom;">
+              ${inv.sign_url ? `<img src="${esc(inv.sign_url)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" />` : '<div style="height:44px;"></div>'}
+              <div style="border-top:1px solid #555;padding-top:4px;font-size:10px;font-weight:700;">Authorised Signatory For<br>TechMigos</div>
+            </td>
+          </tr>
+        </table>
       </article>`;
+    }
+
+    function downloadInvoicePdf(id) {
+      window.print();
     }
 
     async function openConversation(id) {
@@ -436,6 +490,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.getElementById('logout-button')?.addEventListener('click', logout);
     document.getElementById('close-invoice')?.addEventListener('click', () => invoiceModal.classList.add('hidden'));
     document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
+    document.getElementById('download-pdf-invoice')?.addEventListener('click', () => {
+      const invoiceNumber = document.querySelector('#invoice-preview h1, #invoice-preview-title')?.textContent || 'invoice';
+      const idMatch = String(invoiceNumber).match(/[\w-]+$/);
+      const id = idMatch ? idMatch[0] : 'unknown';
+      downloadInvoicePdf(id);
+    });
+
     boot();
   </script>
 </BaseLayout>

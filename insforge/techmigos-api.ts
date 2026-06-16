@@ -695,6 +695,8 @@ const portalResources: Record<string, { table: string; fields: string[]; adminOn
       "notes",
       "source",
       "source_ref",
+      "proof_url",
+      "proof_key",
     ],
   },
   deals: {
@@ -736,6 +738,8 @@ const portalResources: Record<string, { table: string; fields: string[]; adminOn
       "payment_instructions",
       "notes",
       "file_url",
+      "received_amount",
+      "sign_url",
       "sent_at",
       "viewed_at",
       "paid_at",
@@ -1075,6 +1079,42 @@ async function handleDashboard(req: Request) {
   });
 }
 
+async function handleInvoiceSettings(req: Request) {
+  await getPortalProfile(req, ["company_admin"]);
+  if (req.method === "GET") return ok(req, { settings: await invoiceSettings() });
+  const body = await readJson(req);
+  const fields = ["prefix", "starting_number", "tax_label", "tax_rate", "default_terms", "default_payment_instructions"];
+  const row = sanitizeBody(body, fields);
+  row.updated_at = new Date().toISOString();
+  const existing = await listRecords("crm_invoice_settings", "order=id.asc&limit=1");
+  if (existing[0]?.id) {
+    await updateRecord("crm_invoice_settings", existing[0].id, row);
+  } else {
+    await insertRecord("crm_invoice_settings", row);
+  }
+  return ok(req, { settings: await invoiceSettings() });
+}
+
+async function handleCompanySettings(req: Request) {
+  await getPortalProfile(req, ["company_admin"]);
+  if (req.method === "GET") {
+    const rows = await listRecords("crm_company_settings", "order=id.asc&limit=1");
+    return ok(req, { settings: rows[0] || {} });
+  }
+  const body = await readJson(req);
+  const fields = ["company_name", "company_email", "company_phone", "company_address", "timezone", "currency"];
+  const row = sanitizeBody(body, fields);
+  row.updated_at = new Date().toISOString();
+  const existing = await listRecords("crm_company_settings", "order=id.asc&limit=1");
+  if (existing[0]?.id) {
+    await updateRecord("crm_company_settings", existing[0].id, row);
+  } else {
+    await insertRecord("crm_company_settings", row);
+  }
+  const updated = await listRecords("crm_company_settings", "order=id.asc&limit=1");
+  return ok(req, { settings: updated[0] || {} });
+}
+
 async function handleNextInvoiceNumber(req: Request) {
   await getPortalProfile(req, ["company_admin", "company_member"]);
   return ok(req, { invoice_number: await nextInvoiceNumber(), settings: await invoiceSettings() });
@@ -1117,6 +1157,8 @@ async function handleCreateInvoice(req: Request) {
     payment_instructions: stringValue(body.payment_instructions || settings.default_payment_instructions, 3000),
     notes: stringValue(body.notes, 3000),
     file_url: stringValue(body.file_url, 500),
+    received_amount: Math.max(numberValue(body.received_amount, 0), 0),
+    sign_url: stringValue(body.sign_url, 500),
     created_at: new Date().toISOString(),
   });
 
@@ -1131,6 +1173,32 @@ async function handleCreateInvoice(req: Request) {
 async function handleInvoiceDetail(req: Request, id: string) {
   await getPortalProfile(req, ["company_admin", "company_member"]);
   return ok(req, { detail: await invoiceDetail(id) });
+}
+
+async function handleInvoiceUploadSign(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const invoice = await getRecordById("crm_invoices", id);
+  if (!invoice) throw new ApiError("Invoice not found.", 404);
+
+  const form = await req.formData();
+  const file = form.get("file");
+  if (!(file instanceof File) || file.size <= 0) throw new ApiError("File is required.", 422);
+  if (file.size > 2 * 1024 * 1024) throw new ApiError("Signature image must be under 2 MB.", 422);
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  const storedName = `sign-${id}-${Date.now()}.${ext}`;
+  const uploadForm = new FormData();
+  uploadForm.append("file", file, storedName);
+  const res = await fetch(`${API_BASE_URL}/api/storage/buckets/invoice-signatures/objects/${storedName}`, {
+    method: "POST",
+    headers: { "x-api-key": requireApiKey() },
+    body: uploadForm,
+  });
+  if (!res.ok) throw new ApiError("Signature upload failed.", 500);
+  const sign_url = `${API_BASE_URL}/api/storage/buckets/invoice-signatures/objects/${storedName}`;
+  await updateRecord("crm_invoices", id, { sign_url, updated_at: new Date().toISOString() });
+  await recordActivity(profile, "updated", "invoices", id, `Uploaded signature for invoice`);
+  return ok(req, { sign_url });
 }
 
 async function handleInvoiceSend(req: Request, id: string) {
@@ -1220,6 +1288,27 @@ async function handleCompanyResource(req: Request, resource: string, id?: string
 
   if (req.method === "PATCH" && id) {
     const body = await readJson(req);
+    // Invoice PATCH: update flat fields + replace line items if provided
+    if (resource === "invoices" && Array.isArray(body.items)) {
+      const items = normalizeLineItems(body.items);
+      const settings = await invoiceSettings();
+      const totals = invoiceTotals(items, body, settings);
+      const row = sanitizeBody(body, config.fields);
+      row.subtotal = totals.subtotal;
+      row.discount_amount = totals.discountAmount;
+      row.tax_amount = totals.taxAmount;
+      row.total_amount = totals.totalAmount;
+      row.amount = totals.totalAmount;
+      row.updated_at = new Date().toISOString();
+      await updateRecord(config.table, id, row);
+      // Replace line items
+      await insforge(`/api/database/records/crm_invoice_items?invoice_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+      for (const item of items) {
+        await insertRecord("crm_invoice_items", { ...item, invoice_id: Number(id) });
+      }
+      await recordActivity(profile, "updated", resource, id, `Updated invoice`);
+      return ok(req, { detail: await invoiceDetail(id) });
+    }
     const row = sanitizeBody(body, config.fields);
     if (hasUpdatedAt(resource)) row.updated_at = new Date().toISOString();
     await updateRecord(config.table, id, row);
@@ -1472,6 +1561,35 @@ async function handleClientTicketMessages(req: Request, id: string) {
   throw new ApiError("Unsupported ticket message operation.", 405);
 }
 
+async function handleFinanceUploadProof(req: Request, id: string) {
+  const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
+  const record = await getRecordById("crm_finance_transactions", id);
+  if (!record) throw new ApiError("Transaction not found.", 404);
+
+  const form = await req.formData();
+  const file = form.get("file");
+  if (!(file instanceof File) || file.size <= 0) throw new ApiError("File is required.", 422);
+  if (file.size > 10 * 1024 * 1024) throw new ApiError("Proof file must be under 10 MB.", 422);
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+  const storedName = `proof-${id}-${Date.now()}.${ext}`;
+  const uploadForm = new FormData();
+  uploadForm.append("file", file, storedName);
+
+  const res = await fetch(`${API_BASE_URL}/api/storage/buckets/finance-proofs/objects/${storedName}`, {
+    method: "POST",
+    headers: { "x-api-key": requireApiKey() },
+    body: uploadForm,
+  });
+  if (!res.ok) throw new ApiError("Proof upload failed.", 500);
+
+  const proof_url = `${API_BASE_URL}/api/storage/buckets/finance-proofs/objects/${storedName}`;
+  const proof_key = storedName;
+  await updateRecord("crm_finance_transactions", id, { proof_url, proof_key, updated_at: new Date().toISOString() });
+  await recordActivity(profile, "updated", "finances", id, `Uploaded proof for transaction`);
+  return ok(req, { proof_url, proof_key });
+}
+
 async function handleFinanceTransactions(req: Request, id?: string) {
   const { profile } = await getPortalProfile(req, ["company_admin", "company_member"]);
   const config = portalResources.finances;
@@ -1608,6 +1726,8 @@ async function handlePortal(req: Request, route: string) {
   if (req.method === "GET" && route === "/api/portal/me") return await handlePortalMe(req);
   if (req.method === "GET" && route === "/api/portal/dashboard") return await handleDashboard(req);
   if (req.method === "GET" && route === "/api/portal/invoices/next-number") return await handleNextInvoiceNumber(req);
+  if ((req.method === "GET" || req.method === "PATCH") && route === "/api/portal/settings/invoice") return await handleInvoiceSettings(req);
+  if ((req.method === "GET" || req.method === "PATCH") && route === "/api/portal/settings/company") return await handleCompanySettings(req);
   if (req.method === "GET" && route === "/api/portal/client/overview") return await handleClientOverview(req);
   if (req.method === "POST" && route === "/api/portal/client/tickets") return await handleClientTicket(req);
   if (req.method === "GET" && route === "/api/portal/finance/summary") return await handleFinanceSummary(req);
@@ -1624,6 +1744,9 @@ async function handlePortal(req: Request, route: string) {
 
   const invoiceSendMatch = route.match(/^\/api\/portal\/invoices\/([^/]+)\/send$/);
   if (req.method === "POST" && invoiceSendMatch) return await handleInvoiceSend(req, invoiceSendMatch[1]);
+
+  const invoiceUploadSignMatch = route.match(/^\/api\/portal\/invoices\/([^/]+)\/upload-sign$/);
+  if (req.method === "POST" && invoiceUploadSignMatch) return await handleInvoiceUploadSign(req, invoiceUploadSignMatch[1]);
 
   const invoiceDetailMatch = route.match(/^\/api\/portal\/invoices\/([^/]+)$/);
   if (req.method === "GET" && invoiceDetailMatch) return await handleInvoiceDetail(req, invoiceDetailMatch[1]);
@@ -1642,6 +1765,9 @@ async function handlePortal(req: Request, route: string) {
 
   const financeMatch = route.match(/^\/api\/portal\/finance-transactions(?:\/([^/]+))?$/);
   if (financeMatch) return await handleFinanceTransactions(req, financeMatch[1]);
+
+  const financeUploadMatch = route.match(/^\/api\/portal\/finances\/([^/]+)\/upload-proof$/);
+  if (req.method === "POST" && financeUploadMatch) return await handleFinanceUploadProof(req, financeUploadMatch[1]);
 
   const match = route.match(/^\/api\/portal\/([a-z_-]+)(?:\/([^/]+))?$/);
   if (!match) throw new ApiError("Unsupported portal route.", 404);

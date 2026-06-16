@@ -28,6 +28,8 @@
     "astro": "^6.3.3",
     "astro-icon": "^1.1.0",
     "autoprefixer": "^10.5.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.372.0",
     "postcss": "^8.5.14",
     "sharp": "^0.34.5",
