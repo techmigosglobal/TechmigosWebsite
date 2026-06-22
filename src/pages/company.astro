@@ -156,7 +156,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       top: 0;
       z-index: 30;
       display: grid;
-      grid-template-columns: minmax(260px, 560px) 1fr auto;
+      grid-template-columns: minmax(260px, 560px) auto;
       align-items: center;
       gap: 18px;
       min-height: 78px;
@@ -766,6 +766,99 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       box-shadow: inset 3px 0 0 var(--crm-orange);
     }
 
+    .invoice-hover-preview {
+      position: fixed;
+      z-index: 100;
+      width: min(420px, 92vw);
+      max-height: 360px;
+      overflow: auto;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 18px 50px rgba(8, 22, 56, 0.22), 0 0 0 1px rgba(31, 122, 255, 0.10);
+      padding: 16px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .invoice-hover-preview.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .invoice-hover-preview .ihp-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--crm-line);
+    }
+
+    .invoice-hover-preview .ihp-head h4 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 950;
+      color: var(--crm-navy);
+    }
+
+    .invoice-hover-preview .ihp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+      font-size: 12px;
+    }
+
+    .invoice-hover-preview .ihp-grid dt {
+      color: var(--crm-muted);
+      font-weight: 800;
+    }
+
+    .invoice-hover-preview .ihp-grid dd {
+      margin: 0;
+      font-weight: 850;
+      color: var(--crm-text);
+    }
+
+    .invoice-hover-preview .ihp-items {
+      margin-top: 10px;
+      border-top: 1px solid var(--crm-line);
+      padding-top: 8px;
+    }
+
+    .invoice-hover-preview .ihp-items table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .invoice-hover-preview .ihp-items th {
+      text-align: left;
+      color: var(--crm-muted);
+      font-weight: 900;
+      padding: 3px 6px;
+      border-bottom: 1px solid var(--crm-line);
+    }
+
+    .invoice-hover-preview .ihp-items td {
+      padding: 3px 6px;
+      font-weight: 750;
+      color: var(--crm-text);
+    }
+
+    .invoice-hover-preview .ihp-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--crm-line);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
     .crm-modal {
       position: fixed;
       inset: 0;
@@ -1248,9 +1341,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <input id="crm-search" type="search" placeholder="Search across projects, clients, tickets..." />
           <span class="crm-search-kbd">/</span>
         </label>
-        <div></div>
         <div class="crm-top-actions">
-          <div class="crm-company-pill"><span>▥</span><span>TechMigos Solutions</span></div>
+          <div class="crm-company-pill"><span>▥</span><span id="crm-company-name">TechMigos Solutions</span></div>
           <button id="crm-notifications" class="crm-icon-button" type="button" aria-label="Notifications">⌁<span class="crm-badge-dot">3</span></button>
           <button class="crm-icon-button" type="button" aria-label="Help">?</button>
           <button id="crm-profile-button" class="crm-user" type="button" aria-label="Open profile management">
@@ -1303,6 +1395,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
   <div id="crm-toast" class="crm-toast"></div>
+  <div id="invoice-hover-preview" class="invoice-hover-preview" aria-hidden="true"></div>
 
   <script is:inline>
     const navItems = [
@@ -1320,6 +1413,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       ['campaigns', 'Campaigns', '✉'],
       ['settings', 'Settings', '⚙'],
     ];
+
+    const hoverCache = new Map();
+    let hoverGen = 0;
 
     const state = {
       active: 'dashboard',
@@ -1360,6 +1456,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       invoicePreviewTitle: document.getElementById('invoice-preview-title'),
       actionbar: document.getElementById('crm-actionbar'),
       selectedCount: document.getElementById('crm-selected-count'),
+      invoiceHover: document.getElementById('invoice-hover-preview'),
     };
 
     function token() {
@@ -2081,6 +2178,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         toast(error instanceof Error ? error.message : 'Settings save failed');
       }
     }
+
+    function render() {
       renderShell();
       if (state.active === 'dashboard') renderDashboard();
       if (state.active === 'leads') renderCrudResource('leads', 'Leads', 'Capture, qualify, assign, and convert incoming opportunities.', [['name', 'Name'], ['company', 'Company'], ['email', 'Email'], ['service', 'Service'], ['budget', 'Budget'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned To']]);
@@ -2137,7 +2236,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       document.querySelector('[data-bulk-delete]')?.addEventListener('click', bulkDelete);
       document.querySelector('[data-bulk-export]')?.addEventListener('click', bulkExport);
       document.querySelector('[data-clear-selection]')?.addEventListener('click', clearSelection);
-      document.querySelectorAll('[data-invoice-view]').forEach((button) => button.addEventListener('click', () => showInvoice(button.dataset.invoiceView)));
+      document.querySelectorAll('[data-invoice-view]').forEach((button) => {
+        button.addEventListener('click', () => showInvoice(button.dataset.invoiceView));
+        button.addEventListener('mouseenter', async () => {
+          const invoiceId = button.dataset.invoiceView;
+          const preview = els.invoiceHover;
+          if (!preview) return;
+          const gen = ++hoverGen;
+          let data = hoverCache.get(invoiceId);
+          if (!data) {
+            try {
+              const result = await portal(`/api/portal/invoices/${invoiceId}`);
+              data = result.detail;
+              hoverCache.set(invoiceId, data);
+            } catch (_) {
+              preview.classList.remove('visible');
+              return;
+            }
+          }
+          if (gen !== hoverGen) return;
+          preview.innerHTML = buildInvoicePreviewHtml(data.invoice, data.items);
+          const rect = button.getBoundingClientRect();
+          preview.style.left = `${Math.min(rect.left, window.innerWidth - 440)}px`;
+          preview.style.top = `${rect.bottom + 8}px`;
+          preview.classList.add('visible');
+        });
+        button.addEventListener('mouseleave', () => {
+          els.invoiceHover?.classList.remove('visible');
+        });
+      });
       document.querySelectorAll('[data-jump]').forEach((button) => button.addEventListener('click', () => {
         state.active = button.dataset.jump;
         render();
@@ -2885,6 +3012,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       window.print();
     }
 
+    function buildInvoicePreviewHtml(invoice, items) {
+      const statusClass = statusTone(invoice.status);
+      const itemRows = (items || []).map((item) => `<tr><td>${escapeHtml(item.description || '')}</td><td style="text-align:right">${Number(item.quantity || 0)}</td><td style="text-align:right">${escapeHtml(item.unit || 'N/A')}</td><td style="text-align:right">${money(item.rate || item.unit_price)}</td><td style="text-align:right">${money(item.amount || item.total || 0)}</td></tr>`).join('');
+      return `<div class="ihp-head"><h4>${escapeHtml(invoice.invoice_number || 'Invoice')}</h4>${badge(invoice.status, statusClass)}</div>
+        <dl class="ihp-grid">
+          <dt>Client</dt><dd>${escapeHtml(invoice.customer_company || invoice.customer_name || clientName(invoice.client_id))}</dd>
+          <dt>Date</dt><dd>${escapeHtml(invoice.invoice_date || '').slice(0, 10) || '-'}</dd>
+          <dt>Due</dt><dd>${escapeHtml(invoice.due_date || '').slice(0, 10) || '-'}</dd>
+          <dt>Service</dt><dd>${escapeHtml(invoice.service_title || '-')}</dd>
+        </dl>
+        ${items && items.length ? `<div class="ihp-items"><table><thead><tr><th>Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${itemRows}</tbody></table></div>` : ''\}
+        <div class="ihp-foot"><span>Total</span><span>${money(invoice.total_amount || invoice.amount || 0)}</span></div>`;
+    }
+
     async function showInvoice(id) {
       const result = await portal(`/api/portal/invoices/${id}`);
       const detail = result.detail;
@@ -2913,6 +3054,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         state.profile = me.profile;
         if (me.destination !== '/company') location.href = me.destination;
         document.getElementById('crm-user-name').textContent = me.profile.name || 'TechMigos';
+document.getElementById('crm-company-name').textContent = me.profile.company || state.profile?.company || 'TechMigos Solutions';
         document.getElementById('crm-user-role').textContent = String(me.profile.role || 'company').replace(/_/g, ' ');
         await loadData();
       } catch (error) {
