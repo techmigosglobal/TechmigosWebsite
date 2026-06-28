@@ -24,7 +24,7 @@ const {
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
 const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
-const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || 'https://n2hhxvw3.ap-southeast.insforge.app').trim().replace(/\/$/, '');
+const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/$/, '');
 const pageTitle = title === 'Home'
   ? 'TechMigos | Web, Mobile, AI & Backend Development'
   : `${title} | TechMigos`;
@@ -68,6 +68,8 @@ const pageTitle = title === 'Home'
     <meta name="theme-color" content="#2563EB" />
 
     <meta name="techmigos-api-base-url" content={publicApiBaseUrl} />
+    <meta name="supabase-url" content={import.meta.env.PUBLIC_SUPABASE_URL || ''} />
+    <meta name="supabase-key" content={import.meta.env.PUBLIC_SUPABASE_KEY || ''} />
 
     <!-- JSON-LD Structured Data -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify({
@@ -89,47 +91,24 @@ const pageTitle = title === 'Home'
         "contactType": "customer service"
       }
     })} />
+    <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script is:inline>
-      const apiBaseMeta = document.querySelector('meta[name="techmigos-api-base-url"]');
-      const publicApiBaseUrl = apiBaseMeta ? apiBaseMeta.getAttribute('content') || 'https://n2hhxvw3.ap-southeast.insforge.app' : 'https://n2hhxvw3.ap-southeast.insforge.app';
+      window.TechMigosConfig = { apiBaseUrl: '' };
+      window.techmigosApiUrl = function(p) { return String(p || ''); };
+      window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
+      window.techmigosGetCsrfToken = async function() { return 'no-csrf'; };
 
-      window.TechMigosConfig = {
-        apiBaseUrl: publicApiBaseUrl,
-      };
-
-      window.techmigosApiUrl = function techmigosApiUrl(path) {
-        const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
-        const base = String(window.TechMigosConfig?.apiBaseUrl || '').replace(/\/$/, '');
-        if (base.includes('.insforge.app')) {
-          return `${base}/functions/techmigos-api`;
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          var url = document.querySelector('meta[name="supabase-url"]');
+          var key = document.querySelector('meta[name="supabase-key"]');
+          var sbUrl = url ? url.getAttribute('content') : '';
+          var sbKey = key ? key.getAttribute('content') : '';
+          window.tmSupabase = supabase.createClient(sbUrl, sbKey);
+        } catch (e) {
+          console.error('Supabase init failed:', e);
         }
-        return base ? `${base}${normalizedPath}` : normalizedPath;
-      };
-
-      window.techmigosApiFetch = function techmigosApiFetch(path, options) {
-        const normalizedPath = String(path || '').startsWith('/') ? String(path || '') : `/${path || ''}`;
-        const headers = new Headers((options || {}).headers || {});
-        const base = String(window.TechMigosConfig?.apiBaseUrl || '').replace(/\/$/, '');
-
-        if (base.includes('.insforge.app')) {
-          headers.set('x-techmigos-route', normalizedPath);
-        }
-
-        return fetch(window.techmigosApiUrl(path), {
-          ...(options || {}),
-          credentials: base.includes('.insforge.app') ? 'omit' : 'include',
-          headers,
-        });
-      };
-
-      window.techmigosGetCsrfToken = async function techmigosGetCsrfToken(message) {
-        const response = await window.techmigosApiFetch('/api/csrf', { method: 'GET' });
-        const result = await response.json().catch(() => null);
-        if (!response.ok || !result?.token) {
-          throw new Error(message || 'Secure form submission is unavailable. Please email info@techmigos.com directly.');
-        }
-        return String(result.token);
-      };
+      });
     </script>
   </head>
   <body class="bg-white text-gray-900">

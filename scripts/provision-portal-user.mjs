@@ -14,8 +14,8 @@ function flag(name) {
   return args.includes(`--${name}`);
 }
 
-const baseUrl = (env.INSFORGE_BASE_URL || 'https://n2hhxvw3.ap-southeast.insforge.app').replace(/\/$/, '');
-const apiKey = env.INSFORGE_API_KEY;
+const baseUrl = (env.SUPABASE_URL || env.PUBLIC_SUPABASE_URL || 'https://lzlflnjrtxovzrniwmyq.supabase.co').replace(/\/$/, '');
+const apiKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY;
 const email = option('email').trim().toLowerCase();
 const password = option('password');
 const name = option('name', email);
@@ -26,12 +26,12 @@ let authUserId = option('auth-user-id');
 const recreateAuth = flag('recreate-auth');
 
 if (!apiKey) {
-  console.error('INSFORGE_API_KEY is required.');
+  console.error('SUPABASE_SERVICE_ROLE_KEY is required.');
   process.exit(1);
 }
 
 if (!email || !name || !['company_admin', 'company_member', 'client'].includes(role)) {
-  console.error('Usage: INSFORGE_API_KEY=... npm run portal:user -- --email user@example.com --password TempPass123! --name "User Name" --role client');
+  console.error('Usage: SUPABASE_SERVICE_ROLE_KEY=... npm run portal:user -- --email user@example.com --password TempPass123! --name "User Name" --role client');
   process.exit(1);
 }
 

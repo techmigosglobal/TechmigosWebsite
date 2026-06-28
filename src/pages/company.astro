@@ -1460,7 +1460,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     };
 
     function token() {
-      return sessionStorage.getItem('tm_portal_access_token') || '';
+      return 'supabase-session';
     }
 
     function escapeHtml(value) {
@@ -1491,20 +1491,203 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       els.status.style.color = tone === 'error' ? 'var(--crm-red)' : tone === 'success' ? 'var(--crm-green)' : '#667599';
     }
 
+    const TABLE_MAP = {
+      leads: 'crm_leads',
+      clients: 'crm_clients',
+      projects: 'crm_projects',
+      deals: 'crm_deals',
+      tickets: 'crm_tickets',
+      invoices: 'crm_invoices',
+      finances: 'crm_finances',
+      followups: 'crm_followups',
+      campaigns: 'crm_campaigns',
+      activities: 'crm_activities',
+      profiles: 'crm_profiles',
+      ticket_messages: 'crm_ticket_messages',
+    };
+
+    function tableName(resource) {
+      return TABLE_MAP[resource] || resource;
+    }
+
     async function portal(path, options = {}) {
-      const headers = new Headers(options.headers || {});
-      headers.set('authorization', `Bearer ${token()}`);
-      if (options.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
-      const response = await window.techmigosApiFetch(path, { ...options, headers });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.error || 'Portal request failed.');
-      return data;
+      const method = (options.method || 'GET').toUpperCase();
+      const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : null;
+      const parts = path.replace(/^\/api\/portal\//, '').split('/').filter(Boolean);
+      const resource = parts[0];
+      const id = parts[1];
+      const sub = parts[2];
+      const table = tableName(resource);
+
+      if (resource === 'me') {
+        const { data: { user } } = await window.tmSupabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        const { data: profile } = await window.tmSupabase
+          .from('crm_profiles')
+          .select('*')
+          .eq('auth_user_id', user.id)
+          .single();
+        if (!profile) throw new Error('Profile not found');
+        if (profile.role === 'client') throw new Error('Access denied');
+        return { profile, destination: '/company' };
+      }
+
+      if (resource === 'settings') {
+        const category = id || 'company';
+        if (method === 'GET') {
+          const { data } = await window.tmSupabase
+            .from('crm_settings')
+            .select('settings')
+            .eq('category', category)
+            .single();
+          return { settings: data?.settings || {} };
+        }
+        if (method === 'PATCH') {
+          const { data: existing } = await window.tmSupabase
+            .from('crm_settings')
+            .select('id, settings')
+            .eq('category', category)
+            .single();
+          if (existing) {
+            await window.tmSupabase
+              .from('crm_settings')
+              .update({ settings: { ...existing.settings, ...body } })
+              .eq('id', existing.id);
+          }
+          return { ok: true };
+        }
+      }
+
+      if (resource === 'invoices' && id && sub === 'upload-sign') {
+        const file = options.body?.get?.('file');
+        if (!file) throw new Error('No file provided');
+        const path = `signatures/${id}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await window.tmSupabase.storage
+          .from('invoice-signatures')
+          .upload(path, file, { upsert: true });
+        if (uploadError) throw new Error(uploadError.message);
+        const { data: urlData } = window.tmSupabase.storage
+          .from('invoice-signatures')
+          .getPublicUrl(path);
+        await window.tmSupabase
+          .from('crm_invoices')
+          .update({ sign_url: urlData.publicUrl })
+          .eq('id', id);
+        return { sign_url: urlData.publicUrl };
+      }
+
+      if (resource === 'invoices' && id && sub === undefined && method === 'GET') {
+        const { data: invoice } = await window.tmSupabase
+          .from('crm_invoices')
+          .select('*')
+          .eq('id', id)
+          .single();
+        const { data: items } = await window.tmSupabase
+          .from('crm_invoice_items')
+          .select('*')
+          .eq('invoice_id', id)
+          .order('sort_order');
+        return { detail: { invoice, items } };
+      }
+
+      if (resource === 'client') {
+        if (id === 'overview') {
+          const { data: { user } } = await window.tmSupabase.auth.getUser();
+          const { data: profile } = await window.tmSupabase
+            .from('crm_profiles')
+            .select('client_id')
+            .eq('auth_user_id', user.id)
+            .single();
+          const clientId = profile?.client_id;
+          if (!clientId) throw new Error('No client linked');
+          const [clientRes, projectsRes, invoicesRes, ticketsRes] = await Promise.all([
+            window.tmSupabase.from('crm_clients').select('*').eq('id', clientId).single(),
+            window.tmSupabase.from('crm_projects').select('*').eq('client_id', clientId),
+            window.tmSupabase.from('crm_invoices').select('*').eq('client_id', clientId),
+            window.tmSupabase.from('crm_tickets').select('*').eq('client_id', clientId),
+          ]);
+          return {
+            client: clientRes.data,
+            projects: projectsRes.data || [],
+            invoices: invoicesRes.data || [],
+            tickets: ticketsRes.data || [],
+          };
+        }
+      }
+
+      if (method === 'GET' && !id) {
+        const { data, error } = await window.tmSupabase
+          .from(table)
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw new Error(error.message);
+        return { items: data || [] };
+      }
+
+      if (method === 'POST' && !id) {
+        const rows = Array.isArray(body) ? body : [body];
+        const { data, error } = await window.tmSupabase
+          .from(table)
+          .insert(rows)
+          .select();
+        if (error) throw new Error(error.message);
+
+        if (resource === 'invoices' && body.items) {
+          const invoiceId = data[0]?.id;
+          if (invoiceId) {
+            const items = body.items.map((item, i) => ({
+              invoice_id: invoiceId,
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              rate: item.rate || 0,
+              amount: (item.quantity || 1) * (item.rate || 0),
+              sort_order: i,
+            }));
+            await window.tmSupabase.from('crm_invoice_items').insert(items);
+          }
+        }
+
+        return { item: data?.[0], items: data };
+      }
+
+      if (method === 'PATCH' && id) {
+        const { data, error } = await window.tmSupabase
+          .from(table)
+          .update(body)
+          .eq('id', id)
+          .select();
+        if (error) throw new Error(error.message);
+
+        if (resource === 'invoices' && body.items) {
+          await window.tmSupabase.from('crm_invoice_items').delete().eq('invoice_id', id);
+          const items = body.items.map((item, i) => ({
+            invoice_id: id,
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            rate: item.rate || 0,
+            amount: (item.quantity || 1) * (item.rate || 0),
+            sort_order: i,
+          }));
+          await window.tmSupabase.from('crm_invoice_items').insert(items);
+        }
+
+        return { item: data?.[0] };
+      }
+
+      if (method === 'DELETE' && id) {
+        const { error } = await window.tmSupabase
+          .from(table)
+          .delete()
+          .eq('id', id);
+        if (error) throw new Error(error.message);
+        return { ok: true };
+      }
+
+      throw new Error(`Unsupported portal call: ${method} ${path}`);
     }
 
     function logout() {
-      sessionStorage.removeItem('tm_portal_access_token');
-      sessionStorage.removeItem('tm_portal_refresh_token');
-      sessionStorage.removeItem('tm_portal_csrf_token');
+      window.tmSupabase.auth.signOut();
       location.href = '/login';
     }
 
@@ -2112,7 +2295,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <section class="crm-card">
             <div class="crm-card-head"><h2 class="crm-card-title">Connected Integrations</h2></div>
             <div class="crm-list">
-              <div class="crm-list-row"><span>InsForge</span>${badge('connected', 'green')}</div>
+              <div class="crm-list-row"><span>Supabase</span>${badge('connected', 'green')}</div>
               <div class="crm-list-row"><span>MSG91</span>${badge('ready', 'blue')}</div>
               <div class="crm-list-row"><span>Exports</span><strong>Excel, CSV, PDF</strong></div>
             </div>
@@ -2346,7 +2529,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       try {
         await portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'PATCH', body: JSON.stringify(rowPayload(row, row.dataset.resource)) });
         row.classList.remove('crm-dirty');
-        toast('Saved to InsForge');
+        toast('Saved to Supabase');
       } catch (error) {
         toast(error instanceof Error ? error.message : 'Save failed');
       }
@@ -2367,7 +2550,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             summary: `Updated company settings: ${Object.keys(values).join(', ')}`,
           }),
         });
-        toast('Settings update recorded in InsForge');
+        toast('Settings update recorded in Supabase');
         await loadData();
       } catch (error) {
         toast(error instanceof Error ? error.message : 'Settings save failed');
@@ -2399,7 +2582,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return configs[resource] || configs.clients;
     }
 
-    function formMarkup(resource, values = {}, submitLabel = 'Save to InsForge') {
+    function formMarkup(resource, values = {}, submitLabel = 'Save') {
       return `<form id="crm-edit-form" class="crm-form-grid">${createFields(resource).map(([name, label, type]) => {
         const value = escapeHtml(values[name] ?? '');
         return `<label class="${type === 'textarea' ? 'wide' : ''}">${label}${type === 'textarea' ? `<textarea name="${name}">${value}</textarea>` : `<input name="${name}" type="${type}" value="${value}" />`}</label>`;
@@ -2697,7 +2880,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (resource === 'tickets') return openTicketCreate();
       const actualResource = resource === 'salary' ? 'finances' : resource;
       els.modalTitle.textContent = resource === 'salary' ? 'Add Salary' : `Create ${resource}`;
-      els.modalBody.innerHTML = formMarkup(actualResource, smartDefaults(resource), resource === 'salary' ? 'Add Salary to InsForge' : 'Create in InsForge');
+      els.modalBody.innerHTML = formMarkup(actualResource, smartDefaults(resource), resource === 'salary' ? 'Add Salary' : 'Create');
       els.modal.classList.add('open');
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -2708,7 +2891,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         try {
           await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
-          toast('Created in InsForge');
+          toast('Created');
           await loadData();
         } catch (error) {
           toast(error instanceof Error ? error.message : 'Create failed');
@@ -2747,14 +2930,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
       els.modalTitle.textContent = `Edit ${resource}`;
-      els.modalBody.innerHTML = formMarkup(resource, item, 'Update in InsForge');
+      els.modalBody.innerHTML = formMarkup(resource, item, 'Update');
       els.modal.classList.add('open');
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         try {
           await portal(`/api/portal/${resource}/${id}`, { method: 'PATCH', body: JSON.stringify(normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()))) });
           els.modal.classList.remove('open');
-          toast('Updated in InsForge');
+          toast('Updated');
           await loadData();
         } catch (error) {
           toast(error instanceof Error ? error.message : 'Update failed');
@@ -2773,7 +2956,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (body.invoice_number) delete body.invoice_number;
       try {
         await portal(`/api/portal/${resource}`, { method: 'POST', body: JSON.stringify(normalizePayload(resource, body)) });
-        toast('Duplicated in InsForge');
+        toast('Duplicated');
         await loadData();
       } catch (error) {
         toast(error instanceof Error ? error.message : 'Duplicate failed');
@@ -2784,7 +2967,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (!id || !confirm(`Delete this ${resource.slice(0, -1) || resource}? This cannot be undone.`)) return;
       try {
         await portal(`/api/portal/${resource}/${id}`, { method: 'DELETE' });
-        toast('Deleted from InsForge');
+        toast('Deleted');
         await loadData();
       } catch (error) {
         toast(error instanceof Error ? error.message : 'Delete failed');
@@ -2797,7 +2980,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           method: 'PATCH',
           body: JSON.stringify({ [button.dataset.quickField]: button.dataset.quickValue }),
         });
-        toast('Updated in InsForge');
+        toast('Updated');
         await loadData();
       } catch (error) {
         toast(error instanceof Error ? error.message : 'Update failed');
@@ -3022,7 +3205,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <dt>Due</dt><dd>${escapeHtml(invoice.due_date || '').slice(0, 10) || '-'}</dd>
           <dt>Service</dt><dd>${escapeHtml(invoice.service_title || '-')}</dd>
         </dl>
-        ${items && items.length ? `<div class="ihp-items"><table><thead><tr><th>Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${itemRows}</tbody></table></div>` : ''\}
+        ${items && items.length ? `<div class="ihp-items"><table><thead><tr><th>Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${itemRows}</tbody></table></div>` : ''}
         <div class="ihp-foot"><span>Total</span><span>${money(invoice.total_amount || invoice.amount || 0)}</span></div>`;
     }
 
@@ -3039,22 +3222,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const names = Object.keys(state.data).filter((name) => name !== 'profiles' || state.profile?.role === 'company_admin');
       const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
       results.forEach(([name, items]) => { state.data[name] = items; });
-      setStatus('CRM data synced with InsForge.', 'success');
+      setStatus('CRM data synced.', 'success');
       render();
     }
 
     async function boot() {
-      if (!token()) return logout();
       try {
+        const { data: { session } } = await window.tmSupabase.auth.getSession();
+        if (!session) return logout();
         if (localStorage.getItem('tm_crm_sidebar_collapsed') === '1') {
           document.querySelector('.crm-app')?.classList.add('sidebar-collapsed');
           document.getElementById('crm-collapse').textContent = '⇥';
         }
         const me = await portal('/api/portal/me');
         state.profile = me.profile;
-        if (me.destination !== '/company') location.href = me.destination;
         document.getElementById('crm-user-name').textContent = me.profile.name || 'TechMigos';
-document.getElementById('crm-company-name').textContent = me.profile.company || state.profile?.company || 'TechMigos Solutions';
+        document.getElementById('crm-company-name').textContent = 'TechMigos Solutions';
         document.getElementById('crm-user-role').textContent = String(me.profile.role || 'company').replace(/_/g, ' ');
         await loadData();
       } catch (error) {

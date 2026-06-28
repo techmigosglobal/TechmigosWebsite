@@ -270,26 +270,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         service: String(formData.get('service') || ''),
         budget: String(formData.get('budget') || ''),
         message: String(formData.get('message') || ''),
-        company_website: String(formData.get('company_website') || ''),
-        sourcePath: '/contact',
+        source_path: '/contact',
       };
 
-      const csrfToken = await getCsrfToken();
-      const response = await (window as any).techmigosApiFetch('/api/leads/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
-        },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.ok) {
-        if (result.fieldErrors) {
-          const firstError = Object.values(result.fieldErrors)[0];
-          throw new Error(String(firstError || result.error || 'Validation failed.'));
-        }
-        throw new Error(result.error || 'Request failed.');
+      const { error } = await (window as any).tmSupabase
+        .from('contact_leads')
+        .insert([payload]);
+
+      if (error) {
+        throw new Error(error.message || 'Request failed.');
       }
 
       showToast("Message sent! We'll be in touch within 24 hours.", 'success');

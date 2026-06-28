@@ -6,7 +6,8 @@
     "NODE_ENV": "production",
     "PUBLIC_SITE_URL": "https://www.techmigos.com",
     "NEXT_PUBLIC_SITE_URL": "https://www.techmigos.com",
-    "PUBLIC_API_BASE_URL": "https://n2hhxvw3.ap-southeast.insforge.app"
+    "PUBLIC_SUPABASE_URL": "https://lzlflnjrtxovzrniwmyq.supabase.co",
+    "PUBLIC_SUPABASE_KEY": "sb_publishable_c6ePngXzONzedvwFQnL6tw_5tyUCLHJ"
   },
   "redirects": [
     {
@@ -21,12 +22,7 @@
       "permanent": true
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/auth/:path*",
-      "destination": "https://n2hhxvw3.ap-southeast.insforge.app/api/auth/:path*"
-    }
-  ],
+  "rewrites": [],
   "headers": [
     {
       "source": "/:path*",

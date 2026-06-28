@@ -43,8 +43,7 @@ pnpm-debug.log*
 *.pdf
 .vercel
 
-# InsForge & AI agent skills
-.insforge
+# Supabase & AI agent skills
 .agent
 .agents
 .augment

@@ -234,29 +234,21 @@ const socialLinks = [
   newsletterForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const formData = new FormData(newsletterForm);
-    const payload = {
-      email: String(formData.get('email') || ''),
-      company_website: String(formData.get('company_website') || ''),
-      sourcePath: window.location.pathname || '/',
-    };
+      const payload = {
+        email: String(formData.get('email') || ''),
+        source_path: window.location.pathname || '/',
+      };
 
-    try {
-      newsletterSubmit.disabled = true;
-      newsletterSubmit.textContent = 'Subscribing…';
-      const csrfToken = await getCsrfToken();
-      const response = await (window as any).techmigosApiFetch('/api/leads/newsletter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
-        },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.ok) {
-        const firstError = result.fieldErrors ? Object.values(result.fieldErrors)[0] : null;
-        throw new Error(String(firstError || result.error || 'Could not subscribe.'));
-      }
+      try {
+        newsletterSubmit.disabled = true;
+        newsletterSubmit.textContent = 'Subscribing...';
+        const { error } = await (window as any).tmSupabase
+          .from('newsletter_subscribers')
+          .insert([payload]);
+
+        if (error) {
+          throw new Error(error.message || 'Could not subscribe.');
+        }
       newsletterForm.reset();
       if (newsletterStatus) {
         newsletterStatus.textContent = 'Thanks for subscribing.';

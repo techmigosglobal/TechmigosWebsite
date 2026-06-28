@@ -325,27 +325,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         service: topic,
         budget: priority,
         message,
-        company_website: String(formData.get('company_website') || ''),
-        sourcePath: '/support',
+        source_path: '/support',
       };
 
-      const csrfToken = await getCsrfToken();
-      const response = await (window as any).techmigosApiFetch('/api/leads/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
-        },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
+      const { error } = await (window as any).tmSupabase
+        .from('contact_leads')
+        .insert([payload]);
 
-      if (!response.ok || !result.ok) {
-        if (result.fieldErrors) {
-          const firstError = Object.values(result.fieldErrors)[0];
-          throw new Error(String(firstError || result.error || 'Validation failed.'));
-        }
-        throw new Error(result.error || 'Request failed.');
+      if (error) {
+        throw new Error(error.message || 'Request failed.');
       }
 
       showToast('Support request sent. We will review it shortly.', 'success');

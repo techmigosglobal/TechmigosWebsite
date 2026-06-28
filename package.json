@@ -25,6 +25,7 @@
     "release:github": "./scripts/release-github.sh"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "astro": "^6.3.3",
     "astro-icon": "^1.1.0",
     "autoprefixer": "^10.5.0",

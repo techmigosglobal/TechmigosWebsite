@@ -1495,62 +1495,41 @@ const essentials = [
     setLoading(true);
 
     try {
-      const csrfToken = await getCsrfToken();
       const formData = new FormData(form);
-      formData.set('sourcePath', window.location.pathname || '/careers');
-      const apiBase = String(window.TechMigosConfig?.apiBaseUrl || '');
-      const isInsForge = apiBase.includes('.insforge.app');
-      let headers = { 'x-csrf-token': csrfToken };
-      let body = formData;
+      const cv = formData.get('cv');
+      let resumeUrl = '';
+      let resumePath = '';
 
-      if (isInsForge) {
-        const cv = formData.get('cv');
-        if (!(cv instanceof File)) {
-          throw new Error('Resume file is required.');
-        }
-
-        const buffer = await cv.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        bytes.forEach((byte) => {
-          binary += String.fromCharCode(byte);
-        });
-
-        headers = {
-          ...headers,
-          'Content-Type': 'application/json',
-        };
-        body = JSON.stringify({
-          jobTitle: String(formData.get('jobTitle') || ''),
-          name: String(formData.get('name') || ''),
-          email: String(formData.get('email') || ''),
-          linkedin: String(formData.get('linkedin') || ''),
-          portfolio: String(formData.get('portfolio') || ''),
-          coverLetter: String(formData.get('coverLetter') || ''),
-          company_website: String(formData.get('company_website') || ''),
-          sourcePath: String(formData.get('sourcePath') || ''),
-          resumeName: cv.name,
-          resumeMimeType: cv.type || 'application/octet-stream',
-          resumeSize: cv.size,
-          resumeBase64: btoa(binary),
-        });
+      if (cv instanceof File && cv.size > 0) {
+        const filePath = `resumes/${Date.now()}-${cv.name}`;
+        const { error: uploadError } = await window.tmSupabase.storage
+          .from('resumes')
+          .upload(filePath, cv);
+        if (uploadError) throw new Error('Resume upload failed: ' + uploadError.message);
+        const { data: urlData } = window.tmSupabase.storage.from('resumes').getPublicUrl(filePath);
+        resumeUrl = urlData.publicUrl;
+        resumePath = filePath;
       }
 
-      const response = await window.techmigosApiFetch('/api/leads/careers', {
-        method: 'POST',
-        headers,
-        body,
-      });
+      const payload = {
+        job_title: String(formData.get('jobTitle') || ''),
+        name: String(formData.get('name') || ''),
+        email: String(formData.get('email') || ''),
+        linkedin: String(formData.get('linkedin') || ''),
+        portfolio: String(formData.get('portfolio') || ''),
+        cover_letter: String(formData.get('coverLetter') || ''),
+        company_website: String(formData.get('company_website') || ''),
+        source_path: window.location.pathname || '/careers',
+        resume_url: resumeUrl,
+        resume_path: resumePath,
+      };
 
-      const result = await response.json();
-      if (!response.ok || !result.ok) {
-        if (result.fieldErrors) {
-          Object.entries(result.fieldErrors).forEach(([key, value]) => {
-            touched.add(key);
-            setFieldError(key, String(value));
-          });
-        }
-        throw new Error(result.error || 'Could not submit your application right now.');
+      const { error } = await window.tmSupabase
+        .from('career_applications')
+        .insert([payload]);
+
+      if (error) {
+        throw new Error(error.message || 'Could not submit your application right now.');
       }
 
       form.reset();

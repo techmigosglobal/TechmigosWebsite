@@ -70,25 +70,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const statusEl = document.getElementById('login-status');
     const button = document.getElementById('login-button');
 
-    function apiBase() {
-      return String(window.TechMigosConfig?.apiBaseUrl || 'https://n2hhxvw3.ap-southeast.insforge.app').replace(/\/$/, '');
-    }
-
-    function authUrl(path) {
-      const base = apiBase();
-      return `${base}${path}${path.includes('?') ? '&' : '?'}client_type=server`;
-    }
-
     function setStatus(message, isError) {
       statusEl.textContent = message || '';
       statusEl.className = `text-sm min-h-[1.25rem] ${isError ? 'text-red-600' : 'text-slate-500'}`;
-    }
-
-    async function portalFetch(path, options = {}) {
-      const token = sessionStorage.getItem('tm_portal_access_token') || '';
-      const headers = new Headers(options.headers || {});
-      if (token) headers.set('authorization', `Bearer ${token}`);
-      return window.techmigosApiFetch(path, { ...options, headers });
     }
 
     form?.addEventListener('submit', async (event) => {
@@ -99,42 +83,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       try {
         const data = Object.fromEntries(new FormData(form).entries());
         const loginId = String(data.login_id || '').trim();
-        const isSimpleUsername = loginId && !loginId.includes('@');
-        const response = isSimpleUsername
-          ? await window.techmigosApiFetch('/api/portal/simple-login', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ username: loginId, password: data.password }),
-            })
-          : await fetch(authUrl('/api/auth/sessions'), {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ email: loginId, password: data.password }),
-            });
-        const result = await response.json().catch(() => null);
-        const accessToken = result?.accessToken || result?.data?.accessToken;
-        const refreshToken = result?.refreshToken || result?.data?.refreshToken;
-        const csrfToken = result?.csrfToken || result?.data?.csrfToken;
+        const password = String(data.password || '');
+        let email = loginId;
 
-        if (!response.ok || !accessToken) {
-          if (response.status === 401) {
-            throw new Error(isSimpleUsername ? (result?.error || 'Username or password is incorrect.') : 'Email or password is incorrect, or this account has not been created in InsForge Auth.');
+        if (!loginId.includes('@')) {
+          const { data: resolvedEmail, error: rpcError } = await window.tmSupabase
+            .rpc('get_email_by_username', { p_username: loginId });
+          if (rpcError || !resolvedEmail) {
+            throw new Error('Username not found. Please use your email address.');
           }
-          if (response.status === 404) {
-            throw new Error('Login API was not found. Please refresh the page and confirm the InsForge API URL is configured.');
-          }
-          throw new Error(result?.message || result?.error || 'Could not sign in right now.');
+          email = resolvedEmail;
         }
 
-        sessionStorage.setItem('tm_portal_access_token', accessToken);
-        if (refreshToken) sessionStorage.setItem('tm_portal_refresh_token', refreshToken);
-        if (csrfToken) sessionStorage.setItem('tm_portal_csrf_token', csrfToken);
+        const { data: authData, error: authError } = await window.tmSupabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-        const meResponse = await portalFetch('/api/portal/me');
-        const me = await meResponse.json().catch(() => null);
-        if (!meResponse.ok || !me?.destination) throw new Error(me?.error || 'Portal access is not provisioned for this account.');
-        location.href = me.destination;
+        if (authError) {
+          throw new Error(authError.message === 'Invalid login credentials'
+            ? 'Email or password is incorrect.'
+            : authError.message);
+        }
+
+        const { data: profile } = await window.tmSupabase
+          .from('crm_profiles')
+          .select('role, name')
+          .eq('auth_user_id', authData.user.id)
+          .limit(1)
+          .single();
+
+        if (!profile) throw new Error('Portal access is not provisioned for this account.');
+
+        await window.tmSupabase
+          .from('crm_profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('auth_user_id', authData.user.id);
+
+        location.href = profile.role === 'client' ? '/client' : '/company';
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not sign in.', true);
         button.disabled = false;

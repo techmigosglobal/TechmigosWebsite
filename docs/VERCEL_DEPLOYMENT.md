@@ -29,14 +29,15 @@ Set these in the Vercel project settings under "Environment Variables":
 ```
 NODE_ENV=production
 PUBLIC_SITE_URL=https://www.techmigos.com
-PUBLIC_API_BASE_URL=https://n2hhxvw3.ap-southeast.insforge.app
+PUBLIC_SUPABASE_URL=https://lzlflnjrtxovzrniwmyq.supabase.co
+PUBLIC_SUPABASE_KEY=<your-supabase-anon-key>
 ```
 
 ## Build Configuration
 
 - **Node.js Version**: 20.x
 - **Output Mode**: Static HTML generated into `dist`
-- **Runtime API**: Public forms call the InsForge backend directly
+- **Backend**: Supabase (database, auth, storage, edge functions)
 
 ## Automatic Deployments
 
@@ -46,7 +47,7 @@ PUBLIC_API_BASE_URL=https://n2hhxvw3.ap-southeast.insforge.app
 
 ## Database & API Backend
 
-- Production public form API calls route to InsForge.
+- Production backend uses Supabase at `https://lzlflnjrtxovzrniwmyq.supabase.co`.
 - The removed showcase sub-application is no longer part of this deployment.
 
 ## Monitoring
@@ -68,5 +69,5 @@ After deployment:
 - Redeploy after adding/changing environment variables
 
 **Form submissions not working:**
-- Check that `PUBLIC_API_BASE_URL` points to the InsForge backend.
-- Confirm `INSFORGE_API_KEY` and `CSRF_SECRET` are configured in InsForge function secrets.
+- Check that `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_KEY` are correctly configured.
+- Confirm `CSRF_SECRET` is configured in the environment.

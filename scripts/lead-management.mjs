@@ -15,12 +15,12 @@ function optionValue(name, fallback) {
 
 const tableArg = optionValue('table', '');
 const limitArg = Number(optionValue('limit', '50'));
-const baseUrl = (env.INSFORGE_BASE_URL || 'https://n2hhxvw3.ap-southeast.insforge.app').replace(/\/$/, '');
-const apiKey = env.INSFORGE_API_KEY;
+const baseUrl = (env.SUPABASE_URL || env.PUBLIC_SUPABASE_URL || 'https://lzlflnjrtxovzrniwmyq.supabase.co').replace(/\/$/, '');
+const apiKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY;
 const tables = tableArg ? [tableArg] : ['contact_leads', 'newsletter_subscribers', 'career_applications'];
 
 if (!apiKey) {
-  console.error('INSFORGE_API_KEY is required.');
+  console.error('SUPABASE_SERVICE_ROLE_KEY is required.');
   process.exit(1);
 }
 
