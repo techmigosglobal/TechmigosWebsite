@@ -9,56 +9,135 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   description="Secure TechMigos portal login for clients and company team members to access projects, support, invoices, leads, and CRM workflows."
   noIndex={true}
 >
-  <section class="min-h-screen pt-28 pb-16 bg-slate-950 text-white overflow-hidden">
-    <div class="container-custom max-w-6xl">
-      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center">
-        <div class="relative z-10">
-          <span class="section-eyebrow text-cyan-300">TechMigos Portal</span>
-          <h1 class="mt-5 max-w-3xl text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight">
-            One login for project clients and TechMigos teams.
+  <section class="relative min-h-screen overflow-hidden bg-[#071015] pt-24 pb-14 text-white sm:pt-28 lg:pb-20">
+    <div class="absolute inset-0 grid-pattern opacity-[0.16]"></div>
+    <div class="absolute inset-x-0 top-24 h-px bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-950 to-transparent"></div>
+
+    <div class="container-custom relative z-10 max-w-7xl">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(380px,450px)] lg:items-center xl:grid-cols-[minmax(0,1.2fr)_minmax(400px,460px)]">
+        <div class="order-2 lg:order-1">
+          <div class="inline-flex items-center gap-3 rounded-[8px] border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-200">
+            <span class="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.7)]"></span>
+            TechMigos Portal
+          </div>
+
+          <h1 class="mt-6 max-w-4xl text-4xl font-black leading-[1.04] text-white sm:text-5xl lg:text-6xl">
+            Access the right TechMigos workspace from one secure login.
           </h1>
-          <p class="mt-5 max-w-2xl text-base sm:text-lg text-slate-300 leading-relaxed">
-            Sign in once and we will route your account to the right workspace: client projects, support and invoices, or the internal CRM for leads, follow-ups, sales and operations.
+          <p class="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            Enter your invited account once. TechMigos checks your profile and sends clients to their project desk, while company users land in CRM, sales, support, and operations.
           </p>
 
-          <div class="mt-8 grid gap-3 sm:grid-cols-2 max-w-3xl">
-            <div class="rounded-lg border border-white/10 bg-white/5 p-4">
-              <p class="text-sm font-bold text-white">Clients</p>
-              <p class="mt-1 text-sm text-slate-300">View projects, invoices, and support tickets.</p>
+          <div class="mt-8 max-w-3xl divide-y divide-white/10 border-y border-white/10">
+            <div class="grid gap-2 py-4 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-6">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">Clients</p>
+              <p class="text-sm leading-6 text-slate-300">Projects, invoices, support tickets, and shared delivery updates.</p>
             </div>
-            <div class="rounded-lg border border-white/10 bg-white/5 p-4">
-              <p class="text-sm font-bold text-white">TechMigos team</p>
-              <p class="mt-1 text-sm text-slate-300">Manage CRM, leads, follow-ups, campaigns, and work activity.</p>
+            <div class="grid gap-2 py-4 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-6">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">Team</p>
+              <p class="text-sm leading-6 text-slate-300">CRM, leads, follow-ups, campaigns, finance, and work activity.</p>
             </div>
+            <div class="grid gap-2 py-4 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-6">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">Routing</p>
+              <p class="text-sm leading-6 text-slate-300">Supabase Auth validates the account before the role-based redirect runs.</p>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-wrap gap-3 text-xs font-bold text-slate-200">
+            <span class="rounded-[8px] border border-white/10 bg-white/[0.04] px-3 py-2">Invite-only access</span>
+            <span class="rounded-[8px] border border-white/10 bg-white/[0.04] px-3 py-2">No public sign-up</span>
+            <span class="rounded-[8px] border border-white/10 bg-white/[0.04] px-3 py-2">Profile-based workspace</span>
           </div>
         </div>
 
-        <div class="relative z-10 bg-white text-slate-950 rounded-lg p-5 sm:p-7 shadow-2xl border border-slate-200">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-extrabold">Portal login</h2>
-              <p class="mt-2 text-sm text-slate-500">Use the credentials provided by TechMigos.</p>
+        <div class="order-1 lg:order-2">
+          <div class="relative mx-auto max-w-md">
+            <div class="absolute -left-4 top-5 hidden h-full w-full rounded-[8px] border border-emerald-300/20 lg:block"></div>
+            <div class="relative overflow-hidden rounded-[8px] border border-slate-200 bg-white text-slate-950 shadow-[0_28px_80px_rgba(0,0,0,0.34)]">
+              <div class="border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-7">
+                <div class="flex items-center justify-between gap-4">
+                  <a href="/" class="inline-flex min-h-11 items-center gap-3" aria-label="TechMigos home">
+                    <img src="/icon.png" alt="" width="40" height="40" class="h-10 w-10 rounded-[8px] object-contain" />
+                    <div>
+                      <p class="text-sm font-black text-slate-950">TechMigos</p>
+                      <p class="text-xs font-semibold text-slate-500">Secure portal</p>
+                    </div>
+                  </a>
+                  <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">Protected</span>
+                </div>
+              </div>
+
+              <div class="p-5 sm:p-7">
+                <div>
+                  <h2 class="text-3xl font-black tracking-normal text-slate-950">Sign in</h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-500">Use the username or email provided by TechMigos.</p>
+                </div>
+
+                <form id="portal-login-form" class="mt-7 space-y-5">
+                  <label class="block" for="login-id">
+                    <span class="form-label">Username or email</span>
+                    <input
+                      id="login-id"
+                      name="login_id"
+                      type="text"
+                      required
+                      class="form-input form-control form-control--muted focus-visible:!border-emerald-500 focus-visible:!ring-emerald-500/20"
+                      autocomplete="username"
+                      inputmode="email"
+                      autocapitalize="none"
+                      spellcheck="false"
+                      placeholder="vinay or you@example.com"
+                    />
+                  </label>
+
+                  <label class="block" for="password">
+                    <span class="form-label">Password</span>
+                    <span class="relative block">
+                      <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        required
+                        class="form-input form-control form-control--muted pr-16 focus-visible:!border-emerald-500 focus-visible:!ring-emerald-500/20"
+                        autocomplete="current-password"
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        id="password-toggle"
+                        type="button"
+                        class="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-[8px] text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 focus-visible:ring-emerald-500"
+                        aria-label="Show password"
+                        aria-controls="password"
+                      >
+                        <svg id="password-toggle-icon" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    </span>
+                  </label>
+
+                  <button
+                    id="login-button"
+                    type="submit"
+                    class="inline-flex min-h-[52px] w-full items-center justify-center gap-3 rounded-[8px] bg-emerald-400 px-6 py-3 text-base font-black text-slate-950 shadow-[0_14px_30px_rgba(52,211,153,0.28)] transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:bg-emerald-300 focus-visible:ring-emerald-500 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                    aria-describedby="login-status"
+                  >
+                    <span id="login-button-text">Sign in to portal</span>
+                    <span id="login-spinner" class="hidden h-4 w-4 rounded-full border-2 border-slate-950/30 border-t-slate-950 animate-spin" aria-hidden="true"></span>
+                  </button>
+
+                  <p id="login-status" class="min-h-[1.25rem] text-sm text-slate-500" role="status" aria-live="polite"></p>
+                </form>
+
+                <div class="mt-5 border-t border-slate-200 pt-4">
+                  <p class="text-xs leading-relaxed text-slate-500">
+                    Accounts are invite-only. For access, contact your TechMigos project owner or email <a href="mailto:info@techmigos.com" class="font-bold text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-950">info@techmigos.com</a>.
+                  </p>
+                </div>
+              </div>
             </div>
-            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Secure</span>
-          </div>
-
-          <form id="portal-login-form" class="mt-7 space-y-5">
-            <label class="block" for="login-id">
-              <span class="form-label">Username or email</span>
-              <input id="login-id" name="login_id" type="text" required class="form-input form-control" autocomplete="username" placeholder="vinay or you@example.com" />
-            </label>
-            <label class="block" for="password">
-              <span class="form-label">Password</span>
-              <input id="password" name="password" type="password" required class="form-input form-control" autocomplete="current-password" placeholder="Enter your password" />
-            </label>
-            <button id="login-button" type="submit" class="btn-primary w-full justify-center min-h-[48px]">Login</button>
-            <p id="login-status" class="text-sm text-slate-500 min-h-[1.25rem]" role="status" aria-live="polite"></p>
-          </form>
-
-          <div class="mt-5 border-t border-slate-100 pt-4">
-            <p class="text-xs leading-relaxed text-slate-500">
-              Accounts are invite-only. If you need access, contact your TechMigos project owner or email info@techmigos.com.
-            </p>
           </div>
         </div>
       </div>
@@ -69,18 +148,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const form = document.getElementById('portal-login-form');
     const statusEl = document.getElementById('login-status');
     const button = document.getElementById('login-button');
+    const buttonText = document.getElementById('login-button-text');
+    const spinner = document.getElementById('login-spinner');
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('password-toggle');
+    const passwordToggleIcon = document.getElementById('password-toggle-icon');
 
     function setStatus(message, isError) {
+      if (!statusEl) return;
       statusEl.textContent = message || '';
-      statusEl.className = `text-sm min-h-[1.25rem] ${isError ? 'text-red-600' : 'text-slate-500'}`;
+      statusEl.className = `min-h-[1.25rem] text-sm ${isError ? 'text-rose-600' : 'text-slate-500'}`;
+      statusEl.setAttribute('role', isError ? 'alert' : 'status');
     }
+
+    function setLoading(isLoading, label) {
+      if (!button) return;
+      button.disabled = isLoading;
+      button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+      if (buttonText) buttonText.textContent = label || 'Sign in to portal';
+      spinner?.classList.toggle('hidden', !isLoading);
+    }
+
+    passwordToggle?.addEventListener('click', () => {
+      if (!passwordInput || !passwordToggleIcon) return;
+      const isVisible = passwordInput.getAttribute('type') === 'text';
+      passwordInput.setAttribute('type', isVisible ? 'password' : 'text');
+      passwordToggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+      passwordToggleIcon.innerHTML = isVisible
+        ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle>'
+        : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C5.5 19 2 12 2 12a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A10.77 10.77 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 0 1-4.24-4.24"></path><path d="M1 1l22 22"></path>';
+      passwordInput.focus();
+    });
 
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
-      button.disabled = true;
-      setStatus('Signing in...', false);
+      setLoading(true, 'Checking access...');
+      setStatus('Checking your portal access...', false);
 
       try {
+        if (!window.tmSupabase) throw new Error('Auth client not ready. Please refresh the page.');
         const data = Object.fromEntries(new FormData(form).entries());
         const loginId = String(data.login_id || '').trim();
         const password = String(data.password || '');
@@ -120,10 +226,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           .update({ last_login: new Date().toISOString() })
           .eq('auth_user_id', authData.user.id);
 
+        setStatus('Opening your workspace...', false);
+        if (buttonText) buttonText.textContent = 'Opening workspace...';
         location.href = profile.role === 'client' ? '/client' : '/company';
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not sign in.', true);
-        button.disabled = false;
+        setLoading(false);
       }
     });
   </script>

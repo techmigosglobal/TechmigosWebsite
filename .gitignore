@@ -11,12 +11,7 @@ exports/
 reports/
 
 # Environment & secrets
-.env
-.env.*
-!.env.example
-env.json
-env.*.json
-!env.example.json
+
 
 # OS files
 .DS_Store

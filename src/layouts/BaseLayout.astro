@@ -98,17 +98,15 @@ const pageTitle = title === 'Home'
       window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
       window.techmigosGetCsrfToken = async function() { return 'no-csrf'; };
 
-      document.addEventListener('DOMContentLoaded', function() {
-        try {
-          var url = document.querySelector('meta[name="supabase-url"]');
-          var key = document.querySelector('meta[name="supabase-key"]');
-          var sbUrl = url ? url.getAttribute('content') : '';
-          var sbKey = key ? key.getAttribute('content') : '';
-          window.tmSupabase = supabase.createClient(sbUrl, sbKey);
-        } catch (e) {
-          console.error('Supabase init failed:', e);
-        }
-      });
+      try {
+        var url = document.querySelector('meta[name="supabase-url"]');
+        var key = document.querySelector('meta[name="supabase-key"]');
+        var sbUrl = url ? url.getAttribute('content') : '';
+        var sbKey = key ? key.getAttribute('content') : '';
+        window.tmSupabase = supabase.createClient(sbUrl, sbKey);
+      } catch (e) {
+        console.error('Supabase init failed:', e);
+      }
     </script>
   </head>
   <body class="bg-white text-gray-900">
