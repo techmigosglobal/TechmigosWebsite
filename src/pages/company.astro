@@ -439,6 +439,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       gap: 20px;
       align-items: flex-start;
       margin-bottom: 22px;
+      flex-wrap: wrap;
     }
 
     .crm-page-title {
@@ -462,6 +463,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 10px;
+      min-width: 0;
     }
 
     .crm-button {
@@ -584,6 +586,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       min-height: 56px;
       border-bottom: 1px solid var(--crm-line);
       padding: 0 18px;
+      flex-wrap: wrap;
     }
 
     .crm-card-title {
@@ -1002,6 +1005,65 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       font-weight: 900;
     }
 
+    .proof-preview-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 110;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 22, 56, 0.65);
+      padding: 18px;
+    }
+
+    .proof-preview-modal.open {
+      display: flex;
+    }
+
+    .proof-preview-panel {
+      width: min(920px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 30px 100px rgba(8, 22, 56, 0.35);
+    }
+
+    .proof-preview-body {
+      padding: 18px;
+    }
+
+    .proof-preview-body img,
+    .proof-preview-body iframe {
+      width: 100%;
+      max-width: 100%;
+      border: 0;
+      border-radius: 10px;
+      min-height: 70vh;
+      background: #f8fbff;
+      object-fit: contain;
+    }
+
+    .crm-proof-cell {
+      min-width: 148px;
+    }
+
+    .crm-proof-summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      background: #eef5ff;
+      padding: 0 10px;
+      color: #1f5ed6;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .crm-proof-preview-inline {
+      max-width: 100%;
+    }
+
     .crm-modal {
       position: fixed;
       inset: 0;
@@ -1032,7 +1094,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       gap: 14px;
     }
 
-    .crm-form-grid label {
+.crm-form-grid label {
       display: grid;
       gap: 7px;
       color: #52617f;
@@ -1042,72 +1104,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       letter-spacing: 0.04em;
     }
 
-    .crm-form-grid input,
-    .crm-form-grid select,
-    .crm-form-grid textarea {
-      border: 1px solid var(--crm-line);
-      border-radius: 9px;
-      padding: 12px;
-      color: var(--crm-text);
-      font-size: 14px;
-      font-weight: 750;
-      text-transform: none;
-      letter-spacing: 0;
-    }
-
-    .crm-form-grid textarea,
-    .crm-form-grid .wide {
-      grid-column: 1 / -1;
-    }
-
-    .crm-toast {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      z-index: 120;
-      display: none;
-      border-radius: 10px;
-      background: #081638;
-      padding: 13px 16px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 850;
-      box-shadow: 0 20px 44px rgba(8, 22, 56, 0.22);
-    }
-
-    .crm-toast.show {
-      display: block;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .crm-app button:focus-visible,
-    .crm-app input:focus-visible,
-    .crm-app select:focus-visible,
-    .crm-app textarea:focus-visible {
-      outline: 3px solid rgba(31, 122, 255, 0.32);
-      outline-offset: 2px;
-    }
-
     @media (max-width: 1180px) {
-      .crm-app {
-        grid-template-columns: 92px minmax(0, 1fr);
+      .crm-topbar {
+        grid-template-columns: minmax(220px, 1fr);
+        gap: 14px;
       }
 
-      .crm-topbar-clock,
-      .crm-company-pill,
-      .crm-user-text {
-        display: none;
+      .crm-nav button {
+        justify-content: center;
+        padding: 13px;
       }
 
       .crm-brand {
@@ -1116,13 +1121,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         padding-right: 0;
       }
 
-      .crm-nav button {
-        justify-content: center;
-        padding: 13px;
-      }
-
-      .crm-topbar {
-        grid-template-columns: minmax(220px, 1fr) auto;
+      .crm-topbar-clock,
+      .crm-company-pill,
+      .crm-user-text {
+        display: none;
       }
 
       .crm-two-col {
@@ -1130,19 +1132,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .crm-kpis {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        padding-bottom: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       }
 
       .crm-kpi {
-        min-width: 260px;
-        scroll-snap-align: start;
+        min-height: 108px;
       }
 
       .crm-detail {
         position: static;
+      }
+
+      .crm-three-col {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       }
     }
 
@@ -1200,11 +1202,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       .crm-top-actions {
         justify-self: stretch;
-        justify-content: space-between;
+        justify-content: flex-start;
+        flex-wrap: wrap;
       }
 
       .crm-user {
-        min-width: auto;
+        min-width: 0;
+        flex: 1 1 190px;
       }
 
       .crm-content {
@@ -1225,7 +1229,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .crm-kpis {
-        display: flex;
+        display: grid;
       }
 
       .crm-card-head {
@@ -1272,8 +1276,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .crm-top-actions {
-        display: grid;
-        grid-template-columns: repeat(3, 44px) 1fr;
+        display: flex;
         gap: 8px;
       }
 
@@ -1301,6 +1304,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       .crm-toolbar {
         width: 100%;
+        justify-content: stretch;
       }
 
       .crm-toolbar > * {
@@ -1314,7 +1318,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .crm-kpi {
-        min-width: 78vw;
+        min-width: 0;
       }
 
       .crm-card {
@@ -1347,6 +1351,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .crm-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .crm-table tr {
+        border-bottom: 1px solid #edf2f8;
+        padding: 12px 14px;
+      }
+
+      .crm-table td {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1355,6 +1369,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         padding: 8px 0;
         white-space: normal;
         text-align: right;
+        min-width: 0;
       }
 
       .crm-table td::before {
@@ -1380,6 +1395,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       .crm-row-actions {
         justify-content: flex-end;
         flex-wrap: wrap;
+      }
+
+      .crm-mini-action {
+        width: auto;
+      }
+
+      .crm-proof-cell {
+        width: 100%;
+        align-items: flex-end !important;
+      }
+
+      .crm-proof-cell .crm-proof-preview-inline,
+      .crm-proof-cell .crm-proof-status {
+        text-align: right;
+      }
+
+      .crm-proof-cell > div:last-of-type,
+      .crm-proof-cell > div {
+        justify-content: flex-end;
       }
 
       .crm-detail {
@@ -1420,6 +1454,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         right: 10px;
         bottom: 10px;
         left: 10px;
+      }
+
+      .proof-preview-body {
+        padding: 12px;
+      }
+
+      .proof-preview-body img,
+      .proof-preview-body iframe {
+        min-height: 52vh;
+      }
+
+      .crm-proof-cell {
+        min-width: 0;
       }
     }
 
@@ -1548,6 +1595,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </div>
   <div id="crm-toast" class="crm-toast"></div>
   <div id="invoice-hover-preview" class="invoice-hover-preview" aria-hidden="true"></div>
+  <div id="proof-preview-modal" class="proof-preview-modal" role="dialog" aria-modal="true" aria-label="Proof preview">
+    <div class="proof-preview-panel">
+      <div class="crm-card-head">
+        <h2 class="crm-card-title">Proof Preview</h2>
+        <button id="proof-preview-close" class="crm-icon-button" type="button" aria-label="Close preview">×</button>
+      </div>
+      <div id="proof-preview-body" class="proof-preview-body"></div>
+    </div>
+  </div>
 
   <script is:inline>
     const navItems = [
@@ -1613,6 +1669,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       actionbar: document.getElementById('crm-actionbar'),
       selectedCount: document.getElementById('crm-selected-count'),
       invoiceHover: document.getElementById('invoice-hover-preview'),
+      proofPreviewModal: document.getElementById('proof-preview-modal'),
+      proofPreviewBody: document.getElementById('proof-preview-body'),
     };
 
     function token() {
@@ -1786,6 +1844,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           .update({ sign_url: urlData.publicUrl })
           .eq('id', id);
         return { sign_url: urlData.publicUrl };
+      }
+
+      if (resource === 'finances' && (id === 'upload-proof' || sub === 'upload-proof') && method === 'POST') {
+        const file = options.body?.get?.('file');
+        if (!file) throw new Error('No file provided');
+        const uploadName = id && id !== 'upload-proof' ? `records/${id}/${Date.now()}-${file.name}` : `pending/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await window.tmSupabase.storage
+          .from('finance-proofs')
+          .upload(uploadName, file, { upsert: true });
+        if (uploadError) throw new Error(uploadError.message);
+        if (id) {
+          await window.tmSupabase
+            .from('crm_finances')
+            .update({ proof_url: uploadName })
+            .eq('id', id);
+        }
+        return { proof_url: uploadName, proof_key: uploadName };
       }
 
       if (resource === 'invoices' && id && sub === undefined && method === 'GET') {
@@ -2171,12 +2246,104 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function proofCell(item) {
       const id = item.id;
       if (item.proof_url) {
-        return `<div style="display:flex;align-items:center;gap:4px;">
-          <a href="${escapeHtml(item.proof_url)}" target="_blank" rel="noopener" class="crm-mini-action" title="View proof" style="text-decoration:none;">📎 View</a>
-          <label class="crm-mini-action" style="cursor:pointer;" title="Replace proof">↑<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+        return `<div class="crm-proof-cell" data-proof-cell="${id}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+          <div class="crm-proof-preview-inline" data-proof-preview="${id}">${proofSummaryMarkup(item.proof_url)}</div>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            <button class="crm-mini-action" type="button" data-proof-open="${escapeHtml(item.proof_url)}">Preview</button>
+            <button class="crm-mini-action" type="button" data-proof-link="${escapeHtml(item.proof_url)}">Open</button>
+            <label class="crm-mini-action" style="cursor:pointer;" title="Replace proof">↑<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+          </div>
+          <span class="crm-proof-status" data-proof-status="${id}" style="font-size:10px;color:#667599;"></span>
         </div>`;
       }
-      return `<label class="crm-mini-action" style="cursor:pointer;" title="Upload proof">+ Proof<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>`;
+      return `<div class="crm-proof-cell" data-proof-cell="${id}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+        <label class="crm-mini-action" style="cursor:pointer;" title="Upload proof">+ Proof<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+        <div class="crm-proof-preview-inline" data-proof-preview="${id}">${proofSummaryMarkup('')}</div>
+        <span class="crm-proof-status" data-proof-status="${id}" style="font-size:10px;color:#667599;"></span>
+      </div>`;
+    }
+
+    function proofPreviewMarkup(url) {
+      if (!url) return '';
+      const safeUrl = escapeHtml(url);
+      if (/\.(png|jpe?g|webp|gif|avif)$/i.test(url)) {
+        return `<a href="${safeUrl}" target="_blank" rel="noopener"><img src="${safeUrl}" alt="Proof preview" style="max-width:220px;max-height:160px;object-fit:cover;border:1px solid #e2e8f0;border-radius:8px;background:#fff;" /></a>`;
+      }
+      if (/\.pdf$/i.test(url)) {
+        return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="text-decoration:none;">📄 Open PDF proof</a>`;
+      }
+      return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="text-decoration:none;">📎 Open proof</a>`;
+    }
+
+    function proofSummaryMarkup(url) {
+      if (!url) return '<span class="crm-proof-summary">No proof</span>';
+      if (/\.pdf(\?|$)/i.test(url)) return '<span class="crm-proof-summary">PDF attached</span>';
+      if (/\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(url)) return '<span class="crm-proof-summary">Image attached</span>';
+      return '<span class="crm-proof-summary">Proof attached</span>';
+    }
+
+    function proofStoragePath(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      if (/^https?:\/\//i.test(raw)) {
+        const match = raw.match(/\/finance-proofs\/(.+)$/);
+        return match ? decodeURIComponent(match[1]) : '';
+      }
+      return raw;
+    }
+
+    async function resolveProofUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      const path = proofStoragePath(raw);
+      if (!path && /^https?:\/\//i.test(raw)) return raw;
+      if (!path) return raw;
+      const { data, error } = await window.tmSupabase.storage
+        .from('finance-proofs')
+        .createSignedUrl(path, 60 * 60);
+      if (error) throw new Error(error.message);
+      return data?.signedUrl || '';
+    }
+
+    async function openProofPreview(value) {
+      if (!value || !els.proofPreviewModal || !els.proofPreviewBody) return;
+      els.proofPreviewBody.innerHTML = '<p style="margin:0;color:#475569;font-weight:700;">Loading proof preview...</p>';
+      els.proofPreviewModal.classList.add('open');
+      try {
+        const resolvedUrl = await resolveProofUrl(value);
+        const safeUrl = escapeHtml(resolvedUrl);
+        if (/\.pdf(\?|$)/i.test(resolvedUrl)) {
+          els.proofPreviewBody.innerHTML = `<iframe src="${safeUrl}" title="Proof PDF preview"></iframe>`;
+        } else if (/\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(resolvedUrl)) {
+          els.proofPreviewBody.innerHTML = `<img src="${safeUrl}" alt="Proof preview" />`;
+        } else {
+          els.proofPreviewBody.innerHTML = `<p style="margin:0 0 12px;color:#475569;font-weight:700;">Inline preview is not available for this proof type.</p><a class="crm-button primary" href="${safeUrl}" target="_blank" rel="noopener" style="text-decoration:none;">Open Proof</a>`;
+        }
+      } catch (error) {
+        els.proofPreviewBody.innerHTML = `<p style="margin:0;color:#b91c1c;font-weight:700;">${escapeHtml(error instanceof Error ? error.message : 'Could not open proof preview')}</p>`;
+        return;
+      }
+    }
+
+    async function openProofInNewTab(value) {
+      try {
+        const resolvedUrl = await resolveProofUrl(value);
+        window.open(resolvedUrl, '_blank', 'noopener,noreferrer');
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Could not open proof');
+      }
+    }
+
+    function financeProofFieldMarkup(values = {}) {
+      const proofUrl = String(values.proof_url || '');
+      return `<div class="wide" style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;">
+        <strong style="font-size:12px;">Payment Proof Attachment</strong>
+        <span style="display:block;font-size:10px;color:#667599;margin-bottom:6px;">Upload a receipt, screenshot, or PDF proof. It will be saved with the transaction and can be included in reports.</span>
+        ${proofUrl ? `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup(proofUrl)}</div>` : `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup('')}</div>`}
+        <input type="file" id="finance-proof-file" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:block;" />
+        <input type="hidden" name="proof_url" id="finance-proof-url" value="${escapeHtml(proofUrl)}" />
+        <span id="finance-proof-status" style="font-size:10px;color:#667599;"></span>
+      </div>`;
     }
 
     function financeRows() {
@@ -2249,6 +2416,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <td><input class="crm-edit-input" data-field="payment_method" placeholder="Account no." value="${escapeHtml(item.payment_method || '')}" /></td>
             <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td>${proofCell(item)}</td>
             <td>${rowActions('finances', item.id)}</td>
           </tr>`).join('');
       }
@@ -2264,6 +2432,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td>${proofCell(item)}</td>
             <td>${rowActions('finances', item.id)}</td>
           </tr>`).join('');
       }
@@ -2278,18 +2447,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
           <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','sent','overdue','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
           <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
+          <td>${proofCell(item)}</td>
           <td>${rowActions('finances', item.id)}</td>
         </tr>`).join('');
     }
 
     function financeSheetHeaders() {
       const h = {
-        all:      ['', 'Date', 'Type', 'Title', 'Amount', 'Status', 'Notes', 'Actions'],
+        all:      ['', 'Date', 'Type', 'Title', 'Amount', 'Status', 'Notes', 'Proof', 'Actions'],
         income:   ['', 'Date', 'Client', 'Project / Service', 'Received By', 'Payment Method', 'Amount', 'Status', 'Notes', 'Proof', 'Actions'],
         expenses: ['', 'Date', 'Expense ID', 'Purpose', 'Paid By', 'Payment Method', 'Amount', 'Status', 'Notes', 'Proof', 'Actions'],
-        salary:   ['', 'Date', 'Employee', 'Department', 'Role', 'Bank Name', 'Account No.', 'Amount', 'Status', 'Actions'],
-        pending:  ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Actions'],
-        paid:     ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Actions'],
+        salary:   ['', 'Date', 'Employee', 'Department', 'Role', 'Bank Name', 'Account No.', 'Amount', 'Status', 'Proof', 'Actions'],
+        pending:  ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Proof', 'Actions'],
+        paid:     ['', 'Date', 'Type', 'Title', 'Client', 'Amount', 'Payment Method', 'Status', 'Proof', 'Actions'],
         invoices: ['', 'Date', 'Invoice No.', 'Client', 'Service', 'Due Date', 'Total', 'Paid', 'Balance', 'Status', 'Actions'],
       };
       return h[state.financeSheet] || h.all;
@@ -2312,7 +2482,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const income = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const expenses = state.data.finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       els.view.innerHTML = `
-        ${pageHead('Financial Management', 'Manage invoices, expenses, payments, and cash flow in one place.', '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-create="salary" type="button">+ Add Salary</button><button class="crm-button" data-export="finance" type="button">Export</button>')}
+        ${pageHead('Financial Management', 'Manage invoices, expenses, payments, and cash flow in one place.', '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-create="salary" type="button">+ Add Salary</button><button class="crm-button" data-export="finance" type="button">Export CSV</button><button class="crm-button" data-export-pdf="finance" type="button">Export PDF</button>')}
         <div class="crm-grid crm-kpis">
           ${metric('Total Revenue', compactMoney(income), '₹', 'green')}
           ${metric('Total Expenses', compactMoney(expenses), '▵', 'red', 'down 7% vs last month')}
@@ -2320,7 +2490,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           ${metric('Profit This Month', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
           ${metric('Cash Balance', compactMoney(income - expenses), '▤', 'blue')}
         </div>
-        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Financial Records</h2><div class="crm-toolbar"><button class="crm-button" data-export="finance">Export Sheet</button><input class="crm-input" placeholder="Search records..." /></div></div>${financeSheetTabs()}${table(financeSheetHeaders(), financeRows())}</section>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">Financial Records</h2><div class="crm-toolbar"><button class="crm-button" data-export="finance">Export CSV</button><button class="crm-button" data-export-pdf="finance">Export PDF</button><input class="crm-input" placeholder="Search records..." /></div></div>${financeSheetTabs()}${table(financeSheetHeaders(), financeRows())}</section>
         <div class="crm-three-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong>${compactMoney(item.amount)}</strong></div>`).join('')}</div></section>
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div class="crm-chart"></div></section>
@@ -2400,7 +2570,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             ['Invoice Total', compactMoney(invoiceTotal), '▱', 'blue'],
             ['Outstanding', compactMoney(invoiceTotal - invoiceReceived), '!', 'orange'],
           ],
-          columns: [['date', 'Date'], ['type', 'Type'], ['title', 'Title'], ['client', 'Client'], ['amount', 'Amount'], ['status', 'Status']],
+          columns: [['date', 'Date'], ['type', 'Type'], ['title', 'Title'], ['client', 'Client'], ['amount', 'Amount'], ['status', 'Status'], ['proof', 'Proof']],
           rows: [
             ...finances.map((item) => ({
               date: item.transaction_date || String(item.created_at || '').slice(0, 10),
@@ -2409,6 +2579,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               client: item.client || '-',
               amount: compactMoney(item.amount),
               status: item.status || '-',
+              proof: item.proof_url ? 'Attached' : '-',
             })),
             ...invoices.map((item) => ({
               date: item.invoice_date || String(item.created_at || '').slice(0, 10),
@@ -2417,6 +2588,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               client: item.customer_name || clientName(item.client_id),
               amount: compactMoney(item.total_amount),
               status: item.status || '-',
+              proof: item.sign_url ? 'Signed' : '-',
             })),
           ],
         },
@@ -2560,6 +2732,69 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function exportCurrentReport() {
       downloadCsv(reportCsv(), `techmigos-${state.reportType}-report-${state.reportFrom}-to-${state.reportTo}.csv`);
+    }
+
+    function financePdfRows() {
+      return financeSheetRows().map((item) => {
+        const total = Number(item.total_amount || item.amount || 0);
+        const received = Number(item.received_amount || (item.status === 'paid' ? total : 0));
+        const proofLabel = item.proof_url ? (/\.(png|jpe?g|webp|gif|avif)$/i.test(item.proof_url) ? 'Image proof' : 'PDF/link proof') : '-';
+        return {
+          date: item.transaction_date || item.invoice_date || String(item.created_at || '').slice(0, 10),
+          type: item.transaction_type || 'invoice',
+          title: item.title || item.reference_id || item.invoice_number || '-',
+          client: item.client || item.customer_name || '-',
+          amount: compactMoney(total || item.amount || 0),
+          status: item.status || '-',
+          proof: proofLabel,
+          proof_url: item.proof_url || item.sign_url || '',
+          received: compactMoney(received),
+        };
+      });
+    }
+
+    async function printFinancePdf() {
+      const rows = financePdfRows();
+      const popup = window.open('', '_blank', 'noopener,noreferrer,width=1200,height=900');
+      if (!popup) return toast('Allow popups to export finance PDF.');
+      popup.document.write('<!doctype html><html><head><title>TechMigos Finance PDF</title></head><body style="font-family:Arial,sans-serif;margin:24px;color:#111;"><p style="margin:0;color:#475569;font-weight:700;">Preparing finance PDF...</p></body></html>');
+      popup.document.close();
+      const rowsWithResolvedProofs = await Promise.all(rows.map(async (row) => {
+        if (!row.proof_url) return { ...row, proof_href: '', proof_embed: '' };
+        try {
+          const proofHref = await resolveProofUrl(row.proof_url);
+          const isImage = /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(proofHref);
+          return { ...row, proof_href: proofHref, proof_embed: isImage ? proofHref : '' };
+        } catch {
+          return { ...row, proof_href: '', proof_embed: '' };
+        }
+      }));
+      popup.document.open();
+      popup.document.write(`<!doctype html><html><head><title>TechMigos Finance PDF</title><style>
+        body{font-family:Arial,sans-serif;color:#111;margin:24px;}
+        h1{margin:0;font-size:24px;} p{margin:6px 0 14px;color:#555;}
+        .meta{font-size:12px;color:#555;margin-bottom:16px;}
+        .card{border:1px solid #d8e0ea;border-radius:10px;padding:14px;margin:0 0 14px;}
+        table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
+        th,td{border:1px solid #d8e0ea;padding:8px;vertical-align:top;text-align:left;}
+        th{background:#f5f8fc;font-weight:800;}
+        .proof{max-width:190px;}
+        .proof img{max-width:190px;max-height:120px;object-fit:cover;border:1px solid #d8e0ea;border-radius:8px;display:block;margin-top:4px;}
+        .proof a{color:#1f7aff;text-decoration:none;word-break:break-all;}
+      </style></head><body>
+        <h1>TechMigos Finance Export</h1>
+        <p>Transactions with proof attachments</p>
+        <div class="meta">Sheet: ${escapeHtml(state.financeSheet)} · Generated: ${new Date().toLocaleString('en-IN')}</div>
+        ${rowsWithResolvedProofs.map((row) => `<div class="card">
+          <strong>${escapeHtml(row.title)}</strong>
+          <div style="margin-top:6px;font-size:12px;color:#333;">${escapeHtml(row.date)} · ${escapeHtml(row.type)} · ${escapeHtml(row.client)} · ${escapeHtml(row.amount)} · ${escapeHtml(row.status)}</div>
+          <div style="margin-top:8px;font-size:12px;"><strong>Proof:</strong> ${escapeHtml(row.proof)}</div>
+          <div class="proof">${row.proof_href ? (row.proof_embed ? `<a href="${escapeHtml(row.proof_href)}" target="_blank" rel="noopener"><img src="${escapeHtml(row.proof_embed)}" alt="Proof" /></a>` : `<a href="${escapeHtml(row.proof_href)}" target="_blank" rel="noopener">Open attached proof</a>`) : '<div style="color:#888;font-size:12px;">No preview available</div>'}</div>
+        </div>`).join('')}
+      </body></html>`);
+      popup.document.close();
+      popup.focus();
+      popup.print();
     }
 
     function printCurrentReport() {
@@ -2864,6 +3099,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
       document.querySelectorAll('[data-create]').forEach((button) => button.addEventListener('click', () => openCreate(button.dataset.create)));
       document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportRows(button.dataset.export)));
+      document.querySelectorAll('[data-export-pdf]').forEach((button) => button.addEventListener('click', async () => {
+        if (button.dataset.exportPdf === 'finance') return printFinancePdf();
+      }));
+      document.querySelectorAll('[data-proof-open]').forEach((button) => button.addEventListener('click', () => openProofPreview(button.dataset.proofOpen)));
+      document.querySelectorAll('[data-proof-link]').forEach((button) => button.addEventListener('click', () => openProofInNewTab(button.dataset.proofLink)));
       document.querySelectorAll('[data-finance-sheet]').forEach((button) => button.addEventListener('click', () => {
         state.financeSheet = button.dataset.financeSheet;
         renderFinance();
@@ -2889,6 +3129,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
       document.querySelectorAll('[data-report-export]').forEach((button) => button.addEventListener('click', exportCurrentReport));
       document.querySelectorAll('[data-report-print]').forEach((button) => button.addEventListener('click', printCurrentReport));
+      bindFinanceProofUploads();
       document.getElementById('crm-collapse')?.addEventListener('click', toggleSidebar);
       document.getElementById('crm-notifications')?.addEventListener('click', openNotifications);
       document.getElementById('crm-profile-button')?.addEventListener('click', openProfileManagement);
@@ -3073,7 +3314,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           { name: 'amount',           label: 'Amount (₹) *',    type: 'number',   required: true, min: '0', step: 'any', placeholder: '0' },
           { name: 'status',           label: 'Status',          type: 'select',   html: `<select name="status">${selectOpts([['pending','Pending'],['paid','Paid'],['received','Received'],['half_payment','Half Payment'],['cancelled','Cancelled']], values.status || 'pending')}</select>` },
           { name: 'source',           label: 'Source',          type: 'text',     placeholder: 'manual' },
-          { name: 'proof_url',        label: 'Proof URL',       type: 'url',      placeholder: 'Optional uploaded proof URL' },
+          { name: 'proof_url',        label: 'Proof Attachment', type: 'html',    html: financeProofFieldMarkup(values) },
           { name: 'notes',            label: 'Notes',           type: 'textarea', wide: true, placeholder: 'Additional notes...' },
         ],
         salary: [
@@ -3159,7 +3400,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const wide = f.wide ? 'wide' : '';
         const req = f.required ? ' required' : '';
         let input;
-        if (f.html) {
+        if (f.type === 'html') {
           input = f.html;
         } else if (f.type === 'textarea') {
           input = `<textarea name="${f.name}"${req} placeholder="${f.placeholder || ''}">${escapeHtml(values[f.name] ?? '')}</textarea>`;
@@ -3359,6 +3600,81 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
     }
 
+    async function uploadFinanceProof(file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        return await portal('/api/portal/finances/upload-proof', { method: 'POST', body: fd, headers: {} });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Proof upload failed';
+        if (/row-level security|violates|status code 400|storage/i.test(message)) {
+          throw new Error('Supabase storage policy is blocking uploads for `finance-proofs`. Apply the new storage RLS policy in Supabase, then retry.');
+        }
+        throw error;
+      }
+    }
+
+    function bindFinanceProofField() {
+      const input = document.getElementById('finance-proof-file');
+      const urlInput = document.getElementById('finance-proof-url');
+      const preview = document.getElementById('finance-proof-preview');
+      const status = document.getElementById('finance-proof-status');
+      input?.addEventListener('change', async function () {
+        const file = this.files?.[0];
+        if (!file || !urlInput || !preview || !status) return;
+        status.textContent = 'Uploading proof...';
+        status.style.color = '#667599';
+        try {
+          const res = await uploadFinanceProof(file);
+          urlInput.value = res.proof_url || '';
+          preview.innerHTML = proofPreviewMarkup(res.proof_url);
+          status.textContent = '✓ Proof uploaded';
+          status.style.color = 'var(--crm-green)';
+        } catch (error) {
+          status.textContent = error instanceof Error ? error.message : 'Proof upload failed';
+          status.style.color = 'var(--crm-red)';
+        }
+      });
+    }
+
+    function bindFinanceProofUploads() {
+      document.querySelectorAll('[data-proof-upload]').forEach((input) => {
+        input.addEventListener('change', async function () {
+          const file = this.files?.[0];
+          const row = this.closest('[data-row-id]');
+          const proofCell = this.closest('[data-proof-cell]');
+          const preview = proofCell?.querySelector('[data-proof-preview]');
+          const status = proofCell?.querySelector('[data-proof-status]');
+          if (!file || !row) return;
+          if (status) {
+            status.textContent = 'Uploading proof...';
+            status.style.color = '#667599';
+          }
+          try {
+            const res = await uploadFinanceProof(file);
+            await portal(`/api/portal/finances/${row.dataset.rowId}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ proof_url: res.proof_url }),
+            });
+            if (preview) preview.innerHTML = proofSummaryMarkup(res.proof_url);
+            if (status) {
+              status.textContent = `✓ ${file.name}`;
+              status.style.color = 'var(--crm-green)';
+            }
+            toast('Proof uploaded');
+            await loadData();
+            render();
+          } catch (error) {
+            if (status) {
+              status.textContent = error instanceof Error ? error.message : 'Proof upload failed';
+              status.style.color = 'var(--crm-red)';
+            }
+            toast(error instanceof Error ? error.message : 'Proof upload failed');
+          }
+        }, { once: true });
+      });
+    }
+
     function collectInvoiceBody(data) {
       const itemEls = els.modalBody.querySelectorAll('.inv-line-item');
       const items = Array.from(itemEls).map((el, i) => ({
@@ -3488,6 +3804,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       els.modalTitle.textContent = resource === 'salary' ? 'Add Salary' : `Create ${resource.replace(/_/g, ' ')}`;
       els.modalBody.innerHTML = formMarkup(resource === 'salary' ? 'salary' : actualResource, defaults, resource === 'salary' ? 'Add Salary' : 'Create');
       els.modal.classList.add('open');
+      if (actualResource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -3532,6 +3849,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       els.modalTitle.textContent = `Edit ${resource.replace(/_/g, ' ')}`;
       els.modalBody.innerHTML = formMarkup(resource, item, 'Save Changes');
       els.modal.classList.add('open');
+      if (resource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()));
@@ -3885,6 +4203,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     els.modal?.addEventListener('click', (e) => { if (e.target === els.modal) els.modal.classList.remove('open'); });
     document.getElementById('close-invoice')?.addEventListener('click', () => els.invoiceModal.classList.remove('open'));
     els.invoiceModal?.addEventListener('click', (e) => { if (e.target === els.invoiceModal) els.invoiceModal.classList.remove('open'); });
+    document.getElementById('proof-preview-close')?.addEventListener('click', () => els.proofPreviewModal?.classList.remove('open'));
+    els.proofPreviewModal?.addEventListener('click', (e) => { if (e.target === els.proofPreviewModal) els.proofPreviewModal.classList.remove('open'); });
     document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
     document.getElementById('download-pdf-invoice')?.addEventListener('click', () => {
       const invoiceNumber = document.querySelector('#invoice-preview h1, #invoice-preview-title')?.textContent || 'invoice';

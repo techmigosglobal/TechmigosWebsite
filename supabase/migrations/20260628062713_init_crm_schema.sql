@@ -595,6 +595,41 @@ values ('finance-proofs', 'finance-proofs', false)
 on conflict (id) do nothing;
 
 -- ============================================================
+-- STORAGE POLICIES
+-- ============================================================
+create policy "Company staff can upload finance proofs"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'finance-proofs'
+    and public.is_company_staff()
+  );
+
+create policy "Company staff can read finance proofs"
+  on storage.objects for select
+  using (
+    bucket_id = 'finance-proofs'
+    and public.is_company_staff()
+  );
+
+create policy "Company staff can update finance proofs"
+  on storage.objects for update
+  using (
+    bucket_id = 'finance-proofs'
+    and public.is_company_staff()
+  )
+  with check (
+    bucket_id = 'finance-proofs'
+    and public.is_company_staff()
+  );
+
+create policy "Company staff can delete finance proofs"
+  on storage.objects for delete
+  using (
+    bucket_id = 'finance-proofs'
+    and public.is_company_staff()
+  );
+
+-- ============================================================
 -- INDEXES
 -- ============================================================
 create index if not exists idx_crm_profiles_auth_user on public.crm_profiles(auth_user_id);
