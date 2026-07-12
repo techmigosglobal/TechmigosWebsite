@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
+    "@vercel/speed-insights": "^2.0.0",
     "astro": "^6.3.3",
     "astro-icon": "^1.1.0",
     "autoprefixer": "^10.5.0",
