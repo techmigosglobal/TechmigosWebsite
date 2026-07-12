@@ -1,0 +1,388 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+/**
+ * Hastkala Portfolio Case Study
+ * Site scraped via Python: https://ecommerce-site-taupe-seven.vercel.app/
+ *
+ * Scraped data extracted:
+ *   Title:       "Hastkala - Celebrating Indian Handcrafted Stories"
+ *   H1:          "Celebrate the Artistry of Indian Hands"
+ *   Stats:       2000+ Artisans | 50K+ Customers | 100% Handcrafted | 25+ States
+ *   Products:    50 products across 4 categories (Home Decor, Textiles, Lighting, Furniture)
+ *   Discounts:   Up to -43% off (e.g. Pashmina Shawl: ₹6999 → was ₹11999)
+ *   Nav:         Shop / Categories / About / Sell / Search / Login / Cart / Wishlist
+ *   Filters:     Category (All, Home Decor, Textiles, Lighting, Furniture) + Price Slider (₹0–₹10000) + Sort
+ *   Top products: Handwoven Terracotta Pot (342 reviews), Indigo-Dyed Cotton Saree (267), Kantha Throw (234)
+ *   Mission:     "To empower Indian artisans and craftspeople by creating a sustainable marketplace"
+ *   Images found on site (hosted on Vercel):
+ *     /indian-artisan-handcrafted-pottery-weaving-textile.jpg
+ *     /terracotta-pottery-handmade-indian.jpg
+ *     /hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg
+ *     /indigo-dyed-cotton-saree-handwoven-indian-textile.jpg
+ *     /kantha-embroidered-throw-blanket-west-bengal-handm.jpg
+ *     /brass-peacock-lamp-handcrafted-indian-art.jpg
+ *     /hand-carved-wooden-sheesham-box-brass-inlay-indian.jpg
+ */
+
+const appName = 'Hastkala';
+const contactUrl = '/contact';
+const liveUrl = 'https://ecommerce-site-taupe-seven.vercel.app/';
+
+// Real images scraped directly from the Hastkala Vercel deployment
+const SITE = 'https://ecommerce-site-taupe-seven.vercel.app';
+
+const showcaseSlides = [
+  {
+    src: `${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`,
+    alt: 'Indian artisans at work — hero image from Hastkala homepage',
+    title: 'Hero: Celebrate the Artistry of Indian Hands',
+    caption: '"Every product is a masterpiece. Behind each item is a story of dedication, tradition, and the soul of Indian craftsmanship." — Hastkala hero headline with dual CTAs: Explore Collection + Our Story.',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/terracotta-pottery-handmade-indian.jpg`,
+    alt: 'Handwoven Terracotta Pot — top-rated product with 342 reviews, -37% discount',
+    title: 'Smart Product Catalog — 50 Products, 4 Categories',
+    caption: 'Filter by Category (Home Decor, Textiles, Lighting, Furniture), drag a price slider from ₹0–₹10,000, sort by Featured / Price / Top Rated, and see "Showing 50 products" live. Each card has a bounce-animated discount badge (up to -43%).',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg`,
+    alt: 'Hand-Painted Ceramic Tiles — Blue Pottery from Jaipur with traditional Persian-inspired patterns',
+    title: 'Rich Product Cards — Ratings, Discounts, Material Tags',
+    caption: 'Blue Pottery Vase from Jaipur (214 reviews, ₹3,299 vs ₹5,499). Every card shows: discount badge, material tag, star rating, review count, sale + original pricing, and Add to Cart / Wishlist buttons.',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/kantha-embroidered-throw-blanket-west-bengal-handm.jpg`,
+    alt: 'Kantha Embroidered Throw from West Bengal — 100% organic cotton with natural dyes',
+    title: 'Textiles Category — Woven, Dyed, Embroidered',
+    caption: 'Kantha Embroidered Throw (West Bengal, 234 reviews, ₹2,299 from ₹3,799), Indigo-Dyed Cotton Sarees, Ajrakh Block Print Fabric, Pashmina Shawls from Kashmir, Pochampalli Ikat, Madhubani painted fabrics — all on one platform.',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/brass-peacock-lamp-handcrafted-indian-art.jpg`,
+    alt: 'Brass Peacock Lamp — pure brass with intricate hand-carved details, 189 reviews',
+    title: 'Lighting Category — Brass, Copper, Jali, Wooden Lamps',
+    caption: 'Brass Peacock Lamp (189 reviews, ₹4,599 from ₹7,499), Brass Oil Lamp (Diya), Copper Lantern with Glass, Jali Wall Lamp, Vintage Kerosene Lamp, Chandelier Pendant with Crystals — a curated artisan lighting lineup.',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/hand-carved-wooden-sheesham-box-brass-inlay-indian.jpg`,
+    alt: 'Hand-carved wooden box with brass inlay — Wooden Treasure Box, 423 reviews',
+    title: 'Furniture Category — Carved, Inlaid, Handcrafted Wood',
+    caption: 'Wooden Treasure Box (423 reviews — top seller, ₹5,499 from ₹8,999), Carved Wooden Side Table, Brass Inlaid Wooden Screen, Mirror Frame with Carved Wood, Decorative Room Divider — all handcrafted furniture.',
+    displayClass: 'hastkala-showcase-poster',
+  },
+  {
+    src: `${SITE}/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg`,
+    alt: 'Indigo-Dyed Cotton Saree — 100% organic cotton, 267 reviews, -43% off',
+    title: 'About & Mission — 2,000+ Artisans, 25+ States',
+    caption: '"To empower Indian artisans by creating a sustainable marketplace connecting them with customers who appreciate authentic, handcrafted excellence. We preserve ancient crafts, support fair wages, and eliminate unnecessary middlemen."',
+    displayClass: 'hastkala-showcase-poster',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: '50-Product Artisan Catalog',
+    description: 'Four handcrafted categories — Home Decor (pottery, ceramics), Textiles (sarees, shawls, fabric), Lighting (brass, copper, jali lamps), and Furniture (carved wood, brass inlay) — each with full detail pages.',
+  },
+  {
+    icon: '02',
+    title: 'Category, Price & Sort Filters',
+    description: 'Inline sidebar with category tabs (All, Home Decor, Textiles, Lighting, Furniture), a draggable ₹0–₹10,000 price-range slider, and four sort options: Featured, Price Low→High, Price High→Low, Top Rated.',
+  },
+  {
+    icon: '03',
+    title: 'Rich Product Cards with Real Data',
+    description: 'Animated bounce discount badges (-37% to -43%), material tags (Clay, Pashmina, 100% organic cotton, Pure brass), star ratings, review counts up to 423, and strikethrough original pricing on every card.',
+  },
+  {
+    icon: '04',
+    title: 'Wishlist & Cart System',
+    description: 'Heart-icon wishlist and shopping cart with live item counts in the header. Buyers can save products and return — all powered by client-side state with clear header affordances for both actions.',
+  },
+  {
+    icon: '05',
+    title: 'Artisan Brand Identity',
+    description: 'Stat bar celebrating 2,000+ Artisans Empowered, 50K+ Happy Customers, 100% Handcrafted, 25+ States Covered. Heritage, Sustainability, and Community values framed across the About page.',
+  },
+  {
+    icon: '06',
+    title: 'Full Storefront Navigation',
+    description: 'Shop, Categories, About, Sell nav with Search bar, Login, Wishlist icon, Cart icon in the header. Footer links: All Products, Categories, Sale, New Arrivals, About Us, Contact, Careers, Privacy, Terms, Shipping.',
+  },
+];
+
+const storySteps = [
+  {
+    image: `${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`,
+    alt: 'Hastkala homepage hero — Indian artisans at work',
+    title: '"Celebrate the Artistry of Indian Hands"',
+    description: 'The homepage hero leads with a full-bleed artisan photograph and the brand\'s core tagline. Stats appear immediately below — 2,000+ Artisans, 50K+ Customers, 100% Handcrafted, 25+ States — before a single product appears.',
+  },
+  {
+    image: `${SITE}/terracotta-pottery-handmade-indian.jpg`,
+    alt: 'Hastkala shop catalog with Handwoven Terracotta Pot',
+    title: 'Filter the Catalog to Your Craft',
+    description: 'Buyers filter by category, drag the ₹0–₹10,000 price slider, choose a sort order, and see "Showing 50 products" update live. The Handwoven Terracotta Pot (342 reviews, ₹2,499 from ₹3,999, -37%) leads the home decor shelf.',
+  },
+  {
+    image: `${SITE}/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg`,
+    alt: 'Blue Pottery Vase from Jaipur with 214 reviews',
+    title: 'Every Product Card Tells a Craft Story',
+    description: 'Blue Pottery Vase from Jaipur — "Exquisite blue pottery with traditional Persian-inspired patterns. Glazed ceramic with hand-painted patterns." 214 reviews, ₹3,299 sale (from ₹5,499). Material, story, and price are all on the card.',
+  },
+  {
+    image: `${SITE}/brass-peacock-lamp-handcrafted-indian-art.jpg`,
+    alt: 'Brass Peacock Lamp — pure brass with hand-carved details',
+    title: 'Lighting and Furniture — Brass, Wood, Stone',
+    description: 'The Brass Peacock Lamp — "Pure brass with intricate hand-carved details, a symbol of beauty and grace in Indian culture." 189 reviews, ₹4,599 from ₹7,499. The furniture shelf includes the Wooden Treasure Box at 423 reviews — the platform\'s top seller.',
+  },
+  {
+    image: `${SITE}/kantha-embroidered-throw-blanket-west-bengal-handm.jpg`,
+    alt: 'Kantha Embroidered Throw from West Bengal',
+    title: 'Textiles — From Kashmiri Pashmina to Kantha Stitch',
+    description: 'Kantha Embroidered Throw — "Vintage Kantha-stitch using sustainable cotton from West Bengal artisans. 100% organic cotton with natural dyes." 234 reviews, ₹2,299 from ₹3,799. The Pashmina Shawl from Kashmir reaches ₹6,999 (from ₹11,999).',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'The hero stat bar — 2,000+ Artisans, 50K+ Customers, 100% Handcrafted, 25+ States — puts the mission before the product grid. Brand identity comes first, commerce second.',
+    name: 'Brand Architecture',
+    role: 'Artisan-first storytelling strategy',
+  },
+  {
+    quote: 'The filter panel combines category tabs, price-range slider, and sort into a single persistent sidebar so product discovery is always one interaction away — no page navigation required.',
+    name: 'UX Filter System',
+    role: 'Inline discovery without page exits',
+  },
+  {
+    quote: 'Material tags (Clay, 100% Pashmina, Pure brass, 100% Mulberry silk) on product cards create trust signals that mass-produced e-commerce cannot replicate — they anchor the handcrafted premium.',
+    name: 'Product Card Design',
+    role: 'Material provenance as purchase trigger',
+  },
+];
+---
+
+<BaseLayout
+  title="Hastkala — Indian Artisan E-Commerce Case Study | TechMigos"
+  description="Hastkala case study: a Next.js artisan marketplace with 50 handcrafted products across Home Decor, Textiles, Lighting and Furniture — with smart filters, star ratings up to 423 reviews, discount badges up to -43%, wishlist, cart, and live on Vercel."
+  ogImage={`${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`}
+  ogType="article"
+>
+  <HeroSection
+    appName={appName}
+    eyebrow="Indian Artisan E-Commerce Platform"
+    tagline='"Celebrate the Artistry of Indian Hands" — a Next.js marketplace connecting 2,000+ artisans across 25+ states with buyers through smart filters, rich product cards, and a brand rooted in Indian craft heritage.'
+    heroImage={`${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`}
+    webUrl={liveUrl}
+    primaryLabel="Visit Live Site ↗"
+    supportText="50 curated handcrafted products • 4 categories • Price-range slider • Star ratings with up to 423 reviews • Discount badges up to -43% • Wishlist & cart • Full storefront navigation — live on Vercel."
+    isDesktop={true}
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="Platform Showcase — Real Screenshots"
+    title="Hastkala: From Hero to Handcrafted Cart"
+    description="Seven real images scraped from the live Hastkala deployment — hero, product catalog with filters, Home Decor cards, Textiles shelf, Lighting category, Furniture top-seller, and the artisan About mission."
+    isDesktop={true}
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Artisan Discovery and Confident Commerce"
+    description="Hastkala delivers a 50-product artisan catalog, inline category and price filters, animated discount badges, material-tag product cards, wishlist and cart, and a brand identity grounded in Indian heritage — all production-deployed on Vercel."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={liveUrl}
+    eyebrow="Product Narrative"
+    title="From Artisan Story to Craft in Your Cart"
+    description="Follow the real Hastkala buyer journey using scraped product data: land on the hero, filter the 50-product catalog, read a product card's craft story, explore Lighting and Furniture, and finish with the Textiles shelf."
+    accessEyebrow="Live Experience"
+    primaryLabel="Explore the Live Site ↗"
+    isDesktop={true}
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind Hastkala"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Handcrafted Artisan Marketplace"
+    description="Use the Hastkala direction as a reference for artisan e-commerce, curated product catalogs, smart inline filtering, material-provenance product cards, and a culturally rooted brand storefront."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">Hastkala by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href={liveUrl} target="_blank" rel="noopener noreferrer" class="hover:text-primary-700">Visit Live Site ↗</a>
+        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+  /* Custom warm terracotta, heritage gold & linen theme for Hastkala Case Study */
+
+  /* Set warm, premium serif typography for headings */
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, Cambria, "Times New Roman", Times, serif !important;
+    font-weight: 800 !important;
+    color: #1c1917 !important;
+  }
+
+  /* Body, main content and header/footer warm backgrounds */
+  body, #main-content {
+    background-color: #fefcf9 !important;
+    color: #1c1917 !important;
+  }
+
+  header, footer, nav {
+    background-color: #fefcf9 !important;
+  }
+
+  /* Warm sections */
+  #focus-showcase, .section-padding {
+    background-color: #fdfaf6 !important;
+  }
+
+  .bg-slate-100 {
+    background-color: #f5eedf !important; /* Warm custom footer bar */
+  }
+
+  /* Text Selection */
+  ::selection {
+    background-color: rgba(194, 65, 12, 0.2) !important;
+    color: #c2410c !important;
+  }
+
+  /* Custom Cursor dot/ring terracotta overrides */
+  #cursor-dot {
+    background-color: #c2410c !important;
+  }
+  #cursor-ring {
+    border-color: #c2410c !important;
+  }
+
+  /* Page Scroll Progress Bar */
+  #page-progress {
+    background: linear-gradient(to right, #ea580c, #b45309) !important;
+  }
+
+  /* Override Hero background gradient to warm cream & terracotta */
+  section.relative.overflow-hidden.pt-32 {
+    background: radial-gradient(circle at 20% 20%, rgba(234, 88, 12, 0.15), transparent 55%),
+                radial-gradient(circle at 85% 15%, rgba(180, 83, 9, 0.12), transparent 45%),
+                linear-gradient(180deg, #fefaf6 0%, #faf3e6 60%, #fbf5ea 100%) !important;
+  }
+  
+  /* Remove the default tailwind dynamic bg gradient container inside it */
+  section.relative.overflow-hidden.pt-32 > div.absolute.inset-0 {
+    display: none !important;
+  }
+
+  /* Set warm clay color vars in sections */
+  #focus-showcase, #focus-demo {
+    --primary-color: #c2410c;
+    --primary-hover: #9a3412;
+  }
+
+  /* Override default primary buttons inside this page */
+  .btn-primary {
+    background-color: #c2410c !important;
+    border-color: #c2410c !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(194, 65, 12, 0.3) !important;
+    font-family: inherit;
+  }
+  .btn-primary:hover {
+    background-color: #9a3412 !important;
+    border-color: #9a3412 !important;
+    box-shadow: 0 6px 20px rgba(154, 52, 18, 0.4) !important;
+  }
+
+  /* Eyebrows styling (rust terracotta) */
+  .section-eyebrow {
+    color: #c2410c !important;
+    border-color: rgba(194, 65, 12, 0.2) !important;
+    background-color: rgba(194, 65, 12, 0.05) !important;
+  }
+
+  /* Scroll Demo Section - custom dark stone and gold accents */
+  #focus-demo {
+    background-color: #1c1917 !important; /* stone dark */
+  }
+
+  #focus-demo h2, #focus-demo h3, #focus-demo p {
+    color: #fefcf9 !important;
+  }
+
+  #focus-demo .text-cyan-200 {
+    color: #fdba74 !important; /* Warm gold/peach step title */
+  }
+
+  #focus-demo .border-white\/15 {
+    border-color: rgba(253, 186, 116, 0.15) !important;
+  }
+
+  #focus-demo .bg-white\/5 {
+    background-color: rgba(253, 186, 116, 0.04) !important;
+  }
+
+  #focus-demo .bg-white\/12 {
+    background-color: rgba(253, 186, 116, 0.1) !important;
+  }
+
+  /* Scroll Demo active step indicators */
+  .focus-story-step.is-active {
+    border-color: rgba(194, 65, 12, 0.5) !important;
+    background-color: rgba(194, 65, 12, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(194, 65, 12, 0.12) !important;
+  }
+
+  .focus-story-step.is-active p.text-cyan-200 {
+    color: #f97316 !important; /* Vivid terracotta step title on active */
+  }
+
+  /* TrustCards features accent color */
+  .text-primary-600 {
+    color: #c2410c !important;
+  }
+  .bg-primary-50 {
+    background-color: rgba(194, 65, 12, 0.05) !important;
+  }
+  .border-primary-100 {
+    border-color: rgba(194, 65, 12, 0.15) !important;
+  }
+
+  /* Adjust spacing of Carousel dots */
+  .focus-dot.bg-primary-600 {
+    background-color: #c2410c !important;
+  }
+</style>

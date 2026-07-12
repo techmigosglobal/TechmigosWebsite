@@ -1,5 +1,6 @@
 ---
 import PhoneFrame from './PhoneFrame.astro';
+import BrowserFrame from './BrowserFrame.astro';
 
 interface Props {
   appName: string;
@@ -11,6 +12,7 @@ interface Props {
   primaryLabel?: string;
   secondaryLabel?: string;
   supportText?: string;
+  isDesktop?: boolean;
 }
 
 const {
@@ -23,6 +25,7 @@ const {
   primaryLabel = 'Try Web Live',
   secondaryLabel = 'Get Android App',
   supportText = 'Verified local updates, multilingual content, and civic engagement workflows in one mobile experience.',
+  isDesktop = false,
 } = Astro.props;
 
 const hasSecondaryLink = Boolean(androidUrl && androidUrl !== '#');
@@ -68,8 +71,12 @@ const isPreframedHero = heroImage.includes('/screenshots/');
       {supportText && <p class="mt-5 text-sm text-gray-500">{supportText}</p>}
     </div>
 
-    <div class="reveal-scale justify-self-center lg:justify-self-end">
-      {isPreframedHero ? (
+    <div class="reveal-scale justify-self-center lg:justify-self-end w-full max-w-xl lg:max-w-2xl">
+      {isDesktop ? (
+        <div class="animate-float-slow">
+          <BrowserFrame src={heroImage} alt={`${appName} desktop screen`} priority={true} url={isExternalUrl(webUrl) ? new URL(webUrl).hostname : 'hastkala.vercel.app'} />
+        </div>
+      ) : isPreframedHero ? (
         <div class="animate-float-slow">
           <PhoneFrame src={heroImage} alt={`${appName} hero screen`} priority={true} />
         </div>

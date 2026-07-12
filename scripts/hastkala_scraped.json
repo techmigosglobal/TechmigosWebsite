@@ -1,0 +1,400 @@
+{
+  "base_url": "https://ecommerce-site-taupe-seven.vercel.app",
+  "pages": {
+    "/": {
+      "url": "https://ecommerce-site-taupe-seven.vercel.app/",
+      "title": "Hastkala - Celebrating Indian Handcrafted Stories",
+      "meta": "Discover authentic handcrafted products from Indian artisans. Premium quality, traditional craftsmanship, sustainable materials.",
+      "images": [
+        "https://ecommerce-site-taupe-seven.vercel.app/indian-artisan-handcrafted-pottery-weaving-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg"
+      ],
+      "product_count": 20,
+      "sections": [],
+      "headings": {
+        "h1": [
+          "Celebrate the Artistry of Indian Hands"
+        ],
+        "h2": [
+          "Discover Handcrafted Excellence",
+          "Why Choose Handcrafted?"
+        ],
+        "h3": [
+          "Handwoven Terracotta Pot",
+          "Blue Pottery Vase",
+          "Raku Pottery Plate Set",
+          "Hand-Painted Ceramic Tiles",
+          "Terracotta Wall Art Panel",
+          "Pottery Buddha Statue"
+        ]
+      }
+    },
+    "/shop": {
+      "url": "https://ecommerce-site-taupe-seven.vercel.app/shop",
+      "title": "Hastkala - Celebrating Indian Handcrafted Stories",
+      "meta": "Discover authentic handcrafted products from Indian artisans. Premium quality, traditional craftsmanship, sustainable materials.",
+      "images": [
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg",
+        "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg"
+      ],
+      "product_count": 20,
+      "sections": [],
+      "headings": {
+        "h1": [
+          "Shop All Products"
+        ],
+        "h3": [
+          "Handwoven Terracotta Pot",
+          "Blue Pottery Vase",
+          "Raku Pottery Plate Set",
+          "Hand-Painted Ceramic Tiles",
+          "Terracotta Wall Art Panel",
+          "Pottery Buddha Statue"
+        ]
+      }
+    },
+    "/categories": {
+      "url": "https://ecommerce-site-taupe-seven.vercel.app/categories",
+      "title": "404: This page could not be found.",
+      "meta": "Discover authentic handcrafted products from Indian artisans. Premium quality, traditional craftsmanship, sustainable materials.",
+      "images": [],
+      "product_count": 0,
+      "sections": [],
+      "headings": {
+        "h1": [
+          "404"
+        ],
+        "h2": [
+          "This page could not be found."
+        ],
+        "h3": [
+          "Shop",
+          "Company",
+          "Support"
+        ]
+      }
+    },
+    "/about": {
+      "url": "https://ecommerce-site-taupe-seven.vercel.app/about",
+      "title": "Hastkala - Celebrating Indian Handcrafted Stories",
+      "meta": "Discover authentic handcrafted products from Indian artisans. Premium quality, traditional craftsmanship, sustainable materials.",
+      "images": [],
+      "product_count": 0,
+      "sections": [],
+      "headings": {
+        "h1": [
+          "About Hastkala"
+        ],
+        "h2": [
+          "Our Mission",
+          "Why Handcrafted Matters"
+        ],
+        "h3": [
+          "Heritage",
+          "Sustainability",
+          "Community",
+          "Shop",
+          "Company",
+          "Support"
+        ]
+      }
+    },
+    "/sell": {
+      "url": "https://ecommerce-site-taupe-seven.vercel.app/sell",
+      "title": "404: This page could not be found.",
+      "meta": "Discover authentic handcrafted products from Indian artisans. Premium quality, traditional craftsmanship, sustainable materials.",
+      "images": [],
+      "product_count": 0,
+      "sections": [],
+      "headings": {
+        "h1": [
+          "404"
+        ],
+        "h2": [
+          "This page could not be found."
+        ],
+        "h3": [
+          "Shop",
+          "Company",
+          "Support"
+        ]
+      }
+    }
+  },
+  "all_colors": [
+    "#000",
+    "#fff"
+  ],
+  "css_vars": [],
+  "all_images": [
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/indian-artisan-handcrafted-pottery-weaving-textile.jpg",
+      "alt": "Indian artisans at work"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+      "alt": "Pottery Buddha Statue"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+      "alt": "Ceramic Wall Hanging Bells"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "alt": "Silk Dupatta with Gold Zari"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+      "alt": "Handloom Cotton Bed Sheet"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg",
+      "alt": "Gemstone and Silver Pendant"
+    },
+    {
+      "src": "https://ecommerce-site-taupe-seven.vercel.app/hand-carved-wooden-sheesham-box-brass-inlay-indian.jpg",
+      "alt": "Wall-mounted Wooden Bracket Shelf"
+    }
+  ],
+  "products": [
+    {
+      "name": "Handwoven Terracotta Pot",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Blue Pottery Vase",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Raku Pottery Plate Set",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Hand-Painted Ceramic Tiles",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Terracotta Wall Art Panel",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Pottery Buddha Statue",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/terracotta-pottery-handmade-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Indigo Pottery Dinnerware Set",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Ceramic Wall Hanging Bells",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/hand-painted-ceramic-tiles-jaipur-pattern-indian.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Indigo-Dyed Cotton Saree",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Kantha Embroidered Throw",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Handwoven Silk Scarf",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Ajrakh Block Print Fabric",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Ikat Patterned Cotton Saree",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Madhubani Painted Fabric Roll",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Handloom Cotton Bed Sheet",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/kantha-embroidered-throw-blanket-west-bengal-handm.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Pashmina Shawl with Embroidery",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Pochampalli Ikat Salwar Kameez",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Silk Dupatta with Gold Zari",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indigo-dyed-cotton-saree-handwoven-indian-textile.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Brass Peacock Lamp",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg",
+      "badge": ""
+    },
+    {
+      "name": "Brass Oil Lamp (Diya)",
+      "price": "",
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/brass-peacock-lamp-handcrafted-indian-art.jpg",
+      "badge": ""
+    }
+  ],
+  "categories": [
+    {
+      "name": "Categories",
+      "href": "/categories"
+    }
+  ],
+  "stats": [
+    {
+      "value": "8",
+      "label": "Shop"
+    },
+    {
+      "value": "1",
+      "label": "Celebrating the artistry, tradition, and"
+    },
+    {
+      "value": "4",
+      "label": "Explore Collection"
+    },
+    {
+      "value": "2",
+      "label": "To empower Indian artisans and craftspeop"
+    },
+    {
+      "value": "50",
+      "label": "products"
+    },
+    {
+      "value": "3",
+      "label": "Every purchase supports fair wages, ethic"
+    },
+    {
+      "value": "5",
+      "label": "Hand-Painted Ceramic Tiles"
+    },
+    {
+      "value": "12",
+      "label": "Our Mission"
+    }
+  ],
+  "typography": {
+    "h1": [
+      "Celebrate the Artistry of Indian Hands",
+      "Shop All Products",
+      "404",
+      "About Hastkala"
+    ],
+    "h2": [
+      "Discover Handcrafted Excellence",
+      "Why Choose Handcrafted?",
+      "This page could not be found.",
+      "Our Mission",
+      "Why Handcrafted Matters"
+    ],
+    "h3": [
+      "Handwoven Terracotta Pot",
+      "Blue Pottery Vase",
+      "Raku Pottery Plate Set",
+      "Hand-Painted Ceramic Tiles",
+      "Terracotta Wall Art Panel",
+      "Pottery Buddha Statue",
+      "Shop",
+      "Company"
+    ]
+  },
+  "navigation": [
+    {
+      "text": "Shop",
+      "href": "/shop"
+    },
+    {
+      "text": "Categories",
+      "href": "/categories"
+    },
+    {
+      "text": "About",
+      "href": "/about"
+    },
+    {
+      "text": "Sell",
+      "href": "/vendor"
+    }
+  ]
+}

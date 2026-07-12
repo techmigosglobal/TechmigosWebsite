@@ -1,5 +1,6 @@
 ---
 import PhoneFrame from './PhoneFrame.astro';
+import BrowserFrame from './BrowserFrame.astro';
 
 type Slide = {
   src: string;
@@ -14,6 +15,7 @@ interface Props {
   eyebrow?: string;
   title?: string;
   description?: string;
+  isDesktop?: boolean;
 }
 
 const {
@@ -21,6 +23,7 @@ const {
   eyebrow = 'App Showcase',
   title = 'A Polished Mobile Experience',
   description = 'Core screens presented in a smooth scroll carousel designed for quick product comprehension.',
+  isDesktop = false,
 } = Astro.props;
 ---
 
@@ -35,12 +38,16 @@ const {
     <div class="relative reveal">
       <div id="focus-carousel-track" class="flex snap-x snap-mandatory items-start gap-6 overflow-x-auto pb-6 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {slides.map((slide, index) => (
-          <article class="focus-slide flex min-w-[86%] snap-center flex-col px-4 py-3 text-center sm:min-w-[48%] lg:min-w-[32%]" data-slide-index={index}>
-            <div class="focus-shot-viewport mx-auto flex items-center justify-center overflow-hidden">
-              <PhoneFrame src={slide.src} alt={slide.alt} className={`focus-showcase-shot ${slide.displayClass || ''}`} />
+          <article class={`focus-slide flex snap-center flex-col px-4 py-3 text-center ${isDesktop ? 'min-w-[90%] sm:min-w-[70%] lg:min-w-[55%]' : 'min-w-[86%] sm:min-w-[48%] lg:min-w-[32%]'}`} data-slide-index={index}>
+            <div class={`focus-shot-viewport mx-auto flex items-center justify-center overflow-hidden ${isDesktop ? 'focus-shot-viewport--desktop' : ''}`}>
+              {isDesktop ? (
+                <BrowserFrame src={slide.src} alt={slide.alt} className={`focus-showcase-shot ${slide.displayClass || ''}`} />
+              ) : (
+                <PhoneFrame src={slide.src} alt={slide.alt} className={`focus-showcase-shot ${slide.displayClass || ''}`} />
+              )}
             </div>
-            <div class="focus-slide-copy mx-auto flex w-full max-w-xs flex-1 flex-col justify-start">
-              <h3 class="mt-3 text-xl font-bold text-gray-900">{slide.title}</h3>
+            <div class="focus-slide-copy mx-auto flex w-full max-w-lg flex-1 flex-col justify-start">
+              <h3 class="mt-4 text-xl font-bold text-gray-900">{slide.title}</h3>
               <p class="mt-2 text-sm leading-relaxed text-gray-600">{slide.caption}</p>
             </div>
           </article>
@@ -183,6 +190,12 @@ const {
     height: 560px;
   }
 
+  .focus-shot-viewport.focus-shot-viewport--desktop {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1.6;
+  }
+
   .focus-slide-copy {
     min-height: 9.25rem;
   }
@@ -190,6 +203,10 @@ const {
   @media (max-width: 639px) {
     .focus-shot-viewport {
       height: min(560px, 134vw);
+    }
+    .focus-shot-viewport.focus-shot-viewport--desktop {
+      height: auto;
+      aspect-ratio: 1.6;
     }
   }
 </style>

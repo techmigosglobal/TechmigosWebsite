@@ -2012,6 +2012,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       reportType: 'executive',
       reportFrom: '',
       reportTo: '',
+      projectStatusFilter: '',
       saveTimers: new Map(),
       data: {
         leads: [],
@@ -2438,6 +2439,24 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const openTickets = tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
+      const newEnquiries = state.data.contact_leads.filter((item) => item.status === 'new');
+      const newApplications = state.data.career_applications.filter((item) => item.status === 'new');
+      
+      // Dynamic current-week date range
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - dayOfWeek);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const fmtDate = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      const weekLabel = `${fmtDate(weekStart)} \u2013 ${fmtDate(weekEnd)}, ${weekEnd.getFullYear()}`;
+
+      // Accounts Receivable
+      const receivable = state.data.invoices
+        .filter((item) => !['paid', 'cancelled'].includes(item.status))
+        .reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+
       const projectRows = filtered(projects, ['name', 'client_name', 'status', 'project_manager']).slice(0, 5).map((project) => `
         <tr><td><strong>${escapeHtml(project.name)}</strong></td><td>${escapeHtml(project.client_name || clientName(project.client_id))}</td><td>${badge(project.status)}</td><td>${compactMoney(project.budget)}</td><td>${progress(project.progress)}</td></tr>
       `).join('');
@@ -2445,13 +2464,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <tr><td>#TIC-${ticket.id}</td><td>${badge(ticket.priority, statusTone(ticket.priority))}</td><td>${escapeHtml(ticket.assigned_to || 'Unassigned')}</td><td>${badge(ticket.status)}</td></tr>
       `).join('');
       els.view.innerHTML = `
-        ${pageHead(`Welcome back, ${escapeHtml(state.profile?.name || 'Team')}`, "Here's what's happening with your company today.", '<button class="crm-button" type="button">May 20 - May 26, 2025</button>')}
+        ${pageHead(`Welcome back, ${escapeHtml(state.profile?.name || 'Team')}`, "Here's what's happening with your company today.", `<button class="crm-button" type="button">${escapeHtml(weekLabel)}</button>`)}
         <div class="crm-grid crm-kpis">
-          ${metric('Total Projects', projects.length, '▣', 'blue')}
-          ${metric('Active Clients', clients.filter((item) => item.status !== 'archived').length, '○', 'green')}
-          ${metric('Open Tickets', openTickets.length, '◴', 'red', openTickets.length ? 'down 5% vs last month' : 'up 0% vs last month')}
-          ${metric('Monthly Revenue', compactMoney(income), '₹', 'green')}
-          ${metric('Active Employees', Math.max(state.data.profiles.length, 1), '♙', 'purple')}
+          ${metric('Total Projects', projects.length, '\u25a3', 'blue')}
+          ${metric('Active Clients', clients.filter((item) => item.status !== 'archived').length, '\u25cb', 'green')}
+          ${metric('Open Tickets', openTickets.length, '\u25f4', 'red', openTickets.length ? 'Needs attention' : 'All resolved')}
+          ${metric('Monthly Revenue', compactMoney(income), '\u20b9', 'green')}
+          ${metric('Accounts Receivable', compactMoney(receivable), '\u25c8', receivable > 0 ? 'orange' : 'green', receivable > 0 ? 'Unpaid invoices' : 'All paid')}
         </div>
         <div class="crm-two-col mt-5">
           <section class="crm-card">
@@ -2463,22 +2482,24 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <div class="crm-list">
               <div class="crm-list-row"><span>Revenue</span><strong>${compactMoney(income)}</strong></div>
               <div class="crm-list-row"><span>Expenses</span><strong>${compactMoney(expenses)}</strong></div>
-              <div class="crm-list-row"><span>Invoices Due</span><strong>${compactMoney(state.data.invoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</strong></div>
-              <div class="crm-list-row"><span>Net Cash Flow</span><strong>${compactMoney(income - expenses)}</strong></div>
+              <div class="crm-list-row"><span>Net Profit</span><strong style="color:${income - expenses >= 0 ? '#16a34a' : '#dc2626'}">${compactMoney(income - expenses)}</strong></div>
+              <div class="crm-list-row"><span>Accounts Receivable</span><strong>${compactMoney(receivable)}</strong></div>
             </div>
-            <div class="crm-chart" aria-hidden="true"></div>
           </section>
         </div>
         <div class="crm-three-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Support Tickets</h2><button class="crm-link" data-jump="tickets">View all tickets</button></div>${table(['Ticket ID', 'Priority', 'Assigned Agent', 'Status'], ticketRows)}</section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">User Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Secure Role-Based Access</h2></div><div class="crm-list"><p class="text-sm font-semibold leading-6 text-slate-600">Separate workspaces for clients and employees keep project, finance, and support data controlled.</p><div class="crm-list-row"><span>Clients</span><strong>Project visibility</strong></div><div class="crm-list-row"><span>Employees</span><strong>Company operations</strong></div></div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Inbound Activity</h2></div><div class="crm-list">${[...newEnquiries.map((item) => ({ title: item.name || 'Website enquiry', meta: item.service || item.email || 'New enquiry' })), ...newApplications.map((item) => ({ title: item.name || 'Career application', meta: item.job_title || 'Application' })), ...state.data.activities.map((item) => ({ title: item.summary || item.action, meta: String(item.created_at || '').slice(0, 10) }))].slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.meta)}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">New Enquiries</h2></div><div class="crm-list">${newEnquiries.slice(0, 4).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || 'Visitor')}</span><small>${escapeHtml(item.service || item.email || 'Enquiry')}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No new enquiries.</p>'}</div></section>
         </div>
       `;
     }
 
     function projectRows() {
-      return filtered(state.data.projects, ['name', 'client_name', 'status', 'project_manager']).map((project) => `
+      const allProjects = state.projectStatusFilter
+        ? state.data.projects.filter((p) => p.status === state.projectStatusFilter)
+        : state.data.projects;
+      return filtered(allProjects, ['name', 'client_name', 'status', 'project_manager']).map((project) => `
         <tr data-resource="projects" data-row-id="${project.id}">
           <td><input type="checkbox" data-row-select aria-label="Select project ${escapeHtml(project.name)}" /></td>
           <td><input class="crm-edit-input" data-field="name" value="${escapeHtml(project.name)}" /></td>
@@ -2507,8 +2528,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>
         <div class="crm-two-col mt-5">
           <section class="crm-card">
-            <div class="crm-card-head"><h2 class="crm-card-title">Projects</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><button class="crm-button" data-export="projects">Export</button></div></div>
-            ${table(['', 'Project Name', 'Client', 'Project Manger', 'Budget', 'Deadline', 'Status', 'Health', 'Progress', 'Actions'], projectRows())}
+            <div class="crm-card-head"><h2 class="crm-card-title">Projects</h2><div class="crm-toolbar"><select class="crm-select" id="project-status-filter"><option value="">All Statuses</option><option value="planning" ${state.projectStatusFilter === 'planning' ? 'selected' : ''}>Planning</option><option value="active" ${state.projectStatusFilter === 'active' ? 'selected' : ''}>Active</option><option value="review" ${state.projectStatusFilter === 'review' ? 'selected' : ''}>In Review</option><option value="completed" ${state.projectStatusFilter === 'completed' ? 'selected' : ''}>Completed</option><option value="on_hold" ${state.projectStatusFilter === 'on_hold' ? 'selected' : ''}>On Hold</option></select><button class="crm-button" data-export="projects">Export</button></div></div>
+            ${table(['', 'Project Name', 'Client', 'Project Manager', 'Budget', 'Deadline', 'Status', 'Health', 'Progress', 'Actions'], projectRows())}
           </section>
           <aside class="crm-card crm-detail">${projectDetail(selected)}</aside>
         </div>
@@ -2851,7 +2872,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       const tabActions = isBuilder
         ? '<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button><button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button><button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button><button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>'
-        : '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-create="salary" type="button">+ Add Salary</button><button class="crm-button" data-export="finance" type="button">Export CSV</button><button class="crm-button" data-export-pdf="finance" type="button">Export PDF</button>';
+        : (() => {
+            const sheet = state.financeSheet || 'all';
+            const incomeBtn = (sheet === 'all' || sheet === 'income') ? '<button class="crm-button green" data-create="income" type="button">+ Add Income</button>' : '';
+            const expenseBtn = (sheet === 'all' || sheet === 'expenses') ? '<button class="crm-button green" data-create="finances" type="button">+ Add Expense</button>' : '';
+            const salaryBtn = (sheet === 'all' || sheet === 'salary') ? '<button class="crm-button" data-create="salary" type="button">+ Add Salary</button>' : '';
+            const invoiceBtn = '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>';
+            return `${invoiceBtn}${incomeBtn}${expenseBtn}${salaryBtn}<button class="crm-button" data-export="finance" type="button">Export CSV</button><button class="crm-button" data-export-pdf="finance" type="button">Export PDF</button>`;
+          })();
 
       const subtitles = isBuilder
         ? 'Build professional invoices with live preview. Configure company settings, client details, service items, and branding.'
@@ -2865,10 +2893,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         bodyContent = `
           <div class="crm-grid crm-kpis">
             ${metric('Total Revenue', compactMoney(income), '₹', 'green')}
-            ${metric('Total Expenses', compactMoney(expenses), '◵', 'red', 'down 7% vs last month')}
+            ${metric('Total Expenses', compactMoney(expenses), '◵', 'red')}
             ${metric('Recurring Amount', compactMoney(recurring), '◱', 'orange')}
-            ${metric('Profit This Month', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
-            ${metric('Cash Balance', compactMoney(income - expenses), '▤', 'blue')}
+            ${metric('Net Profit', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
+            ${metric('Accounts Receivable', compactMoney(state.data.invoices.filter((i) => !['paid','cancelled'].includes(i.status)).reduce((s, i) => s + Number(i.total_amount || i.amount || 0), 0)), '◈', 'blue', 'Unpaid invoices')}
           </div>
           <section class="crm-card mt-5">
             <div class="crm-card-head">
@@ -2883,9 +2911,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <div class="crm-table-wrap">${table(financeSheetHeaders(), financeRows())}</div>
           </section>
           <div class="crm-three-col mt-5">
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong>${compactMoney(item.amount)}</strong></div>`).join('')}</div></section>
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div class="crm-chart"></div></section>
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Invoice Aging</h2></div><div class="crm-list"><div class="crm-list-row"><span>0-30 Days</span><strong>${compactMoney(48500)}</strong></div><div class="crm-list-row"><span>31-60 Days</span><strong>${compactMoney(41250)}</strong></div><div class="crm-list-row"><span>90+ Days</span><strong>${compactMoney(24000)}</strong></div></div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong style="color:${['income','revenue'].includes(item.transaction_type) ? '#16a34a' : '#dc2626'}">${compactMoney(item.amount)}</strong></div>`).join('') || '<p class="p-4 text-sm text-slate-400">No transactions yet.</p>'}</div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div style="padding:12px" id="cashflow-chart-container"></div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Invoice Aging (Overdue)</h2></div><div class="crm-list" id="invoice-aging-list"></div></section>
           </div>`;
       }
 
@@ -2894,7 +2922,65 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ${isBuilder ? financeSheetTabs() : ''}
         ${bodyContent}`;
 
-      if (isBuilder) initInvoiceBuilder();
+      if (isBuilder) {
+        initInvoiceBuilder();
+      } else {
+        initFinanceCharts();
+      }
+    }
+
+    function initFinanceCharts() {
+      // Invoice Aging: real computed from invoice data
+      const today = new Date();
+      const aging = { '0\u201330 Days': 0, '31\u201360 Days': 0, '61\u201390 Days': 0, '90+ Days': 0 };
+      state.data.invoices
+        .filter((inv) => !['paid', 'cancelled'].includes(inv.status))
+        .forEach((inv) => {
+          const daysLate = inv.due_date ? Math.floor((today - new Date(inv.due_date)) / 86400000) : 0;
+          const amt = Number(inv.total_amount || inv.amount || 0);
+          if (daysLate <= 30) aging['0\u201330 Days'] += amt;
+          else if (daysLate <= 60) aging['31\u201360 Days'] += amt;
+          else if (daysLate <= 90) aging['61\u201390 Days'] += amt;
+          else aging['90+ Days'] += amt;
+        });
+      const agingEl = document.getElementById('invoice-aging-list');
+      if (agingEl) {
+        agingEl.innerHTML = Object.entries(aging).map(([label, amt]) =>
+          `<div class="crm-list-row"><span>${label}</span><strong style="color:${amt > 0 ? '#dc2626' : '#64748b'}">${compactMoney(amt)}</strong></div>`
+        ).join('');
+      }
+      // Monthly Cash Flow: last 6 months bar chart
+      const monthMap = {};
+      state.data.finances.forEach((item) => {
+        const d = item.transaction_date || (item.created_at || '').slice(0, 10);
+        const monthKey = d.slice(0, 7);
+        if (!monthKey || monthKey.length < 7) return;
+        if (!monthMap[monthKey]) monthMap[monthKey] = { income: 0, expense: 0 };
+        if (['income', 'revenue'].includes(item.transaction_type)) monthMap[monthKey].income += Number(item.amount || 0);
+        else monthMap[monthKey].expense += Number(item.amount || 0);
+      });
+      const monthKeys = Object.keys(monthMap).sort().slice(-6);
+      const maxFlow = Math.max(...monthKeys.flatMap((k) => [monthMap[k].income, monthMap[k].expense]), 1);
+      const chartEl = document.getElementById('cashflow-chart-container');
+      if (chartEl) {
+        if (monthKeys.length === 0) {
+          chartEl.innerHTML = '<p style="font-size:11px;color:#94a3b8;padding:8px">No transaction data yet</p>';
+        } else {
+          const bars = monthKeys.map((k) => {
+            const incH = Math.round((monthMap[k].income / maxFlow) * 60);
+            const expH = Math.round((monthMap[k].expense / maxFlow) * 60);
+            const lbl = new Date(k + '-01').toLocaleDateString('en-IN', { month: 'short' });
+            return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+              <div style="display:flex;gap:2px;align-items:flex-end;height:64px">
+                <div title="Income \u20b9${monthMap[k].income.toLocaleString('en-IN')}" style="width:10px;height:${incH}px;background:#16a34a;border-radius:2px 2px 0 0"></div>
+                <div title="Expense \u20b9${monthMap[k].expense.toLocaleString('en-IN')}" style="width:10px;height:${expH}px;background:#dc2626;border-radius:2px 2px 0 0"></div>
+              </div>
+              <span style="font-size:9px;color:#64748b">${lbl}</span>
+            </div>`;
+          }).join('');
+          chartEl.innerHTML = `<div style="display:flex;align-items:flex-end;gap:4px;height:80px">${bars}</div><div style="display:flex;gap:12px;margin-top:6px"><span style="font-size:10px;color:#16a34a;font-weight:700">&#9632; Income</span><span style="font-size:10px;color:#dc2626;font-weight:700">&#9632; Expense</span></div>`;
+        }
+      }
     }
 
     function renderInvoiceBuilder() {
@@ -3844,7 +3930,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function renderUsers() {
       const profiles = state.data.profiles.length ? state.data.profiles : employeeSeed();
-      els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" type="button">Invite User</button><button class="crm-button" data-export="users" type="button">Export</button>')}
+      els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" id="btn-invite-user" type="button">Invite User</button><button class="crm-button" data-export="users" type="button">Export</button>')}
         <div class="crm-grid crm-kpis">${metric('Total Users', profiles.length, '♧', 'blue')}${metric('Client Logins', profiles.filter((item) => item.role === 'client').length, '○', 'green')}${metric('Employee Logins', profiles.filter((item) => item.role !== 'client').length, '♙', 'purple')}${metric('Pending Invites', profiles.filter((item) => item.status === 'pending').length, '▹', 'orange', 'down 12% vs last month')}</div>
         <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Access Directory</h2><div class="crm-toolbar"><select class="crm-select"><option>All Statuses</option></select><input class="crm-input" placeholder="Search users..." /></div></div>${table(['', 'Name', 'Role', 'User Type', 'Company', 'Access Level', 'Status', 'Actions'], userRows())}</section><aside class="crm-card crm-detail"><div class="crm-detail-hero"><div class="crm-detail-icon">♧</div><div><h2 class="text-xl font-black text-slate-950">Role Details</h2><p class="font-semibold text-slate-500">Permissions and module access</p></div></div><div class="crm-list"><div class="crm-list-row"><span>Projects</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Clients</span><strong>Enabled</strong></div><div class="crm-list-row"><span>Finance</span><strong>Restricted by role</strong></div><div class="crm-list-row"><span>Analytics</span><strong>Enabled</strong></div><div class="crm-list-row"><span>MFA</span><strong>Recommended</strong></div></div></aside></div>
         <div class="crm-two-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Login Activity</h2></div><div class="crm-list">${profiles.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || item.email)}</span>${badge(item.status || 'success', item.status === 'inactive' ? 'red' : 'green')}</div>`).join('')}</div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Alerts</h2></div><div class="crm-list"><div class="crm-list-row"><span>Role permissions reviewed</span>${badge('low', 'blue')}</div><div class="crm-list-row"><span>Inactive accounts</span><strong>${profiles.filter((item) => item.status === 'inactive').length}</strong></div></div></section></div>`;
@@ -4115,6 +4201,36 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const target = button.dataset.jump;
         window.location.href = `/company/${target === 'users' ? 'user-management' : target}`;
       }));
+
+      // Project status filter listener
+      const statusFilter = document.querySelector('#project-status-filter');
+      if (statusFilter) {
+        statusFilter.addEventListener('change', () => {
+          state.projectStatusFilter = statusFilter.value;
+          renderProjects();
+          bindActions();
+        });
+      }
+
+      // Invite user listener
+      document.getElementById('btn-invite-user')?.addEventListener('click', () => {
+        const email = prompt('Enter email address to invite:');
+        if (!email || !email.includes('@')) return;
+        window.tmSupabase?.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/company/login' })
+          .then(({ error }) => toast(error ? 'Invite failed: ' + error.message : 'Invite email sent to ' + email));
+      });
+
+      // User Management details handlers
+      document.getElementById('btn-assign-role')?.addEventListener('click', () => {
+        toast('Select a user row and use the role dropdown to reassign.');
+      });
+      document.getElementById('btn-reset-password')?.addEventListener('click', () => {
+        const email = prompt('Enter user email to send password reset:');
+        if (!email) return;
+        window.tmSupabase?.auth.resetPasswordForEmail(email)
+          .then(({ error }) => toast(error ? 'Failed: ' + error.message : 'Password reset email sent to ' + email));
+      });
+
       updateSelectionBar();
     }
 

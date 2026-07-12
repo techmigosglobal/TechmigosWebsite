@@ -28,6 +28,67 @@ const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().repl
 const pageTitle = title === 'Home'
   ? 'TechMigos | Web, Mobile, AI & Backend Development'
   : `${title} | TechMigos`;
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const breadcrumbLabels: Record<string, string> = {
+  about: 'About', services: 'Services', portfolio: 'Portfolio', blog: 'Blog',
+  careers: 'Careers', contact: 'Contact', support: 'Support', privacy: 'Privacy Policy', terms: 'Terms of Service',
+};
+const breadcrumbs = pathSegments.map((segment, index) => ({
+  name: breadcrumbLabels[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+  url: new URL(`/${pathSegments.slice(0, index + 1).join('/')}`, siteOrigin).toString(),
+}));
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteOrigin}/#organization`,
+      name: 'TechMigos',
+      url: siteOrigin,
+      logo: `${siteOrigin}/icon.png`,
+      description,
+      email: 'info@techmigos.com',
+      sameAs: [
+        'https://linkedin.com/company/techmigos',
+        'https://github.com/techmigos',
+        'https://twitter.com/techmigos',
+        'https://www.instagram.com/techmigos_official/',
+        'https://medium.com/@techmigos',
+      ],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: 'info@techmigos.com',
+        contactType: 'customer service',
+        availableLanguage: ['English'],
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteOrigin}/#website`,
+      name: 'TechMigos',
+      url: siteOrigin,
+      publisher: { '@id': `${siteOrigin}/#organization` },
+      inLanguage: 'en-IN',
+    },
+    {
+      '@type': 'WebPage',
+      '@id': `${canonicalURL}#webpage`,
+      name: pageTitle,
+      description,
+      url: canonicalURL.toString(),
+      isPartOf: { '@id': `${siteOrigin}/#website` },
+      about: { '@id': `${siteOrigin}/#organization` },
+      inLanguage: 'en-IN',
+    },
+    ...(breadcrumbs.length ? [{
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteOrigin },
+        ...breadcrumbs.map((item, index) => ({ '@type': 'ListItem', position: index + 2, name: item.name, item: item.url })),
+      ],
+    }] : []),
+  ],
+};
 ---
 
 <!DOCTYPE html>
@@ -41,24 +102,25 @@ const pageTitle = title === 'Home'
     <title>{pageTitle}</title>
     <meta name="title" content={pageTitle} />
     <meta name="description" content={description} />
-    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
 
     <!-- Canonical -->
     <link rel="canonical" href={canonicalURL} />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="TechMigos" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={absoluteOgImage} />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={pageTitle} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={absoluteOgImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalURL} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absoluteOgImage} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/icon.png" />
@@ -71,39 +133,24 @@ const pageTitle = title === 'Home'
     <meta name="supabase-url" content={import.meta.env.PUBLIC_SUPABASE_URL || ''} />
     <meta name="supabase-key" content={import.meta.env.PUBLIC_SUPABASE_KEY || ''} />
 
-    <!-- JSON-LD Structured Data -->
-    <script is:inline type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "TechMigos",
-      "url": siteOrigin,
-      "logo": `${siteOrigin}/icon.png`,
-      "description": description,
-      "sameAs": [
-        "https://linkedin.com/company/techmigos",
-        "https://github.com/techmigos",
-        "https://twitter.com/techmigos",
-        "https://www.instagram.com/techmigos_official/"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "info@techmigos.com",
-        "contactType": "customer service"
-      }
-    })} />
+    <!-- JSON-LD makes the page, organization, and navigation legible to search engines. -->
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script is:inline>
       window.TechMigosConfig = { apiBaseUrl: '' };
       window.techmigosApiUrl = function(p) { return String(p || ''); };
       window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
       window.techmigosGetCsrfToken = async function() { return 'no-csrf'; };
+      window.tmSupabase = null;
 
       try {
         var url = document.querySelector('meta[name="supabase-url"]');
         var key = document.querySelector('meta[name="supabase-key"]');
         var sbUrl = url ? url.getAttribute('content') : '';
         var sbKey = key ? key.getAttribute('content') : '';
-        window.tmSupabase = supabase.createClient(sbUrl, sbKey);
+        if (sbUrl && sbKey) {
+          window.tmSupabase = supabase.createClient(sbUrl, sbKey);
+        }
       } catch (e) {
         console.error('Supabase init failed:', e);
       }
@@ -136,7 +183,7 @@ const pageTitle = title === 'Home'
       const ring = document.getElementById('cursor-ring');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
       const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-      const allowEnhancedMotion = finePointer.matches && !reducedMotion.matches;
+      const allowEnhancedMotion = !reducedMotion.matches && (finePointer.matches || window.innerWidth >= 1024);
       let dotX = -100, dotY = -100;
       let ringX = -100, ringY = -100;
 

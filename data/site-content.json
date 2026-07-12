@@ -48,7 +48,7 @@
       "slug": "focus-today",
       "title": "Focus Today",
       "category": "Mobile",
-      "emoji": "📰",
+      "emoji": "\ud83d\udcf0",
       "tags": [
         "Flutter",
         "Firebase",
@@ -242,6 +242,47 @@
       "timeline": "Case-study product direction and screen system",
       "team": "Product strategy, UX, mobile UI, and QA review",
       "services": "Mobile Product Design and Development",
+      "featured": true
+    },
+    {
+      "slug": "hastkala",
+      "title": "Hastkala",
+      "category": "Web",
+      "emoji": "\ud83e\udeb4",
+      "tags": [
+        "Next.js",
+        "E-Commerce",
+        "Artisan Marketplace",
+        "Tailwind CSS"
+      ],
+      "image": "https://ecommerce-site-taupe-seven.vercel.app/indian-artisan-handcrafted-pottery-weaving-textile.jpg",
+      "description": "A full-featured Indian e-commerce artisan marketplace built to connect craftspeople directly with buyers. Deployed on Vercel with responsive desktop layouts.",
+      "result": "Live Artisan Marketplace",
+      "href": "/portfolio/hastkala",
+      "overview": "Hastkala is a web-based artisan marketplace built to connect Indian craftspeople directly with customers. The platform celebrates handcrafted traditions \u2014 terracotta pottery, woven textiles, blue ceramics, lighting, and furniture \u2014 empowering over 2,000 artisans across 25+ states.",
+      "challenge": "Traditional artisan goods lacked a dignified digital storefront. Craftspeople had no discovery layer, buyers had no curated filter experience, and the platform needed to handle a 50+ product catalog with responsive design and intuitive navigation.",
+      "solution": "We built a Next.js storefront with category filters, price-range sliders, sort controls, star-rating system, discount badges, wishlist functionality, cart flow, vendor onboarding portal, and a structured About and Sell section \u2014 all deployed on Vercel.",
+      "results": [
+        {
+          "metric": "50+ Products",
+          "label": "Curated handcrafted catalog at launch"
+        },
+        {
+          "metric": "2,000+ Artisans",
+          "label": "Empowered across 25+ Indian states"
+        },
+        {
+          "metric": "Smart Filters",
+          "label": "Category, price range, and sort controls"
+        },
+        {
+          "metric": "Live on Vercel",
+          "label": "Production-deployed Next.js storefront"
+        }
+      ],
+      "timeline": "Case-study product direction and layout strategy",
+      "team": "Next.js engineering, Web scraper design, and UX design",
+      "services": "E-Commerce Web App Strategy & Engineering",
       "featured": true
     }
   ]

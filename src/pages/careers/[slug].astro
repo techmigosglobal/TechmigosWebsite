@@ -1494,21 +1494,36 @@ const essentials = [
 
     setLoading(true);
 
+    let uploadedResumePath = '';
+
     try {
       const formData = new FormData(form);
+      if (String(formData.get('company_website') || '').trim()) {
+        form.reset();
+        touched.clear();
+        syncCount();
+        syncFileSummary();
+        updateProgress();
+        setStatus('Application submitted successfully. Our team will review your materials and follow up soon.', 'success');
+        return;
+      }
+      if (!window.tmSupabase) {
+        throw new Error('Secure application submission is unavailable. Please email careers@techmigos.com.');
+      }
       const cv = formData.get('cv');
       let resumeUrl = '';
       let resumePath = '';
 
       if (cv instanceof File && cv.size > 0) {
-        const filePath = `resumes/${Date.now()}-${cv.name}`;
+        const extension = getFileExtension(cv);
+        const uniqueId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const filePath = `applications/${new Date().toISOString().slice(0, 7)}/${uniqueId}.${extension}`;
         const { error: uploadError } = await window.tmSupabase.storage
           .from('resumes')
-          .upload(filePath, cv);
+          .upload(filePath, cv, { contentType: cv.type || undefined, upsert: false });
         if (uploadError) throw new Error('Resume upload failed: ' + uploadError.message);
-        const { data: urlData } = window.tmSupabase.storage.from('resumes').getPublicUrl(filePath);
-        resumeUrl = urlData.publicUrl;
         resumePath = filePath;
+        uploadedResumePath = filePath;
       }
 
       const payload = {
@@ -1541,6 +1556,9 @@ const essentials = [
       updateProgress();
       setStatus('Application submitted successfully. Our team will review your materials and follow up soon.', 'success');
     } catch (error) {
+      if (uploadedResumePath && window.tmSupabase) {
+        await window.tmSupabase.storage.from('resumes').remove([uploadedResumePath]);
+      }
       const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       setStatus(message, 'error');
     } finally {

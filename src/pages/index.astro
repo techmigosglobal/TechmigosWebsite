@@ -4,9 +4,6 @@ export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ServiceIcon from '../components/ServiceIcon.astro';
 import { loadSiteContent } from '../lib/siteContent';
-import { supabase } from '../db/supabase';
-
-const { data: todos, error: todosError } = await supabase.from("todos").select('*');
 
 const services = [
   {
@@ -107,9 +104,12 @@ const showTestimonials = false;
   <!-- ========================================
        HERO SECTION
        ======================================== -->
-  <section class="relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
+  <section id="homepage-hero" class="homepage-hero relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
     <!-- Animated grid background -->
-    <div class="absolute inset-0 grid-pattern opacity-60"></div>
+    <div class="absolute inset-0 grid-pattern opacity-60" style="z-index: 0;"></div>
+
+    <!-- Canvas for interactive neural particle network background -->
+    <canvas id="hero-network-canvas" class="absolute inset-0 pointer-events-none opacity-50" style="z-index: 1;"></canvas>
 
     <!-- Animated gradient blobs -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -452,6 +452,18 @@ const showTestimonials = false;
 </BaseLayout>
 
 <style>
+  .homepage-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(30rem circle at var(--hero-x, 50%) var(--hero-y, 35%), rgba(20, 184, 166, 0.16), transparent 62%);
+    transition: opacity 250ms ease;
+  }
+
+  .homepage-hero.is-interactive::after { opacity: 1; }
+
   @keyframes trustTicker {
     from { transform: translateX(-50%); }
     to { transform: translateX(0); }
@@ -465,6 +477,22 @@ const showTestimonials = false;
     0%, 18% { opacity: 1; transform: translateY(0); }
     22%, 96% { opacity: 0; transform: translateY(-20px); }
     100% { opacity: 0; }
+  }
+
+  /* Spotlight glow effect for cards */
+  .glow-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(280px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(37, 99, 235, 0.07), transparent 45%);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+  }
+  .glow-card:hover::after {
+    opacity: 1;
   }
 </style>
 
@@ -490,5 +518,145 @@ const showTestimonials = false;
         }, 50);
       }, 400);
     }, 3000);
+  }
+
+  // Debugging info
+  console.log('[Antigravity] Hero script initializing...');
+
+  const hero = document.getElementById('homepage-hero');
+  const canvas = document.getElementById('hero-network-canvas') as HTMLCanvasElement;
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  if (canvas && !prefersReduced) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      let width = 0;
+      let height = 0;
+      
+      const particles: Array<{x: number, y: number, vx: number, vy: number, r: number}> = [];
+      const particleCount = 45;
+      
+      let mouse = { x: -1000, y: -1000 };
+      
+      function resize() {
+        const rect = hero ? hero.getBoundingClientRect() : null;
+        width = canvas.width = canvas.offsetWidth || (rect ? rect.width : window.innerWidth);
+        height = canvas.height = canvas.offsetHeight || (rect ? rect.height : window.innerHeight);
+        
+        console.log(`[Antigravity] Canvas resized to ${width}x${height}`);
+        
+        if (particles.length === 0) {
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              vx: (Math.random() - 0.5) * 0.45,
+              vy: (Math.random() - 0.5) * 0.45,
+              r: Math.random() * 2 + 1
+            });
+          }
+        } else {
+          particles.forEach(p => {
+            if (p.x > width) p.x = Math.random() * width;
+            if (p.y > height) p.y = Math.random() * height;
+          });
+        }
+      }
+      
+      const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      if (hero && hasFinePointer) {
+        hero.addEventListener('mousemove', (e) => {
+          const rect = hero.getBoundingClientRect();
+          mouse.x = e.clientX - rect.left;
+          mouse.y = e.clientY - rect.top;
+        }, { passive: true });
+        
+        hero.addEventListener('mouseleave', () => {
+          mouse.x = -1000;
+          mouse.y = -1000;
+        }, { passive: true });
+
+        hero.classList.add('is-interactive');
+        hero.addEventListener('pointermove', (event) => {
+          const rect = hero.getBoundingClientRect();
+          hero.style.setProperty('--hero-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+          hero.style.setProperty('--hero-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+        }, { passive: true });
+      }
+      
+      window.addEventListener('resize', resize, { passive: true });
+      resize();
+      
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Brand teal particles and subtle blue connecting lines
+        ctx.fillStyle = 'rgba(13, 148, 136, 0.45)'; // teal-600
+        ctx.strokeStyle = 'rgba(37, 99, 235, 0.08)'; // blue-600
+        
+        for (let i = 0; i < particleCount; i++) {
+          const p = particles[i];
+          if (!p) continue;
+          
+          p.x += p.vx;
+          p.y += p.vy;
+          
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+          
+          if (p.x < 0) p.x = 0;
+          if (p.x > width) p.x = width;
+          if (p.y < 0) p.y = 0;
+          if (p.y > height) p.y = height;
+          
+          if (mouse.x > 0) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 180) {
+              p.x += dx * 0.005;
+              p.y += dy * 0.005;
+            }
+          }
+          
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+          
+          for (let j = i + 1; j < particleCount; j++) {
+            const p2 = particles[j];
+            if (!p2) continue;
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 110) {
+              ctx.beginPath();
+              ctx.lineWidth = (1 - dist / 110) * 0.8;
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
+          }
+        }
+        
+        requestAnimationFrame(draw);
+      }
+      
+      draw();
+    }
+  }
+
+  if (!prefersReduced) {
+    document.querySelectorAll('.glow-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const mouseEvent = e as MouseEvent;
+        const rect = (card as HTMLElement).getBoundingClientRect();
+        const x = mouseEvent.clientX - rect.left;
+        const y = mouseEvent.clientY - rect.top;
+        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+      }, { passive: true });
+    });
   }
 </script>

@@ -49,6 +49,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     type="text" id="name" name="name" required
                     class="form-input form-control form-control--muted"
                     placeholder="John Smith"
+                    autocomplete="name"
                   />
                 </div>
                 <div class="form-group">
@@ -59,6 +60,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     type="email" id="email" name="email" required
                     class="form-input form-control form-control--muted"
                     placeholder="john@company.com"
+                    autocomplete="email"
                   />
                 </div>
               </div>
@@ -69,6 +71,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                   type="text" id="company" name="company"
                   class="form-input form-control form-control--muted"
                   placeholder="Your company name"
+                  autocomplete="organization"
                 />
               </div>
 
@@ -131,6 +134,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                 </svg>
               </button>
+              <p class="form-submission-note" aria-live="polite">
+                Your project details are sent securely to the TechMigos CRM. We never publish contact submissions.
+              </p>
             </form>
           </div>
         </div>
@@ -249,6 +255,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   function setLoading(loading: boolean) {
     submitBtn.disabled = loading;
+    submitBtn.setAttribute('aria-busy', String(loading));
     btnText.textContent = loading ? 'Sending...' : 'Send Message';
     btnIcon.classList.toggle('hidden', loading);
     btnSpinner.classList.toggle('hidden', !loading);
@@ -260,9 +267,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
     setLoading(true);
     try {
       const formData = new FormData(form);
+      if (String(formData.get('company_website') || '').trim()) {
+        showToast("Message sent! We'll be in touch within 24 hours.", 'success');
+        form.reset();
+        return;
+      }
+      const supabase = (window as any).tmSupabase;
+      if (!supabase) {
+        throw new Error('Secure form submission is unavailable. Please email info@techmigos.com.');
+      }
       const payload = {
         name: String(formData.get('name') || ''),
         email: String(formData.get('email') || ''),
@@ -273,7 +293,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         source_path: '/contact',
       };
 
-      const { error } = await (window as any).tmSupabase
+      const { error } = await supabase
         .from('contact_leads')
         .insert([payload]);
 

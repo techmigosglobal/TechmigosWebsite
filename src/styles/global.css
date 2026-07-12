@@ -18,6 +18,7 @@
   body {
     @apply font-sans text-gray-900 antialiased;
     overflow-x: hidden;
+    min-width: 320px;
   }
 
   input,
@@ -144,6 +145,10 @@
     min-height: 1.25rem;
   }
 
+  .form-submission-note {
+    @apply rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600;
+  }
+
   /* Glassmorphism card */
   .glass-card {
     background: rgba(255, 255, 255, 0.7);
@@ -174,10 +179,19 @@
     transform: scale(0.92);
     transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .revealed {
-    opacity: 1 !important;
-    transform: none !important;
+.revealed {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Horizontal reveal offsets can create a transient mobile overflow. Mobile keeps the
+   same entrance hierarchy with a vertical move, which also reads better in a scroll. */
+@media (max-width: 767px) {
+  .reveal-left,
+  .reveal-right {
+    transform: translateY(24px);
   }
+}
 
   /* Stagger delay utilities */
   .stagger-1 { transition-delay: 0.1s; }
@@ -491,6 +505,32 @@ body.cursor-hovering #cursor-ring {
   #page-progress {
     display: none !important;
   }
+}
+
+@media (hover: none) {
+  .btn-primary,
+  .btn-ghost,
+  .btn-secondary,
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  .card:hover,
+  .btn-primary:hover,
+  .btn-ghost:hover,
+  .tech-card:hover {
+    transform: none;
+  }
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 /* Skip to main content link */
