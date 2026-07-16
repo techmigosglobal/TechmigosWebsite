@@ -1,0 +1,22 @@
+---
+import { crmNavIcon, crmNavItems } from '../../lib/crmNav';
+
+interface Props {
+  activeTab: string;
+}
+
+const { activeTab } = Astro.props;
+---
+
+<aside class="crm-sidebar">
+  <div class="crm-brand"><img src="/icon.png" class="crm-logo" alt="TechMigos" /><span>TechMigos CRM</span></div>
+  <nav class="crm-nav" aria-label="Company CRM navigation" id="crm-nav">
+    {crmNavItems.map(([key, label, icon, path]) => (
+      <a href={path} class={`crm-nav-item ${activeTab === key ? 'active' : ''}`} style="text-decoration:none;" data-nav-key={key}>
+        <span class="crm-nav-icon" set:html={crmNavIcon(icon)} />
+        <span class="crm-nav-label">{label}</span>
+      </a>
+    ))}
+  </nav>
+  <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
+</aside>

@@ -88,10 +88,10 @@ const technologies = [
   <!-- ========================================
        HERO
        ======================================== -->
-  <section class="pt-36 pb-20 relative overflow-hidden">
-    <div class="absolute inset-0 dot-pattern opacity-50"></div>
-    <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
-    <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-accent-100 rounded-full blur-3xl opacity-40"></div>
+  <section id="about-hero" class="section-surface section-surface-mist section-spotlight pt-36 pb-20 relative overflow-hidden">
+    <canvas class="section-neural-canvas" data-network-canvas data-particle-count="42"></canvas>
+    <div class="section-orb -top-40 -right-40 w-96 h-96 bg-primary-100"></div>
+    <div class="section-orb -bottom-20 -left-20 w-72 h-72 bg-accent-100 opacity-45"></div>
     <div class="container-custom relative z-10">
       <div class="max-w-3xl">
         <div class="reveal">
@@ -115,7 +115,8 @@ const technologies = [
   <!-- ========================================
        MISSION & VISION
        ======================================== -->
-  <section class="section-padding bg-white">
+  <section id="about-mission" class="section-surface section-surface-glow section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-35" data-network-canvas data-particle-count="30"></canvas>
     <div class="container-custom">
       <div class="grid lg:grid-cols-2 gap-20 items-center">
         <div class="reveal-left">
@@ -135,7 +136,7 @@ const technologies = [
               { val: 'Build', label: 'Ship Reliably' },
               { val: 'Improve', label: 'Iterate Fast' },
             ].map(s => (
-              <div class="text-center p-4 rounded-2xl bg-primary-50 border border-primary-100">
+              <div class="text-center p-4 rounded-2xl bg-white/80 border border-primary-100 shadow-sm lift-panel">
                 <div class="text-2xl font-black text-primary-600">{s.val}</div>
                 <div class="text-sm text-gray-500 mt-1">{s.label}</div>
               </div>
@@ -160,7 +161,8 @@ const technologies = [
   <!-- ========================================
        TIMELINE
        ======================================== -->
-  <section class="section-padding" style="background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)">
+  <section id="about-timeline" class="section-surface section-surface-mist section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-30" data-network-canvas data-particle-count="28"></canvas>
     <div class="container-custom">
       <div class="text-center mb-16 reveal">
         <span class="section-eyebrow">Our Journey</span>
@@ -179,7 +181,7 @@ const technologies = [
               {/* Dot */}
               <div class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse-glow" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)"></div>
               {/* Card */}
-              <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1">
+              <div class="bg-white/88 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold mb-2">{milestone.need}</span>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">{milestone.title}</h3>
                 <p class="text-sm text-gray-500 italic mb-3">{milestone.moment}</p>
@@ -196,7 +198,10 @@ const technologies = [
   <!-- ========================================
        VALUES
        ======================================== -->
-  <section class="section-padding" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #0e7490 100%)">
+  <section id="about-values" class="section-surface section-surface-dark section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-35" data-network-canvas data-particle-count="34"></canvas>
+    <div class="section-orb top-0 left-8 w-80 h-80 bg-cyan-300/25"></div>
+    <div class="section-orb bottom-0 right-12 w-96 h-96 bg-indigo-300/20"></div>
     <div class="container-custom">
       <div class="text-center mb-16 reveal">
         <span class="section-eyebrow" style="color:#a5b4fc; background: rgba(165,180,252,0.1); border-color: rgba(165,180,252,0.2);">Our Values</span>
@@ -206,7 +211,7 @@ const technologies = [
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {values.map((value, i) => (
-          <div class={`group p-7 rounded-2xl border border-white/10 hover:border-primary-400/40 bg-white/5 hover:bg-white/10 transition-[background-color,border-color,transform] duration-300 hover:-translate-y-1 stagger-${i + 1} reveal`}>
+          <div class={`group p-7 rounded-2xl border border-white/10 hover:border-primary-400/40 bg-white/6 hover:bg-white/12 backdrop-blur-sm transition-[background-color,border-color,transform] duration-300 hover:-translate-y-1 stagger-${i + 1} reveal`}>
             <div class="w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-2xl" style="background: rgba(255,255,255,0.1)">
               {value.icon === 'innovation' && '💡'}
               {value.icon === 'collaboration' && '🤝'}
@@ -226,7 +231,8 @@ const technologies = [
   <!-- ========================================
        TECHNOLOGIES
        ======================================== -->
-  <section class="section-padding bg-white relative overflow-hidden">
+  <section id="about-tech" class="section-surface section-surface-glow section-spotlight section-padding bg-white relative overflow-hidden">
+    <canvas class="section-neural-canvas opacity-32" data-network-canvas data-particle-count="36"></canvas>
     <div class="absolute inset-0" aria-hidden="true">
       <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl bg-gradient-to-br from-primary-100/70 to-accent-100/60"></div>
       <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full blur-3xl bg-gradient-to-tr from-amber-100/60 to-rose-100/60"></div>
@@ -255,7 +261,7 @@ const technologies = [
   <!-- ========================================
        CTA
        ======================================== -->
-  <section class="py-24 relative overflow-hidden">
+  <section id="about-cta" class="section-surface section-spotlight py-24 relative overflow-hidden">
     <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg, #2563eb, #0ea5e9, #06b6d4, #2563eb); background-size: 300% 300%;"></div>
     <div class="container-custom relative z-10 text-center reveal">
       <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Join us in building the future</h2>
@@ -276,3 +282,114 @@ const technologies = [
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .tech-icon-wall {
+    position: relative;
+    max-width: 980px;
+    margin-inline: auto;
+  }
+
+  .tech-icon-item {
+    background: rgba(255, 255, 255, 0.58);
+    border-radius: 20px;
+    padding: 16px 12px 14px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(10px);
+  }
+
+  .tech-icon-item:hover,
+  .tech-icon-item:focus-visible {
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+    border-color: rgba(37, 99, 235, 0.22);
+  }
+</style>
+
+<script>
+  const aboutReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const aboutFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (!aboutReducedMotion) {
+    document.querySelectorAll('.section-spotlight').forEach((section) => {
+      if (!aboutFinePointer) return;
+      section.classList.add('is-interactive');
+      section.addEventListener('pointermove', (event) => {
+        const rect = section.getBoundingClientRect();
+        section.style.setProperty('--spotlight-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+        section.style.setProperty('--spotlight-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+      }, { passive: true });
+    });
+
+    document.querySelectorAll('[data-network-canvas]').forEach((canvasEl) => {
+      if (!(canvasEl instanceof HTMLCanvasElement)) return;
+      const section = canvasEl.closest('section');
+      const context = canvasEl.getContext('2d');
+      if (!section || !context) return;
+
+      const particleCount = Number(canvasEl.dataset.particleCount || 30);
+      const particles = Array.from({ length: particleCount }, () => ({
+        x: 0,
+        y: 0,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: (Math.random() - 0.5) * 0.28,
+        r: Math.random() * 1.8 + 0.9,
+      }));
+
+      let width = 0;
+      let height = 0;
+
+      function resizeCanvas() {
+        width = canvasEl.width = section.clientWidth;
+        height = canvasEl.height = section.clientHeight;
+        particles.forEach((particle) => {
+          if (!particle.x || particle.x > width) particle.x = Math.random() * width;
+          if (!particle.y || particle.y > height) particle.y = Math.random() * height;
+        });
+      }
+
+      function drawCanvas() {
+        context.clearRect(0, 0, width, height);
+        context.fillStyle = section.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
+        context.strokeStyle = section.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
+
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          if (!particle) continue;
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+
+          if (particle.x < 0 || particle.x > width) particle.vx *= -1;
+          if (particle.y < 0 || particle.y > height) particle.vy *= -1;
+          particle.x = Math.max(0, Math.min(width, particle.x));
+          particle.y = Math.max(0, Math.min(height, particle.y));
+
+          context.beginPath();
+          context.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+          context.fill();
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const particleB = particles[j];
+            if (!particleB) continue;
+            const dx = particle.x - particleB.x;
+            const dy = particle.y - particleB.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 118) {
+              context.beginPath();
+              context.lineWidth = (1 - dist / 118) * 0.75;
+              context.moveTo(particle.x, particle.y);
+              context.lineTo(particleB.x, particleB.y);
+              context.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(drawCanvas);
+      }
+
+      resizeCanvas();
+      drawCanvas();
+      window.addEventListener('resize', resizeCanvas, { passive: true });
+    });
+  }
+</script>

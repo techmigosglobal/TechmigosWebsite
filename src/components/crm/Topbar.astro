@@ -1,0 +1,45 @@
+<header class="crm-topbar">
+  <label class="crm-search">
+    <span>⌕</span>
+    <span class="sr-only">Search CRM</span>
+    <input id="crm-search" type="search" placeholder="Search projects, clients, tickets…" />
+    <kbd class="crm-search-kbd">/</kbd>
+  </label>
+  <div class="crm-top-actions">
+    <div class="crm-company-pill">
+      <img src="/icon.png" style="width:20px;height:20px;border-radius:5px;object-fit:contain;" alt="" />
+      <span id="crm-company-name">TechMigos</span>
+    </div>
+    <div class="crm-topbar-clock">
+      <span id="crm-clock-time" class="clock-time">--:--</span>
+      <span id="crm-clock-date" class="clock-date">Loading…</span>
+    </div>
+    <button id="crm-notifications" class="crm-icon-button" type="button" aria-label="Notifications">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 17H9"></path>
+        <path d="M18 17V11a6 6 0 1 0-12 0v6l-2 2h16l-2-2Z"></path>
+      </svg>
+      <span id="crm-badge" class="crm-badge-dot" style="display:none;">0</span>
+    </button>
+    <button class="crm-icon-button" type="button" aria-label="Help" title="Help & shortcuts">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M9.1 9a3 3 0 1 1 5 2.2c-.8.7-1.1 1.1-1.1 2.3"></path>
+        <path d="M12 17h.01"></path>
+      </svg>
+    </button>
+    <button id="crm-profile-button" class="crm-user" type="button" aria-label="Open profile management">
+      <div class="crm-avatar" id="crm-avatar">TM</div>
+      <div class="crm-user-text">
+        <span id="crm-user-name" style="font-size:13px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">Loading…</span>
+        <span id="crm-user-role" style="font-size:11px;font-weight:700;color:#667599;white-space:nowrap;">Company</span>
+      </div>
+    </button>
+    <button id="crm-logout-btn" class="crm-logout-btn" type="button" title="Sign out" aria-label="Sign out">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v8"></path>
+        <path d="M7.8 5.8a8 8 0 1 0 8.4 0"></path>
+      </svg>
+    </button>
+  </div>
+</header>

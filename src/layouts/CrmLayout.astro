@@ -2,6 +2,9 @@
 export const prerender = true;
 
 import BaseLayout from './BaseLayout.astro';
+import Sidebar from '../components/crm/Sidebar.astro';
+import Topbar from '../components/crm/Topbar.astro';
+import OverlayLayer from '../components/crm/OverlayLayer.astro';
 
 interface Props {
   activeTab: string;
@@ -9,6 +12,7 @@ interface Props {
 }
 
 const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
+
 ---
 
 <BaseLayout
@@ -19,17 +23,25 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 >
   <style is:global>
     :root {
-      --crm-blue: #1f7aff;
-      --crm-blue-dark: #0f5fe8;
-      --crm-navy: #081638;
-      --crm-text: #102047;
-      --crm-muted: #667599;
-      --crm-line: #dfe7f3;
-      --crm-bg: #f7faff;
-      --crm-green: #08a979;
-      --crm-red: #ff4d47;
-      --crm-orange: #ff9f1a;
-      --crm-purple: #8b5cf6;
+      --crm-blue: #0f766e;
+      --crm-blue-dark: #115e59;
+      --crm-navy: #0f172a;
+      --crm-text: #1e293b;
+      --crm-muted: #64748b;
+      --crm-line: #dbe3ef;
+      --crm-bg: #f4f7fb;
+      --crm-green: #059669;
+      --crm-red: #dc2626;
+      --crm-orange: #d97706;
+      --crm-purple: #475569;
+      --crm-sidebar-bg: #0f172a;
+      --crm-sidebar-line: rgba(148, 163, 184, 0.16);
+      --crm-sidebar-text: #cbd5e1;
+      --crm-sidebar-active: rgba(15, 118, 110, 0.18);
+      --crm-surface: #ffffff;
+      --crm-surface-muted: #f8fafc;
+      --crm-shadow-soft: 0 18px 48px rgba(15, 23, 42, 0.07);
+      --crm-shadow-strong: 0 24px 64px rgba(15, 23, 42, 0.12);
     }
 
     body:has(.crm-app) {
@@ -42,7 +54,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       grid-template-columns: 256px minmax(0, 1fr);
       background: var(--crm-bg);
       color: var(--crm-text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     .crm-app.sidebar-collapsed {
@@ -53,24 +65,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       position: sticky;
       top: 0;
       height: 100vh;
-      border-right: 1px solid var(--crm-line);
-      background: #fff;
+      border-right: 1px solid var(--crm-sidebar-line);
+      background:
+        radial-gradient(circle at top, rgba(15, 118, 110, 0.22), transparent 26%),
+        linear-gradient(180deg, #111827 0%, #0f172a 55%, #0b1120 100%);
       display: flex;
       flex-direction: column;
       padding: 0;
       overflow: hidden;
+      color: var(--crm-sidebar-text);
     }
 
     .crm-brand {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 18px 16px 14px;
-      color: var(--crm-navy);
+      padding: 20px 18px 16px;
+      color: #f8fafc;
       font-weight: 900;
       font-size: 17px;
-      letter-spacing: -0.03em;
-      border-bottom: 1px solid var(--crm-line);
+      letter-spacing: -0.035em;
+      border-bottom: 1px solid var(--crm-sidebar-line);
       flex-shrink: 0;
     }
 
@@ -104,44 +119,47 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       flex-shrink: 0;
     }
 
-    .crm-nav button,
+    .crm-nav-item,
     .crm-button,
     .crm-icon-button {
       min-height: 44px;
       touch-action: manipulation;
     }
 
-    .crm-nav button {
+    .crm-nav-item {
       display: flex;
       align-items: center;
       gap: 10px;
       width: 100%;
-      border: 0;
-      border-radius: 8px;
+      border: 1px solid transparent;
+      border-radius: 12px;
       background: transparent;
-      padding: 9px 10px;
+      padding: 11px 12px;
       text-align: left;
-      color: #4a5568;
+      color: var(--crm-sidebar-text);
       font-size: 13.5px;
-      font-weight: 700;
+      font-weight: 750;
       cursor: pointer;
-      transition: background 0.12s, color 0.12s;
-      min-height: 38px;
+      transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+      min-height: 42px;
+      text-decoration: none;
     }
 
-    .crm-nav button[aria-current="page"] {
-      background: #eef4ff;
-      color: var(--crm-blue);
-      font-weight: 900;
+    .crm-nav-item.active {
+      background: var(--crm-sidebar-active);
+      color: #f8fafc;
+      border-color: rgba(45, 212, 191, 0.2);
+      box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.22);
     }
 
-    .crm-nav button[aria-current="page"] .crm-nav-icon {
-      color: var(--crm-blue);
+    .crm-nav-item.active .crm-nav-icon {
+      color: #7dd3fc;
     }
 
-    .crm-nav button:hover:not([aria-current="page"]) {
-      background: #f7faff;
-      color: var(--crm-navy);
+    .crm-nav-item:hover {
+      background: rgba(148, 163, 184, 0.08);
+      color: #f8fafc;
+      transform: translateX(2px);
     }
 
     .crm-nav-icon {
@@ -150,16 +168,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       flex-shrink: 0;
       display: grid;
       place-items: center;
-      color: #718096;
+      color: #94a3b8;
     }
 
     .crm-nav-icon svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .crm-nav button[aria-current="page"] .crm-nav-icon svg {
-      color: var(--crm-blue);
+      width: 18px;
+      height: 18px;
     }
 
     .crm-sidebar-footer {
@@ -171,10 +185,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     .crm-collapse {
       width: 100%;
       justify-content: center;
-      border: 1px solid var(--crm-line);
-      border-radius: 8px;
-      background: #f7faff;
-      color: #667599;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      background: rgba(148, 163, 184, 0.08);
+      color: #cbd5e1;
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
@@ -183,12 +197,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       align-items: center;
       gap: 8px;
       padding: 0 12px;
-      transition: background 0.12s;
+      transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
     }
 
     .crm-collapse:hover {
-      background: #eef4ff;
-      color: var(--crm-blue);
+      background: rgba(15, 118, 110, 0.16);
+      color: #f8fafc;
+      border-color: rgba(45, 212, 191, 0.22);
     }
 
     .sidebar-collapsed .crm-brand span,
@@ -208,7 +223,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       height: 28px;
     }
 
-    .sidebar-collapsed .crm-nav button {
+    .sidebar-collapsed .crm-nav-item {
       padding: 9px;
       justify-content: center;
     }
@@ -233,10 +248,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       gap: 18px;
       min-height: 72px;
       border-bottom: 1px solid var(--crm-line);
-      background: rgba(255, 255, 255, 0.97);
+      background: rgba(255, 255, 255, 0.92);
       padding: 0 28px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 1px 0 var(--crm-line), 0 4px 16px rgba(16,32,71,0.04);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 1px 0 var(--crm-line), 0 16px 40px rgba(15, 23, 42, 0.05);
     }
 
     .crm-search {
@@ -247,12 +262,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       width: 100%;
       height: 48px;
       border: 1px solid var(--crm-line);
-      border-radius: 9px;
-      background: #fff;
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.92);
       padding: 0 58px 0 44px;
       color: var(--crm-text);
       font-weight: 700;
-      box-shadow: 0 8px 28px rgba(14, 29, 64, 0.05);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
     }
 
     .crm-search span:first-child {
@@ -326,21 +341,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       width: 40px;
       height: 40px;
       border: 1px solid var(--crm-line);
-      border-radius: 10px;
-      background: #fff;
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.9);
       color: #26395e;
       font-size: 17px;
       font-weight: 900;
       cursor: pointer;
       display: grid;
       place-items: center;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, color 0.16s ease;
     }
 
     .crm-icon-button:hover {
-      border-color: #b9d2ff;
-      box-shadow: 0 4px 12px rgba(31,122,255,0.12);
+      border-color: rgba(15, 118, 110, 0.24);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
       color: var(--crm-blue);
+    }
+
+    .crm-icon-button svg,
+    .crm-logout-btn svg {
+      width: 18px;
+      height: 18px;
     }
 
     .crm-badge-dot {
@@ -366,18 +387,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       gap: 10px;
       min-width: 0;
       border: 1px solid var(--crm-line);
-      border-radius: 10px;
-      background: #fff;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.9);
       color: inherit;
       cursor: pointer;
       text-align: left;
       padding: 5px 10px 5px 6px;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
     }
 
     .crm-user:hover {
-      border-color: #b9d2ff;
-      box-shadow: 0 4px 12px rgba(31,122,255,0.10);
+      border-color: rgba(15, 118, 110, 0.22);
+      box-shadow: 0 10px 26px rgba(15, 118, 110, 0.1);
     }
 
     .crm-avatar {
@@ -387,7 +408,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       height: 36px;
       border-radius: 999px;
       overflow: visible;
-      background: linear-gradient(135deg, var(--crm-blue), var(--crm-blue-dark));
+      background: linear-gradient(135deg, #0f766e, #0f172a);
       display: grid;
       place-items: center;
       color: #fff;
@@ -437,7 +458,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     .crm-content {
       min-width: 0;
-      padding: 28px;
+      padding: 30px;
     }
 
     .crm-page-head {
@@ -479,20 +500,20 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       justify-content: center;
       gap: 9px;
       border: 1px solid var(--crm-line);
-      border-radius: 9px;
-      background: #fff;
+      border-radius: 12px;
+      background: var(--crm-surface);
       padding: 0 16px;
       color: var(--crm-text);
       font-size: 14px;
       font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(16, 32, 71, 0.05);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
     }
 
     .crm-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(16, 32, 71, 0.08);
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
       border-color: #cbd5e1;
     }
 
@@ -503,14 +524,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     .crm-button.primary {
       border-color: transparent;
-      background: linear-gradient(135deg, var(--crm-blue), var(--crm-blue-dark));
+      background: linear-gradient(135deg, #0f766e, #115e59);
       color: #fff;
-      box-shadow: 0 16px 30px rgba(31, 122, 255, 0.28);
+      box-shadow: 0 18px 34px rgba(15, 118, 110, 0.22);
     }
 
     .crm-button.primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 18px 36px rgba(31, 122, 255, 0.35);
+      box-shadow: 0 20px 38px rgba(15, 118, 110, 0.28);
     }
 
     .crm-button.primary:active {
@@ -519,14 +540,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     .crm-button.green {
       border-color: transparent;
-      background: linear-gradient(135deg, #0ac391, #059669);
+      background: linear-gradient(135deg, #059669, #047857);
       color: #fff;
-      box-shadow: 0 16px 30px rgba(8, 169, 121, 0.24);
+      box-shadow: 0 18px 34px rgba(5, 150, 105, 0.2);
     }
 
     .crm-button.green:hover {
       transform: translateY(-1px);
-      box-shadow: 0 18px 36px rgba(8, 169, 121, 0.32);
+      box-shadow: 0 20px 38px rgba(5, 150, 105, 0.26);
     }
 
     .crm-button.green:active {
@@ -561,10 +582,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     .crm-card {
       border: 1px solid var(--crm-line);
-      border-radius: 12px;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(16, 32, 71, 0.055);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--crm-shadow-soft);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .crm-kpi {
@@ -575,7 +596,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       min-height: 112px;
       padding: 20px;
       border: 1px solid transparent;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .crm-kpi:hover {
@@ -594,11 +615,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       font-weight: 900;
     }
 
-    .blue-soft { background: #eaf3ff; color: var(--crm-blue); }
+    .blue-soft { background: #dff7f4; color: var(--crm-blue); }
     .green-soft { background: #ddfaef; color: var(--crm-green); }
-    .red-soft { background: #ffeded; color: var(--crm-red); }
-    .orange-soft { background: #fff3dc; color: var(--crm-orange); }
-    .purple-soft { background: #f1eaff; color: var(--crm-purple); }
+    .red-soft { background: #fee2e2; color: var(--crm-red); }
+    .orange-soft { background: #ffedd5; color: var(--crm-orange); }
+    .purple-soft { background: #e2e8f0; color: var(--crm-purple); }
 
     .crm-kpi-label {
       color: #506080;
@@ -654,8 +675,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       gap: 6px;
       overflow-x: auto;
       padding: 6px;
-      background: #f1f5f9;
-      border-radius: 12px;
+      background: #edf3f8;
+      border-radius: 14px;
       margin-bottom: 20px;
       border: 1px solid #e2e8f0;
     }
@@ -671,7 +692,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
     }
 
     .crm-sheet-tab:hover {
@@ -696,7 +717,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     .crm-table {
       width: 100%;
-      min-width: 860px;
+      min-width: 920px;
       border-collapse: collapse;
       color: #26395e;
       font-size: 13px;
@@ -706,7 +727,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     .crm-table th,
     .crm-table td {
       border-bottom: 1px solid #edf2f8;
-      padding: 13px 16px;
+      padding: 15px 16px;
       text-align: left;
       vertical-align: middle;
       white-space: nowrap;
@@ -720,11 +741,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       color: #4f5f80;
       font-size: 12px;
       font-weight: 950;
-      background: #fbfdff;
+      background: #f8fbfd;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .crm-table tr:hover td {
-      background: #f8fbff;
+      background: #f7fbfc;
     }
 
     .crm-status {
@@ -882,6 +905,516 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       padding-bottom: 0;
     }
 
+    .crm-hero-panel {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(45, 212, 191, 0.24), transparent 30%),
+        linear-gradient(135deg, #0f172a 0%, #111827 45%, #134e4a 100%);
+      color: #f8fafc;
+      box-shadow: var(--crm-shadow-strong);
+    }
+
+    .crm-hero-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -55% auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      filter: blur(10px);
+    }
+
+    .crm-hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.7fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .crm-hero-kicker,
+    .crm-section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .crm-hero-kicker {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(248, 250, 252, 0.88);
+    }
+
+    .crm-section-kicker {
+      background: #dff7f4;
+      color: var(--crm-blue-dark);
+    }
+
+    .crm-hero-title {
+      margin: 16px 0 8px;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 950;
+      text-wrap: balance;
+    }
+
+    .crm-hero-copy {
+      max-width: 60ch;
+      color: rgba(226, 232, 240, 0.88);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .crm-hero-meta {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.28);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    .crm-meta-label {
+      color: rgba(203, 213, 225, 0.88);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .crm-meta-value {
+      color: #f8fafc;
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+    }
+
+    .crm-meta-note {
+      color: rgba(226, 232, 240, 0.78);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .crm-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .crm-section-stack {
+      display: grid;
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .crm-split-callout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .crm-mini-card {
+      border: 1px solid var(--crm-line);
+      border-radius: 18px;
+      background: var(--crm-surface-muted);
+      padding: 18px;
+    }
+
+    .crm-mini-card strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--crm-navy);
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .crm-note {
+      color: var(--crm-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .crm-table-card {
+      overflow: hidden;
+    }
+
+    .crm-table th.crm-numeric,
+    .crm-table td.crm-numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crm-amount-positive {
+      color: #047857;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crm-amount-negative {
+      color: #b91c1c;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crm-finance-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      align-items: start;
+    }
+
+    .crm-filterbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 14px 18px 0;
+    }
+
+    .crm-ledger-pinned-summary {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 18px 0;
+      padding: 10px;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      border-radius: 14px;
+      background: rgba(248, 252, 255, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 34px rgba(15, 23, 42, 0.05);
+    }
+
+    .crm-ledger-pill {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+      border: 1px solid #e4edf6;
+    }
+
+    .crm-ledger-pill span {
+      color: var(--crm-muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .crm-ledger-pill strong {
+      color: var(--crm-navy);
+      font-size: 15px;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crm-ledger-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .crm-ledger-toolbar .crm-toolbar {
+      flex: 1 1 280px;
+      justify-content: flex-end;
+    }
+
+    .crm-ledger-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .crm-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 233, 0.14);
+      background: linear-gradient(180deg, #f8fdff 0%, #ecfeff 100%);
+      padding: 0 12px;
+      color: #155e75;
+      font-size: 12px;
+      font-weight: 850;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .crm-filter-chip strong {
+      color: #0f172a;
+      font-weight: 950;
+    }
+
+    .crm-filterbar .crm-select,
+    .crm-filterbar .crm-input,
+    .crm-filterbar .crm-button {
+      flex: 1 1 160px;
+    }
+
+    .crm-density-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #dbe5f0;
+    }
+
+    .crm-density-button {
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #51627e;
+      min-height: 30px;
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .crm-density-button.active {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .crm-table--ledger thead th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+    }
+
+    .crm-table--ledger th:first-child,
+    .crm-table--ledger td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: inherit;
+    }
+
+    .crm-table--ledger th:nth-child(2),
+    .crm-table--ledger td:nth-child(2) {
+      position: sticky;
+      left: 54px;
+      z-index: 2;
+      background: inherit;
+      box-shadow: 1px 0 0 #edf2f8;
+    }
+
+    .crm-table--ledger thead th:first-child,
+    .crm-table--ledger thead th:nth-child(2) {
+      z-index: 5;
+      background: #f8fbfd;
+    }
+
+    .crm-table--ledger th:last-child,
+    .crm-table--ledger td:last-child {
+      position: sticky;
+      right: 0;
+      z-index: 2;
+      background: inherit;
+      box-shadow: -1px 0 0 #edf2f8;
+    }
+
+    .crm-table--ledger thead th:last-child {
+      z-index: 5;
+      background: #f8fbfd;
+    }
+
+    .crm-table--ledger tbody tr {
+      transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .crm-table--ledger tbody tr:hover {
+      transform: translateY(-1px);
+    }
+
+    .crm-table--ledger.crm-density-compact th,
+    .crm-table--ledger.crm-density-compact td {
+      padding: 10px 12px;
+    }
+
+    .crm-table--ledger.crm-density-compact .crm-edit-input,
+    .crm-table--ledger.crm-density-compact .crm-edit-select {
+      min-width: 90px;
+      height: 30px;
+      padding: 0 6px;
+      font-size: 12px;
+    }
+
+    .crm-ledger-row--dirty td {
+      background: linear-gradient(180deg, rgba(255, 247, 237, 0.92) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+
+    .crm-ledger-row--saving td {
+      background: linear-gradient(180deg, rgba(239, 246, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+
+    .crm-ledger-row--saved td {
+      background: linear-gradient(180deg, rgba(236, 253, 245, 0.94) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+
+    .crm-ledger-row--invalid td {
+      background: linear-gradient(180deg, rgba(254, 242, 242, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+
+    .crm-ledger-readonly .crm-edit-input,
+    .crm-ledger-readonly .crm-edit-select {
+      pointer-events: none;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      color: inherit;
+      appearance: none;
+    }
+
+    .crm-ledger-readonly .crm-edit-select {
+      padding-right: 8px;
+    }
+
+    .crm-save-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      border-radius: 999px;
+      padding: 0 14px;
+      background: #ecfeff;
+      color: #155e75;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .crm-save-indicator::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.65;
+    }
+
+    .crm-ledger-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 118px;
+      min-height: 34px;
+      border-radius: 999px;
+      border: 1px solid #dbe5f0;
+      background: #fff;
+      padding: 0 12px;
+      color: #51627e;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .crm-ledger-state::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      flex: 0 0 auto;
+    }
+
+    .crm-ledger-state--dirty {
+      border-color: rgba(245, 158, 11, 0.22);
+      background: #fff9ed;
+      color: #b45309;
+    }
+
+    .crm-ledger-state--saving {
+      border-color: rgba(14, 165, 233, 0.22);
+      background: #f0f9ff;
+      color: #0369a1;
+    }
+
+    .crm-ledger-state--saved {
+      border-color: rgba(22, 163, 74, 0.22);
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .crm-ledger-state--locked {
+      border-color: rgba(100, 116, 139, 0.18);
+      background: #f8fafc;
+      color: #64748b;
+    }
+
+    .crm-ledger-state--invalid {
+      border-color: rgba(220, 38, 38, 0.2);
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .crm-chart-card {
+      padding: 18px;
+    }
+
+    .crm-chart-card .crm-card-head {
+      padding-left: 0;
+      padding-right: 0;
+      min-height: auto;
+    }
+
+    .crm-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 14px;
+      color: var(--crm-muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .crm-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .crm-legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .crm-empty {
+      padding: 24px 18px;
+      color: var(--crm-muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
     .crm-actionbar {
       display: none;
       align-items: center;
@@ -961,6 +1494,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       background: #fff;
       outline: none;
       box-shadow: 0 0 0 3px rgba(31, 122, 255, 0.12);
+    }
+
+    .crm-cell-invalid {
+      border-color: rgba(220, 38, 38, 0.34) !important;
+      background: #fff5f5 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
     }
 
     .crm-dirty {
@@ -1165,7 +1704,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         gap: 14px;
       }
 
-      .crm-nav button {
+      .crm-nav-item {
         justify-content: center;
         padding: 13px;
       }
@@ -1183,6 +1722,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       }
 
       .crm-two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-hero-grid,
+      .crm-finance-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1235,7 +1779,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         scroll-snap-type: x mandatory;
       }
 
-      .crm-nav button {
+      .crm-nav-item {
         flex: 0 0 auto;
         width: auto;
         scroll-snap-align: start;
@@ -1264,6 +1808,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       .crm-user {
         min-width: 0;
         flex: 1 1 190px;
+      }
+
+      .crm-split-callout {
+        grid-template-columns: 1fr;
       }
 
       .crm-content {
@@ -1324,7 +1872,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         border-radius: 9px;
       }
 
-      .crm-nav button {
+      .crm-nav-item {
         min-height: 40px;
         padding: 9px 11px;
         font-size: 13px;
@@ -1405,6 +1953,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         padding: 12px 14px;
       }
 
+      .crm-ledger-toolbar,
+      .crm-ledger-summary {
+        align-items: stretch;
+      }
+
+      .crm-ledger-pinned-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .crm-table td {
         display: block;
         width: 100%;
@@ -1469,6 +2026,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       .crm-proof-cell > div:last-of-type,
       .crm-proof-cell > div {
         justify-content: flex-end;
+      }
+
+      .crm-table--ledger th:last-child,
+      .crm-table--ledger td:last-child,
+      .crm-table--ledger th:nth-child(2),
+      .crm-table--ledger td:nth-child(2),
+      .crm-table--ledger th:first-child,
+      .crm-table--ledger td:first-child {
+        position: static;
+        box-shadow: none;
       }
 
       .crm-detail {
@@ -1866,68 +2433,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
   </style>
 
   <div class="crm-app">
-    <aside class="crm-sidebar">
-      <div class="crm-brand"><img src="/icon.png" class="crm-logo" alt="TechMigos" /><span>TechMigos CRM</span></div>
-      <nav class="crm-nav" aria-label="Company CRM navigation" id="crm-nav">
-        {[
-          ['dashboard', 'Dashboard', '⌂', '/company/dashboard'],
-          ['leads', 'Leads', '◎', '/company/leads'],
-          ['deals', 'Deals', '◈', '/company/deals'],
-          ['projects', 'Projects', '▣', '/company/projects'],
-          ['tickets', 'Support Tickets', '◴', '/company/tickets'],
-          ['finance', 'Finance', '▤', '/company/finance'],
-          ['analytics', 'Analytics', '▥', '/company/analytics'],
-          ['reports', 'Reports', '▧', '/company/reports'],
-          ['clients', 'Clients', '○', '/company/clients'],
-          ['employees', 'Employees', '♙', '/company/employees'],
-          ['users', 'User Management', '♧', '/company/user-management'],
-          ['followups', 'Follow-ups', '⌁', '/company/followups'],
-          ['campaigns', 'Campaigns', '✉', '/company/campaigns'],
-          ['settings', 'Settings', '⚙', '/company/settings'],
-        ].map(([key, label, icon, path]) => (
-          <a href={path} class={`crm-nav-item ${activeTab === key ? 'active' : ''}`} style="text-decoration:none;">
-            <span class="crm-nav-icon">{icon}</span>
-            <span class="crm-nav-label">{label}</span>
-          </a>
-        ))}
-      </nav>
-      <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
-    </aside>
+    <Sidebar activeTab={activeTab} />
 
     <main class="crm-main">
-      <header class="crm-topbar">
-        <label class="crm-search">
-          <span>⌕</span>
-          <span class="sr-only">Search CRM</span>
-          <input id="crm-search" type="search" placeholder="Search projects, clients, tickets..." />
-          <kbd class="crm-search-kbd">/</kbd>
-        </label>
-        <div class="crm-top-actions">
-          <div class="crm-company-pill">
-            <img src="/icon.png" style="width:20px;height:20px;border-radius:5px;object-fit:contain;" alt="" />
-            <span id="crm-company-name">TechMigos</span>
-          </div>
-          <div class="crm-topbar-clock">
-            <span id="crm-clock-time" class="clock-time">--:--</span>
-            <span id="crm-clock-date" class="clock-date">Loading...</span>
-          </div>
-          <button id="crm-notifications" class="crm-icon-button" type="button" aria-label="Notifications">
-            🔔<span id="crm-badge" class="crm-badge-dot" style="display:none;">0</span>
-          </button>
-          <button class="crm-icon-button" type="button" aria-label="Help" title="Help & shortcuts">?</button>
-          <button id="crm-profile-button" class="crm-user" type="button" aria-label="Open profile management">
-            <div class="crm-avatar" id="crm-avatar">TM</div>
-            <div class="crm-user-text">
-              <span id="crm-user-name" style="font-size:13px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">Loading...</span>
-              <span id="crm-user-role" style="font-size:11px;font-weight:700;color:#667599;white-space:nowrap;">Company</span>
-            </div>
-          </button>
-          <button id="crm-logout-btn" class="crm-logout-btn" type="button" title="Sign out" aria-label="Sign out">⏻</button>
-        </div>
-      </header>
+      <Topbar />
 
       <section class="crm-content">
-        <p id="crm-status" class="mb-4 text-sm font-bold text-slate-500" role="status">Loading CRM data...</p>
+        <p id="crm-status" class="mb-4 text-sm font-bold text-slate-500" role="status">Loading CRM data…</p>
         <div id="crm-actionbar" class="crm-actionbar">
           <span id="crm-selected-count">0 selected</span>
           <div class="crm-toolbar">
@@ -1941,47 +2453,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     </main>
   </div>
 
-  <div id="crm-modal" class="crm-modal" role="dialog" aria-modal="true">
-    <div class="crm-modal-panel">
-      <div class="crm-card-head">
-        <h2 id="crm-modal-title" class="crm-card-title">Create</h2>
-        <button id="crm-modal-close" class="crm-icon-button" type="button" aria-label="Close">×</button>
-      </div>
-      <div id="crm-modal-body" class="p-5"></div>
-    </div>
-  </div>
-  <div id="invoice-modal" class="crm-modal" role="dialog" aria-modal="true">
-    <div class="crm-modal-panel">
-      <div class="crm-card-head">
-        <h2 id="invoice-preview-title" class="crm-card-title">Invoice</h2>
-        <div class="flex gap-2">
-          <button id="print-invoice" class="crm-button primary" type="button">Print PDF</button>
-          <button id="close-invoice" class="crm-icon-button" type="button" aria-label="Close">×</button>
-        </div>
-      </div>
-        <div id="invoice-preview" class="p-5"></div>
-        <div class="pt-4 flex justify-end gap-2 border-t border-slate-200">
-          <button id="download-pdf-invoice" class="crm-button" type="button">Download PDF</button>
-        </div>
-    </div>
-  </div>
-  <div id="crm-toast" class="crm-toast"></div>
-  <div id="invoice-hover-preview" class="invoice-hover-preview" aria-hidden="true"></div>
-  <div id="proof-preview-modal" class="proof-preview-modal" role="dialog" aria-modal="true" aria-label="Proof preview">
-    <div class="proof-preview-panel">
-      <div class="crm-card-head">
-        <h2 class="crm-card-title">Proof Preview</h2>
-        <button id="proof-preview-close" class="crm-icon-button" type="button" aria-label="Close preview">×</button>
-      </div>
-      <div id="proof-preview-body" class="proof-preview-body"></div>
-    </div>
-  </div>
+  <OverlayLayer />
 
   <script is:inline define:vars={{ activeTab }}>
     const navItems = [
       ['dashboard', 'Dashboard', '⌂'],
-      ['leads', 'Leads', '◎'],
-      ['deals', 'Deals', '◈'],
       ['projects', 'Projects', '▣'],
       ['tickets', 'Support Tickets', '◴'],
       ['finance', 'Finance', '▤'],
@@ -1990,10 +2466,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       ['clients', 'Clients', '○'],
       ['employees', 'Employees', '♙'],
       ['users', 'User Management', '♧'],
-      ['followups', 'Follow-ups', '⌁'],
-      ['campaigns', 'Campaigns', '✉'],
       ['settings', 'Settings', '⚙'],
     ];
+
+    const DISABLED_CRM_RESOURCES = new Set(['leads', 'deals', 'followups', 'campaigns']);
+    const ADMIN_ONLY_RESOURCES = new Set(['profiles', 'settings']);
 
     const hoverCache = new Map();
     let hoverGen = 0;
@@ -2001,6 +2478,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     const state = {
       active: typeof activeTab !== 'undefined' ? activeTab : 'dashboard',
       search: '',
+      financeStatusFilter: '',
+      financeProofFilter: 'all',
+      financeEditMode: false,
+      financeDensity: 'comfortable',
       profile: null,
       selectedProjectId: null,
       selectedTicketId: null,
@@ -2014,6 +2495,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       reportTo: '',
       projectStatusFilter: '',
       saveTimers: new Map(),
+      rowSaveStates: new Map(),
       data: {
         leads: [],
         clients: [],
@@ -2123,6 +2605,38 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function tableName(resource) {
       return TABLE_MAP[resource] || resource;
+    }
+
+    function isCompanyAdmin() {
+      return state.profile?.role === 'company_admin';
+    }
+
+    function isDisabledResource(resource) {
+      return DISABLED_CRM_RESOURCES.has(resource);
+    }
+
+    function ensurePortalAccess(resource) {
+      if (!resource || resource === 'me' || resource === 'client') return;
+      if (isDisabledResource(resource)) throw new Error(`${nice(resource)} is not enabled in this CRM workspace.`);
+      if (ADMIN_ONLY_RESOURCES.has(resource) && !isCompanyAdmin()) {
+        throw new Error('Only company admins can access this area.');
+      }
+    }
+
+    function validatePayload(resource, payload) {
+      if (resource === 'profiles' && payload.role === 'client' && !payload.client_id) {
+        return 'Select a client before creating or updating a client login.';
+      }
+      if (resource === 'projects' && !payload.client_id) {
+        return 'Select a client for this project.';
+      }
+      if (resource === 'tickets' && !payload.client_id) {
+        return 'Select a client before creating the ticket.';
+      }
+      if (resource === 'finances' && (!payload.transaction_date || payload.amount === undefined)) {
+        return 'Finance records need both a date and an amount.';
+      }
+      return '';
     }
 
     function sanitizeInvoiceItems(items = []) {
@@ -2280,6 +2794,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         }
       }
 
+      ensurePortalAccess(resource);
+
       if (method === 'GET' && !id) {
         const { data, error } = await window.tmSupabase
           .from(table)
@@ -2397,7 +2913,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       </div>`;
     }
 
-    function metric(label, value, icon, color = 'blue', trend = 'up 12% vs last month') {
+    function metric(label, value, icon, color = 'blue', trend = 'Updated just now') {
       return `<article class="crm-card crm-kpi">
         <div class="crm-kpi-icon ${color}-soft">${icon}</div>
         <div><p class="crm-kpi-label">${label}</p><p class="crm-kpi-value">${value}</p><p class="crm-trend ${trend.startsWith('down') ? 'down' : 'up'}">${trend}</p></div>
@@ -2407,6 +2923,25 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function progress(value) {
       const safe = Math.max(0, Math.min(100, Number(value || 0)));
       return `<div class="crm-progress"><div class="crm-progress-track"><div class="crm-progress-fill" style="width:${safe}%"></div></div><strong>${safe}%</strong></div>`;
+    }
+
+    function currentWeekLabel() {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - dayOfWeek);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const fmtDate = (date) => date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      return `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}, ${weekEnd.getFullYear()}`;
+    }
+
+    function syncNavVisibility() {
+      document.querySelectorAll('[data-nav-key]').forEach((link) => {
+        const key = link.getAttribute('data-nav-key');
+        const hideForNonAdmin = (key === 'users' || key === 'settings') && !isCompanyAdmin();
+        link.style.display = hideForNonAdmin ? 'none' : '';
+      });
     }
 
     function renderShell() {
@@ -2420,14 +2955,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return `<div class="crm-page-head"><div><h1 class="crm-page-title">${title}</h1><p class="crm-page-subtitle">${subtitle}</p></div><div class="crm-toolbar">${actions}</div></div>`;
     }
 
-    function table(headers, rows, empty = 'No records yet.') {
+    function table(headers, rows, empty = 'No records yet.', tableClass = '') {
       table.labelIndex = 0;
       const labeledRows = rows ? rows.replace(/<td(?![^>]*data-label=)([^>]*)>/g, (match, attrs) => {
         const index = table.labelIndex % headers.length;
         table.labelIndex += 1;
         return `<td data-label="${escapeHtml(headers[index] || '')}"${attrs}>`;
       }) : '';
-      return `<div class="crm-table-wrap"><table class="crm-table"><thead><tr>${headers.map((item) => `<th>${item}</th>`).join('')}</tr></thead><tbody>${labeledRows || `<tr><td data-label="" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table></div>`;
+      return `<div class="crm-table-wrap"><table class="crm-table ${tableClass}"><thead><tr>${headers.map((item) => `<th>${item}</th>`).join('')}</tr></thead><tbody>${labeledRows || `<tr><td data-label="" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table></div>`;
     }
     table.labelIndex = 0;
 
@@ -2439,18 +2974,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const openTickets = tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
-      const newEnquiries = state.data.contact_leads.filter((item) => item.status === 'new');
-      const newApplications = state.data.career_applications.filter((item) => item.status === 'new');
       
       // Dynamic current-week date range
-      const now = new Date();
-      const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - dayOfWeek);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      const fmtDate = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      const weekLabel = `${fmtDate(weekStart)} \u2013 ${fmtDate(weekEnd)}, ${weekEnd.getFullYear()}`;
+      const weekLabel = currentWeekLabel();
 
       // Accounts Receivable
       const receivable = state.data.invoices
@@ -2464,33 +2990,62 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <tr><td>#TIC-${ticket.id}</td><td>${badge(ticket.priority, statusTone(ticket.priority))}</td><td>${escapeHtml(ticket.assigned_to || 'Unassigned')}</td><td>${badge(ticket.status)}</td></tr>
       `).join('');
       els.view.innerHTML = `
-        ${pageHead(`Welcome back, ${escapeHtml(state.profile?.name || 'Team')}`, "Here's what's happening with your company today.", `<button class="crm-button" type="button">${escapeHtml(weekLabel)}</button>`)}
-        <div class="crm-grid crm-kpis">
-          ${metric('Total Projects', projects.length, '\u25a3', 'blue')}
-          ${metric('Active Clients', clients.filter((item) => item.status !== 'archived').length, '\u25cb', 'green')}
-          ${metric('Open Tickets', openTickets.length, '\u25f4', 'red', openTickets.length ? 'Needs attention' : 'All resolved')}
-          ${metric('Monthly Revenue', compactMoney(income), '\u20b9', 'green')}
-          ${metric('Accounts Receivable', compactMoney(receivable), '\u25c8', receivable > 0 ? 'orange' : 'green', receivable > 0 ? 'Unpaid invoices' : 'All paid')}
-        </div>
-        <div class="crm-two-col mt-5">
-          <section class="crm-card">
-            <div class="crm-card-head"><h2 class="crm-card-title">Projects Overview</h2><button class="crm-link" data-jump="projects">View all projects</button></div>
-            ${table(['Project Name', 'Client', 'Status', 'Budget', 'Progress'], projectRows)}
-          </section>
-          <section class="crm-card">
-            <div class="crm-card-head"><h2 class="crm-card-title">Financial Summary</h2><button class="crm-link" data-jump="finance">View full report</button></div>
-            <div class="crm-list">
-              <div class="crm-list-row"><span>Revenue</span><strong>${compactMoney(income)}</strong></div>
-              <div class="crm-list-row"><span>Expenses</span><strong>${compactMoney(expenses)}</strong></div>
-              <div class="crm-list-row"><span>Net Profit</span><strong style="color:${income - expenses >= 0 ? '#16a34a' : '#dc2626'}">${compactMoney(income - expenses)}</strong></div>
-              <div class="crm-list-row"><span>Accounts Receivable</span><strong>${compactMoney(receivable)}</strong></div>
+        ${pageHead('Operations Dashboard', 'Company-wide visibility across delivery, support, projects, clients, and finance.', `<button class="crm-button" type="button">${escapeHtml(weekLabel)}</button><button class="crm-button primary" type="button" data-jump="reports">Open reports</button>`)}
+        <section class="crm-card crm-hero-panel">
+          <div class="crm-hero-grid">
+            <div>
+              <span class="crm-hero-kicker">Team Snapshot</span>
+              <h2 class="crm-hero-title">Welcome back, ${escapeHtml(state.profile?.name || 'Team')}.</h2>
+              <p class="crm-hero-copy">You have ${openTickets.length} active support items, ${projects.filter((item) => ['active', 'review', 'planning'].includes(item.status)).length} live projects, and ${receivable ? `${compactMoney(receivable)} pending collection` : 'no outstanding receivables'} across the current operating cycle.</p>
             </div>
-          </section>
-        </div>
-        <div class="crm-three-col mt-5">
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Support Tickets</h2><button class="crm-link" data-jump="tickets">View all tickets</button></div>${table(['Ticket ID', 'Priority', 'Assigned Agent', 'Status'], ticketRows)}</section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Inbound Activity</h2></div><div class="crm-list">${[...newEnquiries.map((item) => ({ title: item.name || 'Website enquiry', meta: item.service || item.email || 'New enquiry' })), ...newApplications.map((item) => ({ title: item.name || 'Career application', meta: item.job_title || 'Application' })), ...state.data.activities.map((item) => ({ title: item.summary || item.action, meta: String(item.created_at || '').slice(0, 10) }))].slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.meta)}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No activity yet.</p>'}</div></section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">New Enquiries</h2></div><div class="crm-list">${newEnquiries.slice(0, 4).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || 'Visitor')}</span><small>${escapeHtml(item.service || item.email || 'Enquiry')}</small></div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No new enquiries.</p>'}</div></section>
+            <div class="crm-hero-meta">
+              <span class="crm-meta-label">Cash Position</span>
+              <span class="crm-meta-value">${compactMoney(income - expenses)}</span>
+              <p class="crm-meta-note">${income >= expenses ? 'Revenue is covering operating spend this period.' : 'Operating spend is ahead of collected revenue this period.'}</p>
+              <button class="crm-button" type="button" data-jump="finance">Review finance desk</button>
+            </div>
+          </div>
+        </section>
+        <div class="crm-section-stack">
+          <div class="crm-grid crm-kpis">
+            ${metric('Total Projects', projects.length, '▣', 'blue', `${projects.filter((item) => item.status === 'completed').length} completed`)}
+            ${metric('Active Clients', clients.filter((item) => item.status !== 'archived').length, '○', 'green', `${clients.filter((item) => item.status === 'lead').length} still in lead stage`)}
+            ${metric('Open Tickets', openTickets.length, '◴', 'red', openTickets.length ? `${openTickets.filter((item) => ['high', 'urgent'].includes(item.priority)).length} high priority` : 'Queue is under control')}
+            ${metric('Monthly Revenue', compactMoney(income), '₹', 'green', `${compactMoney(expenses)} in operating costs`)}
+            ${metric('Accounts Receivable', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${state.data.invoices.filter((item) => !['paid', 'cancelled'].includes(item.status)).length} unpaid invoices` : 'All issued invoices are settled')}
+          </div>
+          <div class="crm-two-col">
+            <section class="crm-card crm-table-card">
+              <div class="crm-card-head"><h2 class="crm-card-title">Project Pipeline</h2><button class="crm-link" data-jump="projects">View all projects</button></div>
+              ${table(['Project Name', 'Client', 'Status', 'Budget', 'Progress'], projectRows, 'No projects in progress right now.')}
+            </section>
+            <section class="crm-card">
+              <div class="crm-card-head"><h2 class="crm-card-title">Financial Position</h2><button class="crm-link" data-jump="finance">Open finance</button></div>
+              <div class="crm-list">
+                <div class="crm-list-row"><span>Revenue collected</span><strong class="crm-amount-positive">${compactMoney(income)}</strong></div>
+                <div class="crm-list-row"><span>Expenses recorded</span><strong class="crm-amount-negative">${compactMoney(expenses)}</strong></div>
+                <div class="crm-list-row"><span>Net position</span><strong class="${income - expenses >= 0 ? 'crm-amount-positive' : 'crm-amount-negative'}">${compactMoney(income - expenses)}</strong></div>
+                <div class="crm-list-row"><span>Receivables due</span><strong>${compactMoney(receivable)}</strong></div>
+              </div>
+              <div class="crm-split-callout" style="padding:0 18px 18px;">
+                <div class="crm-mini-card">
+                  <span class="crm-meta-label">Quick action</span>
+                  <strong>Create invoice</strong>
+                  <p class="crm-note">Issue a bill, collect payment, and attach proof from the finance workspace.</p>
+                </div>
+                <div class="crm-mini-card">
+                  <span class="crm-meta-label">Attention</span>
+                  <strong>${openTickets.length} support items</strong>
+                  <p class="crm-note">Keep delivery confidence high by closing urgent client issues first.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="crm-three-col">
+            <section class="crm-card crm-table-card"><div class="crm-card-head"><h2 class="crm-card-title">Support Queue</h2><button class="crm-link" data-jump="tickets">Open support desk</button></div>${table(['Ticket ID', 'Priority', 'Assigned Agent', 'Status'], ticketRows, 'No support tickets in the queue.')}</section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action || 'Activity')}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10) || 'Recently')}</small></div>`).join('') || '<p class="crm-empty">No activity has been recorded yet.</p>'}</div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Client Watchlist</h2></div><div class="crm-list">${projects.filter((item) => ['watch', 'at_risk', 'breached'].includes(item.health)).slice(0, 4).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || 'Project')}</span><small>${escapeHtml(item.client_name || clientName(item.client_id) || 'Client')}</small></div>`).join('') || '<p class="crm-empty">No delivery risks need attention right now.</p>'}</div></section>
+          </div>
         </div>
       `;
     }
@@ -2632,6 +3187,170 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       });
     }
 
+    function financeVisibleRows() {
+      const rows = filtered(financeSheetRows(), ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by', 'invoice_number', 'customer_name', 'service_title']);
+      return rows.filter((item) => {
+        if (state.financeStatusFilter && String(item.status || '') !== state.financeStatusFilter) return false;
+        if (state.financeProofFilter === 'with-proof' && !item.proof_url) return false;
+        if (state.financeProofFilter === 'without-proof' && item.proof_url) return false;
+        return true;
+      });
+    }
+
+    function ledgerStateKey(resource, id) {
+      return `${resource}:${id}`;
+    }
+
+    function setLedgerState(resource, id, status) {
+      const key = ledgerStateKey(resource, id);
+      if (!status || status === 'idle') state.rowSaveStates.delete(key);
+      else state.rowSaveStates.set(key, status);
+    }
+
+    function ledgerState(resource, id) {
+      return state.rowSaveStates.get(ledgerStateKey(resource, id)) || 'idle';
+    }
+
+    function ledgerStateMarkup(resource, id) {
+      if (!state.financeEditMode) return `<span class="crm-ledger-state crm-ledger-state--locked" data-ledger-state="${resource}:${id}">Locked</span>`;
+      const current = ledgerState(resource, id);
+      if (current === 'dirty') return `<span class="crm-ledger-state crm-ledger-state--dirty" data-ledger-state="${resource}:${id}">Pending</span>`;
+      if (current === 'saving') return `<span class="crm-ledger-state crm-ledger-state--saving" data-ledger-state="${resource}:${id}">Saving</span>`;
+      if (current === 'saved') return `<span class="crm-ledger-state crm-ledger-state--saved" data-ledger-state="${resource}:${id}">Saved</span>`;
+      return `<span class="crm-ledger-state" data-ledger-state="${resource}:${id}">Ready</span>`;
+    }
+
+    function financeActiveFilters(rows) {
+      const chips = [
+        `<span class="crm-filter-chip"><span>Rows</span><strong>${rows.length}</strong></span>`,
+      ];
+      if (state.financeStatusFilter) chips.push(`<button class="crm-filter-chip" type="button" data-finance-quick-filter="status-clear"><span>Status</span><strong>${nice(state.financeStatusFilter)}</strong></button>`);
+      if (state.financeProofFilter !== 'all') chips.push(`<button class="crm-filter-chip" type="button" data-finance-quick-filter="proof-clear"><span>Proof</span><strong>${state.financeProofFilter === 'with-proof' ? 'Attached' : 'Missing'}</strong></button>`);
+      if (state.search) chips.push(`<button class="crm-filter-chip" type="button" data-finance-quick-filter="search-clear"><span>Search</span><strong>${escapeHtml(state.search)}</strong></button>`);
+      return chips.join('');
+    }
+
+    function financeSummaryMarkup(rows) {
+      const totalValue = rows.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+      const collectedValue = rows.reduce((sum, item) => sum + Number(item.received_amount || (item.status === 'paid' ? (item.total_amount || item.amount || 0) : 0)), 0);
+      const pendingCount = rows.filter((item) => ['pending', 'sent', 'overdue', 'half_payment'].includes(String(item.status || ''))).length;
+      const proofCoverage = rows.filter((item) => item.proof_url).length;
+      return `<div class="crm-ledger-pinned-summary">
+        <div class="crm-ledger-pill"><span>Visible Rows</span><strong>${rows.length}</strong></div>
+        <div class="crm-ledger-pill"><span>Sheet Total</span><strong>${compactMoney(totalValue)}</strong></div>
+        <div class="crm-ledger-pill"><span>Collected / Paid</span><strong>${compactMoney(collectedValue)}</strong></div>
+        <div class="crm-ledger-pill"><span>Pending / Proof</span><strong>${pendingCount} / ${proofCoverage}</strong></div>
+      </div>`;
+    }
+
+    function financeDensityMarkup() {
+      return `<div class="crm-density-toggle" aria-label="Ledger density">
+        <button class="crm-density-button ${state.financeDensity === 'comfortable' ? 'active' : ''}" type="button" data-finance-density="comfortable">Comfortable</button>
+        <button class="crm-density-button ${state.financeDensity === 'compact' ? 'active' : ''}" type="button" data-finance-density="compact">Compact</button>
+      </div>`;
+    }
+
+    function ledgerFieldError(row, input) {
+      const field = input.dataset.field;
+      const value = String(input.value || '').trim();
+      const resource = row.dataset.resource;
+      if (resource === 'finances') {
+        if (field === 'transaction_date' && !value) return 'Date is required.';
+        if (field === 'amount' && (value === '' || Number(value) < 0 || Number.isNaN(Number(value)))) return 'Amount must be 0 or more.';
+        if (state.financeSheet === 'salary' && field === 'title' && !value) return 'Employee name is required.';
+      }
+      if (resource === 'invoices') {
+        if (['invoice_date', 'invoice_number', 'customer_name', 'service_title'].includes(field) && !value) return 'This field is required.';
+      }
+      return '';
+    }
+
+    function validateLedgerInput(input) {
+      const row = input.closest('[data-row-id]');
+      if (!row || !['finances', 'invoices'].includes(row.dataset.resource || '')) return true;
+      const message = ledgerFieldError(row, input);
+      input.classList.toggle('crm-cell-invalid', Boolean(message));
+      if (message) input.setAttribute('title', message);
+      else input.removeAttribute('title');
+      return !message;
+    }
+
+    function validateLedgerRow(row) {
+      if (!row || !['finances', 'invoices'].includes(row.dataset.resource || '')) return true;
+      const inputs = Array.from(row.querySelectorAll('[data-field]'));
+      const valid = inputs.every((input) => validateLedgerInput(input));
+      if (!valid) {
+        setLedgerState(row.dataset.resource, row.dataset.rowId, 'invalid');
+        applyLedgerStateToRow(row, 'invalid');
+      }
+      return valid;
+    }
+
+    function moveLedgerFocus(current, step) {
+      const cells = Array.from(document.querySelectorAll('.crm-table--ledger [data-field]'));
+      const index = cells.indexOf(current);
+      if (index === -1) return;
+      const target = cells[index + step];
+      if (target) {
+        target.focus();
+        if (target.select) target.select();
+      }
+    }
+
+    function bindLedgerKeyboardFlow() {
+      document.querySelectorAll('.crm-table--ledger [data-field]').forEach((input) => {
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            moveLedgerFocus(input, event.shiftKey ? -1 : 1);
+          }
+          if (event.altKey && event.key === 'ArrowRight') {
+            event.preventDefault();
+            moveLedgerFocus(input, 1);
+          }
+          if (event.altKey && event.key === 'ArrowLeft') {
+            event.preventDefault();
+            moveLedgerFocus(input, -1);
+          }
+        });
+      });
+    }
+
+    function financeRowStart(resource, item) {
+      const currentState = ledgerState(resource, item.id);
+      const rowStateClass = currentState && currentState !== 'idle' ? ` crm-ledger-row--${currentState}` : '';
+      return `<tr class="${rowStateClass.trim()}" data-resource="${resource}" data-row-id="${item.id}">`;
+    }
+
+    function applyLedgerStateToRow(row, status) {
+      if (!row) return;
+      row.classList.remove('crm-ledger-row--dirty', 'crm-ledger-row--saving', 'crm-ledger-row--saved', 'crm-ledger-row--invalid');
+      if (status && status !== 'idle') row.classList.add(`crm-ledger-row--${status}`);
+      const indicator = row.querySelector(`[data-ledger-state="${row.dataset.resource}:${row.dataset.rowId}"]`);
+      if (!indicator) return;
+      indicator.className = 'crm-ledger-state';
+      if (!state.financeEditMode) {
+        indicator.classList.add('crm-ledger-state--locked');
+        indicator.textContent = 'Locked';
+        return;
+      }
+      if (status === 'dirty') {
+        indicator.classList.add('crm-ledger-state--dirty');
+        indicator.textContent = 'Pending';
+      } else if (status === 'saving') {
+        indicator.classList.add('crm-ledger-state--saving');
+        indicator.textContent = 'Saving';
+      } else if (status === 'saved') {
+        indicator.classList.add('crm-ledger-state--saved');
+        indicator.textContent = 'Saved';
+      } else if (status === 'invalid') {
+        indicator.classList.add('crm-ledger-state--invalid');
+        indicator.textContent = 'Fix row';
+      } else {
+        indicator.textContent = 'Ready';
+      }
+    }
+
     function proofCell(item) {
       const id = item.id;
       if (item.proof_url) {
@@ -2728,7 +3447,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return `<div class="wide" style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;">
         <strong style="font-size:12px;">Payment Proof Attachment</strong>
         <span style="display:block;font-size:10px;color:#667599;margin-bottom:6px;">Upload a receipt, screenshot, or PDF proof. It will be saved with the transaction and can be included in reports.</span>
-        ${proofUrl ? `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup(proofUrl)}</div>` : `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup('')}</div>`}
+        ${proofUrl ? `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofPreviewMarkup(proofUrl)}</div>` : `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup('')}</div>`}
         <input type="file" id="finance-proof-file" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:block;" />
         <input type="hidden" name="proof_url" id="finance-proof-url" value="${escapeHtml(proofUrl)}" />
         <span id="finance-proof-status" style="font-size:10px;color:#667599;"></span>
@@ -2736,66 +3455,66 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function financeRows() {
-      const resource = state.financeSheet === 'invoices' ? 'invoices' : 'finances';
-      const rows = filtered(financeSheetRows(), ['transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'paid_by', 'received_by']);
+      const rows = financeVisibleRows();
 
       if (state.financeSheet === 'invoices') {
         return rows.map((item) => {
           const total = Number(item.total_amount || item.amount || 0);
           const received = Number(item.received_amount || (item.status === 'paid' ? total : 0));
-          return `<tr data-resource="invoices" data-row-id="${item.id}">
+          const balance = Math.max(total - received, 0);
+          return `${financeRowStart('invoices', item)}
             <td><input type="checkbox" data-row-select aria-label="Select invoice ${item.id}" /></td>
-            <td><input class="crm-edit-input" data-field="invoice_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="invoice_number" value="${escapeHtml(item.reference_id || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="customer_name" value="${escapeHtml(item.client || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="service_title" value="${escapeHtml(item.project || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="invoice_date" type="date" value="${escapeHtml(item.invoice_date || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="invoice_number" value="${escapeHtml(item.invoice_number || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="customer_name" value="${escapeHtml(item.customer_name || item.client || '')}" /></td>
+            <td><input class="crm-edit-input" data-field="service_title" value="${escapeHtml(item.service_title || item.project || '')}" /></td>
             <td><input class="crm-edit-input" data-field="due_date" type="date" value="${escapeHtml(item.due_date || '')}" /></td>
-            <td><strong>${compactMoney(total)}</strong></td>
-            <td>${compactMoney(received)}</td>
-            <td>${compactMoney(Math.max(total - received, 0))}</td>
+            <td class="crm-numeric"><strong>${compactMoney(total)}</strong></td>
+            <td class="crm-numeric"><span class="crm-amount-positive">${compactMoney(received)}</span></td>
+            <td class="crm-numeric"><span class="${balance > 0 ? 'crm-amount-negative' : 'crm-amount-positive'}">${compactMoney(balance)}</span></td>
             <td><select class="crm-edit-select" data-field="status">${['draft','sent','paid','overdue','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
-            <td>${rowActions('invoices', item.id)}</td>
+            <td><div class="crm-stack">${ledgerStateMarkup('invoices', item.id)}${rowActions('invoices', item.id)}</div></td>
           </tr>`;
         }).join('');
       }
 
       if (state.financeSheet === 'income') {
         return rows.map((item) => `
-          <tr data-resource="finances" data-row-id="${item.id}">
+          ${financeRowStart('finances', item)}
             <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
             <td><input class="crm-edit-input" data-field="client" value="${escapeHtml(item.client || '')}" /></td>
             <td><input class="crm-edit-input" data-field="project" value="${escapeHtml(item.project || '')}" /></td>
             <td><input class="crm-edit-input" data-field="received_by" value="${escapeHtml(item.received_by || '')}" /></td>
             <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td class="crm-numeric"><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','received','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
             <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
             <td>${proofCell(item)}</td>
-            <td>${rowActions('finances', item.id)}</td>
+            <td><div class="crm-stack">${ledgerStateMarkup('finances', item.id)}${rowActions('finances', item.id)}</div></td>
           </tr>`).join('');
       }
 
       if (state.financeSheet === 'expenses') {
         return rows.map((item) => `
-          <tr data-resource="finances" data-row-id="${item.id}">
+          ${financeRowStart('finances', item)}
             <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
             <td><input class="crm-edit-input" data-field="reference_id" value="${escapeHtml(item.reference_id || '')}" /></td>
             <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || '')}" /></td>
             <td><input class="crm-edit-input" data-field="paid_by" value="${escapeHtml(item.paid_by || '')}" /></td>
             <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td class="crm-numeric"><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
             <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
             <td>${proofCell(item)}</td>
-            <td>${rowActions('finances', item.id)}</td>
+            <td><div class="crm-stack">${ledgerStateMarkup('finances', item.id)}${rowActions('finances', item.id)}</div></td>
           </tr>`).join('');
       }
 
       if (state.financeSheet === 'salary') {
         return rows.map((item) => `
-          <tr data-resource="finances" data-row-id="${item.id}">
+          ${financeRowStart('finances', item)}
             <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
             <td><input class="crm-edit-input" data-field="title" placeholder="Employee name" value="${escapeHtml(item.title || '')}" /></td>
@@ -2803,41 +3522,41 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td><input class="crm-edit-input" data-field="paid_by" placeholder="Role" value="${escapeHtml(item.paid_by || '')}" /></td>
             <td><input class="crm-edit-input" data-field="received_by" placeholder="Bank name" value="${escapeHtml(item.received_by || '')}" /></td>
             <td><input class="crm-edit-input" data-field="payment_method" placeholder="Account no." value="${escapeHtml(item.payment_method || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td class="crm-numeric"><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','paid','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
             <td>${proofCell(item)}</td>
-            <td>${rowActions('finances', item.id)}</td>
+            <td><div class="crm-stack">${ledgerStateMarkup('finances', item.id)}${rowActions('finances', item.id)}</div></td>
           </tr>`).join('');
       }
 
       if (state.financeSheet === 'pending' || state.financeSheet === 'paid') {
         return rows.map((item) => `
-          <tr data-resource="finances" data-row-id="${item.id}">
+          ${financeRowStart('finances', item)}
             <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
             <td>${badge(item.transaction_type, 'blue')}</td>
             <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || item.reference_id || '')}" /></td>
             <td><input class="crm-edit-input" data-field="client" value="${escapeHtml(item.client || '')}" /></td>
-            <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+            <td class="crm-numeric"><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
             <td><input class="crm-edit-input" data-field="payment_method" value="${escapeHtml(item.payment_method || '')}" /></td>
             <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
             <td>${proofCell(item)}</td>
-            <td>${rowActions('finances', item.id)}</td>
+            <td><div class="crm-stack">${ledgerStateMarkup('finances', item.id)}${rowActions('finances', item.id)}</div></td>
           </tr>`).join('');
       }
 
       // 'all' sheet
       return rows.map((item) => `
-        <tr data-resource="finances" data-row-id="${item.id}">
+        ${financeRowStart('finances', item)}
           <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
           <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
           <td>${badge(item.transaction_type, 'blue')}</td>
           <td><input class="crm-edit-input" data-field="title" value="${escapeHtml(item.title || '')}" /></td>
-          <td><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
+          <td class="crm-numeric"><input class="crm-edit-input" data-field="amount" type="number" value="${escapeHtml(item.amount || 0)}" /></td>
           <td><select class="crm-edit-select" data-field="status">${['pending','paid','received','sent','overdue','half_payment','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
           <td><input class="crm-edit-input" data-field="notes" value="${escapeHtml(item.notes || '')}" /></td>
           <td>${proofCell(item)}</td>
-          <td>${rowActions('finances', item.id)}</td>
+          <td><div class="crm-stack">${ledgerStateMarkup('finances', item.id)}${rowActions('finances', item.id)}</div></td>
         </tr>`).join('');
     }
 
@@ -2878,42 +3597,90 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             const expenseBtn = (sheet === 'all' || sheet === 'expenses') ? '<button class="crm-button green" data-create="finances" type="button">+ Add Expense</button>' : '';
             const salaryBtn = (sheet === 'all' || sheet === 'salary') ? '<button class="crm-button" data-create="salary" type="button">+ Add Salary</button>' : '';
             const invoiceBtn = '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>';
-            return `${invoiceBtn}${incomeBtn}${expenseBtn}${salaryBtn}<button class="crm-button" data-export="finance" type="button">Export CSV</button><button class="crm-button" data-export-pdf="finance" type="button">Export PDF</button>`;
+            return `${invoiceBtn}${incomeBtn}${expenseBtn}${salaryBtn}<button class="crm-button" data-export="finance" type="button">Export CSV</button><button class="crm-button" data-export-pdf="finance" type="button">Export PDF</button><button class="crm-button" id="finance-edit-toggle" type="button">${state.financeEditMode ? 'Exit Edit Mode' : 'Enable Edit Mode'}</button>`;
           })();
+
+      const receivable = state.data.invoices
+        .filter((item) => !['paid', 'cancelled'].includes(item.status))
+        .reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
 
       const subtitles = isBuilder
         ? 'Build professional invoices with live preview. Configure company settings, client details, service items, and branding.'
-        : 'Manage invoices, expenses, payments, and cash flow in one place.';
+        : 'Track revenue, expenses, salary, receivables, and proof-backed ledger records in one controlled workspace.';
 
       let bodyContent = '';
 
       if (isBuilder) {
         bodyContent = renderInvoiceBuilder();
       } else {
+        const visibleRows = financeVisibleRows();
         bodyContent = `
+          <section class="crm-card crm-hero-panel">
+            <div class="crm-hero-grid">
+              <div>
+                <span class="crm-hero-kicker">Finance Desk</span>
+                <h2 class="crm-hero-title">A cleaner operating ledger for TechMigos.</h2>
+                <p class="crm-hero-copy">Review every invoice, payment, salary, expense, and proof attachment from one workspace. The goal here is fast reconciliation, cleaner exports, and fewer accounting blind spots.</p>
+              </div>
+              <div class="crm-hero-meta">
+                <span class="crm-meta-label">Open Receivables</span>
+                <span class="crm-meta-value">${compactMoney(receivable)}</span>
+                <p class="crm-meta-note">${receivable > 0 ? `${state.data.invoices.filter((item) => !['paid', 'cancelled'].includes(item.status)).length} invoices still need collection.` : 'All invoices are currently settled.'}</p>
+                <button class="crm-button" type="button" data-finance-sheet="invoices">Review invoices</button>
+              </div>
+            </div>
+          </section>
+          <div class="crm-section-stack">
           <div class="crm-grid crm-kpis">
-            ${metric('Total Revenue', compactMoney(income), '₹', 'green')}
-            ${metric('Total Expenses', compactMoney(expenses), '◵', 'red')}
-            ${metric('Recurring Amount', compactMoney(recurring), '◱', 'orange')}
-            ${metric('Net Profit', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red')}
-            ${metric('Accounts Receivable', compactMoney(state.data.invoices.filter((i) => !['paid','cancelled'].includes(i.status)).reduce((s, i) => s + Number(i.total_amount || i.amount || 0), 0)), '◈', 'blue', 'Unpaid invoices')}
+            ${metric('Revenue Collected', compactMoney(income), '₹', 'green', `${state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).length} entries posted`)}
+            ${metric('Expense Load', compactMoney(expenses), '◵', 'red', `${state.data.finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).length} outgoing records`)}
+            ${metric('Recurring Value', compactMoney(recurring), '◱', 'orange', `${state.data.invoices.filter((item) => item.is_recurring).length} recurring invoices`)}
+            ${metric('Net Position', compactMoney(income - expenses), '▢', income - expenses >= 0 ? 'green' : 'red', income - expenses >= 0 ? 'Positive operating margin' : 'Operating margin needs attention')}
+            ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? 'Collection follow-up required' : 'Fully collected')}
           </div>
-          <section class="crm-card mt-5">
+          <div class="crm-finance-grid">
+          <section class="crm-card crm-table-card">
             <div class="crm-card-head">
-              <h2 class="crm-card-title">Financial Records</h2>
-              <div class="crm-toolbar">
-                <button class="crm-button" data-export="finance">Export CSV</button>
-                <button class="crm-button" data-export-pdf="finance">Export PDF</button>
-                <input class="crm-input" id="finance-search" placeholder="Search records..." />
+              <div class="crm-ledger-toolbar">
+                <div class="crm-stack">
+                  <span class="crm-section-kicker">Ledger</span>
+                  <h2 class="crm-card-title">Financial Records</h2>
+                  <div class="crm-ledger-summary">${financeActiveFilters(visibleRows)}</div>
+                </div>
+                <div class="crm-toolbar">
+                  ${financeDensityMarkup()}
+                  <span class="crm-save-indicator">${state.financeEditMode ? 'Live edit mode' : 'View mode'}</span>
+                  <input class="crm-input" id="finance-search" placeholder="Search records…" />
+                </div>
               </div>
             </div>
             ${financeSheetTabs()}
-            <div class="crm-table-wrap">${table(financeSheetHeaders(), financeRows())}</div>
+            ${financeSummaryMarkup(visibleRows)}
+            <div class="crm-filterbar">
+              <select class="crm-select" id="finance-status-filter">
+                <option value="">All statuses</option>
+                <option value="pending" ${state.financeStatusFilter === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="received" ${state.financeStatusFilter === 'received' ? 'selected' : ''}>Received</option>
+                <option value="paid" ${state.financeStatusFilter === 'paid' ? 'selected' : ''}>Paid</option>
+                <option value="sent" ${state.financeStatusFilter === 'sent' ? 'selected' : ''}>Sent</option>
+                <option value="overdue" ${state.financeStatusFilter === 'overdue' ? 'selected' : ''}>Overdue</option>
+                <option value="cancelled" ${state.financeStatusFilter === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+              </select>
+              <select class="crm-select" id="finance-proof-filter">
+                <option value="all" ${state.financeProofFilter === 'all' ? 'selected' : ''}>All proof states</option>
+                <option value="with-proof" ${state.financeProofFilter === 'with-proof' ? 'selected' : ''}>With proof</option>
+                <option value="without-proof" ${state.financeProofFilter === 'without-proof' ? 'selected' : ''}>Missing proof</option>
+              </select>
+              <button class="crm-button" id="finance-filter-reset" type="button">Reset Filters</button>
+            </div>
+            <div class="crm-table-wrap">${table(financeSheetHeaders(), financeRows(), 'No finance records match the current filters.', `crm-table--ledger crm-density-${state.financeDensity} ${state.financeEditMode ? '' : 'crm-ledger-readonly'}`)}</div>
           </section>
-          <div class="crm-three-col mt-5">
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Transactions</h2></div><div class="crm-list">${state.data.finances.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || item.reference_id || item.transaction_type)}</span><strong style="color:${['income','revenue'].includes(item.transaction_type) ? '#16a34a' : '#dc2626'}">${compactMoney(item.amount)}</strong></div>`).join('') || '<p class="p-4 text-sm text-slate-400">No transactions yet.</p>'}</div></section>
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div style="padding:12px" id="cashflow-chart-container"></div></section>
-            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Invoice Aging (Overdue)</h2></div><div class="crm-list" id="invoice-aging-list"></div></section>
+          <div class="crm-stack">
+            <section class="crm-card crm-chart-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Cash Flow</h2></div><div id="cashflow-chart-container"></div><div class="crm-legend"><span><i style="background:#059669;"></i>Income</span><span><i style="background:#dc2626;"></i>Expense</span></div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Ledger Summary</h2></div><div class="crm-list"><div class="crm-list-row"><span>Visible rows</span><strong>${visibleRows.length}</strong></div><div class="crm-list-row"><span>Current sheet</span><strong>${nice(state.financeSheet)}</strong></div><div class="crm-list-row"><span>Proof coverage</span><strong>${visibleRows.filter((item) => item.proof_url).length} attached</strong></div><div class="crm-list-row"><span>Edit safety</span><strong>${state.financeEditMode ? 'Editable' : 'Locked'}</strong></div></div></section>
+            <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Invoice Aging</h2></div><div class="crm-list" id="invoice-aging-list"></div></section>
+          </div>
+          </div>
           </div>`;
       }
 
@@ -3501,7 +4268,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const clients = state.data.clients.length;
       const projects = state.data.projects.length;
       const revenue = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      els.view.innerHTML = `${pageHead('Analytics & User Access', 'Track performance, analyze trends, and manage secure logins for clients and employees.', '<button class="crm-button">May 20 - May 26, 2025</button>')}
+      els.view.innerHTML = `${pageHead('Analytics & User Access', 'Track performance, analyze trends, and manage secure logins for clients and employees.', `<button class="crm-button" type="button">${escapeHtml(currentWeekLabel())}</button>`)}
         <div class="crm-grid crm-kpis">${metric('Client Retention', '92%', '○', 'blue')}${metric('Employee Utilization', '78%', '♙', 'blue')}${metric('Ticket Resolution Rate', '96%', '◴', 'red')}${metric('Revenue by Client', compactMoney(revenue), '₹', 'green')}${metric('Login Activity 7D', Math.max(clients + projects, 1), '▥', 'purple')}</div>
         <div class="crm-three-col mt-5"><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Monthly Revenue</h2></div><div class="crm-chart"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Support Performance</h2></div><div class="crm-chart"></div></section><section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Project Status Distribution</h2></div><div class="crm-list">${Object.entries(groupCount(state.data.projects, 'status')).map(([key, count]) => `<div class="crm-list-row"><span>${nice(key)}</span><strong>${count}</strong></div>`).join('')}</div></section></div>
         <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">User Management</h2><div class="crm-toolbar"><button class="crm-button primary" data-create="profiles">+ Create Login</button><button class="crm-button">Assign Role</button><button class="crm-button">Reset Password</button></div></div>${table(['', 'Name', 'Role', 'User Type', 'Company', 'Access Level', 'Status', 'Actions'], userRows())}</section>`;
@@ -3534,7 +4301,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const invoices = state.data.invoices.filter((row) => inReportRange(row, ['invoice_date', 'created_at']));
       const projects = state.data.projects.filter((row) => inReportRange(row, ['created_at', 'due_date']));
       const tickets = state.data.tickets.filter((row) => inReportRange(row, ['created_at']));
-      const leads = state.data.leads.filter((row) => inReportRange(row, ['created_at']));
       const clients = state.data.clients.filter((row) => inReportRange(row, ['created_at']));
       const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -3544,7 +4310,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return {
         executive: {
           title: 'Executive Summary Report',
-          subtitle: 'Company-wide snapshot across projects, support, finance, clients, and leads.',
+          subtitle: 'Company-wide snapshot across projects, support, finance, and clients.',
           metrics: [
             ['Revenue', compactMoney(income + invoiceReceived), '₹', 'green'],
             ['Expenses', compactMoney(expenses), '▵', 'red'],
@@ -3557,7 +4323,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             { area: 'Finance', value: compactMoney((income + invoiceReceived) - expenses), notes: 'Net after recorded expenses' },
             { area: 'Invoices', value: compactMoney(invoiceTotal - invoiceReceived), notes: 'Outstanding balance' },
             { area: 'Tickets', value: tickets.length, notes: `${tickets.filter((item) => ['urgent', 'high'].includes(item.priority)).length} high priority` },
-            { area: 'Leads', value: leads.length, notes: `${leads.filter((item) => item.status === 'qualified').length} qualified` },
+            { area: 'Clients', value: clients.length, notes: `${clients.filter((item) => item.status === 'active').length} active` },
           ],
         },
         finance: {
@@ -3650,26 +4416,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             billing: compactMoney(state.data.invoices.filter((invoice) => String(invoice.client_id) === String(item.id)).reduce((sum, invoice) => sum + Number(invoice.total_amount || 0), 0)),
           })),
         },
-        leads: {
-          title: 'Leads Report',
-          subtitle: 'Lead source, qualification, ownership, and conversion readiness.',
-          metrics: [
-            ['Leads', leads.length, '◎', 'blue'],
-            ['Qualified', leads.filter((item) => item.status === 'qualified').length, '✓', 'green'],
-            ['Proposal', leads.filter((item) => item.status === 'proposal').length, '▱', 'orange'],
-            ['Won', leads.filter((item) => item.status === 'won').length, '₹', 'green'],
-          ],
-          columns: [['name', 'Name'], ['company', 'Company'], ['email', 'Email'], ['service', 'Service'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned To']],
-          rows: leads.map((item) => ({
-            name: item.name,
-            company: item.company || '-',
-            email: item.email || '-',
-            service: item.service || '-',
-            priority: item.priority,
-            status: item.status,
-            assigned_to: item.assigned_to || 'Unassigned',
-          })),
-        },
       };
     }
 
@@ -3691,7 +4437,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ['projects', 'Projects'],
         ['tickets', 'Support Tickets'],
         ['clients', 'Clients'],
-        ['leads', 'Leads'],
       ];
       els.view.innerHTML = `
         ${pageHead('Report Generation', 'Generate backend-backed operational reports from current Supabase CRM data.', '<button class="crm-button primary" data-report-print type="button">Print / Save PDF</button><button class="crm-button" data-report-export type="button">Export CSV</button>')}
@@ -3929,6 +4674,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function renderUsers() {
+      if (!isCompanyAdmin()) {
+        els.view.innerHTML = `${pageHead('User Management & Access Control', 'Only company admins can create logins, assign roles, and review access.', '')}
+          <section class="crm-card"><div class="crm-list"><div class="crm-list-row"><span>Access level</span><strong>Restricted</strong></div><div class="crm-list-row"><span>Current role</span><strong>${escapeHtml(String(state.profile?.role || 'company_member').replace(/_/g, ' '))}</strong></div><div class="crm-list-row"><span>What to do</span><strong>Ask a company admin to manage users</strong></div></div></section>`;
+        return;
+      }
       const profiles = state.data.profiles.length ? state.data.profiles : employeeSeed();
       els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" id="btn-invite-user" type="button">Invite User</button><button class="crm-button" data-export="users" type="button">Export</button>')}
         <div class="crm-grid crm-kpis">${metric('Total Users', profiles.length, '♧', 'blue')}${metric('Client Logins', profiles.filter((item) => item.role === 'client').length, '○', 'green')}${metric('Employee Logins', profiles.filter((item) => item.role !== 'client').length, '♙', 'purple')}${metric('Pending Invites', profiles.filter((item) => item.status === 'pending').length, '▹', 'orange', 'down 12% vs last month')}</div>
@@ -3953,6 +4703,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function renderSettings() {
+      if (!isCompanyAdmin()) {
+        els.view.innerHTML = `${pageHead('Settings & Configuration', 'Only company admins can update company settings and invoice defaults.', '')}
+          <section class="crm-card"><div class="crm-list"><div class="crm-list-row"><span>Access level</span><strong>Restricted</strong></div><div class="crm-list-row"><span>Current role</span><strong>${escapeHtml(String(state.profile?.role || 'company_member').replace(/_/g, ' '))}</strong></div><div class="crm-list-row"><span>What to do</span><strong>Ask a company admin to open settings</strong></div></div></section>`;
+        return;
+      }
       els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, invoice defaults, and integrations.', '<button class="crm-button primary" type="button" id="settings-save-btn">Save Changes</button>')}
         <p class="text-sm text-slate-500 mb-4" id="settings-status">Loading settings...</p>
         <div class="crm-two-col">
@@ -4054,13 +4809,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       renderShell();
       // Update notification badge
       const pendingCount = state.data.tickets.filter((t) => !['resolved','closed'].includes(t.status)).length
-        + state.data.invoices.filter((i) => ['sent','overdue'].includes(i.status)).length
-        + state.data.followups.filter((f) => f.status !== 'completed').length;
+        + state.data.invoices.filter((i) => ['sent','overdue'].includes(i.status)).length;
       const badgeEl = document.getElementById('crm-badge');
       if (badgeEl) { badgeEl.textContent = pendingCount; badgeEl.style.display = pendingCount ? '' : 'none'; }
       if (state.active === 'dashboard') renderDashboard();
-      if (state.active === 'leads') renderCrudResource('leads', 'Leads', 'Capture, qualify, assign, and convert incoming opportunities.', [['name', 'Name'], ['company', 'Company'], ['email', 'Email'], ['service', 'Service'], ['budget', 'Budget'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned To']]);
-      if (state.active === 'deals') renderCrudResource('deals', 'Deals', 'Track pipeline value, stages, owners, and expected close dates.', [['title', 'Title'], ['stage', 'Stage'], ['value', 'Value', 'number'], ['currency', 'Currency'], ['expected_close_date', 'Close Date', 'date']]);
       if (state.active === 'projects') renderProjects();
       if (state.active === 'tickets') renderTickets();
       if (state.active === 'finance') renderFinance();
@@ -4069,8 +4821,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (state.active === 'clients') renderClients();
       if (state.active === 'employees') renderEmployees();
       if (state.active === 'users') renderUsers();
-      if (state.active === 'followups') renderCrudResource('followups', 'Follow-ups', 'Schedule next actions and keep client work moving.', [['title', 'Title'], ['related_type', 'Related Type'], ['related_id', 'Related ID', 'number'], ['due_at', 'Due Date'], ['status', 'Status'], ['assigned_to', 'Assigned To'], ['notes', 'Notes']]);
-      if (state.active === 'campaigns') renderCrudResource('campaigns', 'Campaigns', 'Create, schedule, and track client communication campaigns.', [['name', 'Name'], ['subject', 'Subject'], ['status', 'Status'], ['scheduled_at', 'Scheduled At'], ['sent_at', 'Sent At']]);
       if (state.active === 'settings') renderSettings();
       bindActions();
     }
@@ -4093,6 +4843,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         renderEmployees();
       }));
       document.querySelectorAll('[data-row-id] [data-field], [data-row-id][data-field]').forEach((input) => {
+        input.addEventListener('blur', () => validateLedgerInput(input));
         input.addEventListener('input', () => scheduleSave(input));
         input.addEventListener('change', () => scheduleSave(input));
       });
@@ -4110,6 +4861,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         renderFinance();
         bindActions();
       }));
+      document.getElementById('finance-edit-toggle')?.addEventListener('click', () => {
+        state.financeEditMode = !state.financeEditMode;
+        renderFinance();
+        bindActions();
+      });
       document.getElementById('inv-cancel-btn')?.addEventListener('click', () => {
         state.invoiceBuilderActive = false;
         state.invoiceBuilderId = null;
@@ -4124,18 +4880,40 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         finSearch.value = state.search;
         finSearch.addEventListener('input', (e) => {
           state.search = e.target.value;
-          const tbody = document.querySelector('section.crm-card tbody');
-          if (tbody) {
-            tbody.innerHTML = financeRows();
-            document.querySelectorAll('[data-edit-resource]').forEach((button) => button.addEventListener('click', () => openEdit(button.dataset.editResource, button.dataset.editId)));
-            document.querySelectorAll('[data-duplicate-resource]').forEach((button) => button.addEventListener('click', () => duplicateRecord(button.dataset.duplicateResource, button.dataset.duplicateId)));
-            document.querySelectorAll('[data-delete-resource]').forEach((button) => button.addEventListener('click', () => deleteRecord(button.dataset.deleteResource, button.dataset.deleteId)));
-            document.querySelectorAll('[data-proof-open]').forEach((button) => button.addEventListener('click', () => openProofPreview(button.dataset.proofOpen)));
-            document.querySelectorAll('[data-proof-link]').forEach((button) => button.addEventListener('click', () => openProofInNewTab(button.dataset.proofLink)));
-            document.querySelectorAll('[data-row-select]').forEach((checkbox) => checkbox.addEventListener('change', updateSelectionBar));
-          }
+          renderFinance();
+          bindActions();
         });
       }
+      document.getElementById('finance-status-filter')?.addEventListener('change', (event) => {
+        state.financeStatusFilter = event.target.value;
+        renderFinance();
+        bindActions();
+      });
+      document.getElementById('finance-proof-filter')?.addEventListener('change', (event) => {
+        state.financeProofFilter = event.target.value;
+        renderFinance();
+        bindActions();
+      });
+      document.getElementById('finance-filter-reset')?.addEventListener('click', () => {
+        state.search = '';
+        state.financeStatusFilter = '';
+        state.financeProofFilter = 'all';
+        renderFinance();
+        bindActions();
+      });
+      document.querySelectorAll('[data-finance-quick-filter]').forEach((button) => button.addEventListener('click', () => {
+        const type = button.dataset.financeQuickFilter;
+        if (type === 'status-clear') state.financeStatusFilter = '';
+        if (type === 'proof-clear') state.financeProofFilter = 'all';
+        if (type === 'search-clear') state.search = '';
+        renderFinance();
+        bindActions();
+      }));
+      document.querySelectorAll('[data-finance-density]').forEach((button) => button.addEventListener('click', () => {
+        state.financeDensity = button.dataset.financeDensity || 'comfortable';
+        renderFinance();
+        bindActions();
+      }));
       document.querySelectorAll('[data-report-refresh]').forEach((button) => button.addEventListener('click', () => {
         state.reportType = document.getElementById('report-type')?.value || state.reportType;
         state.reportFrom = document.getElementById('report-from')?.value || state.reportFrom;
@@ -4168,6 +4946,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.querySelector('[data-bulk-delete]')?.addEventListener('click', bulkDelete);
       document.querySelector('[data-bulk-export]')?.addEventListener('click', bulkExport);
       document.querySelector('[data-clear-selection]')?.addEventListener('click', clearSelection);
+      bindLedgerKeyboardFlow();
       document.querySelectorAll('[data-invoice-view]').forEach((button) => {
         button.addEventListener('click', () => showInvoice(button.dataset.invoiceView));
         button.addEventListener('mouseenter', async () => {
@@ -4246,7 +5025,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const items = [
         ...state.data.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).slice(0, 4).map((ticket) => ({ title: ticket.subject, meta: `Ticket #TIC-${ticket.id} is ${nice(ticket.status)}`, tone: statusTone(ticket.priority) })),
         ...state.data.invoices.filter((invoice) => ['pending', 'sent', 'overdue'].includes(invoice.status)).slice(0, 3).map((invoice) => ({ title: invoice.invoice_number || 'Invoice', meta: `${compactMoney(invoice.total_amount || invoice.amount)} ${nice(invoice.status)}`, tone: statusTone(invoice.status) })),
-        ...state.data.followups.filter((item) => item.status !== 'completed').slice(0, 3).map((item) => ({ title: item.title, meta: `Follow-up due ${String(item.due_at || '').slice(0, 10) || 'soon'}`, tone: 'orange' })),
       ];
       els.modalTitle.textContent = 'Notifications';
       els.modalBody.innerHTML = `<div class="crm-list">${items.map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || 'Notification')}</span>${badge(item.meta || 'new', item.tone)}</div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No pending notifications.</p>'}</div><div class="crm-toolbar p-5 pt-0"><button class="crm-button primary" data-jump="tickets" type="button">Open Tickets</button><button class="crm-button" data-jump="finance" type="button">Open Finance</button></div>`;
@@ -4295,7 +5073,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function scheduleSave(input) {
       const row = input.closest('[data-row-id]');
       if (!row) return;
+      if (!validateLedgerInput(input) || !validateLedgerRow(row)) return;
       row.classList.add('crm-dirty');
+      setLedgerState(row.dataset.resource, row.dataset.rowId, 'dirty');
+      applyLedgerStateToRow(row, 'dirty');
       const key = `${row.dataset.resource}:${row.dataset.rowId}`;
       clearTimeout(state.saveTimers.get(key));
       state.saveTimers.set(key, setTimeout(() => saveRow(row), 850));
@@ -4304,11 +5085,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     async function saveRow(row) {
       const body = rowPayload(row, row.dataset.resource);
       if (!Object.keys(body).length) return;
+      setLedgerState(row.dataset.resource, row.dataset.rowId, 'saving');
+      applyLedgerStateToRow(row, 'saving');
       try {
         await portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'PATCH', body: JSON.stringify(body) });
         row.classList.remove('crm-dirty');
+        setLedgerState(row.dataset.resource, row.dataset.rowId, 'saved');
+        applyLedgerStateToRow(row, 'saved');
+        setTimeout(() => {
+          if (ledgerState(row.dataset.resource, row.dataset.rowId) === 'saved') {
+            setLedgerState(row.dataset.resource, row.dataset.rowId, 'idle');
+            applyLedgerStateToRow(row, 'idle');
+          }
+        }, 1400);
         toast('Saved to Supabase');
       } catch (error) {
+        setLedgerState(row.dataset.resource, row.dataset.rowId, 'dirty');
+        applyLedgerStateToRow(row, 'dirty');
         toast(error instanceof Error ? error.message : 'Save failed');
       }
     }
@@ -4817,6 +5610,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function openCreate(resource) {
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can create new logins.');
       if (resource === 'invoices') return openInvoiceCreateIntegrated();
       if (resource === 'tickets') return openTicketCreate();
       const actualResource = resource === 'salary' ? 'finances' : resource;
@@ -4830,6 +5625,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
         if (actualResource === 'finances' && resource === 'salary') raw.transaction_type = 'salary';
         const body = normalizePayload(actualResource, raw);
+        const validationError = validatePayload(actualResource, body);
+        if (validationError) return toast(validationError);
         try {
           await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
@@ -4850,10 +5647,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         salary:           { transaction_date: today, transaction_type: 'salary', status: 'pending', amount: 0, source: 'manual' },
         clients:          { status: 'active' },
         profiles:         { role: 'company_member', status: 'active' },
-        leads:            { priority: 'medium', status: 'new' },
-        deals:            { stage: 'proposal', currency: 'INR', value: 0 },
-        followups:        { status: 'pending', due_at: today },
-        campaigns:        { status: 'draft' },
         ticket_messages:  { ticket_id: state.selectedTicketId || '', visibility: 'external' },
       }[resource] || {};
     }
@@ -4863,6 +5656,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function openEdit(resource, id) {
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can update user roles and access.');
       if (resource === 'invoices') return openInvoiceEditIntegrated(id);
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
@@ -4873,6 +5668,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()));
+        const validationError = validatePayload(resource, body);
+        if (validationError) return toast(validationError);
         try {
           await portal(`/api/portal/${resource}/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
@@ -4885,6 +5682,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function duplicateRecord(resource, id) {
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can duplicate user records.');
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
       const body = { ...item };
@@ -4903,6 +5702,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function deleteRecord(resource, id) {
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can delete user records.');
       if (!id || !confirm(`Delete this ${resource.slice(0, -1) || resource}? This cannot be undone.`)) return;
       try {
         await portal(`/api/portal/${resource}/${id}`, { method: 'DELETE' });
@@ -4944,6 +5745,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     async function bulkDelete() {
       const rows = selectedRows();
       if (!rows.length || !confirm(`Delete ${rows.length} selected records?`)) return;
+      if (rows.some((row) => isDisabledResource(row.dataset.resource))) return toast('One or more selected records belong to disabled CRM modules.');
+      if (rows.some((row) => row.dataset.resource === 'profiles') && !isCompanyAdmin()) return toast('Only company admins can bulk delete user records.');
       try {
         await Promise.all(rows.map((row) => portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'DELETE' })));
         toast(`Deleted ${rows.length} records`);
@@ -4968,10 +5771,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         finances: { rows: state.data.finances, keys: ['transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'status', 'amount'] },
         tickets: { rows: state.data.tickets, keys: ['id', 'subject', 'client_id', 'project_id', 'priority', 'assigned_to', 'status'] },
         clients: { rows: state.data.clients, keys: ['name', 'company', 'email', 'phone', 'status'] },
-        leads: { rows: state.data.leads, keys: ['name', 'email', 'company', 'service', 'budget', 'priority', 'assigned_to', 'status'] },
-        deals: { rows: state.data.deals, keys: ['client_id', 'lead_id', 'title', 'stage', 'value', 'currency', 'expected_close_date'] },
-        followups: { rows: state.data.followups, keys: ['related_type', 'related_id', 'title', 'due_at', 'status', 'assigned_to', 'notes'] },
-        campaigns: { rows: state.data.campaigns, keys: ['name', 'subject', 'status', 'msg91_template_id', 'scheduled_at', 'sent_at'] },
         employees: { rows: employeeSeed(), keys: ['name', 'email', 'role', 'status'] },
         users: { rows: state.data.profiles.length ? state.data.profiles : employeeSeed(), keys: ['name', 'email', 'role', 'status', 'client_id'] },
       };
@@ -5175,6 +5974,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const skipList = new Set(['ticket_messages']);
         const names = Object.keys(state.data).filter((name) => {
           if (skipList.has(name)) return false;
+          if (isDisabledResource(name)) return false;
           if (name === 'profiles' && state.profile?.role !== 'company_admin') return false;
           return true;
         });
@@ -5199,6 +5999,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       try {
         const { data: { session } } = await window.tmSupabase.auth.getSession();
         if (!session) return logout();
+        if (DISABLED_CRM_RESOURCES.has(state.active)) {
+          window.location.replace('/company/dashboard');
+          return;
+        }
         if (localStorage.getItem('tm_crm_sidebar_collapsed') === '1') {
           document.querySelector('.crm-app')?.classList.add('sidebar-collapsed');
           document.getElementById('crm-collapse').textContent = '⇥';
@@ -5226,11 +6030,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             state.profile = JSON.parse(cachedProfile);
             const displayName = state.profile.name || 'TechMigos';
             const initials = displayName.split(' ').filter(Boolean).map((w) => w[0].toUpperCase()).slice(0, 2).join('');
-            document.getElementById('crm-user-name').textContent = displayName;
-            document.getElementById('crm-avatar').textContent = initials || 'TM';
-            document.getElementById('crm-company-name').textContent = 'TechMigos';
-            document.getElementById('crm-user-role').textContent = String(state.profile.role || 'company').replace(/_/g, ' ');
-          }
+          document.getElementById('crm-user-name').textContent = displayName;
+          document.getElementById('crm-avatar').textContent = initials || 'TM';
+          document.getElementById('crm-company-name').textContent = 'TechMigos';
+          document.getElementById('crm-user-role').textContent = String(state.profile.role || 'company').replace(/_/g, ' ');
+          syncNavVisibility();
+        }
         } catch (e) {
           console.warn('Profile cache read failed:', e);
         }
@@ -5249,6 +6054,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         document.getElementById('crm-avatar').textContent = initials || 'TM';
         document.getElementById('crm-company-name').textContent = 'TechMigos';
         document.getElementById('crm-user-role').textContent = String(me.profile.role || 'company').replace(/_/g, ' ');
+        syncNavVisibility();
         await loadData();
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not load CRM.', 'error');

@@ -839,6 +839,108 @@ label:focus-visible {
   opacity: 1;
 }
 
+/* ============================================
+   IMMERSIVE SECTION SURFACES
+   ============================================ */
+.section-surface {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.section-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.section-surface::before,
+.section-surface::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.section-surface-mist {
+  background:
+    radial-gradient(circle at top right, rgba(37,99,235,0.10), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(6,182,212,0.10), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.section-surface-mist::before {
+  inset: 0;
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.55;
+}
+
+.section-surface-glow {
+  background:
+    radial-gradient(circle at 15% 15%, rgba(191,219,254,0.45), transparent 18%),
+    radial-gradient(circle at 85% 20%, rgba(165,243,252,0.36), transparent 20%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.section-surface-dark {
+  background:
+    radial-gradient(circle at top right, rgba(45,212,191,0.18), transparent 20%),
+    radial-gradient(circle at bottom left, rgba(59,130,246,0.18), transparent 20%),
+    linear-gradient(135deg, #0f172a 0%, #111827 45%, #164e63 100%);
+}
+
+.section-surface-dark::before {
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.28;
+}
+
+.section-neural-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.48;
+  z-index: 0;
+}
+
+.section-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(48px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-spotlight::after {
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  background: radial-gradient(36rem circle at var(--spotlight-x, 50%) var(--spotlight-y, 32%), rgba(20,184,166,0.10), transparent 58%);
+  transition: opacity 280ms ease;
+}
+
+.section-spotlight.is-interactive::after {
+  opacity: 1;
+}
+
+.lift-panel {
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lift-panel:hover {
+  transform: translateY(-6px);
+}
+
 @keyframes tech-drift {
   0%, 100% {
     transform: translateY(0);
