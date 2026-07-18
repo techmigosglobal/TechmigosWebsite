@@ -760,6 +760,10 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 </style>
 
 <script>
+  import { initHomeMotion, destroyHomeMotion } from '../scripts/home-motion';
+  import { initCursorFollower, destroyCursorFollower } from '../scripts/cursor-follower';
+  import { initCardInteractions, destroyCardInteractions } from '../scripts/card-interactions';
+
   // ===== PAGE-LEVEL CLEANUP REGISTRY =====
   const pageCleanups: Array<() => void> = [];
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -951,19 +955,7 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
   }
 
   // ===== GSAP MOTION + CURSOR + CARD INTERACTIONS =====
-  // Uses Astro's module system; bundled only for this page.
-  // All guard checks (reduced motion, fine pointer, mobile) happen inside each module.
-  async function setupHomepageMotion() {
-    const mods = await Promise.allSettled([
-      import('../scripts/home-motion'),
-      import('../scripts/cursor-follower'),
-      import('../scripts/card-interactions'),
-    ]);
-
-    const motionMod = mods[0].status === 'fulfilled' ? mods[0].value : null;
-    const cursorMod = mods[1].status === 'fulfilled' ? mods[1].value : null;
-    const cardsMod  = mods[2].status === 'fulfilled' ? mods[2].value : null;
-
+  function setupHomepageMotion() {
     if (prefersReducedMotion) {
       // Show all content immediately — no reveals
       document.querySelectorAll('[data-service-card], [data-work-card], [data-tech-group], [data-principle-item], [data-insight-card]').forEach((el) => {
@@ -975,27 +967,16 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
         (el as HTMLElement).style.opacity = '0';
       });
 
-      if (motionMod) {
-        motionMod.initHomeMotion();
-        pageCleanups.push(() => motionMod.destroyHomeMotion());
-      } else {
-        // Graceful degradation
-        document.querySelectorAll('[data-service-card], [data-work-card], [data-tech-group], [data-principle-item], [data-insight-card]').forEach((el) => {
-          (el as HTMLElement).style.opacity = '1';
-        });
-      }
+      initHomeMotion();
+      pageCleanups.push(() => destroyHomeMotion());
 
-      if (cardsMod) {
-        cardsMod.initCardInteractions();
-        pageCleanups.push(() => cardsMod.destroyCardInteractions());
-      }
+      initCardInteractions();
+      pageCleanups.push(() => destroyCardInteractions());
     }
 
     // Cursor — internal guards prevent mobile/touch/reduced-motion activation
-    if (cursorMod) {
-      cursorMod.initCursorFollower();
-      pageCleanups.push(() => cursorMod.destroyCursorFollower());
-    }
+    initCursorFollower();
+    pageCleanups.push(() => destroyCursorFollower());
   }
 
   // Run canvas immediately (no dependency on GSAP)
