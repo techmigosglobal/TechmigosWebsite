@@ -6,7 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Project Support for Clients"
-  description="Get help from TechMigos for an active project, deployment issue, or product request. We triage support requests quickly and respond within one business day."
+  description="Contact TechMigos about an active project, deployment issue, or product request and include the details needed to investigate."
   noIndex={true}
 >
   <section class="pt-36 pb-16 relative overflow-hidden">
@@ -21,8 +21,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <span class="text-gradient">Desk</span>
         </h1>
         <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed max-w-2xl">
-          Tell us what is broken, blocked, or unclear and we will route it to the right person.
-          For production incidents, include the exact page, error message, and steps to reproduce.
+          Tell us what is broken, blocked, or unclear and include the context needed to investigate it.
+          For technical issues, include the exact page, error message, and steps to reproduce.
         </p>
       </div>
     </div>
@@ -36,7 +36,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="flex items-start justify-between gap-6 mb-8">
               <div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Open a support request</h2>
-                <p class="text-gray-500 text-sm">We usually reply within one business day. Urgent issues should be marked high priority.</p>
+                <p class="text-gray-500 text-sm">Mark the priority that best describes the request and include the relevant technical context.</p>
               </div>
               <div class="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-50 text-2xl">
                 🛟
@@ -192,7 +192,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               title: 'Urgent issues',
               value: '+919959703547',
               href: 'tel:+919959703547',
-              sub: 'Call or WhatsApp for blocked deployments and production outages',
+              sub: 'Use the number listed above',
             },
             {
               icon: '📧',
@@ -202,18 +202,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               sub: 'Best for screenshots, logs, and longer explanations',
             },
             {
-              icon: '🕐',
-              title: 'Response window',
-              value: 'Within 1 business day',
+              icon: '💬',
+              title: 'Request details',
+              value: 'Share context and screenshots',
               href: 'mailto:info@techmigos.com',
-              sub: 'High priority items are reviewed first during office hours',
+              sub: 'The form includes a priority field',
             },
             {
-              icon: '📍',
-              title: 'Office hours',
-              value: 'Mon–Fri: 9AM – 6PM IST',
-              href: 'tel:+919959703547',
-              sub: 'Weekend support is handled by appointment',
+              icon: '📬',
+              title: 'Contact options',
+              value: 'Email or phone',
+              href: 'mailto:info@techmigos.com',
+              sub: 'Choose the channel that works for you',
             },
           ].map((item, i) => (
             <a
