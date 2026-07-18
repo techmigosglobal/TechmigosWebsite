@@ -4,6 +4,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          ink: '#0F172A',
+          slate: '#475569',
+          teal: '#0F766E',
+          mist: '#CCFBF1',
+        },
+        surface: {
+          base: '#FFFFFF',
+          muted: '#F8FAFC',
+          inverse: '#0F172A',
+        },
+        content: {
+          primary: '#0F172A',
+          secondary: '#475569',
+          muted: '#64748B',
+          inverse: '#F8FAFC',
+        },
         primary: {
           50:  '#EEF2FF',
           100: '#E0E7FF',
@@ -32,6 +49,16 @@ module.exports = {
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      fontSize: {
+        'display-sm': ['clamp(2.25rem, 5vw, 3.75rem)', { lineHeight: '1.05', letterSpacing: '-0.04em', fontWeight: '800' }],
+        'display-lg': ['clamp(3rem, 7vw, 5.5rem)', { lineHeight: '0.98', letterSpacing: '-0.05em', fontWeight: '800' }],
+      },
+      borderRadius: {
+        'ui-sm': '0.375rem',
+        'ui-md': '0.625rem',
+        'ui-lg': '1rem',
+        'ui-xl': '1.5rem',
       },
       animation: {
         'blob':           'blob 7s infinite',
@@ -109,11 +136,27 @@ module.exports = {
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
         'smooth': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'ui-standard': 'cubic-bezier(0.2, 0, 0, 1)',
+        'ui-emphasized': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       boxShadow: {
+        'ui-sm': '0 1px 2px rgba(15, 23, 42, 0.06)',
+        'ui-card': '0 12px 30px rgba(15, 23, 42, 0.08)',
+        'ui-card-hover': '0 18px 42px rgba(15, 23, 42, 0.12)',
         'glow-primary': '0 0 30px rgba(79,70,229,0.3), 0 0 60px rgba(79,70,229,0.1)',
         'glow-accent':  '0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.1)',
         'glow-lg':      '0 20px 60px rgba(79,70,229,0.2)',
+      },
+      transitionDuration: {
+        'ui-fast': '150ms',
+        'ui-normal': '220ms',
+        'ui-slow': '360ms',
+      },
+      zIndex: {
+        header: '40',
+        overlay: '50',
+        modal: '60',
+        toast: '70',
       },
     },
   },
