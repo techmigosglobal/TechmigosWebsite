@@ -17,9 +17,9 @@ This website is configured for deployment on Vercel with automatic builds from t
 3. Select the `TechmigosWebsite` repository from GitHub
 4. Configure the following:
    - **Framework Preset**: Astro
-   - **Build Command**: `npm run build`
+   - **Build Command**: `bun run build`
    - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+   - **Install Command**: `bun install --frozen-lockfile`
 
 ## Environment Variables
 
@@ -61,8 +61,8 @@ After deployment:
 ## Troubleshooting
 
 **Build fails after dependency changes:**
-- Run `npm install` locally to refresh `package-lock.json`.
-- Confirm `npm run validate` passes before deploying.
+- Run `bun install` locally to refresh `bun.lock`.
+- Confirm `bun run validate` passes before deploying.
 
 **Environment variables not loading:**
 - Verify variables are set in Vercel project settings (not in .env file)

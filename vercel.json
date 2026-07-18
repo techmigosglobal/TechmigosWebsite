@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npm run build:vercel",
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun run build:vercel",
   "outputDirectory": "dist",
   "framework": "astro",
   "env": {
