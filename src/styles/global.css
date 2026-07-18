@@ -721,6 +721,12 @@
   }
 }
 
+/* Legacy templates still use Tailwind's gray-500 utility for body copy. The
+   original rendered shade falls below WCAG AA on white, so keep that shared
+   utility at the established secondary-text token until those templates are
+   fully migrated to semantic text classes. */
+.text-gray-500 { color: var(--color-text-secondary) !important; }
+
 img,
 svg,
 video,

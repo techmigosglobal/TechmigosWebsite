@@ -24,7 +24,7 @@ const categories = ['All', ...new Set(projects.map((project) => project.category
         Products We've <span class="text-gradient">Shipped</span>
       </h1>
       <p class="reveal stagger-2 text-xl text-gray-500 max-w-2xl mx-auto">
-        {projects.length} projects showcasing our expertise across web, mobile, and AI/ML.
+        A selection of product directions and shipped experiences across web and mobile.
       </p>
     </div>
   </section>
@@ -78,10 +78,6 @@ const categories = ['All', ...new Set(projects.map((project) => project.category
                 width="800"
                 height="600"
               />
-              <!-- Result badge -->
-              <div class="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-bold rounded-full shadow-sm">
-                {project.result}
-              </div>
               <!-- Hover overlay -->
               <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-5">
                 <div class="flex flex-wrap gap-1.5 mb-3">

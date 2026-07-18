@@ -22,10 +22,11 @@ if (!project) {
 ---
 
 <BaseLayout
-  title={project ? `${project.title} Software Case Study` : 'Project Not Found'}
+  title={project ? `${project.title} software case study` : 'Project not found'}
   description={project ? `${project.title} - ${project.overview.slice(0, 150)}...` : 'The project you requested could not be found.'}
   ogImage={project?.image}
   ogType="article"
+  noIndex={!project}
 >
   {project ? (
     <>

@@ -12,11 +12,12 @@
     "preview": "astro preview",
     "astro": "astro",
     "verify:content": "./scripts/verify-blog-content.sh",
-    "validate": "bun run build && bun scripts/validate-site.mjs",
+    "validate": "bun run build && bun scripts/validate-site.mjs && bun scripts/validate-public-seo.mjs && bun scripts/check-public-links.mjs",
     "seo:audit": "node scripts/seo-weekly-audit.mjs",
     "leads:export": "node scripts/lead-management.mjs export",
     "leads:list": "node scripts/lead-management.mjs list",
     "portal:user": "node scripts/provision-portal-user.mjs",
+    "test:e2e": "playwright test",
     "vercel:whoami": "npx --yes vercel@54.1.0 whoami",
     "vercel:login:techmigos": "npx --yes vercel@54.1.0 login techmigos.global@gmail.com",
     "vercel:link": "npx --yes vercel@54.1.0 link --yes --project techmigos-website",
@@ -40,6 +41,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^20.12.7",
     "typescript": "^5.9.3"
   },
