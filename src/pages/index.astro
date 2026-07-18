@@ -50,13 +50,6 @@ const services = [
   },
 ];
 
-const stats = [
-  { value: 'Web', label: 'Product Engineering', icon: 'Build' },
-  { value: 'Mobile', label: 'App Delivery', icon: 'Ship' },
-  { value: 'Cloud', label: 'Scale Readiness', icon: 'Scale' },
-  { value: 'AI', label: 'Applied Intelligence', icon: 'Adapt' },
-];
-
 const trustHighlights = [
   'Strong Client Satisfaction',
   'Cross-Industry Delivery Experience',
@@ -104,90 +97,49 @@ const showTestimonials = false;
   <!-- ========================================
        HERO SECTION
        ======================================== -->
-  <section id="homepage-hero" class="homepage-hero relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
-    <!-- Animated grid background -->
-    <div class="absolute inset-0 grid-pattern opacity-60" style="z-index: 0;"></div>
+  <section id="homepage-hero" class="homepage-hero" aria-labelledby="homepage-hero-title">
+    <div class="homepage-hero__grid" aria-hidden="true"></div>
+    <canvas id="hero-network-canvas" class="homepage-hero__network" aria-hidden="true"></canvas>
 
-    <!-- Canvas for interactive neural particle network background -->
-    <canvas id="hero-network-canvas" class="absolute inset-0 pointer-events-none opacity-50" style="z-index: 1;"></canvas>
-
-    <!-- Animated gradient blobs -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-blob"></div>
-      <div class="absolute top-40 -left-40 w-[500px] h-[500px] bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-blob" style="animation-delay: 2s;"></div>
-      <div class="absolute -bottom-40 left-1/2 w-[500px] h-[500px] bg-sky-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" style="animation-delay: 4s;"></div>
-    </div>
-
-    <!-- Floating tech icon particles -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none" id="hero-particles">
-      {[
-        { top: '15%', left: '8%', delay: '0s', dur: '7s', size: '40px', opacity: '0.12' },
-        { top: '70%', left: '5%', delay: '1s', dur: '9s', size: '30px', opacity: '0.08' },
-        { top: '25%', left: '90%', delay: '3s', dur: '8s', size: '50px', opacity: '0.10' },
-        { top: '80%', left: '85%', delay: '2s', dur: '6s', size: '35px', opacity: '0.12' },
-        { top: '45%', left: '92%', delay: '0.5s', dur: '10s', size: '25px', opacity: '0.08' },
-        { top: '55%', left: '3%', delay: '4s', dur: '7s', size: '45px', opacity: '0.09' },
-      ].map(p => (
-        <div
-          class="absolute rounded-full bg-gradient-to-br from-primary-400 to-accent-400 animate-float"
-          style={`top:${p.top};left:${p.left};width:${p.size};height:${p.size};animation-delay:${p.delay};animation-duration:${p.dur};opacity:${p.opacity};`}
-        ></div>
-      ))}
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full py-20">
-      <div class="text-center max-w-5xl mx-auto">
-        <!-- Eyebrow -->
-        <div class="reveal stagger-1 flex justify-center mb-6">
-          <span class="section-eyebrow">
-            <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse inline-block"></span>
-            Startup-friendly and enterprise-ready delivery
-          </span>
-        </div>
-
-        <!-- Main heading with typewriter -->
-        <h1 class="reveal stagger-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-[1.05] tracking-tight mb-6">
-          We Build Software<br>
-          That <span class="text-gradient" id="rotating-text">Scales With You</span>
-        </h1>
-
-        <p class="reveal stagger-3 text-xl sm:text-2xl text-gray-500 mb-10 max-w-3xl mx-auto leading-relaxed">
-          TechMigos partners with startups and enterprises to design, build, and ship 
-          <strong class="text-gray-700">world-class digital products</strong> that drive growth.
+    <div class="homepage-hero__container">
+      <div class="homepage-hero__content">
+        <p class="homepage-hero__eyebrow">Product engineering for ambitious teams</p>
+        <h1 id="homepage-hero-title">We build digital products people remember.</h1>
+        <p class="homepage-hero__summary">
+          Strategy, UX, web, mobile, cloud, and applied AI—planned and delivered by one accountable product team.
         </p>
-
-        <div class="reveal stagger-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="/contact" class="btn-primary text-lg px-10 py-4 shine-hover group">
-            Start a Project
-            <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        <div class="homepage-hero__actions">
+          <a href="/contact" class="btn-primary homepage-hero__primary-action">
+            Start a project
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
             </svg>
           </a>
-          <a href="/portfolio" class="btn-ghost text-lg px-10 py-4 group">
-            <svg class="w-5 h-5 mr-2 group-hover:scale-125 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            See Our Work
-          </a>
+          <a href="/portfolio" class="btn-link homepage-hero__secondary-action">Explore our work <span aria-hidden="true">↗</span></a>
         </div>
-
-        <!-- Mini stats strip -->
-        <div class="reveal stagger-5 mt-16 flex flex-wrap justify-center gap-6 md:gap-12">
-          {stats.map(s => (
-            <div class="text-center">
-              <div class="text-3xl font-black text-primary-600 tabular-nums">{s.value}</div>
-              <div class="text-sm text-gray-500 mt-0.5">{s.label}</div>
-            </div>
-          ))}
-        </div>
+        <p class="homepage-hero__assurance">From the first decision to the first release.</p>
       </div>
-    </div>
 
-    <!-- Scroll indicator -->
-    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
-      <span class="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
-      <div class="w-px h-8 bg-gradient-to-b from-gray-400 to-transparent animate-pulse"></div>
+      <div class="homepage-hero__visual" aria-label="TechMigos capabilities: web, mobile, cloud, and AI connected through one product delivery core.">
+        <div class="homepage-hero__visual-header">
+          <span>TechMigos delivery system</span>
+          <span class="homepage-hero__status"><i aria-hidden="true"></i> Ready to build</span>
+        </div>
+        <div class="homepage-hero__map">
+          <svg class="homepage-hero__paths" viewBox="0 0 520 420" aria-hidden="true" focusable="false">
+            <path d="M126 104C186 116 203 154 260 210" />
+            <path d="M394 104C334 116 317 154 260 210" />
+            <path d="M126 316C186 304 203 266 260 210" />
+            <path d="M394 316C334 304 317 266 260 210" />
+          </svg>
+          <div class="homepage-hero__core" aria-hidden="true"><span>TM</span><small>Product core</small></div>
+          <div class="homepage-hero__node homepage-hero__node--web"><span>01</span><strong>Web</strong><small>Experiences that convert</small></div>
+          <div class="homepage-hero__node homepage-hero__node--mobile"><span>02</span><strong>Mobile</strong><small>Useful, native-feeling apps</small></div>
+          <div class="homepage-hero__node homepage-hero__node--cloud"><span>03</span><strong>Cloud</strong><small>Systems built to evolve</small></div>
+          <div class="homepage-hero__node homepage-hero__node--ai"><span>04</span><strong>Applied AI</strong><small>Intelligence with purpose</small></div>
+        </div>
+        <p class="homepage-hero__visual-caption"><span aria-hidden="true"></span> One team, connected delivery</p>
+      </div>
     </div>
   </section>
 
@@ -452,6 +404,205 @@ const showTestimonials = false;
 </BaseLayout>
 
 <style>
+  .homepage-hero {
+    --hero-border: rgb(148 163 184 / 0.25);
+    --hero-grid: rgb(15 118 110 / 0.09);
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-height: min(54rem, 100svh);
+    padding: clamp(7.5rem, 12vw, 10rem) 0 clamp(4rem, 8vw, 7rem);
+    overflow: clip;
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 45%, #ecfdf5 100%);
+  }
+
+  .homepage-hero__grid,
+  .homepage-hero__network {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .homepage-hero__grid {
+    opacity: 0.9;
+    background-image: linear-gradient(var(--hero-grid) 1px, transparent 1px), linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
+    background-size: 2.75rem 2.75rem;
+    mask-image: linear-gradient(to bottom, black, transparent 86%);
+  }
+
+  .homepage-hero__network { opacity: 0.52; }
+
+  .homepage-hero__container {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(20rem, 0.85fr);
+    align-items: center;
+    gap: clamp(3rem, 7vw, 8rem);
+    width: min(100% - 2rem, var(--container-wide));
+    margin-inline: auto;
+  }
+
+  .homepage-hero__content { max-width: 42rem; }
+
+  .homepage-hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-5);
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .homepage-hero__eyebrow::before {
+    width: 1.75rem;
+    height: 1px;
+    content: '';
+    background: currentColor;
+  }
+
+  .homepage-hero h1 {
+    max-width: 11ch;
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: clamp(3rem, 5.6vw, 5.5rem);
+    font-weight: var(--weight-extrabold);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .homepage-hero__summary {
+    max-width: 39rem;
+    margin: var(--space-6) 0 0;
+    color: var(--color-text-secondary);
+    font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+    line-height: 1.65;
+  }
+
+  .homepage-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-5);
+    margin-top: var(--space-8);
+  }
+
+  .homepage-hero__primary-action { gap: var(--space-3); padding-inline: var(--space-6); }
+  .homepage-hero__primary-action svg { width: 1.25rem; height: 1.25rem; }
+  .homepage-hero__secondary-action { padding-inline: var(--space-1); }
+
+  .homepage-hero__assurance {
+    margin: var(--space-6) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .homepage-hero__visual {
+    position: relative;
+    min-width: 0;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    border: 1px solid var(--hero-border);
+    border-radius: var(--radius-xl);
+    background: rgb(255 255 255 / 0.68);
+    box-shadow: 0 28px 70px rgb(15 23 42 / 0.1);
+    backdrop-filter: blur(14px);
+  }
+
+  .homepage-hero__visual::before {
+    position: absolute;
+    z-index: -1;
+    inset: 12% -9% -10% 8%;
+    border-radius: 50%;
+    content: '';
+    background: radial-gradient(circle, rgb(13 148 136 / 0.2), transparent 69%);
+    filter: blur(14px);
+  }
+
+  .homepage-hero__visual-header,
+  .homepage-hero__visual-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .homepage-hero__status { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-accent); }
+  .homepage-hero__status i,
+  .homepage-hero__visual-caption span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgb(34 197 94 / 0.12); }
+
+  .homepage-hero__map {
+    position: relative;
+    min-height: clamp(21rem, 32vw, 27rem);
+    margin: var(--space-3) 0;
+    border: 1px solid rgb(226 232 240 / 0.85);
+    border-radius: calc(var(--radius-xl) - 0.25rem);
+    background: linear-gradient(145deg, rgb(248 250 252 / 0.84), rgb(255 255 255 / 0.96));
+    overflow: hidden;
+  }
+
+  .homepage-hero__map::before {
+    position: absolute;
+    inset: 0;
+    content: '';
+    opacity: 0.72;
+    background-image: radial-gradient(rgb(15 118 110 / 0.18) 0.75px, transparent 0.75px);
+    background-size: 0.8rem 0.8rem;
+    mask-image: radial-gradient(circle at center, black, transparent 73%);
+  }
+
+  .homepage-hero__paths { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .homepage-hero__paths path { fill: none; stroke: rgb(15 118 110 / 0.38); stroke-width: 1.25; stroke-dasharray: 5 6; animation: hero-path-drift 8s linear infinite; }
+
+  .homepage-hero__core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: clamp(6.3rem, 11vw, 8rem);
+    aspect-ratio: 1;
+    border: 1px solid rgb(15 118 110 / 0.35);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #0f766e, #164e63);
+    box-shadow: 0 0 0 0.7rem rgb(13 148 136 / 0.08), 0 20px 42px rgb(15 118 110 / 0.26);
+    color: #fff;
+    text-align: center;
+    transform: translate(-50%, -50%);
+  }
+
+  .homepage-hero__core span { font-size: clamp(1.25rem, 2.8vw, 1.8rem); font-weight: var(--weight-extrabold); letter-spacing: -0.08em; }
+  .homepage-hero__core small { margin-top: -0.8rem; font-size: 0.58rem; font-weight: var(--weight-semibold); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .homepage-hero__node {
+    position: absolute;
+    display: grid;
+    gap: 0.18rem;
+    width: min(10.3rem, 34%);
+    padding: 0.85rem 0.9rem;
+    border: 1px solid rgb(203 213 225 / 0.95);
+    border-radius: var(--radius-md);
+    background: rgb(255 255 255 / 0.93);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .homepage-hero__node > span { color: var(--color-accent); font-family: var(--font-mono); font-size: 0.625rem; font-weight: var(--weight-bold); }
+  .homepage-hero__node strong { color: var(--color-text-primary); font-size: var(--text-sm); }
+  .homepage-hero__node small { color: var(--color-text-muted); font-size: 0.67rem; line-height: 1.35; }
+  .homepage-hero__node--web { top: 10%; left: 7%; }
+  .homepage-hero__node--mobile { top: 10%; right: 7%; }
+  .homepage-hero__node--cloud { bottom: 10%; left: 7%; }
+  .homepage-hero__node--ai { right: 7%; bottom: 10%; }
+
+  .homepage-hero__visual-caption { justify-content: flex-start; }
+
   .homepage-hero::after {
     content: '';
     position: absolute;
@@ -463,6 +614,8 @@ const showTestimonials = false;
   }
 
   .homepage-hero.is-interactive::after { opacity: 1; }
+
+  @keyframes hero-path-drift { to { stroke-dashoffset: -44; } }
 
   @keyframes trustTicker {
     from { transform: translateX(-50%); }
@@ -494,6 +647,35 @@ const showTestimonials = false;
   .glow-card:hover::after {
     opacity: 1;
   }
+
+  @media (max-width: 900px) {
+    .homepage-hero { min-height: auto; }
+    .homepage-hero__container { grid-template-columns: 1fr; gap: var(--space-10); width: min(100% - 2rem, 44rem); }
+    .homepage-hero__content { max-width: 40rem; }
+    .homepage-hero h1 { max-width: 12ch; }
+    .homepage-hero__visual { width: min(100%, 39rem); }
+  }
+
+  @media (max-width: 480px) {
+    .homepage-hero { padding-top: 7rem; }
+    .homepage-hero__actions { align-items: stretch; gap: var(--space-3); }
+    .homepage-hero__primary-action { width: 100%; }
+    .homepage-hero__secondary-action { width: fit-content; }
+    .homepage-hero__visual { padding: 0.8rem; }
+    .homepage-hero__status { display: none; }
+    .homepage-hero__map { min-height: 20rem; }
+    .homepage-hero__node { width: 41%; padding: 0.65rem; }
+    .homepage-hero__node small { font-size: 0.6rem; }
+    .homepage-hero__node--web { top: 7%; left: 4%; }
+    .homepage-hero__node--mobile { top: 7%; right: 4%; }
+    .homepage-hero__node--cloud { bottom: 7%; left: 4%; }
+    .homepage-hero__node--ai { right: 4%; bottom: 7%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .homepage-hero__network { display: none; }
+    .homepage-hero__paths path { animation: none; }
+  }
 </style>
 
 <script>
@@ -510,49 +692,9 @@ const showTestimonials = false;
     }
   }
 
-  function setupRotatingText() {
-    const rotatingText = document.getElementById('rotating-text');
-    if (!rotatingText) return;
-
-    const phrases = ['Scales With You', 'Drives Growth', 'Wins Markets', 'Makes an Impact', 'Delights Users'];
-    const timeoutIds = new Set<number>();
-    let currentPhrase = 0;
-    let isActive = true;
-
-    const schedule = (callback: () => void, delay: number) => {
-      const timeoutId = window.setTimeout(() => {
-        timeoutIds.delete(timeoutId);
-        if (isActive) callback();
-      }, delay);
-      timeoutIds.add(timeoutId);
-    };
-
-    const rotationId = window.setInterval(() => {
-      rotatingText.style.opacity = '0';
-      rotatingText.style.transform = 'translateY(-12px)';
-      rotatingText.style.transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-      schedule(() => {
-        currentPhrase = (currentPhrase + 1) % phrases.length;
-        rotatingText.textContent = phrases[currentPhrase];
-        rotatingText.style.transform = 'translateY(12px)';
-        rotatingText.style.opacity = '0';
-        schedule(() => {
-          rotatingText.style.transform = 'translateY(0)';
-          rotatingText.style.opacity = '1';
-        }, 50);
-      }, 400);
-    }, 3000);
-
-    addCleanup(() => {
-      isActive = false;
-      window.clearInterval(rotationId);
-      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      timeoutIds.clear();
-    });
-  }
-
   function setupNetworkCanvas() {
-    if (prefersReducedMotion) return;
+    const hasLimitedViewport = window.matchMedia('(max-width: 767px)').matches;
+    if (prefersReducedMotion || hasLimitedViewport) return;
 
     const canvas = document.querySelector<HTMLCanvasElement>('#hero-network-canvas');
     const hero = document.querySelector<HTMLElement>('#homepage-hero');
@@ -708,7 +850,6 @@ const showTestimonials = false;
     });
   }
 
-  setupRotatingText();
   setupNetworkCanvas();
   setupCardGlow();
 
