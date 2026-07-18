@@ -8,16 +8,69 @@ interface Props {
 const { title, description, technologies } = Astro.props;
 ---
 
-<section class="home-technology-group" aria-label={title}>
+<section class="home-technology-group" aria-label={title} data-tech-group>
   <h3>{title}</h3>
   <p>{description}</p>
   <ul>{technologies.map((technology) => <li>{technology}</li>)}</ul>
 </section>
 
 <style>
-  .home-technology-group { padding: var(--space-6); border-top: 1px solid var(--color-border); }
-  h3 { margin: 0; color: var(--color-text-primary); font-size: var(--text-lg); }
-  p { margin: var(--space-2) 0 0; color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.55; }
-  ul { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin: var(--space-5) 0 0; list-style: none; }
-  li { padding: 0.35rem 0.55rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-muted); font-family: var(--font-mono); font-size: 0.7rem; }
+  .home-technology-group {
+    padding: var(--space-6);
+    border-top: 1px solid var(--color-border);
+    transition: background var(--motion-normal) var(--ease-standard);
+  }
+
+  .home-technology-group:hover {
+    background: rgb(13 148 136 / 0.04);
+  }
+
+  h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--text-lg);
+  }
+
+  p {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    margin: var(--space-5) 0 0;
+    list-style: none;
+  }
+
+  li {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    transition:
+      border-color var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard);
+    --tag-glow: 0;
+  }
+
+  .home-technology-group:hover li {
+    border-color: rgb(13 148 136 / 0.35);
+    color: var(--color-accent);
+    background: rgb(13 148 136 / 0.06);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-technology-group,
+    li {
+      transition: none;
+    }
+  }
 </style>

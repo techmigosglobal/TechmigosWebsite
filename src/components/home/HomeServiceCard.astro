@@ -13,7 +13,8 @@ interface Props {
 const { icon, title, problem, deliverable, platform, href } = Astro.props;
 ---
 
-<article class="home-service-card">
+<article class="home-service-card" data-service-card>
+  <div class="home-service-card__spotlight" aria-hidden="true"></div>
   <div class="home-service-card__icon"><ServiceIcon name={icon} class="h-6 w-6" /></div>
   <p class="home-service-card__platform">{platform}</p>
   <h3>{title}</h3>
@@ -24,6 +25,7 @@ const { icon, title, problem, deliverable, platform, href } = Astro.props;
 
 <style>
   .home-service-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-height: 100%;
@@ -32,10 +34,40 @@ const { icon, title, problem, deliverable, platform, href } = Astro.props;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);
-    transition: border-color var(--motion-normal) var(--ease-standard), box-shadow var(--motion-normal) var(--ease-standard), transform var(--motion-normal) var(--ease-standard);
+    overflow: hidden;
+    transition:
+      border-color var(--motion-normal) var(--ease-standard),
+      box-shadow var(--motion-normal) var(--ease-standard),
+      transform var(--motion-normal) var(--ease-standard);
+    transform-style: preserve-3d;
+    will-change: transform;
+    --spotlight-opacity: 0;
+    --spotlight-x: 50%;
+    --spotlight-y: 50%;
   }
-  .home-service-card:hover { border-color: var(--color-border-strong); box-shadow: var(--shadow-card); transform: translateY(-4px); }
+
+  /* Pointer-following spotlight */
+  .home-service-card__spotlight {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--spotlight-opacity);
+    background: radial-gradient(
+      18rem circle at var(--spotlight-x) var(--spotlight-y),
+      rgb(13 148 136 / 0.1),
+      transparent 70%
+    );
+    transition: opacity 0.3s ease;
+  }
+
+  .home-service-card:hover {
+    border-color: rgb(13 148 136 / 0.45);
+    box-shadow: var(--shadow-card), 0 0 0 1px rgb(13 148 136 / 0.12);
+  }
+
   .home-service-card__icon {
+    position: relative;
     display: grid;
     width: 3rem;
     height: 3rem;
@@ -43,13 +75,97 @@ const { icon, title, problem, deliverable, platform, href } = Astro.props;
     border-radius: var(--radius-md);
     background: var(--color-accent-subtle);
     color: var(--color-accent);
+    transition: background-color var(--motion-normal) var(--ease-standard), transform var(--motion-normal) var(--ease-standard);
   }
-  .home-service-card__platform { margin: var(--space-5) 0 var(--space-2); color: var(--color-accent); font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase; }
-  h3 { margin: 0; color: var(--color-text-primary); font-size: var(--text-xl); letter-spacing: -0.02em; }
-  .home-service-card__problem, .home-service-card__deliverable { margin: var(--space-3) 0 0; color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.6; }
-  .home-service-card__deliverable strong { color: var(--color-text-primary); }
-  .home-service-card__link { display: inline-flex; align-items: center; gap: var(--space-2); width: fit-content; min-height: 2.75rem; margin-top: auto; padding-top: var(--space-5); color: var(--color-primary-strong); font-size: var(--text-sm); font-weight: var(--weight-semibold); text-decoration: none; }
-  .home-service-card__link span { transition: transform var(--motion-fast) var(--ease-standard); }
-  .home-service-card__link:hover span, .home-service-card__link:focus-visible span { transform: translateX(0.25rem); }
-  @media (prefers-reduced-motion: reduce) { .home-service-card, .home-service-card__link span { transition: none; } .home-service-card:hover { transform: none; } }
+
+  .home-service-card:hover .home-service-card__icon {
+    background: rgb(13 148 136 / 0.2);
+    transform: scale(1.08);
+  }
+
+  .home-service-card__platform {
+    margin: var(--space-5) 0 var(--space-2);
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--text-xl);
+    letter-spacing: -0.02em;
+  }
+
+  .home-service-card__problem,
+  .home-service-card__deliverable {
+    margin: var(--space-3) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+  }
+
+  .home-service-card__deliverable strong {
+    color: var(--color-text-primary);
+  }
+
+  .home-service-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: fit-content;
+    min-height: 2.75rem;
+    margin-top: auto;
+    padding-top: var(--space-5);
+    color: var(--color-primary-strong);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+  }
+
+  .home-service-card__link span {
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+
+  .home-service-card__link:hover span,
+  .home-service-card__link:focus-visible span {
+    transform: translateX(0.3rem);
+  }
+
+  /* Border-light response on hover */
+  .home-service-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid transparent;
+    background: linear-gradient(
+        var(--color-surface),
+        var(--color-surface)
+      )
+      padding-box,
+      linear-gradient(135deg, rgb(13 148 136 / 0.6), rgb(37 99 235 / 0.4)) border-box;
+    opacity: 0;
+    transition: opacity var(--motion-normal) var(--ease-standard);
+    pointer-events: none;
+  }
+
+  .home-service-card:hover::after,
+  .home-service-card:focus-within::after {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-service-card,
+    .home-service-card__icon,
+    .home-service-card__link span {
+      transition: none;
+    }
+
+    .home-service-card:hover {
+      transform: none;
+    }
+  }
 </style>
