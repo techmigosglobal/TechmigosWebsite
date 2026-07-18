@@ -51,6 +51,9 @@ export const GET: APIRoute = async () => {
         priority: item.priority,
       }),
     ),
+    ...['web', 'mobile', 'qa', 'backend', 'ai', 'consulting'].map((slug) =>
+      urlTag(abs(`/services/${slug}`), { changefreq: 'monthly', priority: '0.7' }),
+    ),
     ...blogPosts.map((post) =>
       urlTag(abs(`/blog/${entrySlug(post)}`), {
         lastmod: post.data.pubDate.toISOString(),
