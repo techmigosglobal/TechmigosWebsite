@@ -497,166 +497,221 @@ const showTestimonials = false;
 </style>
 
 <script>
-  // Rotating hero text
-  const phrases = ['Scales With You', 'Drives Growth', 'Wins Markets', 'Makes an Impact', 'Delights Users'];
-  let currentPhrase = 0;
-  const el = document.getElementById('rotating-text');
+  const cleanups: Array<() => void> = [];
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (el) {
-    setInterval(() => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(-12px)';
-      el.style.transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-      setTimeout(() => {
-        currentPhrase = (currentPhrase + 1) % phrases.length;
-        el.textContent = phrases[currentPhrase];
-        el.style.transform = 'translateY(12px)';
-        el.style.opacity = '0';
-        setTimeout(() => {
-          el.style.transform = 'translateY(0)';
-          el.style.opacity = '1';
-        }, 50);
-      }, 400);
-    }, 3000);
+  function addCleanup(cleanup: () => void) {
+    cleanups.push(cleanup);
   }
 
-  // Debugging info
-  console.log('[Antigravity] Hero script initializing...');
-
-  const hero = document.getElementById('homepage-hero');
-  const canvas = document.getElementById('hero-network-canvas') as HTMLCanvasElement;
-
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  if (canvas && !prefersReduced) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      let width = 0;
-      let height = 0;
-      
-      const particles: Array<{x: number, y: number, vx: number, vy: number, r: number}> = [];
-      const particleCount = 45;
-      
-      let mouse = { x: -1000, y: -1000 };
-      
-      function resize() {
-        const rect = hero ? hero.getBoundingClientRect() : null;
-        width = canvas.width = canvas.offsetWidth || (rect ? rect.width : window.innerWidth);
-        height = canvas.height = canvas.offsetHeight || (rect ? rect.height : window.innerHeight);
-        
-        console.log(`[Antigravity] Canvas resized to ${width}x${height}`);
-        
-        if (particles.length === 0) {
-          for (let i = 0; i < particleCount; i++) {
-            particles.push({
-              x: Math.random() * width,
-              y: Math.random() * height,
-              vx: (Math.random() - 0.5) * 0.45,
-              vy: (Math.random() - 0.5) * 0.45,
-              r: Math.random() * 2 + 1
-            });
-          }
-        } else {
-          particles.forEach(p => {
-            if (p.x > width) p.x = Math.random() * width;
-            if (p.y > height) p.y = Math.random() * height;
-          });
-        }
-      }
-      
-      const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-      if (hero && hasFinePointer) {
-        hero.addEventListener('mousemove', (e) => {
-          const rect = hero.getBoundingClientRect();
-          mouse.x = e.clientX - rect.left;
-          mouse.y = e.clientY - rect.top;
-        }, { passive: true });
-        
-        hero.addEventListener('mouseleave', () => {
-          mouse.x = -1000;
-          mouse.y = -1000;
-        }, { passive: true });
-
-        hero.classList.add('is-interactive');
-        hero.addEventListener('pointermove', (event) => {
-          const rect = hero.getBoundingClientRect();
-          hero.style.setProperty('--hero-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-          hero.style.setProperty('--hero-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
-        }, { passive: true });
-      }
-      
-      window.addEventListener('resize', resize, { passive: true });
-      resize();
-      
-      function draw() {
-        ctx.clearRect(0, 0, width, height);
-        
-        // Brand teal particles and subtle blue connecting lines
-        ctx.fillStyle = 'rgba(13, 148, 136, 0.45)'; // teal-600
-        ctx.strokeStyle = 'rgba(37, 99, 235, 0.08)'; // blue-600
-        
-        for (let i = 0; i < particleCount; i++) {
-          const p = particles[i];
-          if (!p) continue;
-          
-          p.x += p.vx;
-          p.y += p.vy;
-          
-          if (p.x < 0 || p.x > width) p.vx *= -1;
-          if (p.y < 0 || p.y > height) p.vy *= -1;
-          
-          if (p.x < 0) p.x = 0;
-          if (p.x > width) p.x = width;
-          if (p.y < 0) p.y = 0;
-          if (p.y > height) p.y = height;
-          
-          if (mouse.x > 0) {
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 180) {
-              p.x += dx * 0.005;
-              p.y += dy * 0.005;
-            }
-          }
-          
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
-          
-          for (let j = i + 1; j < particleCount; j++) {
-            const p2 = particles[j];
-            if (!p2) continue;
-            const dx = p.x - p2.x;
-            const dy = p.y - p2.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 110) {
-              ctx.beginPath();
-              ctx.lineWidth = (1 - dist / 110) * 0.8;
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.stroke();
-            }
-          }
-        }
-        
-        requestAnimationFrame(draw);
-      }
-      
-      draw();
+  function cleanupPage() {
+    while (cleanups.length > 0) {
+      cleanups.pop()?.();
     }
   }
 
-  if (!prefersReduced) {
-    document.querySelectorAll('.glow-card').forEach(card => {
-      card.addEventListener('mousemove', (e) => {
-        const mouseEvent = e as MouseEvent;
-        const rect = (card as HTMLElement).getBoundingClientRect();
-        const x = mouseEvent.clientX - rect.left;
-        const y = mouseEvent.clientY - rect.top;
-        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
-      }, { passive: true });
+  function setupRotatingText() {
+    const rotatingText = document.getElementById('rotating-text');
+    if (!rotatingText) return;
+
+    const phrases = ['Scales With You', 'Drives Growth', 'Wins Markets', 'Makes an Impact', 'Delights Users'];
+    const timeoutIds = new Set<number>();
+    let currentPhrase = 0;
+    let isActive = true;
+
+    const schedule = (callback: () => void, delay: number) => {
+      const timeoutId = window.setTimeout(() => {
+        timeoutIds.delete(timeoutId);
+        if (isActive) callback();
+      }, delay);
+      timeoutIds.add(timeoutId);
+    };
+
+    const rotationId = window.setInterval(() => {
+      rotatingText.style.opacity = '0';
+      rotatingText.style.transform = 'translateY(-12px)';
+      rotatingText.style.transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+      schedule(() => {
+        currentPhrase = (currentPhrase + 1) % phrases.length;
+        rotatingText.textContent = phrases[currentPhrase];
+        rotatingText.style.transform = 'translateY(12px)';
+        rotatingText.style.opacity = '0';
+        schedule(() => {
+          rotatingText.style.transform = 'translateY(0)';
+          rotatingText.style.opacity = '1';
+        }, 50);
+      }, 400);
+    }, 3000);
+
+    addCleanup(() => {
+      isActive = false;
+      window.clearInterval(rotationId);
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timeoutIds.clear();
     });
   }
+
+  function setupNetworkCanvas() {
+    if (prefersReducedMotion) return;
+
+    const canvas = document.querySelector<HTMLCanvasElement>('#hero-network-canvas');
+    const hero = document.querySelector<HTMLElement>('#homepage-hero');
+    if (!canvas || !hero) return;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    const particleCount = 45;
+    const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
+    let animationFrameId: number | undefined;
+    let width = 0;
+    let height = 0;
+    let isActive = true;
+    let mouse = { x: -1000, y: -1000 };
+
+    const resizeCanvas = () => {
+      const rect = hero.getBoundingClientRect();
+      width = canvas.width = canvas.offsetWidth || rect.width || window.innerWidth;
+      height = canvas.height = canvas.offsetHeight || rect.height || window.innerHeight;
+
+      if (particles.length === 0) {
+        for (let index = 0; index < particleCount; index += 1) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            r: Math.random() * 2 + 1,
+          });
+        }
+        return;
+      }
+
+      particles.forEach((particle) => {
+        if (particle.x > width) particle.x = Math.random() * width;
+        if (particle.y > height) particle.y = Math.random() * height;
+      });
+    };
+
+    const draw = () => {
+      if (!isActive) return;
+
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = 'rgba(13, 148, 136, 0.45)';
+      context.strokeStyle = 'rgba(37, 99, 235, 0.08)';
+
+      for (let index = 0; index < particleCount; index += 1) {
+        const particle = particles[index];
+        if (!particle) continue;
+
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+
+        if (particle.x < 0 || particle.x > width) particle.vx *= -1;
+        if (particle.y < 0 || particle.y > height) particle.vy *= -1;
+
+        particle.x = Math.max(0, Math.min(width, particle.x));
+        particle.y = Math.max(0, Math.min(height, particle.y));
+
+        if (mouse.x > 0) {
+          const xDistance = mouse.x - particle.x;
+          const yDistance = mouse.y - particle.y;
+          const distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+          if (distance < 180) {
+            particle.x += xDistance * 0.005;
+            particle.y += yDistance * 0.005;
+          }
+        }
+
+        context.beginPath();
+        context.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+        context.fill();
+
+        for (let otherIndex = index + 1; otherIndex < particleCount; otherIndex += 1) {
+          const otherParticle = particles[otherIndex];
+          if (!otherParticle) continue;
+
+          const xDistance = particle.x - otherParticle.x;
+          const yDistance = particle.y - otherParticle.y;
+          const distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+          if (distance < 110) {
+            context.beginPath();
+            context.lineWidth = (1 - distance / 110) * 0.8;
+            context.moveTo(particle.x, particle.y);
+            context.lineTo(otherParticle.x, otherParticle.y);
+            context.stroke();
+          }
+        }
+      }
+
+      animationFrameId = window.requestAnimationFrame(draw);
+    };
+
+    const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const updateMousePosition = (event: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      mouse = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    };
+    const resetMousePosition = () => {
+      mouse = { x: -1000, y: -1000 };
+    };
+    const updateHeroSpotlight = (event: PointerEvent) => {
+      const rect = hero.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      hero.style.setProperty('--hero-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+      hero.style.setProperty('--hero-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+    };
+
+    if (hasFinePointer) {
+      hero.classList.add('is-interactive');
+      hero.addEventListener('mousemove', updateMousePosition, { passive: true });
+      hero.addEventListener('mouseleave', resetMousePosition, { passive: true });
+      hero.addEventListener('pointermove', updateHeroSpotlight, { passive: true });
+    }
+
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? undefined
+      : new ResizeObserver(resizeCanvas);
+    resizeObserver?.observe(hero);
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+    resizeCanvas();
+    draw();
+
+    addCleanup(() => {
+      isActive = false;
+      if (animationFrameId !== undefined) window.cancelAnimationFrame(animationFrameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', resizeCanvas);
+      hero.removeEventListener('mousemove', updateMousePosition);
+      hero.removeEventListener('mouseleave', resetMousePosition);
+      hero.removeEventListener('pointermove', updateHeroSpotlight);
+      hero.classList.remove('is-interactive');
+      context.clearRect(0, 0, width, height);
+      canvas.width = 0;
+      canvas.height = 0;
+    });
+  }
+
+  function setupCardGlow() {
+    if (prefersReducedMotion) return;
+
+    document.querySelectorAll<HTMLElement>('.glow-card').forEach((card) => {
+      const updateCardGlow = (event: MouseEvent) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mouse-x', `${event.clientX - rect.left}px`);
+        card.style.setProperty('--mouse-y', `${event.clientY - rect.top}px`);
+      };
+
+      card.addEventListener('mousemove', updateCardGlow, { passive: true });
+      addCleanup(() => card.removeEventListener('mousemove', updateCardGlow));
+    });
+  }
+
+  setupRotatingText();
+  setupNetworkCanvas();
+  setupCardGlow();
+
+  window.addEventListener('pagehide', cleanupPage, { once: true });
+  document.addEventListener('astro:before-swap', cleanupPage, { once: true });
 </script>

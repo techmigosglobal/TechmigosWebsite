@@ -309,25 +309,47 @@ const technologies = [
 <script>
   const aboutReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const aboutFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const aboutCleanups: Array<() => void> = [];
+
+  function addAboutCleanup(cleanup: () => void) {
+    aboutCleanups.push(cleanup);
+  }
+
+  function cleanupAboutPage() {
+    while (aboutCleanups.length > 0) {
+      aboutCleanups.pop()?.();
+    }
+  }
 
   if (!aboutReducedMotion) {
-    document.querySelectorAll('.section-spotlight').forEach((section) => {
+    document.querySelectorAll<HTMLElement>('.section-spotlight').forEach((section) => {
       if (!aboutFinePointer) return;
-      section.classList.add('is-interactive');
-      section.addEventListener('pointermove', (event) => {
+
+      const updateSpotlight = (event: PointerEvent) => {
         const rect = section.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+
         section.style.setProperty('--spotlight-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
         section.style.setProperty('--spotlight-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
-      }, { passive: true });
+      };
+
+      section.classList.add('is-interactive');
+      section.addEventListener('pointermove', updateSpotlight, { passive: true });
+      addAboutCleanup(() => {
+        section.removeEventListener('pointermove', updateSpotlight);
+        section.classList.remove('is-interactive');
+      });
     });
 
-    document.querySelectorAll('[data-network-canvas]').forEach((canvasEl) => {
-      if (!(canvasEl instanceof HTMLCanvasElement)) return;
-      const section = canvasEl.closest('section');
+    document.querySelectorAll<HTMLCanvasElement>('[data-network-canvas]').forEach((canvasEl) => {
+      const section = canvasEl.closest<HTMLElement>('section');
       const context = canvasEl.getContext('2d');
       if (!section || !context) return;
 
-      const particleCount = Number(canvasEl.dataset.particleCount || 30);
+      const configuredParticleCount = Number(canvasEl.dataset.particleCount ?? '30');
+      const particleCount = Number.isFinite(configuredParticleCount)
+        ? Math.max(0, Math.floor(configuredParticleCount))
+        : 30;
       const particles = Array.from({ length: particleCount }, () => ({
         x: 0,
         y: 0,
@@ -338,17 +360,21 @@ const technologies = [
 
       let width = 0;
       let height = 0;
+      let animationFrameId: number | undefined;
+      let isActive = true;
 
-      function resizeCanvas() {
+      const resizeCanvas = () => {
         width = canvasEl.width = section.clientWidth;
         height = canvasEl.height = section.clientHeight;
         particles.forEach((particle) => {
           if (!particle.x || particle.x > width) particle.x = Math.random() * width;
           if (!particle.y || particle.y > height) particle.y = Math.random() * height;
         });
-      }
+      };
 
-      function drawCanvas() {
+      const drawCanvas = () => {
+        if (!isActive) return;
+
         context.clearRect(0, 0, width, height);
         context.fillStyle = section.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
         context.strokeStyle = section.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
@@ -384,12 +410,28 @@ const technologies = [
           }
         }
 
-        requestAnimationFrame(drawCanvas);
-      }
+        animationFrameId = window.requestAnimationFrame(drawCanvas);
+      };
 
+      const resizeObserver = typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(resizeCanvas);
+      resizeObserver?.observe(section);
       resizeCanvas();
       drawCanvas();
       window.addEventListener('resize', resizeCanvas, { passive: true });
+      addAboutCleanup(() => {
+        isActive = false;
+        if (animationFrameId !== undefined) window.cancelAnimationFrame(animationFrameId);
+        resizeObserver?.disconnect();
+        window.removeEventListener('resize', resizeCanvas);
+        context.clearRect(0, 0, width, height);
+        canvasEl.width = 0;
+        canvasEl.height = 0;
+      });
     });
   }
+
+  window.addEventListener('pagehide', cleanupAboutPage, { once: true });
+  document.addEventListener('astro:before-swap', cleanupAboutPage, { once: true });
 </script>
