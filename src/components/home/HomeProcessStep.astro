@@ -1,0 +1,24 @@
+---
+interface Props {
+  number: string;
+  title: string;
+  description: string;
+}
+
+const { number, title, description } = Astro.props;
+---
+
+<li class="home-process-step">
+  <span class="home-process-step__number">{number}</span>
+  <div>
+    <h3>{title}</h3>
+    <p>{description}</p>
+  </div>
+</li>
+
+<style>
+  .home-process-step { display: grid; grid-template-columns: 3rem 1fr; gap: var(--space-4); align-items: start; }
+  .home-process-step__number { display: grid; width: 3rem; height: 3rem; place-items: center; border: 1px solid var(--color-border-strong); border-radius: 50%; background: var(--color-surface); color: var(--color-accent); font-family: var(--font-mono); font-size: var(--text-sm); font-weight: var(--weight-bold); }
+  h3 { margin: 0; color: var(--color-text-primary); font-size: var(--text-lg); }
+  p { margin: var(--space-2) 0 0; color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.6; }
+</style>

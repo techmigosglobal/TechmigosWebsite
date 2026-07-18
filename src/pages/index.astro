@@ -2,94 +2,134 @@
 export const prerender = true;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ServiceIcon from '../components/ServiceIcon.astro';
+import HomeInsightCard from '../components/home/HomeInsightCard.astro';
+import HomeProcessStep from '../components/home/HomeProcessStep.astro';
+import HomeProjectCard from '../components/home/HomeProjectCard.astro';
+import HomeSectionHeading from '../components/home/HomeSectionHeading.astro';
+import HomeServiceCard from '../components/home/HomeServiceCard.astro';
+import HomeTechnologyGroup from '../components/home/HomeTechnologyGroup.astro';
+import { getCollection } from 'astro:content';
 import { loadSiteContent } from '../lib/siteContent';
 
 const services = [
   {
     icon: 'web',
-    title: 'Web Development',
-    description: 'Custom web applications built with modern frameworks that scale to millions.',
+    title: 'Web application development',
+    problem: 'Turn a manual, fragmented, or outdated web experience into a product people can use with confidence.',
+    deliverable: 'Responsive product interfaces, accessible user journeys, and maintainable application foundations.',
+    platform: 'Web products',
     href: '/services#web',
-    color: 'from-indigo-500 to-blue-500',
   },
   {
     icon: 'mobile',
-    title: 'Mobile Apps',
-    description: 'Native iOS & Android apps with React Native & Flutter — ship to both stores fast.',
+    title: 'Mobile application development',
+    problem: 'Meet customers and teams where their work happens: on Android, iOS, and cross-platform devices.',
+    deliverable: 'Native-feeling mobile flows, device-aware UX, and release-ready application delivery.',
+    platform: 'Android, iOS, Flutter',
     href: '/services#mobile',
-    color: 'from-blue-500 to-cyan-500',
   },
   {
     icon: 'qa',
-    title: 'Quality Assurance & Testing',
-    description: 'Comprehensive manual and automated testing to ensure stable, release-ready software.',
+    title: 'Quality assurance and testing',
+    problem: 'Reduce release uncertainty before defects become expensive user-facing problems.',
+    deliverable: 'Test strategy, manual exploration, automated checks, and cross-device release review.',
+    platform: 'Web, mobile, API',
     href: '/services#qa',
-    color: 'from-pink-500 to-rose-500',
   },
   {
     icon: 'backend',
-    title: 'Backend Development',
-    description: 'Robust APIs, databases, and business logic built for performance, security, and scale.',
+    title: 'Cloud and backend systems',
+    problem: 'Give product ideas reliable workflows, data boundaries, and integrations behind the interface.',
+    deliverable: 'APIs, data models, authentication-aware workflows, and deployment-ready services.',
+    platform: 'Backend and data',
     href: '/services#backend',
-    color: 'from-cyan-500 to-sky-500',
   },
   {
     icon: 'ai',
-    title: 'AI/ML Integration',
-    description: 'Intelligent features powered by the latest LLMs and ML pipelines.',
+    title: 'Applied AI and automation',
+    problem: 'Find practical ways to make repetitive work, search, guidance, or analysis more useful.',
+    deliverable: 'Evaluated AI features, automation flows, and human-centered product integrations.',
+    platform: 'AI-enabled workflows',
     href: '/services#ai',
-    color: 'from-emerald-500 to-teal-500',
   },
   {
     icon: 'consulting',
-    title: 'Tech Consulting',
-    description: 'Architecture, education technology, teacher training, technical guidance, and motivation programs.',
+    title: 'Product strategy and modernization',
+    problem: 'Make high-stakes technology decisions with a clearer view of user needs, risks, and delivery paths.',
+    deliverable: 'Discovery, architecture guidance, technical education, and a practical next-step plan.',
+    platform: 'Strategy and consulting',
     href: '/services#consulting',
-    color: 'from-amber-500 to-orange-500',
   },
 ];
 
 const trustHighlights = [
-  'Strong Client Satisfaction',
-  'Cross-Industry Delivery Experience',
-  'Responsive Project Communication',
-  'Reliable, Long-Term Delivery Partner',
-  'On-Time, On-Budget Delivery',
-  'Transparent Progress Reporting',
-  'Security-First Engineering Practices',
+  'Web, mobile, cloud, and applied AI delivery',
+  'Android, iOS, and responsive web product experience',
+  'Product strategy through deployment',
+  'Education, productivity, and business-software product work',
 ];
 
 const processSteps = [
   {
     number: '01',
-    title: 'Discovery & Strategy',
-    description: 'Deep-dive into your goals, audience, and competitive landscape to define a bulletproof roadmap.',
-    icon: 'Plan',
+    title: 'Discover',
+    description: 'Understand the problem, people, existing system, and constraints before choosing a solution.',
   },
   {
     number: '02',
-    title: 'Design & Prototype',
-    description: 'Stunning interfaces and interactive prototypes that bring your vision to life before a line of code is written.',
-    icon: 'Design',
+    title: 'Define',
+    description: 'Turn the strongest insights into a focused scope, delivery plan, and success criteria.',
   },
   {
     number: '03',
-    title: 'Build & Test',
-    description: 'Clean, scalable code with rigorous automated testing ensuring flawless performance at every scale.',
-    icon: 'Build',  
+    title: 'Design',
+    description: 'Shape clear content, journeys, interface states, and technical decisions before implementation grows.',
   },
   {
     number: '04',
-    title: 'Launch & Support',
-    description: 'Deploy with confidence and ongoing support to keep your product thriving and evolving.',
-    icon: 'Launch',
+    title: 'Build',
+    description: 'Implement the product in small, reviewable pieces with maintainability in mind.',
+  },
+  {
+    number: '05',
+    title: 'Test',
+    description: 'Review critical workflows, devices, accessibility, and edge cases before release.',
+  },
+  {
+    number: '06',
+    title: 'Launch',
+    description: 'Prepare the delivery path, monitor the release, and make handoff details explicit.',
+  },
+  {
+    number: '07',
+    title: 'Improve',
+    description: 'Use what the product team learns next to refine the experience and plan the next increment.',
   },
 ];
 
-const { testimonials, projects } = await loadSiteContent();
-const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
-const showTestimonials = false;
+const technologyGroups = [
+  { title: 'Frontend and web', description: 'Interfaces and web products built for real users, content, and business workflows.', technologies: ['Astro', 'React', 'Next.js', 'TypeScript', 'Tailwind CSS'] },
+  { title: 'Mobile products', description: 'Cross-platform and native-minded application experiences for mobile teams and customers.', technologies: ['Flutter', 'React Native', 'Swift', 'Kotlin', 'Firebase'] },
+  { title: 'Backend and data', description: 'Application services, data models, integrations, and product operations behind the interface.', technologies: ['Node.js', 'Python', 'PostgreSQL', 'Supabase', 'REST APIs'] },
+  { title: 'Cloud and deployment', description: 'Practical environments and delivery workflows for web, mobile, and backend releases.', technologies: ['Vercel', 'AWS', 'Docker', 'CI/CD', 'GitHub Actions'] },
+  { title: 'AI and automation', description: 'Applied capabilities selected for a clear user or operations need—not novelty alone.', technologies: ['OpenAI', 'LLM workflows', 'TensorFlow', 'PyTorch', 'Automation'] },
+];
+
+const principles = [
+  { title: 'Think before coding', description: 'We start with the workflow, audience, constraints, and evidence so delivery has a reasoned direction.' },
+  { title: 'Build for the whole product', description: 'Product strategy, UX, interface, backend, QA, and release decisions work better when they connect.' },
+  { title: 'Keep the foundation maintainable', description: 'Clear architecture, accessible patterns, and testable increments make future product work easier.' },
+  { title: 'Make progress visible', description: 'Small reviewable steps and direct communication help teams make decisions without losing context.' },
+];
+
+const { projects } = await loadSiteContent();
+const selectedWorkSlugs = ['focus-today', 'techmigos-hub', 'focusflow'];
+const featuredWork = selectedWorkSlugs
+  .map((slug) => projects.find((project) => project.slug === slug))
+  .filter((project): project is NonNullable<typeof project> => Boolean(project));
+const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
 ---
 
 <BaseLayout title="Home" description="TechMigos designs and builds web apps, mobile apps, backend systems, QA automation, AI integrations, and consulting programs for schools, teachers, startups, and growing companies.">
@@ -143,261 +183,125 @@ const showTestimonials = false;
     </div>
   </section>
 
-  <!-- ========================================
-       TRUST METRICS STRIP
-       ======================================== -->
-  <section class="py-10 bg-gray-50 border-y border-gray-100 overflow-hidden">
-    <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">Trusted delivery, measurable outcomes</p>
-    <div class="relative">
-      <div class="flex w-max animate-trust-ticker whitespace-nowrap">
-        {[...trustHighlights, ...trustHighlights].map((item) => (
-          <div class="mx-3 sm:mx-4 px-6 py-3 rounded-full bg-white border border-gray-200 shadow-sm text-sm sm:text-base font-semibold text-gray-700">
-            {item}
-          </div>
-        ))}
+  <section class="home-trust" aria-labelledby="home-trust-title">
+    <div class="home-container home-trust__layout">
+      <div>
+        <p class="home-kicker">Built around useful proof</p>
+        <h2 id="home-trust-title">Capability-led delivery, from a single product team.</h2>
       </div>
+      <ul class="home-trust__list">
+        {trustHighlights.map((item) => <li>{item}</li>)}
+      </ul>
     </div>
   </section>
 
   <!-- ========================================
        SERVICES SECTION
        ======================================== -->
-  <section class="section-padding bg-white relative overflow-hidden">
-    <!-- Background decor -->
-    <div class="absolute top-0 right-0 w-96 h-96 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">What We Do</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">End-to-End Technology</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          From concept to launch — comprehensive services that take your product to market and beyond.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service, i) => (
-          <a
-            href={service.href}
-            class={`group relative bg-white rounded-2xl p-7 border border-gray-100 glow-card shine-hover tilt-card stagger-${i + 1} reveal overflow-hidden`}
-          >
-            <!-- Gradient corner accent -->
-            <div class={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-bl-3xl rounded-tr-2xl`}></div>
-            
-            {/* Animated icon bg */}
-            <div class={`w-14 h-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-[transform,box-shadow] duration-300`}>
-              <ServiceIcon name={service.icon} class="w-7 h-7 text-white" />
-            </div>
-
-            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-              {service.title}
-            </h3>
-            <p class="text-gray-500 leading-relaxed text-sm">{service.description}</p>
-            
-            <!-- Arrow -->
-            <div class="mt-5 flex items-center text-primary-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-[opacity,transform] duration-300">
-              Learn more
-              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-              </svg>
-            </div>
-          </a>
-        ))}
+  <section class="home-section home-services" aria-labelledby="home-services-title">
+    <div class="home-container">
+      <HomeSectionHeading
+        id="home-services-title"
+        eyebrow="Services and capabilities"
+        title="Make the next version of your product easier to use, run, and evolve."
+        description="TechMigos brings the product decisions, engineering disciplines, and delivery work together around the problem that matters."
+      />
+      <div class="home-services__grid">
+        {services.map((service) => <HomeServiceCard {...service} />)}
       </div>
     </div>
   </section>
 
-  <!-- ========================================
-       FEATURED WORK
-       ======================================== -->
-  <section class="section-padding bg-gray-50">
-    <div class="container-custom">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Portfolio</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Our Best Work</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          Selected projects that showcase our expertise across industries and cutting-edge technologies.
-        </p>
+  <section class="home-section home-work" aria-labelledby="home-work-title">
+    <div class="home-container">
+      <div class="home-work__heading">
+        <HomeSectionHeading
+          id="home-work-title"
+          eyebrow="Selected products"
+          title="Product work that starts with a real use case."
+          description="A selection of real TechMigos product directions across civic information, team productivity, and focused work."
+        />
+        <a href="/portfolio" class="btn-link">Explore all products <span aria-hidden="true">↗</span></a>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featuredWork.map((project, i) => (
-          <a href={project.href || `/portfolio/${project.slug}`} class={`group block bg-white rounded-2xl overflow-hidden shadow-sm glow-card stagger-${i + 1} reveal`}>
-            <div class="relative overflow-hidden">
-              <img
-                src={project.image}
-                alt={project.title}
-                class="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-700"
-                loading="lazy"
-                width="800"
-                height="600"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                <div>
-                  <div class="flex gap-2 mb-3">
-                    {project.tags.map(tag => (
-                      <span class="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-full border border-white/30">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <span class="text-white font-semibold flex items-center gap-2">
-                    View Case Study
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="p-6">
-              <span class="text-sm font-semibold text-primary-600 mb-2 block uppercase tracking-wide">{project.category}</span>
-              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                {project.title}
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">{project.description}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-
-      <div class="text-center mt-12 reveal">
-        <a href="/portfolio" class="btn-ghost group">
-          View All Projects
-          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-          </svg>
-        </a>
+      <div class="home-work__grid">
+        {featuredWork.map((project) => <HomeProjectCard {...project} href={project.href || `/portfolio/${project.slug}`} />)}
       </div>
     </div>
   </section>
 
-  <!-- ========================================
-       PROCESS SECTION
-       ======================================== -->
-  <section class="section-padding bg-white relative overflow-hidden">
-    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-64 h-64 bg-accent-50 rounded-full blur-3xl opacity-50"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Our Process</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">How We Work</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          A battle-tested methodology that delivers exceptional results, every single time.
-        </p>
+  <section class="home-section home-process" aria-labelledby="home-process-title">
+    <div class="home-container home-process__layout">
+      <HomeSectionHeading
+        id="home-process-title"
+        eyebrow="Product development process"
+        title="A clear path from an important question to an improving product."
+        description="The exact shape changes with the work, but the decisions stay visible from discovery through the next iteration."
+      />
+      <ol class="home-process__list">
+        {processSteps.map((step) => <HomeProcessStep {...step} />)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="home-section home-technology" aria-labelledby="home-technology-title">
+    <div class="home-container">
+      <HomeSectionHeading
+        id="home-technology-title"
+        eyebrow="Technology and platforms"
+        title="Choose technology for the job it needs to do."
+        description="The tools below reflect technologies represented in the repository and existing TechMigos service content."
+      />
+      <div class="home-technology__grid">
+        {technologyGroups.map((group) => <HomeTechnologyGroup {...group} />)}
       </div>
+    </div>
+  </section>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
-        <!-- Connecting line (desktop) -->
-        <div class="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-0.5 z-0">
-          <div class="h-full bg-gradient-to-r from-primary-200 via-accent-300 to-primary-200 rounded-full"></div>
-        </div>
-
-        {processSteps.map((step, i) => (
-          <div class={`relative text-center stagger-${i + 1} reveal`}>
-            <div class="relative z-10 inline-flex items-center justify-center w-28 h-28 rounded-full mb-6 animate-pulse-glow" style="background: linear-gradient(135deg, #4F46E5, #06B6D4);">
-              <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center">
-                <div class="text-center">
-                  <div class="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-500">{step.icon}</div>
-                  <div class="text-sm font-black text-primary-600">{step.number}</div>
-                </div>
-              </div>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-3">{step.title}</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">{step.description}</p>
+  <section class="home-section home-principles" aria-labelledby="home-principles-title">
+    <div class="home-container home-principles__layout">
+      <HomeSectionHeading
+        id="home-principles-title"
+        eyebrow="Why TechMigos"
+        title="The product is only as strong as the decisions behind it."
+        description="A practical way of working for teams that need clarity, careful engineering, and a useful next release."
+      />
+      <dl class="home-principles__list">
+        {principles.map((principle, index) => (
+          <div>
+            <dt><span aria-hidden="true">0{index + 1}</span>{principle.title}</dt>
+            <dd>{principle.description}</dd>
           </div>
         ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="home-section home-insights" aria-labelledby="home-insights-title">
+    <div class="home-container">
+      <div class="home-insights__heading">
+        <HomeSectionHeading
+          id="home-insights-title"
+          eyebrow="Featured insights"
+          title="Useful technical thinking, shared in public."
+          description="Recent articles from the TechMigos blog for developers and product-minded teams."
+        />
+        <a href="/blog" class="btn-link">Visit the blog <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="home-insights__grid">
+        {homepageInsights.map((post) => <HomeInsightCard {...post.data} href={`/blog/${post.id}`} />)}
       </div>
     </div>
   </section>
 
-  <!-- ========================================
-       TESTIMONIALS
-       ======================================== -->
-    {showTestimonials && (
-    <section class="section-padding bg-gray-50 relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-80 h-80 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Testimonials</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">What Our Clients Say</h2>
-        <p class="text-lg text-gray-500">Don't take our word for it — hear from the companies we've helped grow.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {testimonials.map((t, i) => (
-          <div class={`group bg-white rounded-2xl p-8 shadow-sm overflow-hidden relative glow-card stagger-${i + 1} reveal`}>
-            <!-- Gradient accent top line -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-accent-400 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-            
-            <!-- Result badge -->
-            <div class="absolute top-6 right-6 px-3 py-1 bg-primary-50 text-primary-700 text-xs font-bold rounded-full border border-primary-100">
-              {t.result}
-            </div>
-
-            <!-- Stars -->
-            <div class="flex gap-1 mb-5">
-              {[...Array(5)].map(() => (
-                <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                </svg>
-              ))}
-            </div>
-
-            <blockquote class="text-gray-700 mb-6 leading-relaxed text-base italic">
-              "{t.quote}"
-            </blockquote>
-
-            <div class="flex items-center">
-              <div class="relative mr-4">
-                <img src={t.avatar} alt={t.name} class="w-12 h-12 rounded-full object-cover ring-2 ring-primary-100" loading="lazy" width="48" height="48"/>
-                <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
-              </div>
-              <div>
-                <div class="font-bold text-gray-900">{t.name}</div>
-                <div class="text-sm text-gray-500">{t.role}, <span class="text-primary-600 font-medium">{t.company}</span></div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-  )}
-
-  <!-- ========================================
-       CTA BANNER
-       ======================================== -->
-  <section class="py-24 relative overflow-hidden">
-    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg, #2563eb, #0ea5e9, #06b6d4, #2563eb); background-size: 300% 300%;"></div>
-    <!-- Animated shapes -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-20 -left-20 w-80 h-80 bg-white/5 rounded-full"></div>
-      <div class="absolute -bottom-20 -right-20 w-96 h-96 bg-white/5 rounded-full"></div>
-      <div class="absolute top-1/2 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-float"></div>
-      <div class="absolute top-1/3 right-1/4 w-3 h-3 bg-white/30 rounded-full animate-float" style="animation-delay:1s;"></div>
-      <div class="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white/40 rounded-full animate-float" style="animation-delay:2s;"></div>
-    </div>
-
-    <div class="container-custom relative z-10 text-center reveal">
-      <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 text-white/90 text-sm font-semibold rounded-full border border-white/20 mb-6">
-        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-        Currently accepting new projects
-      </span>
-      <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-        Ready to bring your<br>idea to life?
-      </h2>
-      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-        Let's collaborate to build something extraordinary.<br>Schedule a free consultation today — no commitment required.
-      </p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/contact" class="group inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:bg-gray-50 transition-[background-color,box-shadow,transform] duration-300 shadow-2xl hover:shadow-white/25 hover:-translate-y-1 text-lg shine-hover">
-          Let's Talk
-          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-          </svg>
-        </a>
-        <a href="/portfolio" class="inline-flex items-center justify-center px-10 py-4 border-2 border-white/40 text-white font-bold rounded-xl hover:bg-white/10 hover:border-white/70 transition-[background-color,border-color] duration-300 text-lg">
-          View Portfolio
-        </a>
+  <section class="home-final-cta" aria-labelledby="home-final-cta-title">
+    <div class="home-final-cta__grid" aria-hidden="true"></div>
+    <div class="home-container home-final-cta__content">
+      <p>Start with the question that is holding your product back.</p>
+      <h2 id="home-final-cta-title">Build the next useful version with a team that sees the whole system.</h2>
+      <p class="home-final-cta__summary">Tell us what needs to change. We will help clarify a practical route from the first decision to the first release.</p>
+      <div class="home-final-cta__actions">
+        <a href="/contact" class="home-final-cta__primary">Start a conversation <span aria-hidden="true">→</span></a>
+        <a href="/portfolio" class="home-final-cta__secondary">Explore product work <span aria-hidden="true">↗</span></a>
       </div>
     </div>
   </section>
@@ -617,36 +521,61 @@ const showTestimonials = false;
 
   @keyframes hero-path-drift { to { stroke-dashoffset: -44; } }
 
-  @keyframes trustTicker {
-    from { transform: translateX(-50%); }
-    to { transform: translateX(0); }
-  }
-  .animate-trust-ticker {
-    animation: trustTicker 22s linear infinite;
-  }
+  .home-container { width: min(100% - 2rem, var(--container-wide)); margin-inline: auto; }
+  .home-section { position: relative; padding: clamp(4.5rem, 9vw, 8rem) 0; }
+  .home-kicker { margin: 0 0 var(--space-3); color: var(--color-accent); font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; }
 
-  /* Rotating text animation */
-  @keyframes textFade {
-    0%, 18% { opacity: 1; transform: translateY(0); }
-    22%, 96% { opacity: 0; transform: translateY(-20px); }
-    100% { opacity: 0; }
-  }
+  .home-trust { border-block: 1px solid var(--color-border); background: var(--color-surface-inverse); color: var(--color-text-inverse); }
+  .home-trust__layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; padding-block: var(--space-10); }
+  .home-trust .home-kicker { color: #99f6e4; }
+  .home-trust h2 { max-width: 25rem; margin: 0; font-size: clamp(1.65rem, 3vw, 2.5rem); letter-spacing: -0.04em; line-height: 1.08; }
+  .home-trust__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); padding: 0; margin: 0; list-style: none; }
+  .home-trust__list li { min-height: 100%; padding: var(--space-4); border: 1px solid rgb(255 255 255 / 0.14); border-radius: var(--radius-md); color: rgb(248 250 252 / 0.86); font-size: var(--text-sm); line-height: 1.5; }
+  .home-trust__list li::before { display: inline-block; width: 0.45rem; height: 0.45rem; margin-right: var(--space-2); border-radius: 50%; content: ''; background: #5eead4; box-shadow: 0 0 0 4px rgb(94 234 212 / 0.1); vertical-align: middle; }
 
-  /* Spotlight glow effect for cards */
-  .glow-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(280px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(37, 99, 235, 0.07), transparent 45%);
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: inherit;
-  }
-  .glow-card:hover::after {
-    opacity: 1;
-  }
+  .home-services { background: var(--color-surface); }
+  .home-services__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); margin-top: clamp(2.5rem, 5vw, 4.5rem); }
+
+  .home-work { background: var(--color-surface-subtle); }
+  .home-work__heading, .home-insights__heading { display: flex; justify-content: space-between; align-items: end; gap: var(--space-6); }
+  .home-work__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); margin-top: clamp(2.5rem, 5vw, 4.5rem); }
+
+  .home-process { background: var(--color-surface); }
+  .home-process__layout { display: grid; grid-template-columns: minmax(16rem, 0.72fr) minmax(0, 1fr); gap: clamp(3rem, 8vw, 9rem); align-items: start; }
+  .home-process__list { display: grid; gap: var(--space-6); padding: 0; margin: 0; list-style: none; }
+
+  .home-technology { background: linear-gradient(140deg, #f8fafc 0%, #ecfdf5 100%); }
+  .home-technology__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(2.5rem, 5vw, 4.5rem); border: 1px solid var(--color-border); border-bottom: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: rgb(255 255 255 / 0.76); overflow: hidden; }
+  .home-technology__grid > :global(section) { border-top: 0; border-right: 1px solid var(--color-border); }
+  .home-technology__grid > :global(section):nth-child(3n) { border-right: 0; }
+
+  .home-principles { background: var(--color-surface-inverse); color: var(--color-text-inverse); }
+  .home-principles__layout { display: grid; grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr); gap: clamp(3rem, 9vw, 10rem); }
+  .home-principles :global(.home-section-heading__eyebrow) { color: #99f6e4; }
+  .home-principles :global(.home-section-heading h2) { color: var(--color-text-inverse); }
+  .home-principles :global(.home-section-heading__description) { color: rgb(248 250 252 / 0.72); }
+  .home-principles__list { display: grid; gap: 0; padding: 0; margin: 0; }
+  .home-principles__list > div { padding: var(--space-5) 0; border-top: 1px solid rgb(255 255 255 / 0.16); }
+  .home-principles__list > div:last-child { border-bottom: 1px solid rgb(255 255 255 / 0.16); }
+  .home-principles dt { display: flex; gap: var(--space-4); align-items: baseline; color: var(--color-text-inverse); font-size: var(--text-xl); font-weight: var(--weight-bold); }
+  .home-principles dt span { color: #5eead4; font-family: var(--font-mono); font-size: var(--text-xs); }
+  .home-principles dd { max-width: 39rem; margin: var(--space-2) 0 0 2.2rem; color: rgb(248 250 252 / 0.7); font-size: var(--text-sm); line-height: 1.65; }
+
+  .home-insights { background: var(--color-surface); }
+  .home-insights__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); margin-top: clamp(2.5rem, 5vw, 4.5rem); }
+
+  .home-final-cta { position: relative; padding: clamp(5rem, 10vw, 9rem) 0; overflow: hidden; background: linear-gradient(135deg, #0f172a 0%, #164e63 100%); color: var(--color-text-inverse); }
+  .home-final-cta__grid { position: absolute; inset: 0; opacity: 0.28; background-image: linear-gradient(rgb(255 255 255 / 0.13) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.13) 1px, transparent 1px); background-size: 2.75rem 2.75rem; mask-image: linear-gradient(to right, transparent, black 42%, black 65%, transparent); }
+  .home-final-cta__content { position: relative; max-width: 55rem; text-align: center; }
+  .home-final-cta__content > p:first-child { margin: 0; color: #99f6e4; font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; }
+  .home-final-cta h2 { max-width: 14ch; margin: var(--space-5) auto 0; color: var(--color-text-inverse); font-size: clamp(2.5rem, 5.5vw, 5rem); font-weight: var(--weight-extrabold); letter-spacing: -0.055em; line-height: 1; }
+  .home-final-cta__summary { max-width: 40rem; margin: var(--space-6) auto 0; color: rgb(248 250 252 / 0.78); font-size: var(--text-lg); line-height: 1.65; }
+  .home-final-cta__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-4); margin-top: var(--space-8); }
+  .home-final-cta__primary, .home-final-cta__secondary { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 3rem; padding: 0 var(--space-5); border-radius: var(--radius-md); font-weight: var(--weight-semibold); text-decoration: none; }
+  .home-final-cta__primary { background: #fff; color: #0f172a; }
+  .home-final-cta__secondary { border: 1px solid rgb(255 255 255 / 0.42); color: var(--color-text-inverse); }
+  .home-final-cta__primary:hover, .home-final-cta__primary:focus-visible { background: #ccfbf1; }
+  .home-final-cta__secondary:hover, .home-final-cta__secondary:focus-visible { border-color: #fff; background: rgb(255 255 255 / 0.1); }
 
   @media (max-width: 900px) {
     .homepage-hero { min-height: auto; }
@@ -654,6 +583,11 @@ const showTestimonials = false;
     .homepage-hero__content { max-width: 40rem; }
     .homepage-hero h1 { max-width: 12ch; }
     .homepage-hero__visual { width: min(100%, 39rem); }
+    .home-trust__layout, .home-process__layout, .home-principles__layout { grid-template-columns: 1fr; }
+    .home-process__layout, .home-principles__layout { gap: var(--space-10); }
+    .home-technology__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .home-technology__grid > :global(section):nth-child(3n) { border-right: 1px solid var(--color-border); }
+    .home-technology__grid > :global(section):nth-child(2n) { border-right: 0; }
   }
 
   @media (max-width: 480px) {
@@ -670,11 +604,19 @@ const showTestimonials = false;
     .homepage-hero__node--mobile { top: 7%; right: 4%; }
     .homepage-hero__node--cloud { bottom: 7%; left: 4%; }
     .homepage-hero__node--ai { right: 4%; bottom: 7%; }
+    .home-section { padding-block: var(--space-16); }
+    .home-trust__layout { padding-block: var(--space-8); }
+    .home-trust__list, .home-services__grid, .home-work__grid, .home-insights__grid, .home-technology__grid { grid-template-columns: 1fr; }
+    .home-work__heading, .home-insights__heading { display: grid; align-items: start; }
+    .home-technology__grid > :global(section) { border-right: 0; }
+    .home-final-cta__actions { align-items: stretch; }
+    .home-final-cta__primary, .home-final-cta__secondary { width: 100%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .homepage-hero__network { display: none; }
     .homepage-hero__paths path { animation: none; }
+    .homepage-hero::after { transition: none; }
   }
 </style>
 
@@ -835,23 +777,7 @@ const showTestimonials = false;
     });
   }
 
-  function setupCardGlow() {
-    if (prefersReducedMotion) return;
-
-    document.querySelectorAll<HTMLElement>('.glow-card').forEach((card) => {
-      const updateCardGlow = (event: MouseEvent) => {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty('--mouse-x', `${event.clientX - rect.left}px`);
-        card.style.setProperty('--mouse-y', `${event.clientY - rect.top}px`);
-      };
-
-      card.addEventListener('mousemove', updateCardGlow, { passive: true });
-      addCleanup(() => card.removeEventListener('mousemove', updateCardGlow));
-    });
-  }
-
   setupNetworkCanvas();
-  setupCardGlow();
 
   window.addEventListener('pagehide', cleanupPage, { once: true });
   document.addEventListener('astro:before-swap', cleanupPage, { once: true });
