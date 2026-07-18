@@ -6,7 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Contact TechMigos for a Project"
-  description="Get in touch with TechMigos. Schedule a free consultation and let's build something extraordinary together."
+  description="Contact TechMigos about a project, partnership, or product question using the form, email, phone, or WhatsApp."
 >
   <!-- HERO -->
   <section class="pt-36 pb-16 relative overflow-hidden">
@@ -150,28 +150,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               title: 'Email Us',
               value: 'info@techmigos.com',
               href: 'mailto:info@techmigos.com',
-              sub: 'We reply within 24 hours',
+              sub: 'Project and partnership enquiries',
             },
             {
               icon: '📞',
               title: 'WhatsApp Us',
               value: '+919959703547',
               href: 'tel:+919959703547',
-              sub: 'Mon–Fri, 9AM–6PM IST',
+              sub: 'Use the number listed above',
             },
             {
               icon: '📍',
               title: 'Visit Us',
               value: 'Hyderabad, Telangana, India, 500079',
               href: 'https://www.google.com/maps/search/?api=1&query=Hyderabad%2C%20Telangana%2C%20India%20500079',
-              sub: 'India Office',
+              sub: 'Hyderabad, Telangana, India',
             },
             {
-              icon: '🕐',
-              title: 'Office Hours',
-              value: 'Mon–Fri: 9AM – 6PM IST',
+              icon: '💬',
+              title: 'How to reach us',
+              value: 'Email, phone, or WhatsApp',
               href: 'mailto:info@techmigos.com',
-              sub: 'Weekend: By appointment',
+              sub: 'Choose the channel that works for you',
             },
           ].map((item, i) => (
             <a
@@ -275,7 +275,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     try {
       const formData = new FormData(form);
       if (String(formData.get('company_website') || '').trim()) {
-        showToast("Message sent! We'll be in touch within 24 hours.", 'success');
+        showToast('Message received. We will use the details you provided to follow up.', 'success');
         form.reset();
         return;
       }
@@ -301,7 +301,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         throw new Error(error.message || 'Request failed.');
       }
 
-      showToast("Message sent! We'll be in touch within 24 hours.", 'success');
+      showToast('Message received. We will use the details you provided to follow up.', 'success');
       form.reset();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Something went wrong. Please email us directly.';

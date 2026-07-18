@@ -9,11 +9,10 @@ function entrySlug(entry: { id: string }) {
   return entry.id;
 }
 
-const perks = [
-  { marker: '01', title: 'Remote-First', description: 'Work from anywhere in the world. We trust you to do your best work wherever you thrive.' },
-  { marker: '02', title: 'Equity for All', description: 'Every team member gets equity so you share in the success you help create.' },
-  { marker: '03', title: 'Flexible Hours', description: 'We care about results, not rigid schedules. Own your time and your output.' },
-  { marker: '04', title: 'Team Retreats', description: 'Annual all-hands retreats where the whole team gets together IRL to connect and celebrate.' },
+const roleGuidance = [
+  { marker: '01', title: 'Clear role scope', description: 'Each published opening outlines the responsibilities, requirements, location, and employment type for that role.' },
+  { marker: '02', title: 'Relevant applications', description: 'Use the role page to review the work before sharing a CV or portfolio with the hiring team.' },
+  { marker: '03', title: 'Direct communication', description: 'Questions about a listed position can be sent to the careers contact shown on this page.' },
 ];
 
 const departments = ['All', ...new Set(allJobs.map(job => job.data.department))];
@@ -21,7 +20,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
 
 <BaseLayout
   title="Software Careers at TechMigos"
-  description="Join TechMigos. We're building world-class software with a remote-first, diverse team that cares about craft, culture, and impact."
+  description="Explore current TechMigos career opportunities, including role responsibilities, requirements, and application details."
 >
   <!-- HERO -->
   <section class="pt-36 pb-20 relative overflow-hidden">
@@ -34,23 +33,23 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
     <div class="container-custom relative z-10 text-center">
       <div class="reveal">
         <span class="section-eyebrow" style="color:#a5b4fc; background:rgba(165,180,252,0.1); border-color:rgba(165,180,252,0.2);">
-          We're Hiring
+          Careers
         </span>
       </div>
       <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-white mb-6 leading-tight">
-        Join the Migos.<br>
+        Explore open roles.<br>
         <span style="-webkit-background-clip:text;-webkit-text-fill-color:transparent;background:linear-gradient(135deg,#a5b4fc,#67e8f9);background-clip:text;">
-          Build the Future.
+          Build with purpose.
         </span>
       </h1>
       <p class="reveal stagger-2 text-xl text-indigo-200 max-w-2xl mx-auto mb-10">
-        Work with world-class engineers, designers, and strategists on products used by millions. A culture that puts people first.
+        Review the currently published opportunities and the work each role is expected to contribute.
       </p>
       <div class="reveal stagger-3 flex flex-wrap justify-center gap-3 text-white/90">
         {[
-          'Remote-First Team',
-          'Global Client Delivery',
-          'Career Growth Focused',
+          'Current openings',
+          'Role details',
+          'Apply by email',
         ].map(s => (
           <span class="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-sm font-semibold">
             {s}
@@ -60,19 +59,19 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
     </div>
   </section>
 
-  <!-- PERKS SECTION -->
+  <!-- APPLICATION GUIDANCE -->
   <section class="section-padding bg-white">
     <div class="container-custom">
       <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Why TechMigos</span>
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">Life at TechMigos</h2>
+        <span class="section-eyebrow">Application guidance</span>
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">What to expect from this page</h2>
         <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          We're building more than a company — a culture where great people do the best work of their careers.
+          This page is the source of truth for currently published positions and how to apply for them.
         </p>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {perks.map((perk, i) => (
+        {roleGuidance.map((perk, i) => (
           <div class={`glow-card bg-white rounded-2xl p-7 border border-gray-100 group stagger-${i + 1} reveal`}>
             <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-sm font-black tracking-[0.2em] text-primary-700 mb-4 group-hover:scale-110 transition-transform duration-300">{perk.marker}</div>
             <h3 class="text-lg font-bold text-gray-900 mb-2">{perk.title}</h3>
@@ -146,7 +145,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
         <div class="text-center py-20 reveal">
           <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 text-sm font-black uppercase tracking-[0.22em] text-primary-700 mb-6">Open</div>
           <h3 class="text-2xl font-bold text-gray-900 mb-3">No open positions right now</h3>
-          <p class="text-gray-500 text-lg mb-8 max-w-md mx-auto">We're growing! Send us your CV anyway — we'd love to meet talented people.</p>
+          <p class="text-gray-500 text-lg mb-8 max-w-md mx-auto">There are no published openings at the moment. You may still share your CV for future consideration.</p>
           <a href="mailto:careers@techmigos.com" class="btn-primary shine-hover">
             Send Your CV
           </a>
@@ -159,9 +158,9 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
   <section class="py-24 relative overflow-hidden">
     <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#2563eb,#0ea5e9,#06b6d4,#2563eb); background-size:300% 300%;"></div>
     <div class="container-custom relative z-10 text-center reveal">
-      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Don't see the perfect role?</h2>
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">No listed role matches?</h2>
       <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-        We're always interested in meeting talented people. Tell us how you'd like to contribute.
+        Send a concise note and relevant work samples to the careers inbox for future consideration.
       </p>
       <a href="mailto:careers@techmigos.com" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
         Get in Touch

@@ -1,6 +1,6 @@
 {
-  "installCommand": "bun install --frozen-lockfile",
-  "buildCommand": "bun run build:vercel",
+  "installCommand": "curl -fsSL https://bun.sh/install | bash -s bun-v1.3.14 && ~/.bun/bin/bun install --frozen-lockfile",
+  "buildCommand": "~/.bun/bin/bun run build:vercel",
   "outputDirectory": "dist",
   "framework": "astro",
   "env": {

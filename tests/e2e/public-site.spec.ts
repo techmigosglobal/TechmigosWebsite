@@ -3,6 +3,10 @@ import AxeBuilder from '@axe-core/playwright';
 
 const publicRoutes = ['/', '/services', '/services/web', '/portfolio', '/portfolio/focus-today', '/about', '/blog', '/contact', '/careers', '/privacy', '/terms'];
 
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+});
+
 for (const route of publicRoutes) {
   test(`${route} renders a complete public document`, async ({ page }) => {
     await page.goto(route);
