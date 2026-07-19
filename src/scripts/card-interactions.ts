@@ -1,11 +1,10 @@
 /**
  * card-interactions.ts
- * Service card spotlight, tilt, project card depth, and hero button magnetic.
+ * Service card spotlight + lift, project card depth, hero button magnetic.
  *
- * All tilt/spotlight effects guarded to fine-pointer desktop only.
- * 3D tilt disabled on touch devices entirely.
- * Keyboard-focus equivalent spotlight for accessibility.
- * Full cleanup on Astro page teardown.
+ * ⚠️  NO 3D TRANSFORMS on cards — rotateY/rotateX with preserve-3d causes
+ *     cards to go blank as the face rotates away from the viewer.
+ *     Instead: scale + subtle Y-translate gives a "lift" feel.
  */
 
 import { gsap } from 'gsap';
@@ -16,67 +15,61 @@ const isFinePointer = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 /**
- * Service card pointer-following spotlight + subtle tilt.
- * Max 3 degrees of rotation.
+ * Service card pointer-following spotlight + lift.
+ * NO rotateY/rotateX — uses scale + translateY instead.
  */
 function initServiceCardInteractions(): void {
-  if (!isFinePointer() || prefersReducedMotion()) return;
+  if (!isFinePointer()) return;
 
   const cards = document.querySelectorAll<HTMLElement>('[data-service-card]');
 
   for (const card of cards) {
+    const spotlight = card.querySelector<HTMLElement>('.home-service-card__spotlight');
+
     const onEnter = () => {
-      gsap.to(card, { '--spotlight-opacity': 1, duration: 0.3 });
+      gsap.to(card, {
+        y: -6,
+        scale: 1.015,
+        duration: 0.35,
+        ease: 'power2.out',
+      });
+      if (spotlight) {
+        gsap.to(spotlight, { opacity: 1, duration: 0.3 });
+      }
     };
 
     const onMove = (e: PointerEvent) => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const nx = (x - cx) / cx; // -1 to 1
-      const ny = (y - cy) / cy;
 
-      // Spotlight position
+      // Spotlight tracks the pointer
       card.style.setProperty('--spotlight-x', `${(x / rect.width) * 100}%`);
       card.style.setProperty('--spotlight-y', `${(y / rect.height) * 100}%`);
-
-      // Tilt — max 3 degrees
-      gsap.to(card, {
-        rotateY: nx * 3,
-        rotateX: -ny * 2.5,
-        duration: 0.35,
-        ease: 'power2.out',
-        transformOrigin: 'center center',
-        transformPerspective: 800,
-      });
     };
 
     const onLeave = () => {
       gsap.to(card, {
-        rotateY: 0,
-        rotateX: 0,
-        '--spotlight-opacity': 0,
+        y: 0,
+        scale: 1,
         duration: 0.5,
-        ease: 'power2.out',
+        ease: 'power3.out',
       });
+      if (spotlight) {
+        gsap.to(spotlight, { opacity: 0, duration: 0.4 });
+      }
     };
 
-    // Focus equivalent — highlight without tilt
+    // Focus equivalent — spotlight without lift
     const onFocus = () => {
-      card.style.setProperty('--spotlight-opacity', '1');
       card.style.setProperty('--spotlight-x', '50%');
       card.style.setProperty('--spotlight-y', '50%');
+      if (spotlight) gsap.to(spotlight, { opacity: 1, duration: 0.3 });
     };
 
     const onBlur = () => {
-      card.style.setProperty('--spotlight-opacity', '0');
+      if (spotlight) gsap.to(spotlight, { opacity: 0, duration: 0.3 });
     };
 
     card.addEventListener('pointerenter', onEnter, { passive: true });
@@ -92,17 +85,17 @@ function initServiceCardInteractions(): void {
       card.removeEventListener('focusin', onFocus);
       card.removeEventListener('focusout', onBlur);
       gsap.killTweensOf(card);
-      gsap.set(card, { rotateX: 0, rotateY: 0 });
+      if (spotlight) gsap.killTweensOf(spotlight);
+      gsap.set(card, { y: 0, scale: 1 });
     });
   }
 }
 
 /**
  * Project card image subtle parallax on hover.
- * No 3D tilt on project cards — just depth on the image.
  */
 function initProjectCardInteractions(): void {
-  if (!isFinePointer() || prefersReducedMotion()) return;
+  if (!isFinePointer()) return;
 
   const cards = document.querySelectorAll<HTMLElement>('[data-work-card]');
 
@@ -116,9 +109,9 @@ function initProjectCardInteractions(): void {
       const ny = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
 
       gsap.to(img, {
-        x: nx * 5,
-        y: ny * 4,
-        scale: 1.04,
+        x: nx * 6,
+        y: ny * 5,
+        scale: 1.05,
         duration: 0.5,
         ease: 'power2.out',
       });
@@ -141,7 +134,7 @@ function initProjectCardInteractions(): void {
 }
 
 /**
- * Hero button animated arrow movement on hover.
+ * Hero button animated arrow on hover.
  */
 function initHeroButtonInteractions(): void {
   const buttons = document.querySelectorAll<HTMLElement>('.homepage-hero__primary-action');
@@ -151,7 +144,7 @@ function initHeroButtonInteractions(): void {
     if (!arrow) continue;
 
     const onEnter = () => {
-      gsap.to(arrow, { x: 3, duration: 0.25, ease: 'power2.out' });
+      gsap.to(arrow, { x: 4, duration: 0.25, ease: 'power2.out' });
     };
     const onLeave = () => {
       gsap.to(arrow, { x: 0, duration: 0.3, ease: 'power2.out' });
@@ -170,10 +163,10 @@ function initHeroButtonInteractions(): void {
 }
 
 /**
- * Technology group connection-line glow on hover.
+ * Technology group tag stagger glow on hover.
  */
 function initTechGroupInteractions(): void {
-  if (!isFinePointer() || prefersReducedMotion()) return;
+  if (!isFinePointer()) return;
 
   const groups = document.querySelectorAll<HTMLElement>('[data-tech-group]');
 
@@ -197,9 +190,6 @@ function initTechGroupInteractions(): void {
   }
 }
 
-/**
- * Initialise all card micro-interactions.
- */
 export function initCardInteractions(): void {
   initServiceCardInteractions();
   initProjectCardInteractions();
@@ -207,9 +197,6 @@ export function initCardInteractions(): void {
   initTechGroupInteractions();
 }
 
-/**
- * Destroy all card interactions — call on Astro page teardown.
- */
 export function destroyCardInteractions(): void {
   for (const cleanup of cleanups) cleanup();
   cleanups.length = 0;

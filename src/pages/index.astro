@@ -315,15 +315,22 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
 <style>
   .homepage-hero {
-    --hero-border: rgb(148 163 184 / 0.25);
-    --hero-grid: rgb(15 118 110 / 0.09);
+    --hero-border: rgb(255 255 255 / 0.12);
+    --hero-grid: rgb(255 255 255 / 0.06);
+    --hero-x: 50%;
+    --hero-y: 50%;
     position: relative;
     display: grid;
     align-items: center;
     min-height: min(54rem, 100svh);
     padding: clamp(7.5rem, 12vw, 10rem) 0 clamp(4rem, 8vw, 7rem);
     overflow: clip;
-    background: linear-gradient(135deg, #f8fafc 0%, #fff 45%, #ecfdf5 100%);
+    /* Deep cinematic dark: navy → teal-dark → near-black */
+    background:
+      radial-gradient(ellipse 80% 60% at 60% 40%, rgb(13 148 136 / 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 70% at 5% 60%, rgb(37 99 235 / 0.14) 0%, transparent 50%),
+      linear-gradient(160deg, #070d1a 0%, #0a1628 40%, #06111f 70%, #04090f 100%);
+    color: #f1f5f9;
   }
 
   .homepage-hero__grid,
@@ -334,13 +341,29 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
   }
 
   .homepage-hero__grid {
-    opacity: 0.9;
+    opacity: 1;
     background-image: linear-gradient(var(--hero-grid) 1px, transparent 1px), linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
     background-size: 2.75rem 2.75rem;
-    mask-image: linear-gradient(to bottom, black, transparent 86%);
+    mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
   }
 
-  .homepage-hero__network { opacity: 0.52; }
+  /* Atmospheric pointer-tracking glow */
+  .homepage-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      45rem circle at var(--hero-x) var(--hero-y),
+      rgb(13 148 136 / 0.12),
+      transparent 65%
+    );
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .homepage-hero.is-interactive::after { opacity: 1; }
+
+  .homepage-hero__network { opacity: 0.9; }
 
   .homepage-hero__container {
     position: relative;
@@ -360,7 +383,7 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     align-items: center;
     gap: var(--space-2);
     margin: 0 0 var(--space-5);
-    color: var(--color-accent);
+    color: #5eead4;
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     letter-spacing: 0.08em;
@@ -377,7 +400,11 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
   .homepage-hero h1 {
     max-width: 11ch;
     margin: 0;
-    color: var(--color-text-primary);
+    /* Gradient text: white → teal */
+    background: linear-gradient(145deg, #ffffff 0%, #e2f8f5 55%, #99f6e4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-size: clamp(3rem, 5.6vw, 5.5rem);
     font-weight: var(--weight-extrabold);
     letter-spacing: -0.055em;
@@ -387,7 +414,7 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
   .homepage-hero__summary {
     max-width: 39rem;
     margin: var(--space-6) 0 0;
-    color: var(--color-text-secondary);
+    color: rgb(203 213 225 / 0.85);
     font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
     line-height: 1.65;
   }
@@ -402,11 +429,15 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
   .homepage-hero__primary-action { gap: var(--space-3); padding-inline: var(--space-6); }
   .homepage-hero__primary-action svg { width: 1.25rem; height: 1.25rem; }
-  .homepage-hero__secondary-action { padding-inline: var(--space-1); }
+  .homepage-hero__secondary-action {
+    padding-inline: var(--space-1);
+    color: rgb(148 163 184);
+  }
+  .homepage-hero__secondary-action:hover { color: #fff; }
 
   .homepage-hero__assurance {
     margin: var(--space-6) 0 0;
-    color: var(--color-text-muted);
+    color: rgb(100 116 139 / 0.9);
     font-size: var(--text-sm);
   }
 
@@ -414,21 +445,22 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     position: relative;
     min-width: 0;
     padding: clamp(1rem, 2.5vw, 1.5rem);
-    border: 1px solid var(--hero-border);
+    border: 1px solid rgb(255 255 255 / 0.1);
     border-radius: var(--radius-xl);
-    background: rgb(255 255 255 / 0.68);
-    box-shadow: 0 28px 70px rgb(15 23 42 / 0.1);
-    backdrop-filter: blur(14px);
+    background: rgb(15 23 42 / 0.7);
+    box-shadow: 0 0 0 1px rgb(13 148 136 / 0.12), 0 28px 70px rgb(0 0 0 / 0.45);
+    backdrop-filter: blur(20px);
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .homepage-hero__visual::before {
     position: absolute;
     z-index: -1;
-    inset: 12% -9% -10% 8%;
+    inset: 8% -12% -12% 5%;
     border-radius: 50%;
     content: '';
-    background: radial-gradient(circle, rgb(13 148 136 / 0.2), transparent 69%);
-    filter: blur(14px);
+    background: radial-gradient(circle, rgb(13 148 136 / 0.35), transparent 65%);
+    filter: blur(24px);
   }
 
   .homepage-hero__visual-header,
@@ -437,24 +469,24 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    color: var(--color-text-muted);
+    color: rgb(148 163 184 / 0.8);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
-  .homepage-hero__status { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-accent); }
+  .homepage-hero__status { display: inline-flex; align-items: center; gap: var(--space-2); color: #4ade80; }
   .homepage-hero__status i,
-  .homepage-hero__visual-caption span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgb(34 197 94 / 0.12); }
+  .homepage-hero__visual-caption span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgb(34 197 94 / 0.2); }
 
   .homepage-hero__map {
     position: relative;
     min-height: clamp(21rem, 32vw, 27rem);
     margin: var(--space-3) 0;
-    border: 1px solid rgb(226 232 240 / 0.85);
+    border: 1px solid rgb(255 255 255 / 0.07);
     border-radius: calc(var(--radius-xl) - 0.25rem);
-    background: linear-gradient(145deg, rgb(248 250 252 / 0.84), rgb(255 255 255 / 0.96));
+    background: linear-gradient(145deg, rgb(10 18 35 / 0.9), rgb(7 14 28 / 0.95));
     overflow: hidden;
   }
 
@@ -462,14 +494,14 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     position: absolute;
     inset: 0;
     content: '';
-    opacity: 0.72;
-    background-image: radial-gradient(rgb(15 118 110 / 0.18) 0.75px, transparent 0.75px);
+    opacity: 0.5;
+    background-image: radial-gradient(rgb(13 148 136 / 0.35) 0.75px, transparent 0.75px);
     background-size: 0.8rem 0.8rem;
     mask-image: radial-gradient(circle at center, black, transparent 73%);
   }
 
   .homepage-hero__paths { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .homepage-hero__paths path { fill: none; stroke: rgb(15 118 110 / 0.38); stroke-width: 1.25; stroke-dasharray: 5 6; animation: hero-path-drift 8s linear infinite; }
+  .homepage-hero__paths path { fill: none; stroke: rgb(20 184 166 / 0.45); stroke-width: 1.25; stroke-dasharray: 5 6; animation: hero-path-drift 8s linear infinite; }
 
   .homepage-hero__core {
     position: absolute;
@@ -479,10 +511,13 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     place-items: center;
     width: clamp(6.3rem, 11vw, 8rem);
     aspect-ratio: 1;
-    border: 1px solid rgb(15 118 110 / 0.35);
+    border: 1px solid rgb(20 184 166 / 0.6);
     border-radius: 50%;
-    background: linear-gradient(145deg, #0f766e, #164e63);
-    box-shadow: 0 0 0 0.7rem rgb(13 148 136 / 0.08), 0 20px 42px rgb(15 118 110 / 0.26);
+    background: linear-gradient(145deg, #0d9488, #0e7490);
+    box-shadow:
+      0 0 0 0.7rem rgb(13 148 136 / 0.15),
+      0 0 0 1.4rem rgb(13 148 136 / 0.06),
+      0 20px 60px rgb(13 148 136 / 0.5);
     color: #fff;
     text-align: center;
     transform: translate(-50%, -50%);
@@ -497,15 +532,16 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     gap: 0.18rem;
     width: min(10.3rem, 34%);
     padding: 0.85rem 0.9rem;
-    border: 1px solid rgb(203 213 225 / 0.95);
+    border: 1px solid rgb(255 255 255 / 0.08);
     border-radius: var(--radius-md);
-    background: rgb(255 255 255 / 0.93);
-    box-shadow: var(--shadow-sm);
+    background: rgb(15 23 42 / 0.8);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(13 148 136 / 0.1);
+    backdrop-filter: blur(12px);
   }
 
-  .homepage-hero__node > span { color: var(--color-accent); font-family: var(--font-mono); font-size: 0.625rem; font-weight: var(--weight-bold); }
-  .homepage-hero__node strong { color: var(--color-text-primary); font-size: var(--text-sm); }
-  .homepage-hero__node small { color: var(--color-text-muted); font-size: 0.67rem; line-height: 1.35; }
+  .homepage-hero__node > span { color: #5eead4; font-family: var(--font-mono); font-size: 0.625rem; font-weight: var(--weight-bold); }
+  .homepage-hero__node strong { color: #f1f5f9; font-size: var(--text-sm); }
+  .homepage-hero__node small { color: rgb(148 163 184 / 0.8); font-size: 0.67rem; line-height: 1.35; }
   .homepage-hero__node--web { top: 10%; left: 7%; }
   .homepage-hero__node--mobile { top: 10%; right: 7%; }
   .homepage-hero__node--cloud { bottom: 10%; left: 7%; }
@@ -513,19 +549,6 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
   .homepage-hero__visual-caption { justify-content: flex-start; }
 
-  /* Atmospheric depth glow responds to pointer */
-  .homepage-hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0;
-    background: radial-gradient(38rem circle at var(--hero-x, 50%) var(--hero-y, 35%), rgba(13, 148, 136, 0.18), rgba(37, 99, 235, 0.06) 60%, transparent 75%);
-    transition: opacity 350ms ease;
-    z-index: 0;
-  }
-
-  .homepage-hero.is-interactive::after { opacity: 1; }
 
   /* Orbital ring on the core */
   @keyframes hero-core-orbit {
@@ -784,10 +807,10 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     if (!context) return;
 
     // Reduced particle count for quality > quantity
-    const PARTICLE_COUNT = 32;
-    const CONNECTION_DISTANCE = 120;
-    const MOUSE_INFLUENCE = 160;
-    const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number; opacity: number }> = [];
+    const PARTICLE_COUNT = 48;
+    const CONNECTION_DISTANCE = 140;
+    const MOUSE_INFLUENCE = 180;
+    const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number; opacity: number; baseVx: number; baseVy: number }> = [];
     let animationFrameId: number | undefined;
     let width = 0;
     let height = 0;
@@ -802,13 +825,17 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
       if (particles.length === 0) {
         for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const vx = (Math.random() - 0.5) * 0.45;
+          const vy = (Math.random() - 0.5) * 0.45;
           particles.push({
             x: Math.random() * width,
             y: Math.random() * height,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4,
-            r: Math.random() * 1.5 + 0.8,
-            opacity: Math.random() * 0.5 + 0.3,
+            vx,
+            vy,
+            baseVx: vx,
+            baseVy: vy,
+            r: Math.random() * 2 + 1,
+            opacity: Math.random() * 0.35 + 0.6,
           });
         }
         return;
@@ -840,21 +867,37 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
         p.x = Math.max(0, Math.min(width, p.x));
         p.y = Math.max(0, Math.min(height, p.y));
 
-        // Mouse subtle attraction
+        // Mouse repulsion — particles scatter away from cursor
         if (mouse.x > 0) {
-          const dx = mouse.x - p.x;
-          const dy = mouse.y - p.y;
+          const dx = p.x - mouse.x;
+          const dy = p.y - mouse.y;
           const dist = Math.hypot(dx, dy);
-          if (dist < MOUSE_INFLUENCE) {
-            p.x += dx * 0.004;
-            p.y += dy * 0.004;
+          if (dist < MOUSE_INFLUENCE && dist > 0) {
+            const force = (MOUSE_INFLUENCE - dist) / MOUSE_INFLUENCE;
+            p.vx += (dx / dist) * force * 0.5;
+            p.vy += (dy / dist) * force * 0.5;
           }
+          // Dampen back to base velocity
+          p.vx += (p.baseVx - p.vx) * 0.03;
+          p.vy += (p.baseVy - p.vy) * 0.03;
+          // Cap speed
+          const speed = Math.hypot(p.vx, p.vy);
+          if (speed > 2.5) { p.vx = (p.vx / speed) * 2.5; p.vy = (p.vy / speed) * 2.5; }
         }
 
-        // Draw particle
+        // Draw particle with glow
+        const gradient = context.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2.5);
+        gradient.addColorStop(0, `rgba(94, 234, 212, ${p.opacity})`);
+        gradient.addColorStop(1, `rgba(20, 184, 166, 0)`);
+        context.beginPath();
+        context.arc(p.x, p.y, p.r * 2.5, 0, Math.PI * 2);
+        context.fillStyle = gradient;
+        context.fill();
+
+        // Solid core
         context.beginPath();
         context.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        context.fillStyle = `rgba(13, 148, 136, ${p.opacity})`;
+        context.fillStyle = `rgba(167, 243, 208, ${p.opacity})`;
         context.fill();
 
         // Connection lines
@@ -865,10 +908,10 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
           const dy = p.y - q.y;
           const dist = Math.hypot(dx, dy);
           if (dist < CONNECTION_DISTANCE) {
-            const alpha = (1 - dist / CONNECTION_DISTANCE) * 0.22;
+            const alpha = (1 - dist / CONNECTION_DISTANCE) * 0.38;
             context.beginPath();
-            context.lineWidth = (1 - dist / CONNECTION_DISTANCE) * 0.9;
-            context.strokeStyle = `rgba(37, 99, 235, ${alpha})`;
+            context.lineWidth = (1 - dist / CONNECTION_DISTANCE) * 1.2;
+            context.strokeStyle = `rgba(20, 184, 166, ${alpha})`;
             context.moveTo(p.x, p.y);
             context.lineTo(q.x, q.y);
             context.stroke();

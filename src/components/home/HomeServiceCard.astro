@@ -35,35 +35,32 @@ const { icon, title, problem, deliverable, platform, href } = Astro.props;
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    transition:
-      border-color var(--motion-normal) var(--ease-standard),
-      box-shadow var(--motion-normal) var(--ease-standard),
-      transform var(--motion-normal) var(--ease-standard);
-    transform-style: preserve-3d;
+    /* No transform-style: preserve-3d — it causes cards to go blank on rotateY */
     will-change: transform;
     --spotlight-opacity: 0;
     --spotlight-x: 50%;
     --spotlight-y: 50%;
   }
 
-  /* Pointer-following spotlight */
+  /* Pointer-following spotlight — vivid teal */
   .home-service-card__spotlight {
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    opacity: var(--spotlight-opacity);
+    opacity: 0;
     background: radial-gradient(
-      18rem circle at var(--spotlight-x) var(--spotlight-y),
-      rgb(13 148 136 / 0.1),
-      transparent 70%
+      16rem circle at var(--spotlight-x) var(--spotlight-y),
+      rgb(20 184 166 / 0.25),
+      rgb(37 99 235 / 0.08) 50%,
+      transparent 75%
     );
     transition: opacity 0.3s ease;
   }
 
   .home-service-card:hover {
-    border-color: rgb(13 148 136 / 0.45);
-    box-shadow: var(--shadow-card), 0 0 0 1px rgb(13 148 136 / 0.12);
+    border-color: rgb(20 184 166 / 0.5);
+    box-shadow: var(--shadow-card), 0 12px 40px rgb(13 148 136 / 0.15), 0 0 0 1px rgb(20 184 166 / 0.15);
   }
 
   .home-service-card__icon {
