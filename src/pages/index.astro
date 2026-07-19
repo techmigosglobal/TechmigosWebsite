@@ -690,16 +690,8 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* Only hide the canvas — orbital rings and node pulses are gentle CSS and remain */
     .homepage-hero__network { display: none; }
-    .homepage-hero__paths path { animation: none; }
-    .homepage-hero::after { transition: none; }
-    .homepage-hero__core::before,
-    .homepage-hero__core::after { animation: none; }
-    .homepage-hero__node { animation: none; }
-    .home-final-cta__orbit,
-    .home-final-cta__orbit::after { animation: none; }
-    .home-final-cta__primary,
-    .home-final-cta__secondary { transition: none; }
   }
 
   /* Custom cursor styles — activated only when JS sets .custom-cursor-active */
@@ -766,8 +758,11 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
   // ===== PAGE-LEVEL CLEANUP REGISTRY =====
   const pageCleanups: Array<() => void> = [];
+  // Only respect prefers-reduced-motion for heavy GSAP scroll reveals, not for canvas/cursor
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // Canvas is already hidden on mobile via CSS (.homepage-hero__network { display: none })
+  // so no need to guard by viewport here
   const isMobileViewport = window.matchMedia('(max-width: 767px)').matches;
 
   function cleanupPage() {
@@ -776,9 +771,10 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
     }
   }
 
-  // ===== HERO NETWORK CANVAS (upgraded) =====
+  // ===== HERO NETWORK CANVAS =====
   function setupNetworkCanvas() {
-    if (prefersReducedMotion || isMobileViewport) return;
+    // Only skip canvas on mobile — reduced motion does NOT disable canvas
+    if (isMobileViewport) return;
 
     const canvas = document.querySelector<HTMLCanvasElement>('#hero-network-canvas');
     const hero = document.querySelector<HTMLElement>('#homepage-hero');
@@ -956,25 +952,25 @@ const homepageInsights = (await getCollection('blog', ({ data }) => !data.draft)
 
   // ===== GSAP MOTION + CURSOR + CARD INTERACTIONS =====
   function setupHomepageMotion() {
-    if (prefersReducedMotion) {
-      // Show all content immediately — no reveals
-      document.querySelectorAll('[data-service-card], [data-work-card], [data-tech-group], [data-principle-item], [data-insight-card]').forEach((el) => {
-        (el as HTMLElement).style.opacity = '1';
-      });
-    } else {
-      // Set initial state for GSAP reveals — hidden until animated in
+    // Always show content — never leave anything invisible
+    document.querySelectorAll('[data-service-card], [data-work-card], [data-tech-group], [data-principle-item], [data-insight-card]').forEach((el) => {
+      (el as HTMLElement).style.opacity = '1';
+    });
+
+    if (!prefersReducedMotion) {
+      // GSAP scroll reveals — hidden initially, animated in on scroll
       document.querySelectorAll('[data-service-card], [data-work-card], [data-tech-group], [data-principle-item], [data-insight-card]').forEach((el) => {
         (el as HTMLElement).style.opacity = '0';
       });
-
       initHomeMotion();
       pageCleanups.push(() => destroyHomeMotion());
-
-      initCardInteractions();
-      pageCleanups.push(() => destroyCardInteractions());
     }
 
-    // Cursor — internal guards prevent mobile/touch/reduced-motion activation
+    // Card interactions — fine pointer only (internal guard in module)
+    initCardInteractions();
+    pageCleanups.push(() => destroyCardInteractions());
+
+    // Cursor follower — fine pointer + non-mobile only (internal guard in module)
     initCursorFollower();
     pageCleanups.push(() => destroyCursorFollower());
   }

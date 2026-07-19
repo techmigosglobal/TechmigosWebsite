@@ -112,14 +112,12 @@ function addMagnetic(el: HTMLElement): () => void {
 export function initCursorFollower(): void {
   if (isInit) return;
 
-  // Guard: fine pointer only
+  // Guard: fine pointer only (no touch / coarse)
   const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   // Guard: not a touch/mobile layout
   const isMobileLayout = window.matchMedia('(max-width: 1023px)').matches;
-  // Guard: reduced motion
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (!hasFinePointer || isMobileLayout || prefersReducedMotion) return;
+  if (!hasFinePointer || isMobileLayout) return;
 
   isInit = true;
   ensureCursorElements();

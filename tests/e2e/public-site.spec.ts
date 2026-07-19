@@ -29,8 +29,8 @@ test('core public routes have no automatically detectable serious accessibility 
 
 test('homepage: H1 count is exactly one', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveCount(1);
-  await expect(page.locator('h1')).toContainText('We build digital products people remember.');
+  await expect(page.locator('main h1')).toHaveCount(1);
+  await expect(page.locator('main h1')).toContainText('We build digital products people remember.');
 });
 
 test('homepage: hero semantic content exists without canvas dependency', async ({ page }) => {
@@ -50,22 +50,24 @@ test('homepage: hero semantic content exists without canvas dependency', async (
   await expect(page.locator('#hero-network-canvas')).toHaveAttribute('aria-hidden', 'true');
 });
 
-test('homepage: custom cursor is not active in reduced-motion mode', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+test('homepage: custom cursor is desktop-only (not active on coarse pointer / mobile)', async ({ page }) => {
+  // Cursor is a fine-pointer UI enhancement — it should NOT activate on touch/coarse devices
+  // The emulated mobile browser has no fine pointer, so cursor must not activate
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  // Allow time for any JS to run
-  await page.waitForTimeout(500);
-  // Cursor elements must not exist or be hidden
+  await page.waitForTimeout(600);
+
+  // On a mobile-sized viewport, custom-cursor-active class must NOT be on html
+  const hasCustomCursor = await page.locator('html.custom-cursor-active').count();
+  expect(hasCustomCursor).toBe(0);
+
+  // Cursor dot must not exist or must be invisible (opacity 0)
   const cursorDot = page.locator('#cursor-dot');
   const count = await cursorDot.count();
-  // Either cursor doesn't exist at all, or is invisible (opacity 0)
   if (count > 0) {
     const opacity = await cursorDot.evaluate((el) => window.getComputedStyle(el).opacity);
     expect(parseFloat(opacity)).toBe(0);
   }
-  // Body must NOT have custom-cursor-active class in reduced-motion
-  const hasCustomCursor = await page.locator('html.custom-cursor-active').count();
-  expect(hasCustomCursor).toBe(0);
 });
 
 test('homepage: hero fallback exists — canvas failure does not remove content', async ({ page }) => {
@@ -120,8 +122,8 @@ test('homepage: all project card links are accessible', async ({ page }) => {
 test('homepage: mobile layout remains usable at 390px', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  // H1 must be visible
-  await expect(page.locator('h1')).toBeVisible();
+  // H1 must be visible — scope to main to avoid Playwright devtools overlay h1s
+  await expect(page.locator('main h1')).toBeVisible();
   // Primary CTA must be visible and accessible
   await expect(page.locator('.homepage-hero__primary-action')).toBeVisible();
   // No horizontal overflow
