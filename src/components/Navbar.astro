@@ -1,20 +1,20 @@
 ---
 const navLinks = [
-  { name: 'Home',      href: '/' },
-  { name: 'Services',  href: '/services' },
+  { name: 'Home', href: '/' },
+  { name: 'Services', href: '/services' },
   { name: 'Portfolio', href: '/portfolio' },
-  { name: 'About',     href: '/about' },
-  { name: 'Blog',      href: '/blog' },
-  { name: 'Careers',   href: '/careers' },
+  { name: 'About', href: '/about' },
+  { name: 'Blog', href: '/blog' },
+  { name: 'Careers', href: '/careers' },
+  { name: 'Contact', href: '/contact' },
 ];
 
 const currentPath = Astro.url.pathname;
 ---
 
 <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500">
-  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Main navigation">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-20">
-
       <!-- Logo -->
       <a href="/" class="flex items-center space-x-2.5 group flex-shrink-0" aria-label="TechMigos Home">
         <div class="relative">
@@ -27,21 +27,17 @@ const currentPath = Astro.url.pathname;
           />
           <div class="absolute inset-0 rounded-full bg-primary-500 opacity-0 group-hover:opacity-15 blur-md transition-opacity duration-300 scale-125"></div>
         </div>
-        <span
-          class="text-xl tracking-tight"
-          style="font-family:'Syne',sans-serif;font-weight:800;background:linear-gradient(135deg,#1e1b4b,#4F46E5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"
-        >
+        <span class="text-xl font-black tracking-tight" style="background: linear-gradient(135deg,#1e1b4b,#4F46E5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
           TechMigos
         </span>
       </a>
 
       <!-- Desktop Navigation -->
-      <div class="hidden lg:flex items-center space-x-0.5">
-        {navLinks.map((link) => (
+      <div class="hidden lg:flex items-center space-x-1">
+        {navLinks.slice(0, -1).map((link) => (
           <a
             href={link.href}
-            aria-current={currentPath === link.href ? 'page' : undefined}
-            class={`relative px-3.5 py-2 text-sm font-medium rounded-lg transition-[background-color,color] duration-200 link-underline ${
+            class={`relative px-3 py-2 text-sm font-medium rounded-lg transition-[background-color,color] duration-200 link-underline ${
               currentPath === link.href
                 ? 'text-primary-600'
                 : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'
@@ -49,22 +45,19 @@ const currentPath = Astro.url.pathname;
           >
             {link.name}
             {currentPath === link.href && (
-              <span class="absolute bottom-1 left-3.5 right-3.5 h-0.5 rounded-full bg-gradient-to-r from-primary-500 to-accent-400"></span>
+              <span class="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-primary-500 to-accent-400"></span>
             )}
           </a>
         ))}
       </div>
 
-      <!-- Desktop CTA buttons -->
+      <!-- CTA Button -->
       <div class="hidden lg:flex items-center gap-3">
-        <a href="/login" class="text-sm px-4 py-2.5 font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors duration-200">
+        <a href="/login" class="btn-secondary text-sm px-5 py-2.5">
           Portal Login
         </a>
         <a href="/contact" class="btn-primary text-sm px-5 py-2.5 shine-hover">
-          Start a Project
-          <svg class="w-4 h-4 ml-1.5 -mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-          </svg>
+          Get a Free Quote
         </a>
       </div>
 
@@ -72,7 +65,7 @@ const currentPath = Astro.url.pathname;
       <button
         id="mobile-menu-btn"
         type="button"
-        class="lg:hidden relative w-11 h-11 flex flex-col items-center justify-center gap-1.5 rounded-xl text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-[background-color,color] duration-200"
+        class="lg:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-[background-color,color] duration-200"
         aria-label="Toggle mobile menu"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -87,18 +80,17 @@ const currentPath = Astro.url.pathname;
   <!-- Mobile Menu Drawer -->
   <div
     id="mobile-menu"
-    class="lg:hidden overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+    class="lg:hidden overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out"
     style="max-height: 0; opacity: 0;"
     hidden
   >
-    <div class="px-4 pb-6 pt-2 space-y-1 border-t border-gray-100/80 bg-white/95 backdrop-blur-xl shadow-lg">
+    <div class="px-4 pb-6 pt-2 space-y-1 border-t border-gray-100 bg-white/95 backdrop-blur-xl shadow-lg">
       {navLinks.map((link) => (
         <a
           href={link.href}
-          aria-current={currentPath === link.href ? 'page' : undefined}
-          class={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-[background-color,color] duration-200 ${
+          class={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-[background-color,color] duration-200 ${
             currentPath === link.href
-              ? 'bg-primary-50 text-primary-600 font-semibold'
+              ? 'bg-primary-50 text-primary-600'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
@@ -108,12 +100,12 @@ const currentPath = Astro.url.pathname;
           {link.name}
         </a>
       ))}
-      <div class="pt-4 space-y-3 px-1">
-        <a href="/login" class="flex items-center justify-center w-full px-5 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors duration-200">
+      <div class="pt-3 px-4">
+        <a href="/login" class="btn-secondary w-full text-center mb-3">
           Portal Login
         </a>
-        <a href="/contact" class="btn-primary w-full text-center shine-hover justify-center">
-          Start a Project
+        <a href="/contact" class="btn-primary w-full text-center shine-hover">
+          Get a Free Quote
         </a>
       </div>
     </div>
@@ -140,37 +132,37 @@ const currentPath = Astro.url.pathname;
   const mobileMenu = document.getElementById('mobile-menu') as HTMLElement;
   let menuOpen = false;
 
-  function applyScrollStyle(scrolled: boolean) {
-    if (scrolled) {
-      navbar.style.background = 'rgba(255,255,255,0.88)';
-      navbar.style.backdropFilter = 'blur(24px)';
-      navbar.style.setProperty('-webkit-backdrop-filter', 'blur(24px)');
-      navbar.style.boxShadow = '0 1px 32px rgba(79,70,229,0.09), 0 1px 0 rgba(0,0,0,0.05)';
-      navbar.style.borderBottom = '1px solid rgba(229,231,235,0.6)';
-    } else {
-      const isHome = window.location.pathname === '/';
-      navbar.style.background = isHome ? 'transparent' : 'rgba(255,255,255,0.95)';
-      navbar.style.backdropFilter = isHome ? 'none' : 'blur(12px)';
-      navbar.style.setProperty('-webkit-backdrop-filter', isHome ? 'none' : 'blur(12px)');
-      navbar.style.boxShadow = 'none';
-      navbar.style.borderBottom = isHome ? 'none' : '1px solid rgba(229,231,235,0.5)';
-    }
-  }
-
-  // Handle scroll
+  // Handle scroll — add glass effect
   let ticking = false;
   window.addEventListener('scroll', () => {
     if (!ticking) {
       requestAnimationFrame(() => {
-        applyScrollStyle(window.scrollY > 20);
+        const scrolled = window.scrollY > 20;
+        if (scrolled) {
+          navbar.style.background = 'rgba(255,255,255,0.85)';
+          navbar.style.backdropFilter = 'blur(20px)';
+          navbar.style.setProperty('-webkit-backdrop-filter', 'blur(20px)');
+          navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08), 0 1px 0 rgba(0,0,0,0.06)';
+        } else {
+          navbar.style.background = window.location.pathname === '/' ? 'transparent' : 'rgba(255,255,255,0.95)';
+          navbar.style.backdropFilter = scrolled ? 'blur(20px)' : 'none';
+          navbar.style.boxShadow = 'none';
+        }
         ticking = false;
       });
       ticking = true;
     }
-  }, { passive: true });
+  });
 
-  // Initialize on load
-  applyScrollStyle(window.scrollY > 20);
+  // Initialize
+  if (window.scrollY > 20) {
+    navbar.style.background = 'rgba(255,255,255,0.85)';
+    navbar.style.backdropFilter = 'blur(20px)';
+    navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08)';
+  } else if (window.location.pathname !== '/') {
+    navbar.style.background = 'rgba(255,255,255,0.95)';
+    navbar.style.boxShadow = '0 1px 0 rgba(0,0,0,0.06)';
+  }
 
   // Toggle mobile menu
   mobileMenuBtn?.addEventListener('click', () => {
@@ -180,16 +172,14 @@ const currentPath = Astro.url.pathname;
 
     if (menuOpen) {
       mobileMenu.hidden = false;
-      requestAnimationFrame(() => {
-        mobileMenu.style.maxHeight = mobileMenu.scrollHeight + 'px';
-        mobileMenu.style.opacity = '1';
-      });
+      mobileMenu.style.maxHeight = mobileMenu.scrollHeight + 'px';
+      mobileMenu.style.opacity = '1';
     } else {
       mobileMenu.style.maxHeight = '0';
       mobileMenu.style.opacity = '0';
       window.setTimeout(() => {
         if (!menuOpen) mobileMenu.hidden = true;
-      }, 520);
+      }, 500);
     }
   });
 
@@ -203,7 +193,7 @@ const currentPath = Astro.url.pathname;
       mobileMenu.style.opacity = '0';
       window.setTimeout(() => {
         if (!menuOpen) mobileMenu.hidden = true;
-      }, 520);
+      }, 500);
     });
   });
 </script>

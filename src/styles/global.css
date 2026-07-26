@@ -1,8 +1,3 @@
-/* =============================================
-   GOOGLE FONTS — Inter (body) + Syne (display)
-   ============================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,10 +6,6 @@
   :root {
     --color-primary: #2563eb;
     --color-accent: #06b6d4;
-    --gradient-brand: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
-    --gradient-hero: linear-gradient(135deg, #2563eb 0%, #0ea5e9 50%, #06b6d4 100%);
-    --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-    --radius-2xl: 1.25rem;
     --cursor-x: 50%;
     --cursor-y: 50%;
     color-scheme: light;
@@ -22,14 +13,12 @@
 
   html {
     scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply font-sans text-gray-900 antialiased;
     overflow-x: hidden;
     min-width: 320px;
-    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
   input,
@@ -205,76 +194,12 @@
 }
 
   /* Stagger delay utilities */
-  .stagger-1 { transition-delay: 0.08s; }
-  .stagger-2 { transition-delay: 0.16s; }
-  .stagger-3 { transition-delay: 0.24s; }
-  .stagger-4 { transition-delay: 0.32s; }
-  .stagger-5 { transition-delay: 0.40s; }
-  .stagger-6 { transition-delay: 0.48s; }
-
-  /* ── NEW COMPONENT CLASSES ── */
-
-  /* Badge — small label pill */
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
-  }
-  .badge-primary {
-    @apply badge bg-primary-50 text-primary-700 border border-primary-200;
-  }
-  .badge-accent {
-    @apply badge bg-accent-50 text-accent-700 border border-accent-200;
-  }
-  .badge-gold {
-    @apply badge bg-gold-50 text-gold-700 border border-gold-200;
-  }
-  .badge-dark {
-    @apply badge bg-gray-900 text-white;
-  }
-
-  /* Chip — slightly larger selectable pill */
-  .chip {
-    @apply inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold border cursor-pointer select-none;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  }
-  .chip-default {
-    @apply chip bg-white text-gray-600 border-gray-200 hover:border-primary-400 hover:text-primary-600;
-  }
-  .chip-active {
-    @apply chip bg-primary-600 text-white border-primary-600;
-  }
-
-  /* Icon box — coloured square for service icons */
-  .icon-box {
-    @apply flex items-center justify-center rounded-2xl flex-shrink-0;
-  }
-  .icon-box-sm  { @apply icon-box w-10 h-10; }
-  .icon-box-md  { @apply icon-box w-14 h-14; }
-  .icon-box-lg  { @apply icon-box w-20 h-20; }
-
-  /* Tech pill — small stack label */
-  .tech-pill {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200;
-    transition: background 0.2s ease;
-  }
-  .tech-pill:hover {
-    @apply bg-primary-50 text-primary-700 border-primary-200;
-  }
-
-  /* Stat card */
-  .stat-card {
-    @apply flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-white border border-gray-100 shadow-sm;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
-  .stat-card:hover {
-    box-shadow: 0 20px 40px rgba(37,99,235,0.1);
-    transform: translateY(-4px);
-  }
-
-  /* Section divider */
-  .section-divider {
-    @apply relative h-px w-full;
-    background: linear-gradient(90deg, transparent 0%, rgba(79,70,229,0.15) 30%, rgba(6,182,212,0.15) 70%, transparent 100%);
-  }
+  .stagger-1 { transition-delay: 0.1s; }
+  .stagger-2 { transition-delay: 0.2s; }
+  .stagger-3 { transition-delay: 0.3s; }
+  .stagger-4 { transition-delay: 0.4s; }
+  .stagger-5 { transition-delay: 0.5s; }
+  .stagger-6 { transition-delay: 0.6s; }
 }
 
 @layer utilities {
@@ -1033,6 +958,9 @@ label:focus-visible {
   }
 }
 
+/* ============================================
+   FAQ SMOOTH COLLAPSE
+   ============================================ */
 .faq-body {
   max-height: 0;
   overflow: hidden;
@@ -1040,81 +968,4 @@ label:focus-visible {
 }
 .faq-body.open {
   max-height: 300px;
-}
-
-/* ============================================
-   GLASS CARD
-   ============================================ */
-.glass-card {
-  background: rgba(255, 255, 255, 0.70);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.06), 0 1px 0 rgba(255,255,255,0.8) inset;
-}
-
-/* ============================================
-   SECTION EYEBROW
-   ============================================ */
-.section-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(6,182,212,0.08));
-  border: 1px solid rgba(79,70,229,0.15);
-  color: #4338CA;
-  margin-bottom: 0;
-}
-
-/* ============================================
-   TEXT GRADIENT
-   ============================================ */
-.text-gradient {
-  background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  display: inline-block;
-}
-
-/* ============================================
-   TILT CARD
-   ============================================ */
-.tilt-card {
-  transition:
-    transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1),
-    box-shadow 0.3s ease;
-  will-change: transform;
-}
-
-/* ============================================
-   ANIMATE GRADIENT SHIFT
-   ============================================ */
-@keyframes gradient-shift-bg {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.animate-gradient-shift {
-  animation: gradient-shift-bg 8s ease infinite;
-  background-size: 300% 300%;
-}
-
-/* ============================================
-   ANIMATE FLOAT / FLOAT-SLOW
-   ============================================ */
-@keyframes animate-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33%       { transform: translateY(-14px) rotate(2deg); }
-  66%       { transform: translateY(-7px) rotate(-1deg); }
-}
-@keyframes animate-float-slow {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-20px); }
 }
