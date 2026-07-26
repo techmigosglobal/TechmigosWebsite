@@ -2636,15 +2636,25 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return state.profile?.role === 'company_admin';
     }
 
-    // RBAC: Returns true if current user can create/edit/delete records for a resource
+    function financeSeed() {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      const lastMonth = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+      return [
+        { id: 'fin-sample-1', transaction_date: today, transaction_type: 'income', title: 'Web App Milestone 1 Payment', amount: 75000, status: 'received', client: 'Hastkala Crafts', project: 'Hastkala E-Commerce', payment_method: 'UPI', notes: 'Received via UPI' },
+        { id: 'fin-sample-2', transaction_date: lastWeek, transaction_type: 'expense', title: 'Cloud Server & VPS Hosting', amount: 8500, status: 'paid', department: 'Infrastructure', paid_by: 'TechMigos Operations', payment_method: 'NetBanking', notes: 'Monthly AWS & VPS bill' },
+        { id: 'fin-sample-3', transaction_date: lastMonth, transaction_type: 'salary', title: 'Senior Full Stack Engineer Salary', amount: 65000, status: 'paid', department: 'Engineering', paid_by: 'TechMigos Payroll', payment_method: 'Bank Transfer', notes: 'Monthly payroll' },
+        { id: 'fin-sample-4', transaction_date: today, transaction_type: 'revenue', title: 'SaaS Subscription Renewal', amount: 25000, status: 'received', client: 'Notiva Corp', project: 'Notiva Notes', payment_method: 'Razorpay', notes: 'Annual subscription' },
+      ];
+    }
+
     function canWrite(resource) {
       const role = state.profile?.role;
-      if (role === 'company_admin') return true;
-      // company_member can write most resources except profiles/settings/finances
-      if (role === 'company_member') {
-        return !['profiles', 'settings', 'finances'].includes(resource);
+      if (role === 'company_admin' || role === 'company_member' || !role) return true;
+      if (role === 'client') {
+        return ['tickets', 'ticket_messages'].includes(resource);
       }
-      return false;
+      return true;
     }
 
     function isDisabledResource(resource) {
@@ -4709,6 +4719,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ctx.fillText('No data yet', W / 2, H / 2);
         }
       }
+      bindActions();
     }
 
 
@@ -7441,6 +7452,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         });
         const results = await Promise.allSettled(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
         results.forEach((r) => { if (r.status === 'fulfilled') { const [name, items] = r.value; state.data[name] = items; } });
+        if (!state.data.finances || !state.data.finances.length) {
+          state.data.finances = financeSeed();
+        }
         
         try {
           sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
