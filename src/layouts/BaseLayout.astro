@@ -11,6 +11,7 @@ interface Props {
   ogType?: string;
   noIndex?: boolean;
   hideNavbar?: boolean;
+  isCrm?: boolean;
 }
 
 const {
@@ -19,7 +20,8 @@ const {
   ogImage = '/og-image.png',
   ogType = 'website',
   noIndex = false,
-  hideNavbar = false
+  hideNavbar = false,
+  isCrm = false,
 } = Astro.props;
 
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
@@ -140,6 +142,7 @@ const structuredData = {
     <!-- JSON-LD makes the page, organization, and navigation legible to search engines. -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script is:inline define:vars={{ sbUrl: import.meta.env.PUBLIC_SUPABASE_URL || '', sbKey: import.meta.env.PUBLIC_SUPABASE_KEY || '' }}>
       window.TechMigosConfig = { apiBaseUrl: '' };
       window.techmigosApiUrl = function(p) { return String(p || ''); };
@@ -160,12 +163,13 @@ const structuredData = {
     <!-- Skip to main content link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Custom Cursor -->
+    {!isCrm && <>
+    {/* Custom Cursor */}
     <div id="cursor-dot" style="left:-100px;top:-100px;"></div>
     <div id="cursor-ring" style="left:-100px;top:-100px;"></div>
-
-    <!-- Scroll Progress Bar -->
+    {/* Scroll Progress Bar */}
     <div id="page-progress" style="width:0%"></div>
+    </>}
 
     {!hideNavbar && <Navbar />}
 
@@ -173,7 +177,7 @@ const structuredData = {
       <slot />
     </main>
 
-    <Footer />
+    {!isCrm && <Footer />}
 
     <SpeedInsights />
 
