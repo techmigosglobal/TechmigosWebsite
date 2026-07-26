@@ -4626,6 +4626,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       // ── Search ──
       const srch = document.getElementById('acc-tx-search');
       if (srch) srch.addEventListener('input', () => { state.accSearch = srch.value; state.accTxPage = 1; renderFinance(); });
+      // ── Edit finance row ──
+      document.querySelectorAll('[data-edit-finance]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          openEdit('finances', btn.dataset.editFinance);
+        });
+      });
       // ── Delete finance row ──
       document.querySelectorAll('[data-del-finance]').forEach(btn => {
         btn.addEventListener('click', async e => {
@@ -5137,8 +5144,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       async function saveInvoice() {
         const g = (id) => (document.getElementById(id)?.value || '').trim();
         const getCheck = (id) => !!document.getElementById(id)?.checked;
-        if (!g('inv-client-name')) { showToast('Client name is required', 'error'); return; }
+        const clientNameInput = g('inv-client-name');
+        if (!clientNameInput) { showToast('Client name is required', 'error'); return; }
         if (!g('inv-number')) { showToast('Invoice number is required', 'error'); return; }
+
+        // Find or map matching client_id from client list
+        const matchedClient = state.data.clients.find(c => (c.company || c.name || '').toLowerCase().includes(clientNameInput.toLowerCase()) || (c.name || '').toLowerCase().includes(clientNameInput.toLowerCase())) || state.data.clients[0];
+        if (!matchedClient && !state.data.clients.length) {
+          showToast('Please create at least one client in Client Management before issuing invoices', 'error');
+          return;
+        }
+        const clientId = matchedClient?.id || 1;
+
         const rows = document.querySelectorAll('#inv-items-tbody tr');
         let totalAmount = 0;
         const invoiceItems = [];
@@ -5148,14 +5165,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           const rate = Number(row.querySelector('.inv-item-rate')?.value || 0);
           const total = qty * rate;
           totalAmount += total;
-          invoiceItems.push({ description: desc, quantity: qty, rate, total });
+          if (desc.trim()) invoiceItems.push({ description: desc, quantity: qty, rate, total });
         });
         const gstAmount = totalAmount * 0.18;
         const grandTotal = totalAmount + gstAmount;
 
         const payload = {
+          client_id: Number(clientId),
           invoice_number: g('inv-number') || 'INV-' + Date.now(),
-          customer_name: g('inv-client-name'),
+          customer_name: clientNameInput,
           customer_email: g('inv-client-email'),
           customer_phone: g('inv-client-phone'),
           billing_address: g('inv-client-address'),
@@ -5173,6 +5191,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         try {
           if (state.invoiceBuilderId) {
             const { data, error } = await window.tmSupabase.from('crm_invoices').update({
+              client_id: payload.client_id,
               invoice_number: payload.invoice_number,
               customer_name: payload.customer_name,
               customer_email: payload.customer_email,
@@ -5202,13 +5221,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               if (itemsError) throw itemsError;
             }
 
-            const idx = state.data.invoices.findIndex(i => i.id === state.invoiceBuilderId);
-            if (idx !== -1) {
-              state.data.invoices[idx] = data;
-            }
+            const idx = state.data.invoices.findIndex(i => String(i.id) === String(state.invoiceBuilderId));
+            if (idx !== -1 && data) state.data.invoices[idx] = data;
             showToast('Invoice updated successfully', 'success');
           } else {
             const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert({
+              client_id: payload.client_id,
               invoice_number: payload.invoice_number,
               customer_name: payload.customer_name,
               customer_email: payload.customer_email,
@@ -5233,19 +5251,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 amount: it.total,
                 sort_order: idx
               }));
-              const { error: itemsError } = await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
-              if (itemsError) throw itemsError;
+              await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
             }
-
-            state.data.invoices.push(inv);
-            showToast('Invoice saved successfully', 'success');
+            if (inv) state.data.invoices.unshift(inv);
+            showToast('Invoice created successfully', 'success');
           }
-
+          await loadData();
           state.invoiceBuilderActive = false;
           state.invoiceBuilderId = null;
-          await loadData();
-        } catch (e) {
-          showToast('Failed to save invoice: ' + e.message, 'error');
+          renderFinance();
+          bindActions();
+        } catch (error) {
+          showToast(error instanceof Error ? error.message : 'Save invoice failed', 'error');
         }
       }
 
@@ -6583,6 +6600,28 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           { name: 'proof_url',        label: 'Proof Attachment', type: 'html',    html: financeProofFieldMarkup(values) },
           { name: 'notes',            label: 'Notes',           type: 'textarea', wide: true, placeholder: 'Additional notes...' },
         ],
+        income: [
+          { name: 'transaction_date', label: 'Date *',          type: 'date',     required: true },
+          { name: 'title',            label: 'Description *',   type: 'text',     required: true, placeholder: 'e.g. Payment for Milestone 1' },
+          { name: 'amount',           label: 'Income Amount (₹) *', type: 'number', required: true, min: '0', step: 'any', placeholder: '0' },
+          { name: 'status',           label: 'Status *',        type: 'select',   required: true, html: `<select name="status" required>${selectOpts([['received','Received'],['pending','Pending'],['half_payment','Half Payment'],['cancelled','Cancelled']], values.status || 'received')}</select>` },
+          { name: 'client',           label: 'Client Name',     type: 'text',     placeholder: 'Client name' },
+          { name: 'project',          label: 'Project Name',    type: 'text',     placeholder: 'Project name' },
+          { name: 'payment_method',   label: 'Payment Method',  type: 'text',     placeholder: 'UPI / Bank / Cash' },
+          { name: 'proof_url',        label: 'Proof Attachment', type: 'html',    html: financeProofFieldMarkup(values) },
+          { name: 'notes',            label: 'Notes',           type: 'textarea', wide: true, placeholder: 'Additional income notes...' },
+        ],
+        expense: [
+          { name: 'transaction_date', label: 'Date *',          type: 'date',     required: true },
+          { name: 'title',            label: 'Description *',   type: 'text',     required: true, placeholder: 'e.g. Server hosting renewal' },
+          { name: 'amount',           label: 'Expense Amount (₹) *', type: 'number', required: true, min: '0', step: 'any', placeholder: '0' },
+          { name: 'status',           label: 'Status *',        type: 'select',   required: true, html: `<select name="status" required>${selectOpts([['paid','Paid'],['pending','Pending'],['cancelled','Cancelled']], values.status || 'paid')}</select>` },
+          { name: 'department',       label: 'Department',      type: 'text',     placeholder: 'e.g. Infrastructure' },
+          { name: 'paid_by',          label: 'Paid By',         type: 'text',     placeholder: 'Person or account' },
+          { name: 'payment_method',   label: 'Payment Method',  type: 'text',     placeholder: 'Credit Card / UPI / NetBanking' },
+          { name: 'proof_url',        label: 'Proof Attachment', type: 'html',    html: financeProofFieldMarkup(values) },
+          { name: 'notes',            label: 'Notes',           type: 'textarea', wide: true, placeholder: 'Additional expense notes...' },
+        ],
         salary: [
           { name: 'transaction_date', label: 'Date *',              type: 'date',     required: true },
           { name: 'title',            label: 'Employee Name *',      type: 'text',     required: true, placeholder: 'Full name' },
@@ -7030,24 +7069,28 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can create new logins.');
       if (resource === 'invoices') return openInvoiceCreateIntegrated();
       if (resource === 'tickets') return openTicketCreate();
-      const actualResource = resource === 'salary' ? 'finances' : resource;
+      const isFinSub = ['salary', 'income', 'expense'].includes(resource);
+      const actualResource = isFinSub ? 'finances' : resource;
       const defaults = smartDefaults(resource);
-      els.modalTitle.textContent = resource === 'salary' ? 'Add Salary' : `Create ${resource.replace(/_/g, ' ')}`;
-      els.modalBody.innerHTML = formMarkup(resource === 'salary' ? 'salary' : actualResource, defaults, resource === 'salary' ? 'Add Salary' : 'Create');
+      const titleMap = { salary: 'Add Salary', income: 'Add Income', expense: 'Add Expense', finances: 'Add Transaction' };
+      els.modalTitle.textContent = titleMap[resource] || `Create ${resource.replace(/_/g, ' ')}`;
+      els.modalBody.innerHTML = formMarkup(isFinSub ? resource : actualResource, defaults, titleMap[resource] || 'Create');
       els.modal.classList.add('open');
       if (actualResource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
-        if (actualResource === 'finances' && resource === 'salary') raw.transaction_type = 'salary';
+        if (isFinSub) raw.transaction_type = resource;
+        if (actualResource === 'finances' && !raw.transaction_type) raw.transaction_type = 'expense';
         const body = normalizePayload(actualResource, raw);
         const validationError = validatePayload(actualResource, body);
         if (validationError) return toast(validationError);
         try {
           await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
-          toast(`${resource === 'salary' ? 'Salary' : 'Record'} created`);
+          toast(`${nice(resource)} created successfully`);
           await loadData();
+          render();
         } catch (error) {
           toast(error instanceof Error ? error.message : 'Create failed');
         }
@@ -7060,6 +7103,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         projects:         { status: 'planning', budget: 0, due_date: today },
         tickets:          { priority: 'medium', status: 'open' },
         finances:         { transaction_date: today, transaction_type: 'expense', status: 'pending', amount: 0, source: 'manual' },
+        income:           { transaction_date: today, transaction_type: 'income', status: 'received', amount: 0, source: 'manual' },
+        expense:          { transaction_date: today, transaction_type: 'expense', status: 'paid', amount: 0, source: 'manual' },
         salary:           { transaction_date: today, transaction_type: 'salary', status: 'pending', amount: 0, source: 'manual' },
         clients:          { status: 'active' },
         profiles:         { role: 'company_member', status: 'active' },
