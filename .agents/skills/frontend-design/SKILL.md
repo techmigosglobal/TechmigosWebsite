@@ -1,418 +1,55 @@
 ---
 name: frontend-design
-description: Design thinking and decision-making for web UI. Use when designing components, layouts, color schemes, typography, or creating aesthetic interfaces. Teaches principles, not fixed values.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+description: Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.
+license: Complete terms in LICENSE.txt
 ---
 
-# Frontend Design System
+# Frontend Design
 
-> **Philosophy:** Every pixel has purpose. Restraint is luxury. User psychology drives decisions.
-> **Core Principle:** THINK, don't memorize. ASK, don't assume.
+Approach this as the design lead at a small studio known for giving every client a visual identity that could not be mistaken for anyone else's. This client has already rejected proposals that felt templated, and is paying for a distinctive point of view: make deliberate, opinionated choices about palette, typography, and layout that are specific to this brief, and take one real aesthetic risk you can justify.
 
----
+## Ground it in the subject
 
-## 🎯 Selective Reading Rule (MANDATORY)
+If the brief does not pin down what the product or subject is, pin it yourself before designing: name one concrete subject, its audience, and the page's single job, and state your choice. If there's any information in your memory about the human's preferences, context about what they're building, or designs you've made before – use that as a hint. The subject's own world, its materials, instruments, artifacts, and vernacular, is where distinctive choices come from. Build with the brief's real content and subject matter throughout.
 
-**Read REQUIRED files always, OPTIONAL only when needed:**
+## Design principles
 
-| File | Status | When to Read |
-|------|--------|--------------|
-| [ux-psychology.md](ux-psychology.md) | 🔴 **REQUIRED** | Always read first! |
-| [color-system.md](color-system.md) | ⚪ Optional | Color/palette decisions |
-| [typography-system.md](typography-system.md) | ⚪ Optional | Font selection/pairing |
-| [visual-effects.md](visual-effects.md) | ⚪ Optional | Glassmorphism, shadows, gradients |
-| [animation-guide.md](animation-guide.md) | ⚪ Optional | Animation needed |
-| [motion-graphics.md](motion-graphics.md) | ⚪ Optional | Lottie, GSAP, 3D |
-| [decision-trees.md](decision-trees.md) | ⚪ Optional | Context templates |
+For web designs, the hero is a thesis. Open with the most characteristic thing in the subject's world, in whatever form makes sense for it: a headline, an image, an animation, a live demo, an interactive moment. Be deliberate with your choice: a big number with a small label, supporting stats, and a gradient accent is the template answer, only use if that's truly the best option.
 
-> 🔴 **ux-psychology.md = ALWAYS READ. Others = only if relevant.**
+Typography carries the personality of the page. Pair the display and body faces deliberately, not the same families you would reach for on any other project, and set a clear type scale with intentional weights, widths, and spacing. Make the type treatment itself a memorable part of the design, not a neutral delivery vehicle for the content.
 
----
+Structure is information. Structural devices, numbering, eyebrows, dividers, labels, should encode something true about the content, not decorate it. Many generic designs use numbered markers (01 / 02 / 03), but that's only appropriate if the content actually is a sequence - like a real process or a typed timeline where order carries information the reader needs. Question if choices like numbered markers actually make sense before incorporating them.
 
-## 🔧 Runtime Scripts
+Leverage motion deliberately. Think about where and if animation can serve the subject: a page-load sequence, a scroll-triggered reveal, hover micro-interactions, ambient atmosphere. An orchestrated moment usually lands harder than scattered effects; choose what the direction calls for. However, sometimes less is more, and extra animation contributes to the feeling that the design is AI-generated.
 
-**Execute these for audits (don't read, just run):**
+Match complexity to the vision. Maximalist directions need elaborate execution; minimal directions need precision in spacing, type, and detail. Elegance is executing the chosen vision well.
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `scripts/ux_audit.py` | UX Psychology & Accessibility Audit | `python scripts/ux_audit.py <project_path>` |
+Consider written content carefully. Often a design brief may not contain real content, and it's up to you to come up with copy. Copy can make a design feel as templated as the design itself. See the below section on writing for more guidance.
 
----
+## Process: brainstorm, explore, plan, critique, build, critique again
 
-## ⚠️ CRITICAL: ASK BEFORE ASSUMING (MANDATORY)
+For calibration: AI-generated design right now clusters around three looks: (1) a warm cream background (near #F4F1EA) with a high-contrast serif display and a terracotta accent; (2) a near-black background with a single bright acid-green or vermilion accent; (3) a broadsheet-style layout with hairline rules, zero border-radius, and dense newspaper-like columns. All three are legitimate for some briefs, but they are defaults rather than choices, and they appear regardless of subject. Where the brief pins down a visual direction, follow it exactly — the brief's own words always win, including when it asks for one of these looks. Where it leaves an axis free, don't spend that freedom on one of these defaults. Just like a human designer who's hired, there's often a careful balance between doing what you're good at and taking each project as a chance to experiment and learn.
 
-> **STOP! If the user's request is open-ended, DO NOT default to your favorites.**
+Work in two passes. First, brainstorm a short design plan based on the human's design brief: create a compact token system with color, type, layout, and signature. Color: describe the palette as 4–6 named hex values. Type: the typefaces for 2+ roles (a characterful display face that's used with restraint, a complementary body face, and a utility face for captions or data if needed). Layout: a layout concept, using one-sentence prose descriptions and ASCII wireframes to ideate and compare. Signature: the single unique element this page will be remembered by that embodies the brief in an appropriate way.
 
-### When User Prompt is Vague, ASK:
+Then review that plan against the brief before building: if any part of it reads like the generic default you would produce for any similar page (work through a similar prompt to see if you arrive somewhere similar) rather than a choice made for this specific brief — revise that part, say what you changed and why. Only after you've confirmed the relative uniqueness of your design plan should you start to write the code, following the revised plan exactly and deriving every color and type decision from it.
 
-**Color not specified?** Ask:
-> "What color palette do you prefer? (blue/green/orange/neutral/other?)"
+When writing the code, be careful of structuring your CSS selector specificities. It's easy to generate CSS classes that cancel each other out (especially with a type-based selector like .section and a element-based selector like .cta). This can happen often with paddings/margins between sections.
 
-**Style not specified?** Ask: 
-> "What style are you going for? (minimal/bold/retro/futuristic/organic?)"
+Try to do a lot of this planning and iteration in your thinking, and only show ideas to the user when you have higher confidence it'll delight them.
 
-**Layout not specified?** Ask:
-> "Do you have a layout preference? (single column/grid/asymmetric/full-width?)"
+## Restraint and self-critique
 
-### ⛔ DEFAULT TENDENCIES TO AVOID (ANTI-SAFE HARBOR):
+Spend your boldness in one place. Let the signature element be the one memorable thing, keep everything around it quiet and disciplined, and cut any decoration that does not serve the brief. Not taking a risk can be a risk itself! Build to a quality floor without announcing it: responsive down to mobile, visible keyboard focus, reduced motion respected. Critique your own work as you build, taking screenshots if your environment supports it – a picture is worth 1000 tokens. Consider Chanel's advice: before leaving the house, take a look in the mirror and remove one accessory. Human creators have memory and always try to do something new, so if you have a space to quickly jot down notes about what you've tried, it can help you in future passes.
 
-| AI Default Tendency | Why It's Bad | Think Instead |
-|---------------------|--------------|---------------|
-| **Bento Grids (Modern Cliché)** | Used in every AI design | Why does this content NEED a grid? |
-| **Hero Split (Left/Right)** | Predictable & Boring | How about Massive Typography or Vertical Narrative? |
-| **Mesh/Aurora Gradients** | The "new" lazy background | What's a radical color pairing? |
-| **Glassmorphism** | AI's idea of "premium" | How about solid, high-contrast flat? |
-| **Deep Cyan / Fintech Blue** | Safe harbor from purple ban | Why not Red, Black, or Neon Green? |
-| **"Orchestrate / Empower"** | AI-generated copywriting | How would a human say this? |
-| Dark background + neon glow | Overused, "AI look" | What does the BRAND actually need? |
-| **Rounded everything** | Generic/Safe | Where can I use sharp, brutalist edges? |
+## More on writing in design
 
-> 🔴 **"Every 'safe' structure you choose brings you one step closer to a generic template. TAKE RISKS."**
+Words appear in a design for one reason: to make it easier to understand, and therefore easier to use. They are design material, not decoration. Bring the same intentionality to copy that you would bring to spacing and color. Before writing anything, ask what the design needs to say, and how it can best be said to help the person navigate the experience.
 
----
+Write from the end user's side of the screen. Name things by what people control and recognize, never by how the system is built. A person manages notifications, not webhook config. Describe what something does in plain terms rather than selling it. Being specific is always better than being clever.
 
-## 1. Constraint Analysis (ALWAYS FIRST)
+Use active voice as default. A control should say exactly what happens when it's used: "Save changes," not "Submit." An action keeps the same name through the whole flow, so the button that says "Publish" produces a toast that says "Published." The vocabulary of an interface is the signposting for someone navigating the product. Cohesion and consistency are how people learn their way around.
 
-Before any design work, ANSWER THESE or ASK USER:
+Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 
-| Constraint | Question | Why It Matters |
-|------------|----------|----------------|
-| **Timeline** | How much time? | Determines complexity |
-| **Content** | Ready or placeholder? | Affects layout flexibility |
-| **Brand** | Existing guidelines? | May dictate colors/fonts |
-| **Tech** | What stack? | Affects capabilities |
-| **Audience** | Who exactly? | Drives all visual decisions |
-
-### Audience → Design Approach
-
-| Audience | Think About |
-|----------|-------------|
-| **Gen Z** | Bold, fast, mobile-first, authentic |
-| **Millennials** | Clean, minimal, value-driven |
-| **Gen X** | Familiar, trustworthy, clear |
-| **Boomers** | Readable, high contrast, simple |
-| **B2B** | Professional, data-focused, trust |
-| **Luxury** | Restrained elegance, whitespace |
-
----
-
-## 2. UX Psychology Principles
-
-### Core Laws (Internalize These)
-
-| Law | Principle | Application |
-|-----|-----------|-------------|
-| **Hick's Law** | More choices = slower decisions | Limit options, use progressive disclosure |
-| **Fitts' Law** | Bigger + closer = easier to click | Size CTAs appropriately |
-| **Miller's Law** | ~7 items in working memory | Chunk content into groups |
-| **Von Restorff** | Different = memorable | Make CTAs visually distinct |
-| **Serial Position** | First/last remembered most | Key info at start/end |
-
-### Emotional Design Levels
-
-```
-VISCERAL (instant)  → First impression: colors, imagery, overall feel
-BEHAVIORAL (use)    → Using it: speed, feedback, efficiency
-REFLECTIVE (memory) → After: "I like what this says about me"
-```
-
-### Trust Building
-
-- Security indicators on sensitive actions
-- Social proof where relevant
-- Clear contact/support access
-- Consistent, professional design
-- Transparent policies
-
----
-
-## 3. Layout Principles
-
-### Golden Ratio (φ = 1.618)
-
-```
-Use for proportional harmony:
-├── Content : Sidebar = roughly 62% : 38%
-├── Each heading size = previous × 1.618 (for dramatic scale)
-├── Spacing can follow: sm → md → lg (each × 1.618)
-```
-
-### 8-Point Grid Concept
-
-```
-All spacing and sizing in multiples of 8:
-├── Tight: 4px (half-step for micro)
-├── Small: 8px
-├── Medium: 16px
-├── Large: 24px, 32px
-├── XL: 48px, 64px, 80px
-└── Adjust based on content density
-```
-
-### Key Sizing Principles
-
-| Element | Consideration |
-|---------|---------------|
-| **Touch targets** | Minimum comfortable tap size |
-| **Buttons** | Height based on importance hierarchy |
-| **Inputs** | Match button height for alignment |
-| **Cards** | Consistent padding, breathable |
-| **Reading width** | 45-75 characters optimal |
-
----
-
-## 4. Color Principles
-
-### 60-30-10 Rule
-
-```
-60% → Primary/Background (calm, neutral base)
-30% → Secondary (supporting areas)
-10% → Accent (CTAs, highlights, attention)
-```
-
-### Color Psychology (For Decision Making)
-
-| If You Need... | Consider Hues | Avoid |
-|----------------|---------------|-------|
-| Trust, calm | Blue family | Aggressive reds |
-| Growth, nature | Green family | Industrial grays |
-| Energy, urgency | Orange, red | Passive blues |
-| Luxury, creativity | Deep Teal, Gold, Emerald | Cheap-feeling brights |
-| Clean, minimal | Neutrals | Overwhelming color |
-
-### Selection Process
-
-1. **What's the industry?** (narrows options)
-2. **What's the emotion?** (picks primary)
-3. **Light or dark mode?** (sets foundation)
-4. **ASK USER** if not specified
-
-For detailed color theory: [color-system.md](color-system.md)
-
----
-
-## 5. Typography Principles
-
-### Scale Selection
-
-| Content Type | Scale Ratio | Feel |
-|--------------|-------------|------|
-| Dense UI | 1.125-1.2 | Compact, efficient |
-| General web | 1.25 | Balanced (most common) |
-| Editorial | 1.333 | Readable, spacious |
-| Hero/display | 1.5-1.618 | Dramatic impact |
-
-### Pairing Concept
-
-```
-Contrast + Harmony:
-├── DIFFERENT enough for hierarchy
-├── SIMILAR enough for cohesion
-└── Usually: display + neutral, or serif + sans
-```
-
-### Readability Rules
-
-- **Line length**: 45-75 characters optimal
-- **Line height**: 1.4-1.6 for body text
-- **Contrast**: Check WCAG requirements
-- **Size**: 16px+ for body on web
-
-For detailed typography: [typography-system.md](typography-system.md)
-
----
-
-## 6. Visual Effects Principles
-
-### Glassmorphism (When Appropriate)
-
-```
-Key properties:
-├── Semi-transparent background
-├── Backdrop blur
-├── Subtle border for definition
-└── ⚠️ **WARNING:** Standard blue/white glassmorphism is a modern cliché. Use it radically or not at all.
-```
-
-### Shadow Hierarchy
-
-```
-Elevation concept:
-├── Higher elements = larger shadows
-├── Y-offset > X-offset (light from above)
-├── Multiple layers = more realistic
-└── Dark mode: may need glow instead
-```
-
-### Gradient Usage
-
-```
-Harmonious gradients:
-├── Adjacent colors on wheel (analogous)
-├── OR same hue, different lightness
-├── Avoid harsh complementary pairs
-├── 🚫 **NO Mesh/Aurora Gradients** (floating blobs)
-└── VARY from project to project radically
-```
-
-For complete effects guide: [visual-effects.md](visual-effects.md)
-
----
-
-## 7. Animation Principles
-
-### Timing Concept
-
-```
-Duration based on:
-├── Distance (further = longer)
-├── Size (larger = slower)
-├── Importance (critical = clear)
-└── Context (urgent = fast, luxury = slow)
-```
-
-### Easing Selection
-
-| Action | Easing | Why |
-|--------|--------|-----|
-| Entering | Ease-out | Decelerate, settle in |
-| Leaving | Ease-in | Accelerate, exit |
-| Emphasis | Ease-in-out | Smooth, deliberate |
-| Playful | Bounce | Fun, energetic |
-
-### Performance
-
-- Animate only transform and opacity
-- Respect reduced-motion preference
-- Test on low-end devices
-
-For animation patterns: [animation-guide.md](animation-guide.md), for advanced: [motion-graphics.md](motion-graphics.md)
-
----
-
-## 8. "Wow Factor" Checklist
-
-### Premium Indicators
-
-- [ ] Generous whitespace (luxury = breathing room)
-- [ ] Subtle depth and dimension
-- [ ] Smooth, purposeful animations
-- [ ] Attention to detail (alignment, consistency)
-- [ ] Cohesive visual rhythm
-- [ ] Custom elements (not all defaults)
-
-### Trust Builders
-
-- [ ] Security cues where appropriate
-- [ ] Social proof / testimonials
-- [ ] Clear value proposition
-- [ ] Professional imagery
-- [ ] Consistent design language
-
-### Emotional Triggers
-
-- [ ] Hero that evokes intended emotion
-- [ ] Human elements (faces, stories)
-- [ ] Progress/achievement indicators
-- [ ] Moments of delight
-
----
-
-## 9. Anti-Patterns (What NOT to Do)
-
-### ❌ Lazy Design Indicators
-
-- Default system fonts without consideration
-- Stock imagery that doesn't match
-- Inconsistent spacing
-- Too many competing colors
-- Walls of text without hierarchy
-- Inaccessible contrast
-
-### ❌ AI Tendency Patterns (AVOID!)
-
-- **Same colors every project**
-- **Dark + neon as default**
-- **Purple/violet everything (PURPLE BAN ✅)**
-- **Bento grids for simple landing pages**
-- **Mesh Gradients & Glow Effects**
-- **Same layout structure / Vercel clone**
-- **Not asking user preferences**
-
-### ❌ Dark Patterns (Unethical)
-
-- Hidden costs
-- Fake urgency
-- Forced actions
-- Deceptive UI
-- Confirmshaming
-
----
-
-## 10. Decision Process Summary
-
-```
-For EVERY design task:
-
-1. CONSTRAINTS
-   └── What's the timeline, brand, tech, audience?
-   └── If unclear → ASK
-
-2. CONTENT
-   └── What content exists?
-   └── What's the hierarchy?
-
-3. STYLE DIRECTION
-   └── What's appropriate for context?
-   └── If unclear → ASK (don't default!)
-
-4. EXECUTION
-   └── Apply principles above
-   └── Check against anti-patterns
-
-5. REVIEW
-   └── "Does this serve the user?"
-   └── "Is this different from my defaults?"
-   └── "Would I be proud of this?"
-```
-
----
-
-## Reference Files
-
-For deeper guidance on specific areas:
-
-- [color-system.md](color-system.md) - Color theory and selection process
-- [typography-system.md](typography-system.md) - Font pairing and scale decisions
-- [visual-effects.md](visual-effects.md) - Effects principles and techniques
-- [animation-guide.md](animation-guide.md) - Motion design principles
-- [motion-graphics.md](motion-graphics.md) - Advanced: Lottie, GSAP, SVG, 3D, Particles
-- [decision-trees.md](decision-trees.md) - Context-specific templates
-- [ux-psychology.md](ux-psychology.md) - User psychology deep dive
-
----
-
-## Related Skills
-
-| Skill | When to Use |
-|-------|-------------|
-| **frontend-design** (this) | Before coding - Learn design principles (color, typography, UX psychology) |
-| **[web-design-guidelines](../web-design-guidelines/SKILL.md)** | After coding - Audit for accessibility, performance, and best practices |
-
-## Post-Design Workflow
-
-After implementing your design, run the audit:
-
-```
-1. DESIGN   → Read frontend-design principles ← YOU ARE HERE
-2. CODE     → Implement the design
-3. AUDIT    → Run web-design-guidelines review
-4. FIX      → Address findings from audit
-```
-
-> **Next Step:** After coding, use `web-design-guidelines` skill to audit your implementation for accessibility, focus states, animations, and performance issues.
-
----
-
-> **Remember:** Design is THINKING, not copying. Every project deserves fresh consideration based on its unique context and users. **Avoid the Modern SaaS Safe Harbor!**
+Keep the register conversational and tuned: plain verbs, sentence case, no filler, with tone matched to the brand and the audience. Let each element do exactly one job. A label labels, an example demonstrates, and nothing quietly does double duty.

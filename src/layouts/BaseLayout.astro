@@ -131,13 +131,16 @@ const structuredData = {
     <meta name="theme-color" content="#2563EB" />
 
     <meta name="techmigos-api-base-url" content={publicApiBaseUrl} />
-    <meta name="supabase-url" content={import.meta.env.PUBLIC_SUPABASE_URL || ''} />
-    <meta name="supabase-key" content={import.meta.env.PUBLIC_SUPABASE_KEY || ''} />
+
+    <!-- Performance: preconnect to key origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://lzlflnjrtxovzrniwmyq.supabase.co" />
 
     <!-- JSON-LD makes the page, organization, and navigation legible to search engines. -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script is:inline>
+    <script is:inline define:vars={{ sbUrl: import.meta.env.PUBLIC_SUPABASE_URL || '', sbKey: import.meta.env.PUBLIC_SUPABASE_KEY || '' }}>
       window.TechMigosConfig = { apiBaseUrl: '' };
       window.techmigosApiUrl = function(p) { return String(p || ''); };
       window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
@@ -145,10 +148,6 @@ const structuredData = {
       window.tmSupabase = null;
 
       try {
-        var url = document.querySelector('meta[name="supabase-url"]');
-        var key = document.querySelector('meta[name="supabase-key"]');
-        var sbUrl = url ? url.getAttribute('content') : '';
-        var sbKey = key ? key.getAttribute('content') : '';
         if (sbUrl && sbKey) {
           window.tmSupabase = supabase.createClient(sbUrl, sbKey);
         }
