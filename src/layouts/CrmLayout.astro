@@ -2513,6 +2513,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       clientStatusFilter: '',
       usersSearch: '',
       accTab: 'overview',
+      accSubTab: 'all',
+      accSearch: '',
+      accTxPage: 1,
+      accSelectedId: null,
+      accInlineFinanceId: null,
       projectView: 'board',
       projectSearch: '',
       ticketView: 'board',
@@ -4182,15 +4187,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function renderFinance() {
       const isBuilder = state.financeSheet === 'invoices' && state.invoiceBuilderActive;
       const income = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const expenses = state.data.finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const operatingExpenses = state.data.finances.filter((item) => item.transaction_type === 'expense').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const salaries = state.data.finances.filter((item) => item.transaction_type === 'salary').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const expenses = operatingExpenses + salaries;
       const recurring = state.data.invoices.filter((item) => item.is_recurring).reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
       const received = state.data.invoices.reduce((sum, item) => sum + Number(item.received_amount || (item.status === 'paid' ? (item.total_amount || item.amount || 0) : 0)), 0);
       const receivable = state.data.invoices.filter((item) => !['paid', 'cancelled'].includes(item.status)).reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+      const availableBalance = income - expenses;
 
       const canWriteFinance = canWrite('finances');
       const tabActions = isBuilder
         ? '<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button><button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button><button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button><button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>'
-        : `${canWriteFinance ? '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button><button class="crm-button green" data-create="income" type="button">+ Add Income</button><button class="crm-button green" data-create="finances" type="button">+ Add Expense</button><button class="crm-button" data-create="salary" type="button">+ Add Salary</button>' : ''}<button class="crm-button" data-export="finance" type="button">Export CSV</button>`;
+        : '<button class="crm-button" data-export="finance" type="button">Export CSV</button>';
 
       const subtitles = isBuilder
         ? 'Build professional invoices with live preview. Configure company settings, client details, service items, and branding.'
@@ -4206,6 +4214,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const isInc = (t) => ['income', 'revenue'].includes(t);
         const signedINR = (v, t) => (isInc(t) ? '+' : '-') + fmtINR(Math.abs(Number(v) || 0));
+        const cashFlowByMonth = {};
+        state.data.finances.forEach((item) => {
+          const month = (item.transaction_date || '').slice(0, 7);
+          if (!month) return;
+          cashFlowByMonth[month] = (cashFlowByMonth[month] || 0) + (isInc(item.transaction_type) ? Number(item.amount || 0) : -Number(item.amount || 0));
+        });
+        const cashFlowMonths = Object.keys(cashFlowByMonth).sort().slice(-6);
+        const cashFlowValues = cashFlowMonths.map((month) => cashFlowByMonth[month]);
+        const cashFlowMax = Math.max(...cashFlowValues.map(Math.abs), 1);
+        const cashFlowPoints = cashFlowValues.map((value, index) => `${8 + (index * 184 / Math.max(cashFlowValues.length - 1, 1))},${44 - (value / cashFlowMax) * 32}`).join(' ');
 
         const catBadge = (t) => {
           const m = { income: 'acc-badge-income', revenue: 'acc-badge-income', expense: 'acc-badge-expense', salary: 'acc-badge-salary', invoice: 'acc-badge-invoice' };
@@ -4240,12 +4258,31 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const txTotal = finRows.length;
         const txPageRows = finRows.slice((txPage - 1) * txPer, txPage * txPer);
 
+        const transactionTypeOptions = (selected) => ['income', 'expense', 'salary', 'invoice'].map((type) => `<option value="${type}" ${selected === type ? 'selected' : ''}>${nice(type === 'expense' ? 'expenses' : type)}</option>`).join('');
+        const transactionStatusOptions = (selected) => ['pending', 'paid', 'received', 'sent', 'overdue', 'cancelled'].map((status) => `<option value="${status}" ${selected === status ? 'selected' : ''}>${nice(status)}</option>`).join('');
+        const inlineTransactionRow = (record = {}, showProof = false) => {
+          const isNew = !record.id;
+          const type = record.transaction_type || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
+          const status = record.status || (type === 'income' ? 'received' : 'pending');
+          const date = record.transaction_date || new Date().toISOString().slice(0, 10);
+          return `<tr class="acc-tbl-row acc-inline-row" data-inline-finance-row${isNew ? ' data-inline-finance-new' : ` data-inline-finance-id="${record.id}"`}>
+            <td><input class="crm-edit-input" data-inline-field="transaction_date" type="date" value="${escapeHtml(date)}" aria-label="Transaction date" /></td>
+            <td><input class="crm-edit-input" data-inline-field="title" value="${escapeHtml(record.title || '')}" placeholder="Description" aria-label="Description" /></td>
+            <td><select class="crm-edit-select" data-inline-field="transaction_type" aria-label="Category">${transactionTypeOptions(type)}</select></td>
+            <td><input class="crm-edit-input" data-inline-field="amount" type="number" min="0" step="0.01" value="${escapeHtml(record.amount ?? '')}" placeholder="0.00" aria-label="Amount" /></td>
+            <td><select class="crm-edit-select" data-inline-field="status" aria-label="Status">${transactionStatusOptions(status)}</select></td>
+            ${showProof ? '<td style="color:#94a3b8;font-size:12px;">Save first</td>' : ''}
+            <td><div style="display:flex;gap:4px;align-items:center;"><button class="crm-button primary" data-save-inline-finance type="button">Save</button><button class="crm-button" data-cancel-inline-finance type="button">Cancel</button></div></td>
+          </tr>`;
+        };
         const txTable = (rows, showProof = false) => {
-          if (!rows.length) return `<p style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No records found.</p>`;
+          const isAdding = state.accInlineFinanceId === 'new';
+          if (!rows.length && !isAdding) return `<p style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No records found.</p>`;
           return `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr>
             <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Status</th>${showProof ? '<th>Proof</th>' : ''}<th>Actions</th>
           </tr></thead><tbody>
-          ${rows.map(r => `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}" data-row-id="${r.id}">
+          ${isAdding ? inlineTransactionRow({}, showProof) : ''}
+          ${rows.map(r => state.accInlineFinanceId === String(r.id) ? inlineTransactionRow(r, showProof) : `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}" data-row-id="${r.id}">
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(r.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(r.title || '—')}</td>
             <td>${catBadge(r.transaction_type)}</td>
@@ -4253,7 +4290,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td>${sBadge(r.status)}</td>
             ${showProof ? `<td>${proofIcon(r)}</td>` : ''}
             <td><div style="display:flex;gap:4px;align-items:center;">
-              <button class="crm-button" data-edit-finance="${r.id}" type="button" title="Edit" aria-label="Edit" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+              <button class="crm-button" data-edit-finance="${r.id}" type="button" title="Edit" aria-label="Edit" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
               <button class="crm-button" data-del-finance="${r.id}" type="button" title="Delete" aria-label="Delete" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:#dc2626;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
             </div></td>
           </tr>`).join('')}
@@ -4337,22 +4374,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
         // Build sub-tab pills
         const subTabs = (tabs) => `<div class="acc-sheet-tabs">${tabs.map(([k, l]) => `<button class="acc-sheet-tab${(state.accSubTab || 'all') === k ? ' active' : ''}" data-acc-subtab="${k}" type="button">${l}</button>`).join('')}</div>`;
+        const financialPulse = `<section class="acc-financial-pulse" aria-label="Financial summary">
+          <div class="acc-pulse-metrics">
+            <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${state.data.finances.filter((item) => isInc(item.transaction_type)).length} entries</small></div>
+            <div class="acc-pulse-metric"><span>Operating expenses</span><strong>${fmtINR(operatingExpenses)}</strong><small>Excludes salaries</small></div>
+            <div class="acc-pulse-metric"><span>Total spending</span><strong>${fmtINR(expenses)}</strong><small>Expenses and salaries</small></div>
+            <div class="acc-pulse-metric"><span>Outstanding invoices</span><strong>${fmtINR(receivable)}</strong><small>Awaiting collection</small></div>
+            <div class="acc-pulse-metric ${availableBalance >= 0 ? 'acc-pulse-balance-positive' : 'acc-pulse-balance-negative'}"><span>Available balance</span><strong>${availableBalance < 0 ? '−' : ''}${fmtINR(availableBalance)}</strong><small>${availableBalance >= 0 ? 'Funds remaining' : 'Spending exceeds income'}</small></div>
+          </div>
+          <div class="acc-pulse-chart">
+            <div><span>Net cash flow</span><strong>${availableBalance >= 0 ? '+' : '−'}${fmtINR(availableBalance)}</strong></div>
+            ${cashFlowMonths.length ? `<svg viewBox="0 0 200 88" role="img" aria-label="Net cash flow trend" preserveAspectRatio="none"><line x1="0" y1="44" x2="200" y2="44" class="acc-pulse-baseline"/><polyline points="${cashFlowPoints}" class="acc-pulse-line"/></svg><div class="acc-pulse-months">${cashFlowMonths.map((month) => `<span>${new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short' })}</span>`).join('')}</div>` : '<p>No cash-flow data yet.</p>'}
+          </div>
+        </section>`;
 
         // ── OVERVIEW TAB ──
         const overviewTab = `<div style="display:flex;flex-direction:column;gap:18px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 620px;gap:14px;">
-            <div class="acc-kpi-card acc-kpi-green"><div class="acc-kpi-label">Total Income</div><div class="acc-kpi-value">${fmtINR(income)}</div><div class="acc-kpi-note">${state.data.finances.filter(r => isInc(r.transaction_type)).length} entries posted</div></div>
-            <div class="acc-kpi-card acc-kpi-purple"><div class="acc-kpi-label">Total Expenses</div><div class="acc-kpi-value">${fmtINR(expenses)}</div><div class="acc-kpi-note">${state.data.finances.filter(r => ['expense', 'salary'].includes(r.transaction_type)).length} outgoing records</div></div>
-            <div class="acc-kpi-card acc-kpi-dark"><div class="acc-kpi-label" style="color:#aaa;">⏱ Pending Invoices</div><div class="acc-kpi-value">${fmtINR(receivable)}</div><div class="acc-kpi-note" style="color:#555;">${state.data.invoices.filter(r => !['paid', 'cancelled'].includes(r.status)).length} need collection</div></div>
-            <div style="background:#111;border-radius:14px;padding:16px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-size:12px;font-weight:700;color:#e2e8f0;">Cash Flow Trend</span>
-                <span style="font-size:12px;font-weight:700;color:#22f25a;" id="acc-cf-pct">—</span>
-              </div>
-              <canvas id="acc-cashflow-canvas" height="80" style="width:100%;height:80px;display:block;"></canvas>
-              <div style="display:flex;gap:0;margin-top:6px;" id="acc-cf-labels"></div>
-            </div>
-          </div>
+          ${financialPulse}
           <div style="display:grid;grid-template-columns:1fr 620px;gap:14px;">
             <div class="crm-card" style="padding:18px;">
               ${subTabs([['all', 'All Records'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Salary'], ['invoices', 'Invoices']])}
@@ -4363,13 +4401,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>`;
 
         // ── TRANSACTIONS TAB ──
-        const transactionsTab = `<div style="display:grid;grid-template-columns:1fr 620px;gap:14px;">
-          <div>
+        const transactionsTab = `<div style="display:flex;flex-direction:column;gap:18px;">
+          ${financialPulse}
+          <div class="acc-transactions-workspace">
+          <div class="acc-transactions-left">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
               <div style="font-size:16px;font-weight:800;color:#1e293b;">All Transactions</div>
               <div style="display:flex;gap:8px;align-items:center;">
                 <input class="crm-input" id="acc-tx-search" placeholder="Search transactions…" value="${escapeHtml(state.accSearch || '')}" style="width:200px;height:36px;font-size:13px;" />
-                <button class="crm-button primary" data-create="finances" type="button">+ Add Row</button>
+                ${canWriteFinance ? '<button class="crm-button primary" data-add-inline-finance type="button">+ Add Row</button>' : ''}
               </div>
             </div>
             ${subTabs([['all', 'All'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Salary'], ['invoices', 'Invoices']])}
@@ -4384,10 +4424,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             </div>
           </div>
           ${proofPanel('acc-tx-proof')}
+          </div>
         </div>`;
 
         // ── INVOICES TAB ──
         const invoicesTab = `<div style="display:flex;flex-direction:column;gap:14px;">
+          ${financialPulse}
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:16px;font-weight:800;color:#1e293b;">Invoices</div>
             <button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>
@@ -4444,22 +4486,24 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td style="font-weight:600;">${margin}%</td>
           </tr>`;
         }).join('');
-        const salAmt = state.data.finances.filter(r => r.transaction_type === 'salary').reduce((s, r) => s + Number(r.amount || 0), 0);
-        const totalAll = Math.max(income + expenses + salAmt, 1);
-        const net = income - expenses;
+        const salAmt = salaries;
+        const totalAll = Math.max(income + operatingExpenses + salAmt, 1);
+        const net = availableBalance;
         const target = Math.max(net * 1.4, income * 0.5, 500000);
         const pct = Math.min(Math.max(Math.round((net / target) * 100), 0), 100);
         const donutArcs = (() => {
           const circ = 2 * Math.PI * 15.9155;
           let off = 25;
-          return [{ c: '#22f25a', v: income }, { c: '#b69df8', v: expenses }, { c: '#1e293b', v: salAmt }].map(({ c, v }) => {
+          return [{ c: '#22f25a', v: income }, { c: '#b69df8', v: operatingExpenses }, { c: '#1e293b', v: salAmt }].map(({ c, v }) => {
             const dash = (v / totalAll) * circ;
             const arc = `<circle cx="18" cy="18" r="15.9155" fill="none" stroke="${c}" stroke-width="3.5" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${off}" transform="rotate(-90 18 18)"/>`;
             off -= dash;
             return arc;
           }).join('');
         })();
-        const reportsTab = `<div style="display:grid;grid-template-columns:1fr 260px;gap:16px;">
+        const reportsTab = `<div style="display:flex;flex-direction:column;gap:18px;">
+          ${financialPulse}
+          <div class="acc-reports-workspace">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="crm-card" style="padding:20px;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
@@ -4488,7 +4532,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <text x="18" y="21" text-anchor="middle" font-size="2.5" fill="#94a3b8">Income</text>
               </svg>
               <div style="display:flex;flex-direction:column;gap:8px;">
-                ${[{ c: '#22f25a', l: 'Revenue', v: income }, { c: '#b69df8', l: 'Expenses', v: expenses }, { c: '#1e293b', l: 'Salaries', v: salAmt }].map(d => `<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;"><div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:${d.c};flex-shrink:0;"></div>${d.l}</div><strong style="font-size:12px;">${fmtINR(d.v)}</strong></div>`).join('')}
+                ${[{ c: '#22f25a', l: 'Revenue', v: income }, { c: '#b69df8', l: 'Expenses', v: operatingExpenses }, { c: '#1e293b', l: 'Salaries', v: salAmt }].map(d => `<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;"><div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:${d.c};flex-shrink:0;"></div>${d.l}</div><strong style="font-size:12px;">${fmtINR(d.v)}</strong></div>`).join('')}
               </div>
             </div>
             <div style="background:#111;border-radius:14px;padding:20px;color:#fff;">
@@ -4501,6 +4545,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <button class="crm-button" data-export-pdf="finance" type="button" style="flex:1;font-size:12px;">📄 PDF</button>
               </div>
             </div>
+          </div>
           </div>
         </div>`;
 
@@ -4519,6 +4564,26 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.8;margin-bottom:10px;}
           .acc-kpi-value{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1;}
           .acc-kpi-note{font-size:11px;opacity:.6;margin-top:6px;}
+          .acc-financial-pulse{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,.8fr);gap:14px;}
+          .acc-pulse-metrics{display:grid;grid-template-columns:repeat(5,minmax(118px,1fr));gap:10px;}
+          .acc-pulse-metric{min-width:0;padding:14px 15px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;display:flex;flex-direction:column;gap:5px;}
+          .acc-pulse-metric span,.acc-pulse-chart span{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#64748b;}
+          .acc-pulse-metric strong{font-size:18px;line-height:1.1;letter-spacing:-.03em;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          .acc-pulse-metric small{font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+          .acc-pulse-income{border-color:#bbf7d0;background:#f0fdf4;}
+          .acc-pulse-income strong,.acc-pulse-balance-positive strong{color:#15803d;}
+          .acc-pulse-balance-negative{border-color:#fecaca;background:#fff7f7;}
+          .acc-pulse-balance-negative strong{color:#dc2626;}
+          .acc-pulse-chart{min-height:118px;padding:14px 16px;border-radius:12px;background:#111827;color:#fff;display:grid;grid-template-columns:88px 1fr;grid-template-rows:1fr auto;column-gap:12px;align-items:center;}
+          .acc-pulse-chart strong{display:block;margin-top:6px;font-size:17px;line-height:1.1;color:#f8fafc;}
+          .acc-pulse-chart svg{width:100%;height:68px;overflow:visible;}
+          .acc-pulse-baseline{stroke:#334155;stroke-width:1;stroke-dasharray:3 3;}
+          .acc-pulse-line{fill:none;stroke:#22c55e;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+          .acc-pulse-months{grid-column:2;display:flex;justify-content:space-between;gap:4px;color:#94a3b8;font-size:10px;}
+          .acc-pulse-chart p{margin:0;color:#94a3b8;font-size:12px;}
+          .acc-transactions-workspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.85fr);gap:18px;align-items:start;}
+          .acc-transactions-left{min-width:0;padding-left:4px;}
+          .acc-reports-workspace{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;}
           .acc-sheet-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
           .acc-sheet-tab{padding:5px 14px;border-radius:20px;border:1px solid #dbe3ef;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#64748b;transition:all .15s;}
           .acc-sheet-tab.active{background:#0f172a;color:#fff;border-color:#0f172a;}
@@ -4548,6 +4613,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-proof-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:2px 4px;transition:transform .1s;line-height:1;}
           .acc-proof-btn:hover{transform:scale(1.2);}
           .acc-proof-panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;min-height:220px;}
+          @media (max-width:1180px){.acc-financial-pulse{grid-template-columns:1fr;}.acc-pulse-metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.acc-transactions-workspace{grid-template-columns:minmax(0,1fr) 360px;}.acc-reports-workspace{grid-template-columns:minmax(0,1fr) 230px;}}
+          @media (max-width:820px){.acc-pulse-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.acc-transactions-workspace,.acc-reports-workspace{grid-template-columns:1fr;}.acc-transactions-left{padding-left:0;}.acc-pulse-chart{grid-template-columns:80px 1fr;}}
         </style>
         <div class="acc-tab-nav">
           ${tabDefs.map(([k, l]) => `<button class="acc-tab-btn${accTab === k ? ' active' : ''}" data-acc-tab="${k}" type="button">${l}</button>`).join('')}
@@ -4636,11 +4703,48 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       // ── Search ──
       const srch = document.getElementById('acc-tx-search');
       if (srch) srch.addEventListener('input', () => { state.accSearch = srch.value; state.accTxPage = 1; renderFinance(); });
+      document.querySelector('[data-add-inline-finance]')?.addEventListener('click', () => {
+        state.accInlineFinanceId = 'new';
+        renderFinance();
+        document.querySelector('[data-inline-field="title"]')?.focus();
+      });
+      document.querySelectorAll('[data-cancel-inline-finance]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.accInlineFinanceId = null;
+          renderFinance();
+        });
+      });
+      document.querySelectorAll('[data-save-inline-finance]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const row = button.closest('[data-inline-finance-row]');
+          if (!row) return;
+          const raw = Object.fromEntries(Array.from(row.querySelectorAll('[data-inline-field]')).map((field) => [field.dataset.inlineField, field.value]));
+          const body = normalizePayload('finances', { ...raw, source: 'manual' });
+          const validationError = validatePayload('finances', body);
+          if (validationError) return toast(validationError);
+          button.disabled = true;
+          try {
+            const id = row.dataset.inlineFinanceId;
+            await portal(id ? `/api/portal/finances/${id}` : '/api/portal/finances', {
+              method: id ? 'PATCH' : 'POST',
+              body: JSON.stringify(body),
+            });
+            state.accInlineFinanceId = null;
+            toast(id ? 'Transaction updated' : 'Transaction added');
+            await loadData();
+            renderFinance();
+          } catch (error) {
+            button.disabled = false;
+            toast(error instanceof Error ? error.message : 'Could not save transaction');
+          }
+        });
+      });
       // ── Edit finance row ──
       document.querySelectorAll('[data-edit-finance]').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
-          openEdit('finances', btn.dataset.editFinance);
+          state.accInlineFinanceId = btn.dataset.editFinance;
+          renderFinance();
         });
       });
       // ── Delete finance row ──
