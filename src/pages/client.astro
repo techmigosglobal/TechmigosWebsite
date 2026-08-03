@@ -141,8 +141,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <h2 id="invoice-preview-title" class="mt-1 text-xl font-extrabold text-slate-950">Invoice</h2>
         </div>
         <div class="flex gap-2">
-          <button id="download-pdf-invoice" class="btn-secondary text-sm">Download PDF</button>
-          <button id="print-invoice" class="btn-primary text-sm">Print</button>
+          <button id="download-pdf-invoice" class="btn-secondary text-sm">Print / Save PDF</button>
+          <button id="print-invoice" class="btn-primary text-sm">Print / Save PDF</button>
           <button id="close-invoice" class="btn-secondary text-sm">Close</button>
         </div>
       </div>
@@ -184,6 +184,49 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function money(value, currency = 'INR') {
       return `${escapeHtml(currency || 'INR')} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function invoiceProjectSnapshot(invoice) {
+      const snapshot = invoice?.project_snapshot;
+      if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot)) return snapshot;
+      return state.projects.find((project) => String(project.id) === String(invoice?.project_id)) || {};
+    }
+
+    function invoiceBranding(invoice) {
+      const branding = invoice?.invoice_branding;
+      return branding && typeof branding === 'object' && !Array.isArray(branding) ? branding : {};
+    }
+
+    function getInvoicePrintName(value) {
+      return String(value || 'invoice').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'invoice';
+    }
+
+    async function printInvoiceMarkup(markup, filename = 'invoice') {
+      const printWindow = window.open('', '_blank', 'popup,width=900,height=1100');
+      if (!printWindow) {
+        setStatus('Allow pop-ups to print or save the invoice as PDF.', 'error');
+        return false;
+      }
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(filename)}</title><style>
+        @page { size: A4; margin: 10mm; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff; color: #111; }
+        body { font-family: Arial, Helvetica, sans-serif; }
+        .invoice-print-sheet { width: 190mm; max-width: 190mm; margin: 0 auto; color: #111; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.35; }
+        .invoice-print-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .invoice-print-sheet table { border-collapse: collapse; width: 100%; }
+        img { max-width: 100%; }
+      </style></head><body>${markup}</body></html>`);
+      printWindow.document.close();
+      await Promise.all(Array.from(printWindow.document.images || []).map((image) => image.complete ? Promise.resolve() : new Promise((resolve) => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+      })));
+      printWindow.onafterprint = () => printWindow.close();
+      printWindow.focus();
+      window.setTimeout(() => printWindow.print(), 80);
+      return true;
     }
 
     function badge(value, tone = 'slate') {
@@ -360,6 +403,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const detail = result.detail;
       invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
       invoicePreview.innerHTML = invoiceHtml(detail);
+      invoicePreview.dataset.invoiceNumber = detail.invoice.invoice_number || id;
       invoiceModal.classList.remove('hidden');
       await loadOverview(false);
     }
@@ -376,6 +420,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const billCompany = inv.customer_company || detail.client?.company || '';
       const billPhone = inv.customer_phone || detail.client?.phone || '';
       const billEmail = inv.customer_email || detail.client?.email || '';
+      const project = invoiceProjectSnapshot(inv);
+      const branding = invoiceBranding(inv);
+      const logoUrl = branding.logo_url || '/icon.png';
+      const qrUrl = branding.qr_url || '';
+      const signatureUrl = branding.signature_url || inv.sign_url || '';
 
       const total = Number(inv.total_amount || inv.amount || 0);
       const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
@@ -400,7 +449,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
         <div style="border:1px solid #ccc;margin-top:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <img src="/icon.png" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
+            <img src="${esc(logoUrl)}" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
             <div>
               <div style="font-size:18px;font-weight:900;">TechMigos</div>
               <div style="font-size:10px;color:#555;">Hyderabad, Hyderabad, Telangana, 500097</div>
@@ -426,6 +475,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Due Date</strong><br>${esc(inv.due_date || '-')}</td>
           </tr>
         </table>
+        ${project.name ? `<div style="margin:0;padding:8px 10px;border:1px solid #ccc;border-top:0;background:#f8fafc;font-size:10px;line-height:1.45;"><strong>Project:</strong> ${esc(project.name)}${project.project_manager ? ` · <strong>Manager:</strong> ${esc(project.project_manager)}` : ''}${project.status ? ` · <strong>Status:</strong> ${esc(String(project.status).replace(/_/g, ' '))}` : ''}${project.health ? ` · <strong>Health:</strong> ${esc(String(project.health).replace(/_/g, ' '))}` : ''}${project.progress !== null && project.progress !== undefined ? ` · <strong>Progress:</strong> ${esc(project.progress)}%` : ''}${project.due_date ? `<br><strong>Project due:</strong> ${esc(String(project.due_date).slice(0, 10))}` : ''}${project.summary ? `<br><strong>Scope:</strong> ${esc(project.summary)}` : ''}</div>` : ''}
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <thead>
             <tr style="background:#f3f4f6;">
@@ -461,10 +511,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <tr>
             <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;width:55%;">
+              ${qrUrl ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><img src="${esc(qrUrl)}" style="width:58px;height:58px;object-fit:contain;" alt="Payment QR code" onerror="this.style.display='none'" /><span style="font-size:9px;color:#555;">Scan to pay</span></div>` : ''}
               ${inv.terms ? `<strong>Terms and Conditions</strong><div style="margin-top:4px;font-size:10px;white-space:pre-line;">${esc(inv.terms)}</div>` : ''}
             </td>
             <td style="border:1px solid #ccc;padding:8px 10px;text-align:center;vertical-align:bottom;">
-              ${inv.sign_url ? `<img src="${esc(inv.sign_url)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" />` : '<div style="height:44px;"></div>'}
+              ${signatureUrl ? `<img src="${esc(signatureUrl)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" onerror="this.style.display='none'" />` : '<div style="height:44px;"></div>'}
               <div style="border-top:1px solid #555;padding-top:4px;font-size:10px;font-weight:700;">Authorised Signatory For<br>TechMigos</div>
             </td>
           </tr>
@@ -473,7 +524,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function downloadInvoicePdf(id) {
-      window.print();
+      const markup = invoicePreview?.innerHTML || '';
+      if (!markup) return setStatus('Invoice preview is not ready yet.', 'error');
+      return printInvoiceMarkup(markup, getInvoicePrintName(id || 'invoice'));
     }
 
     async function openConversation(id) {
@@ -550,12 +603,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     document.getElementById('logout-button')?.addEventListener('click', logout);
     document.getElementById('close-invoice')?.addEventListener('click', () => invoiceModal.classList.add('hidden'));
-    document.getElementById('print-invoice')?.addEventListener('click', () => window.print());
+    document.getElementById('print-invoice')?.addEventListener('click', () => {
+      const markup = invoicePreview?.innerHTML || '';
+      if (markup) printInvoiceMarkup(markup, getInvoicePrintName(invoicePreview.dataset.invoiceNumber || 'invoice'));
+    });
     document.getElementById('download-pdf-invoice')?.addEventListener('click', () => {
-      const invoiceNumber = document.querySelector('#invoice-preview h1, #invoice-preview-title')?.textContent || 'invoice';
-      const idMatch = String(invoiceNumber).match(/[\w-]+$/);
-      const id = idMatch ? idMatch[0] : 'unknown';
-      downloadInvoicePdf(id);
+      downloadInvoicePdf(invoicePreview.dataset.invoiceNumber || 'invoice');
     });
 
     boot();
