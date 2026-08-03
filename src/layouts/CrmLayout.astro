@@ -2634,6 +2634,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     }
 
+    function proofIconMarkup(kind = 'file', size = 18) {
+      const paths = {
+        file: '<path d="M6 2.75h7l5 5V21.25H6z"></path><path d="M13 2.75v5h5"></path><path d="M9 12h6"></path><path d="M9 16h6"></path>',
+        paperclip: '<path d="m8.5 12.5 5.8-5.8a3.18 3.18 0 0 1 4.5 4.5l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.6-7.6a1.9 1.9 0 0 1 2.7 2.7l-7.2 7.2a.65.65 0 0 0 .9.9l6.5-6.5"></path>',
+        upload: '<path d="M12 16V4"></path><path d="m7 9 5-5 5 5"></path><path d="M5 20h14"></path>',
+        pending: '<circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3 2"></path>',
+      };
+      return `<svg class="acc-proof-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind] || paths.file}</svg>`;
+    }
+
     function money(value, currency = 'INR') {
       return `${currency} ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
@@ -2721,11 +2731,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function canWrite(resource) {
       const role = state.profile?.role;
-      if (role === 'company_admin' || role === 'company_member' || !role) return true;
+      if (role === 'company_admin' || role === 'company_member') return true;
       if (role === 'client') {
         return ['tickets', 'ticket_messages'].includes(resource);
       }
-      return true;
+      return false;
     }
 
     function isDisabledResource(resource) {
@@ -2734,6 +2744,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function ensurePortalAccess(resource) {
       if (!resource || resource === 'me' || resource === 'client') return;
+      if (!['company_admin', 'company_member'].includes(state.profile?.role)) {
+        throw new Error('This workspace is available to company staff only.');
+      }
       if (isDisabledResource(resource)) throw new Error(`${nice(resource)} is not enabled in this CRM workspace.`);
       if (ADMIN_ONLY_RESOURCES.has(resource) && !isCompanyAdmin()) {
         throw new Error('Only company admins can access this area.');
@@ -2823,9 +2836,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .eq('auth_user_id', user.id)
           .single();
         if (!profile) throw new Error('Profile not found');
+        if (profile.status !== 'active') throw new Error('This company account is not active.');
         if (profile.role === 'client') throw new Error('Access denied');
         return { profile, destination: '/company' };
       }
+
+      ensurePortalAccess(resource);
 
       if (resource === 'settings') {
         const category = id || 'company';
@@ -2926,8 +2942,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           };
         }
       }
-
-      ensurePortalAccess(resource);
 
       if (method === 'GET' && !id) {
         const { data, error } = await window.tmSupabase
@@ -4042,7 +4056,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>
         </div>`;
       }
-      return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="text-decoration:none;">📎 Open proof</a>`;
+      return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="text-decoration:none;">${proofIconMarkup('paperclip', 14)} Open proof</a>`;
     }
 
     function proofSummaryMarkup(url) {
@@ -4265,7 +4279,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       const canWriteFinance = canWrite('finances');
       const tabActions = isBuilder
-        ? '<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button><button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button><button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button><button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>'
+        ? `<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button>${isCompanyAdmin() ? '<button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button>' : ''}<button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button><button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>`
         : '<button class="crm-button" data-export="finance" type="button">Export CSV</button>';
 
       const subtitles = isBuilder
@@ -4301,11 +4315,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         };
         const sBadge = (s) => {
           const m = { paid: 'acc-status-paid', pending: 'acc-status-pending', overdue: 'acc-status-overdue', draft: 'acc-status-draft', sent: 'acc-status-sent', cancelled: 'acc-status-cancelled' };
-          return `<span class="acc-status-badge ${m[s] || 'acc-status-other'}">${s ? s[0].toUpperCase() + s.slice(1) : '—'}</span>`;
+          const status = String(s || '').toLowerCase();
+          const label = status ? status[0].toUpperCase() + status.slice(1).replace(/_/g, ' ') : '—';
+          return `<span class="acc-status-badge ${m[status] || 'acc-status-other'}" aria-label="Status: ${escapeHtml(label)}">${status === 'pending' ? proofIconMarkup('pending', 13) : ''}<span>${escapeHtml(label)}</span></span>`;
         };
         const proofIcon = (r) => r.proof_url
-          ? `<button class="acc-proof-btn has-proof" data-proof="${escapeHtml(r.proof_url)}" data-id="${r.id}" title="View proof" type="button">📎</button>`
-          : `<button class="acc-proof-btn" data-noproof="${r.id}" title="No proof" type="button">📄</button>`;
+          ? `<button class="acc-proof-btn has-proof" data-proof="${escapeHtml(r.proof_url)}" data-id="${r.id}" title="View proof" aria-label="View proof" type="button">${proofIconMarkup('paperclip')}</button>`
+          : `<span class="acc-proof-btn acc-proof-btn-empty" data-noproof="${r.id}" title="No proof attached" aria-label="No proof attached">${proofIconMarkup('file')}</span>`;
 
         // Filter finance rows by sub-tab and search
         const getFinRows = () => {
@@ -4333,14 +4349,21 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           const type = record.transaction_type || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
           const status = record.status || (type === 'income' ? 'received' : 'pending');
           const date = record.transaction_date || new Date().toISOString().slice(0, 10);
+          const initialSaveLabel = isNew ? 'Draft · complete required fields' : 'Auto-save ready';
+          const proofCellMarkup = showProof
+            ? isNew
+              ? '<span class="acc-inline-proof-placeholder">Complete the row to attach proof</span>'
+              : `<div class="acc-inline-proof-actions">${record.proof_url ? proofIcon(record) : '<span class="acc-inline-no-proof">No proof</span>'}<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${record.id}" style="display:none;" /></label></div>`
+            : '';
+          const actionLabel = isNew ? 'Cancel' : 'Done';
           return `<tr class="acc-tbl-row acc-inline-row" data-inline-finance-row${isNew ? ' data-inline-finance-new' : ` data-inline-finance-id="${record.id}"`}>
             <td><input class="crm-edit-input" data-inline-field="transaction_date" type="date" value="${escapeHtml(date)}" aria-label="Transaction date" /></td>
             <td><input class="crm-edit-input" data-inline-field="title" value="${escapeHtml(record.title || '')}" placeholder="Description" aria-label="Description" /></td>
             <td><select class="crm-edit-select" data-inline-field="transaction_type" aria-label="Category">${transactionTypeOptions(type)}</select></td>
             <td><input class="crm-edit-input" data-inline-field="amount" type="number" min="0" step="0.01" value="${escapeHtml(record.amount ?? '')}" placeholder="0.00" aria-label="Amount" /></td>
             <td><select class="crm-edit-select" data-inline-field="status" aria-label="Status">${transactionStatusOptions(status)}</select></td>
-            ${showProof ? '<td style="color:#94a3b8;font-size:12px;">Save first</td>' : ''}
-            <td><div style="display:flex;gap:4px;align-items:center;"><button class="crm-button primary" data-save-inline-finance type="button">Save</button><button class="crm-button" data-cancel-inline-finance type="button">Cancel</button></div></td>
+            ${showProof ? `<td>${proofCellMarkup}</td>` : ''}
+            <td><div class="acc-inline-actions"><span class="acc-inline-save-state acc-inline-save-state--draft" data-inline-save-state aria-live="polite">${initialSaveLabel}</span><button class="crm-button" data-cancel-inline-finance type="button">${actionLabel}</button></div></td>
           </tr>`;
         };
         const txTable = (rows, showProof = false) => {
@@ -4350,13 +4373,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Status</th>${showProof ? '<th>Proof</th>' : ''}<th>Actions</th>
           </tr></thead><tbody>
           ${isAdding ? inlineTransactionRow({}, showProof) : ''}
-          ${rows.map(r => state.accInlineFinanceId === String(r.id) ? inlineTransactionRow(r, showProof) : `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}" data-row-id="${r.id}">
+          ${rows.map(r => state.accInlineFinanceId === String(r.id) ? inlineTransactionRow(r, showProof) : `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}${String(r.status).toLowerCase() === 'pending' ? ' acc-row-pending' : ''}" data-row-id="${r.id}">
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(r.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(r.title || '—')}</td>
             <td>${catBadge(r.transaction_type)}</td>
             <td class="${isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
             <td>${sBadge(r.status)}</td>
-            ${showProof ? `<td><div style="display:flex;align-items:center;gap:4px;">${proofIcon(r)}<label class="acc-proof-btn" title="Attach or replace proof">â†‘<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label></div></td>` : ''}
+            ${showProof ? `<td><div class="acc-proof-actions">${proofIcon(r)}<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label></div></td>` : ''}
             <td><div style="display:flex;gap:4px;align-items:center;">
               <button class="crm-button" data-edit-finance="${r.id}" type="button" title="Edit" aria-label="Edit" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
               <button class="crm-button" data-del-finance="${r.id}" type="button" title="Delete" aria-label="Delete" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:#dc2626;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
@@ -4368,7 +4391,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const proofPanel = (panelId) => {
           const row = state.data.finances.find(r => String(r.id) === String(state.accSelectedId));
           if (!row) return `<div class="acc-proof-panel" id="${panelId}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;min-height:200px;">
-            <div style="font-size:36px;margin-bottom:10px;">📋</div>
+            <div class="acc-proof-empty-icon">${proofIconMarkup('file', 32)}</div>
             <div style="font-size:14px;font-weight:700;color:#475569;">Proof Preview</div>
             <p style="font-size:12px;color:#94a3b8;margin-top:6px;max-width:320px;">Click any transaction row to see details and proof/receipt here.</p>
           </div>`;
@@ -4408,7 +4431,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             } else {
               proofContentMarkup = `
                 <div style="border:1.5px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;background:#fff;margin-bottom:10px;">
-                  <div style="font-size:32px;margin-bottom:6px;">📎</div>
+                  <div class="acc-proof-empty-icon">${proofIconMarkup('paperclip', 30)}</div>
                   <div style="font-size:12px;color:#64748b;margin-bottom:10px;word-break:break-all;">${fileName}</div>
                   <div style="display:flex;justify-content:center;gap:6px;">
                     <button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">Preview ↗</button>
@@ -4419,7 +4442,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           } else {
             proofContentMarkup = `
               <label style="display:flex;flex-direction:column;align-items:center;gap:8px;border:1.5px dashed #d1d5db;border-radius:10px;padding:20px;cursor:pointer;background:#fafafa;transition:background .15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fafafa'">
-                <div style="font-size:32px;">📤</div>
+                <div class="acc-proof-empty-icon">${proofIconMarkup('upload', 30)}</div>
                 <span style="font-size:12px;color:#94a3b8;font-weight:600;">No proof attached</span>
                 <span style="font-size:11px;color:#6366f1;font-weight:700;">Click to Upload</span>
                 <input type="file" accept="image/*,.pdf" data-proof-upload="${row.id}" data-proof-row="${row.id}" style="display:none;" />
@@ -4434,6 +4457,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <div style="padding:14px 16px;">
               <div style="font-size:22px;font-weight:800;color:${isInc(row.transaction_type) ? '#16a34a' : '#dc2626'};margin-bottom:6px;">${signedINR(row.amount, row.transaction_type)}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${catBadge(row.transaction_type)}${sBadge(row.status)}</div>
+              ${String(row.status).toLowerCase() === 'pending' ? '<div class="acc-pending-note" role="status">' + proofIconMarkup('pending', 16) + '<span><strong>Pending review</strong><small>Update the status after confirming this record.</small></span>' + (canWriteFinance ? `<button class="crm-button" type="button" data-resolve-finance="${row.id}" style="margin-left:auto;white-space:nowrap;padding:5px 8px;font-size:10px;">Mark ${isInc(row.transaction_type) ? 'Received' : 'Paid'}</button>` : '') + '</div>' : ''}
               ${proofContentMarkup}
               ${row.notes ? `<div style="margin-top:12px;font-size:12px;color:#64748b;background:#f8fafc;padding:10px;border-radius:8px;border-left:3px solid #e2e8f0;">${escapeHtml(row.notes)}</div>` : ''}
             </div>
@@ -4660,7 +4684,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-tbl thead th{text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e5e7eb;}
           .acc-tbl-row{border-bottom:1px solid #f4f7fb;transition:background .1s;cursor:pointer;}
           .acc-tbl-row:hover{background:#f4f7fb;}
-          .acc-row-selected{background:#f0fdf4!important;box-shadow:inset 2px 0 0 #22f25a;}
+          .acc-row-selected{background:#f0fdf4!important;box-shadow:inset 3px 0 0 #22f25a;}
+          .acc-row-pending{background:#fffdf5;box-shadow:inset 3px 0 0 #f59e0b;}
+          .acc-row-selected.acc-row-pending{box-shadow:inset 3px 0 0 #f59e0b;}
           .acc-tbl td{padding:10px;vertical-align:middle;}
           .acc-badge{display:inline-block;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;}
           .acc-badge-income{background:#dcfce7;color:#16a34a;}
@@ -4668,9 +4694,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-badge-salary{background:#ede9fe;color:#7c3aed;}
           .acc-badge-invoice{background:#fef9c3;color:#a16207;}
           .acc-badge-other{background:#f1f5f9;color:#475569;}
-          .acc-status-badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;}
+          .acc-status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:750;white-space:nowrap;}
           .acc-status-paid{background:#dcfce7;color:#16a34a;}
-          .acc-status-pending{background:#fef9c3;color:#a16207;}
+          .acc-status-pending{background:#fff7d6;color:#a16207;box-shadow:inset 0 0 0 1px #f5d77a;}
+          .acc-status-pending .acc-proof-icon{animation:acc-pending-pulse 1.8s ease-in-out infinite;}
           .acc-status-overdue{background:#fee2e2;color:#dc2626;}
           .acc-status-draft{background:#fef3c7;color:#b45309;}
           .acc-status-sent{background:#dbeafe;color:#1d4ed8;}
@@ -4678,8 +4705,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-status-other{background:#f1f5f9;color:#94a3b8;}
           .acc-amt-pos{color:#16a34a;}
           .acc-amt-neg{color:#dc2626;}
-          .acc-proof-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:2px 4px;transition:transform .1s;line-height:1;}
-          .acc-proof-btn:hover{transform:scale(1.2);}
+          .acc-proof-btn{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid #dbe5f0;border-radius:8px;background:#fff;color:#64748b;cursor:pointer;padding:0;transition:transform .1s,border-color .1s,background .1s,color .1s;line-height:1;}
+          .acc-proof-btn:hover{transform:translateY(-1px);border-color:#99f6e4;background:#f0fdfa;color:#0f766e;}
+          .acc-proof-btn.has-proof{border-color:#bbf7d0;background:#f0fdf4;color:#15803d;}
+          .acc-proof-btn-empty{cursor:default;border-color:#e5e7eb;background:#f8fafc;color:#94a3b8;}
+          .acc-proof-btn-empty:hover{transform:none;border-color:#e5e7eb;background:#f8fafc;color:#94a3b8;}
+          .acc-proof-actions,.acc-inline-proof-actions{display:inline-flex;align-items:center;gap:6px;}
+          .acc-proof-upload{color:#0f766e;}
+          .acc-proof-empty-icon{display:grid;place-items:center;margin-bottom:10px;color:#94a3b8;}
+          .acc-inline-proof-placeholder,.acc-inline-no-proof{color:#94a3b8;font-size:11px;line-height:1.4;}
+          .acc-inline-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:220px;}
+          .acc-inline-save-state{display:inline-flex;align-items:center;min-height:28px;border-radius:999px;padding:0 9px;font-size:10px;font-weight:750;white-space:nowrap;}
+          .acc-inline-save-state--draft{background:#f8fafc;color:#64748b;}
+          .acc-inline-save-state--dirty{background:#fff7ed;color:#c2410c;}
+          .acc-inline-save-state--saving{background:#eff6ff;color:#0369a1;}
+          .acc-inline-save-state--saved{background:#f0fdf4;color:#15803d;}
+          .acc-inline-save-state--error{background:#fef2f2;color:#b91c1c;}
+          .acc-pending-note{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;padding:10px 11px;border:1px solid #f5d77a;border-radius:10px;background:#fffaf0;color:#a16207;font-size:11px;}
+          .acc-pending-note span{display:grid;gap:2px;}
+          .acc-pending-note small{color:#92400e;font-size:10px;line-height:1.4;}
+          @keyframes acc-pending-pulse{0%,100%{opacity:.65;}50%{opacity:1;}}
+          @media (prefers-reduced-motion: reduce){.acc-status-pending .acc-proof-icon{animation:none;}}
           .acc-proof-panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;min-height:220px;}
           @media (max-width:1180px){.acc-financial-pulse{grid-template-columns:1fr;}.acc-pulse-metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.acc-transactions-workspace{grid-template-columns:minmax(0,1fr) 360px;}.acc-reports-workspace{grid-template-columns:minmax(0,1fr) 230px;}}
           @media (max-width:820px){.acc-pulse-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.acc-transactions-workspace,.acc-reports-workspace{grid-template-columns:1fr;}.acc-transactions-left{padding-left:0;}.acc-pulse-chart{grid-template-columns:80px 1fr;}}
@@ -4700,6 +4746,101 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       } else {
         initAccounting();
       }
+    }
+
+    function inlineFinanceRowKey(row) {
+      return `inline-finance:${row.dataset.inlineFinanceId || 'new'}`;
+    }
+
+    function inlineFinancePayload(row) {
+      const raw = Object.fromEntries(Array.from(row.querySelectorAll('[data-inline-field]')).map((field) => [field.dataset.inlineField, field.value]));
+      return normalizePayload('finances', { ...raw, source: 'manual' });
+    }
+
+    function setInlineFinanceState(row, stateName, message) {
+      const indicator = row?.querySelector('[data-inline-save-state]');
+      if (!indicator) return;
+      indicator.className = `acc-inline-save-state acc-inline-save-state--${stateName}`;
+      indicator.textContent = message;
+    }
+
+    function upsertFinanceRecord(record) {
+      const index = state.data.finances.findIndex((item) => String(item.id) === String(record.id));
+      if (index === -1) state.data.finances.unshift(record);
+      else state.data.finances[index] = { ...state.data.finances[index], ...record };
+      try {
+        sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
+      } catch (error) {
+        console.warn('Finance cache write failed:', error);
+      }
+    }
+
+    function scheduleInlineFinanceSave(row) {
+      if (!row) return;
+      const key = inlineFinanceRowKey(row);
+      clearTimeout(state.saveTimers.get(key));
+      if (row.dataset.inlineSaving === 'true') row.dataset.inlineSaveQueued = 'true';
+      const payload = inlineFinancePayload(row);
+      const hasDescription = Boolean(String(payload.title || '').trim());
+      const hasAmount = payload.amount !== undefined && payload.amount !== null && String(payload.amount).trim() !== '';
+      if (!hasDescription || !hasAmount) {
+        setInlineFinanceState(row, 'draft', 'Draft · complete required fields');
+        return;
+      }
+      setInlineFinanceState(row, 'dirty', 'Changes pending');
+      state.saveTimers.set(key, setTimeout(() => saveInlineFinanceRow(row), 700));
+    }
+
+    async function saveInlineFinanceRow(row) {
+      if (!row?.isConnected) return;
+      if (row.dataset.inlineSaving === 'true') {
+        row.dataset.inlineSaveQueued = 'true';
+        return;
+      }
+      const body = inlineFinancePayload(row);
+      const validationError = validatePayload('finances', body);
+      if (validationError) {
+        setInlineFinanceState(row, 'error', validationError);
+        return;
+      }
+      const id = row.dataset.inlineFinanceId;
+      row.dataset.inlineSaving = 'true';
+      setInlineFinanceState(row, 'saving', 'Saving…');
+      try {
+        const response = await portal(id ? `/api/portal/finances/${id}` : '/api/portal/finances', {
+          method: id ? 'PATCH' : 'POST',
+          body: JSON.stringify(body),
+        });
+        const savedRecord = response.item || { ...body, id };
+        if (!savedRecord.id) throw new Error('Finance record was not returned after saving.');
+        upsertFinanceRecord(savedRecord);
+        if (!id) {
+          state.accInlineFinanceId = String(savedRecord.id);
+          render();
+          const renderedRow = document.querySelector(`[data-inline-finance-id="${savedRecord.id}"]`);
+          setInlineFinanceState(renderedRow, 'saved', 'Saved · auto-save on');
+        } else {
+          setInlineFinanceState(row, 'saved', 'Saved just now');
+        }
+      } catch (error) {
+        setInlineFinanceState(row, 'error', error instanceof Error ? error.message : 'Save failed');
+        toast(error instanceof Error ? error.message : 'Could not save transaction');
+      } finally {
+        delete row.dataset.inlineSaving;
+        if (row.dataset.inlineSaveQueued === 'true') {
+          delete row.dataset.inlineSaveQueued;
+          scheduleInlineFinanceSave(row);
+        }
+      }
+    }
+
+    function bindInlineFinanceAutosave() {
+      document.querySelectorAll('[data-inline-finance-row]').forEach((row) => {
+        row.querySelectorAll('[data-inline-field]').forEach((field) => {
+          field.addEventListener('input', () => scheduleInlineFinanceSave(row));
+          field.addEventListener('change', () => scheduleInlineFinanceSave(row));
+        });
+      });
     }
 
     function initAccounting() {
@@ -4747,6 +4888,30 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           openProofInNewTab(button.dataset.proofLink);
         });
       });
+      document.querySelectorAll('[data-resolve-finance]').forEach(button => {
+        button.addEventListener('click', async (event) => {
+          event.stopPropagation();
+          const record = state.data.finances.find((item) => String(item.id) === String(button.dataset.resolveFinance));
+          if (!record) return;
+          const nextStatus = ['income', 'revenue'].includes(record.transaction_type) ? 'received' : 'paid';
+          button.disabled = true;
+          button.textContent = 'Updating…';
+          try {
+            const response = await portal(`/api/portal/finances/${record.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status: nextStatus }),
+            });
+            if (response.item) upsertFinanceRecord(response.item);
+            state.accSelectedId = String(record.id);
+            toast(`Finance record marked ${nextStatus}.`);
+            renderFinance();
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = `Mark ${nextStatus === 'received' ? 'Received' : 'Paid'}`;
+            toast(error instanceof Error ? error.message : 'Could not update finance status');
+          }
+        });
+      });
       // ── Proof upload ──
       // ── Pagination ──
       document.querySelectorAll('[data-acc-pg]').forEach(btn => {
@@ -4761,36 +4926,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         document.querySelector('[data-inline-field="title"]')?.focus();
       });
       document.querySelectorAll('[data-cancel-inline-finance]').forEach(button => {
-        button.addEventListener('click', () => {
-          state.accInlineFinanceId = null;
-          renderFinance();
-        });
-      });
-      document.querySelectorAll('[data-save-inline-finance]').forEach(button => {
         button.addEventListener('click', async () => {
           const row = button.closest('[data-inline-finance-row]');
-          if (!row) return;
-          const raw = Object.fromEntries(Array.from(row.querySelectorAll('[data-inline-field]')).map((field) => [field.dataset.inlineField, field.value]));
-          const body = normalizePayload('finances', { ...raw, source: 'manual' });
-          const validationError = validatePayload('finances', body);
-          if (validationError) return toast(validationError);
-          button.disabled = true;
-          try {
-            const id = row.dataset.inlineFinanceId;
-            await portal(id ? `/api/portal/finances/${id}` : '/api/portal/finances', {
-              method: id ? 'PATCH' : 'POST',
-              body: JSON.stringify(body),
-            });
-            state.accInlineFinanceId = null;
-            toast(id ? 'Transaction updated' : 'Transaction added');
-            await loadData();
-            renderFinance();
-          } catch (error) {
-            button.disabled = false;
-            toast(error instanceof Error ? error.message : 'Could not save transaction');
+          if (row?.dataset.inlineSaving === 'true') {
+            toast('Still saving this finance record.');
+            return;
           }
+          if (row) {
+            clearTimeout(state.saveTimers.get(inlineFinanceRowKey(row)));
+            const payload = inlineFinancePayload(row);
+            const hasRequiredFields = Boolean(String(payload.title || '').trim()) && payload.amount !== undefined && payload.amount !== null && String(payload.amount).trim() !== '';
+            if (hasRequiredFields) await saveInlineFinanceRow(row);
+          }
+          state.accInlineFinanceId = null;
+          render();
         });
       });
+      bindInlineFinanceAutosave();
       // ── Edit finance row ──
       document.querySelectorAll('[data-edit-finance]').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -6323,13 +6475,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const myRoleLabel = myRole === 'company_admin' ? 'Company Admin' : myRole === 'client' ? 'Client' : 'Company Member';
         const myPerms = [
           ['Dashboard', myRole !== 'client' ? '✅ Full access' : '—'],
-          ['Projects', myRole === 'company_admin' ? '✅ Create, Edit, Delete' : myRole === 'client' ? '👁 View own projects' : '✅ Edit assigned'],
+          ['Projects', myRole === 'company_admin' ? '✅ Create, Edit, Delete' : myRole === 'client' ? '👁 View own projects' : '✅ Staff manage'],
           ['Support Tickets', myRole === 'company_admin' ? '✅ Full' : '✅ Create & manage'],
-          ['Finance', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '👁 View only'],
+          ['Finance', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '✅ Staff manage'],
           ['Analytics', myRole === 'client' ? '—' : '👁 View'],
           ['Reports', myRole === 'client' ? '—' : '👁 View & export'],
-          ['Clients', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '✅ Own profile only' : '✅ Edit'],
-          ['Employees', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '👁 View'],
+          ['Clients', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '✅ Own profile only' : '✅ Staff manage'],
+          ['Employees', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '👁 Own profile'],
           ['User Management', '🔒 Admin only'],
           ['Settings', '🔒 Admin only'],
         ];
@@ -6367,13 +6519,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const myColIdx = state.profile?.role === 'company_admin' ? 0 : state.profile?.role === 'client' ? 2 : 1;
       const rbacMatrix = [
         ['Dashboard',        '✅ Full',   '✅ Full',      '—'],
-        ['Projects',         '✅ Full',   '✅ Edit',      '✅ View own'],
+        ['Projects',         '✅ Full',   '✅ Staff manage','✅ View own'],
         ['Tickets',          '✅ Full',   '✅ Full',      '✅ Own only'],
-        ['Finance',          '✅ Full',   '👁 View only', '—'],
+        ['Finance',          '✅ Full',   '✅ Staff manage','—'],
         ['Analytics',        '✅ Full',   '✅ View',      '—'],
         ['Reports',          '✅ Full',   '✅ View/Export','—'],
-        ['Clients',          '✅ Full',   '✅ Edit',      '✅ Own profile'],
-        ['Employees',        '✅ Full',   '👁 View',      '—'],
+        ['Clients',          '✅ Full',   '✅ Staff manage','✅ Own profile'],
+        ['Employees',        '✅ Full',   '👁 Own profile','—'],
         ['User Management',  '✅ Full',   '🔒 Restricted','—'],
         ['Settings',         '✅ Full',   '🔒 Restricted','—'],
       ];

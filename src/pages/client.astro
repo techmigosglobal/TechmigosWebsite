@@ -219,6 +219,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (!user) throw new Error('Not authenticated');
         const { data: profile } = await sb.from('crm_profiles').select('*').eq('auth_user_id', user.id).single();
         if (!profile) throw new Error('Profile not found');
+        if (profile.status !== 'active') throw new Error('This client account is not active.');
         return { profile, destination: profile.role === 'client' ? '/client' : '/company' };
       }
 

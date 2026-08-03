@@ -214,12 +214,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         const { data: profile } = await window.tmSupabase
           .from('crm_profiles')
-          .select('role, name')
+          .select('role, name, status')
           .eq('auth_user_id', authData.user.id)
           .limit(1)
           .single();
 
         if (!profile) throw new Error('Portal access is not provisioned for this account.');
+        if (profile.status !== 'active') throw new Error('This account is not active yet. Please contact your TechMigos administrator.');
 
         await window.tmSupabase
           .from('crm_profiles')
