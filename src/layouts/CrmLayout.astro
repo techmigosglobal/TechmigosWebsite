@@ -2221,6 +2221,71 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       border-radius: 6px;
       background: #fff;
     }
+    .inv-assets-panel {
+      margin-top: 14px;
+      border: 1px solid var(--crm-line);
+      border-radius: 12px;
+      background: #f8fbff;
+      padding: 14px;
+    }
+    .inv-assets-panel h4,
+    .inv-assets-panel p { margin: 0; }
+    .inv-assets-panel h4 { color: #0f172a; font-size: 13px; font-weight: 900; }
+    .inv-assets-panel p { margin-top: 4px; color: var(--crm-muted); font-size: 11px; line-height: 1.45; }
+    .inv-assets-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, .7fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .inv-signature-pad-wrap,
+    .inv-asset-current {
+      border: 1px solid #d9e3ef;
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+    }
+    .inv-signature-pad {
+      display: block;
+      width: 100%;
+      height: 130px;
+      margin-top: 8px;
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      background: #fff;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .inv-asset-current img {
+      display: block;
+      width: 100%;
+      max-height: 130px;
+      margin-top: 8px;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      padding: 6px;
+    }
+    .inv-asset-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .inv-asset-actions .crm-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
+    .inv-asset-file { display: inline-flex; align-items: center; cursor: pointer; }
+    .inv-asset-file input { display: none; }
+    .inv-asset-status { display: block; min-height: 16px; margin-top: 8px; color: var(--crm-muted); font-size: 11px; }
+    .inv-asset-list { display: grid; gap: 6px; margin-top: 10px; }
+    .inv-asset-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      font-size: 11px;
+    }
+    .inv-asset-row strong { display: block; color: #27364a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .inv-asset-row span { color: var(--crm-muted); }
+    .inv-asset-row a { color: var(--crm-blue); font-weight: 800; text-decoration: none; }
+    .inv-asset-row button { flex: 0 0 auto; }
     .inv-items-editor {
       border: 1px solid var(--crm-line);
       border-radius: 12px;
@@ -2428,6 +2493,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     @media (max-width: 1080px) {
       .inv-builder-layout { grid-template-columns: 1fr; }
       .inv-upload-grid { grid-template-columns: 1fr 1fr; }
+      .inv-assets-tools { grid-template-columns: 1fr; }
     }
     @media (max-width: 720px) {
       .inv-upload-grid { grid-template-columns: 1fr; }
@@ -2697,9 +2763,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (resource === 'finances') {
         if (!payload.transaction_date) return 'Date is required for finance records.';
         if (!payload.transaction_type) return 'Category (transaction type) is required.';
+        if (!['income', 'revenue', 'expense', 'salary'].includes(payload.transaction_type)) return 'Choose a valid finance category.';
         if (!payload.title || !String(payload.title).trim()) return 'Description is required.';
         if (payload.amount === undefined || payload.amount === null || String(payload.amount).trim() === '' || isNaN(Number(payload.amount))) return 'A valid amount is required.';
         if (!payload.status) return 'Status is required.';
+        if (!['pending', 'paid', 'received', 'half_payment', 'cancelled'].includes(payload.status)) return 'Choose a valid finance status.';
       }
       return '';
     }
@@ -4258,8 +4326,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const txTotal = finRows.length;
         const txPageRows = finRows.slice((txPage - 1) * txPer, txPage * txPer);
 
-        const transactionTypeOptions = (selected) => ['income', 'expense', 'salary', 'invoice'].map((type) => `<option value="${type}" ${selected === type ? 'selected' : ''}>${nice(type === 'expense' ? 'expenses' : type)}</option>`).join('');
-        const transactionStatusOptions = (selected) => ['pending', 'paid', 'received', 'sent', 'overdue', 'cancelled'].map((status) => `<option value="${status}" ${selected === status ? 'selected' : ''}>${nice(status)}</option>`).join('');
+        const transactionTypeOptions = (selected) => ['income', 'revenue', 'expense', 'salary'].map((type) => `<option value="${type}" ${selected === type ? 'selected' : ''}>${nice(type === 'expense' ? 'expenses' : type)}</option>`).join('');
+        const transactionStatusOptions = (selected) => ['pending', 'paid', 'received', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${selected === status ? 'selected' : ''}>${nice(status)}</option>`).join('');
         const inlineTransactionRow = (record = {}, showProof = false) => {
           const isNew = !record.id;
           const type = record.transaction_type || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
@@ -4288,7 +4356,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td>${catBadge(r.transaction_type)}</td>
             <td class="${isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
             <td>${sBadge(r.status)}</td>
-            ${showProof ? `<td>${proofIcon(r)}</td>` : ''}
+            ${showProof ? `<td><div style="display:flex;align-items:center;gap:4px;">${proofIcon(r)}<label class="acc-proof-btn" title="Attach or replace proof">â†‘<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label></div></td>` : ''}
             <td><div style="display:flex;gap:4px;align-items:center;">
               <button class="crm-button" data-edit-finance="${r.id}" type="button" title="Edit" aria-label="Edit" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
               <button class="crm-button" data-del-finance="${r.id}" type="button" title="Delete" aria-label="Delete" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:#dc2626;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
@@ -4354,7 +4422,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <div style="font-size:32px;">📤</div>
                 <span style="font-size:12px;color:#94a3b8;font-weight:600;">No proof attached</span>
                 <span style="font-size:11px;color:#6366f1;font-weight:700;">Click to Upload</span>
-                <input type="file" accept="image/*,.pdf" data-upload-proof="${row.id}" style="display:none;" />
+                <input type="file" accept="image/*,.pdf" data-proof-upload="${row.id}" data-proof-row="${row.id}" style="display:none;" />
               </label>`;
           }
 
@@ -4680,22 +4748,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         });
       });
       // ── Proof upload ──
-      document.querySelectorAll('input[data-upload-proof]').forEach(input => {
-        input.addEventListener('change', async (e) => {
-          const file = e.target.files[0]; if (!file) return;
-          const rowId = input.dataset.uploadProof;
-          const ext = file.name.split('.').pop();
-          const path = `finance-proofs/${rowId}-${Date.now()}.${ext}`;
-          const { error: ue } = await window.tmSupabase.storage.from('finance-proofs').upload(path, file, { upsert: true });
-          if (ue) { alert('Upload failed: ' + ue.message); return; }
-          const { data: ud } = window.tmSupabase.storage.from('finance-proofs').getPublicUrl(path);
-          await window.tmSupabase.from('crm_finances').update({ proof_url: ud.publicUrl }).eq('id', rowId);
-          const ix = state.data.finances.findIndex(r => String(r.id) === String(rowId));
-          if (ix !== -1) state.data.finances[ix].proof_url = ud.publicUrl;
-          state.accSelectedId = rowId;
-          renderFinance();
-        });
-      });
       // ── Pagination ──
       document.querySelectorAll('[data-acc-pg]').forEach(btn => {
         btn.addEventListener('click', () => { state.accTxPage = Number(btn.dataset.accPg); renderFinance(); });
@@ -4900,6 +4952,28 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <div class="inv-upload-box"><label>QR Code<input type="file" id="inv-qr-input" accept="image/*" style="display:none;" /></label><div class="inv-upload-preview" id="inv-qr-preview"><span>No QR selected</span></div></div>
                 <div class="inv-upload-box"><label>Signature<input type="file" id="inv-sign-input" accept="image/*" style="display:none;" /></label><div class="inv-upload-preview" id="inv-sign-preview"><span>No signature selected</span></div></div>
               </div>
+              <div class="inv-assets-panel">
+                <h4>Invoice assets</h4>
+                <p>Assets are uploaded to the invoice storage bucket when available and kept in this browser as a fallback. Draw a signature or upload any supporting file.</p>
+                <div class="inv-assets-tools">
+                  <div class="inv-signature-pad-wrap">
+                    <strong style="font-size:12px;color:#27364a;">Draw signature</strong>
+                    <canvas id="inv-signature-pad" class="inv-signature-pad" width="760" height="260" aria-label="Invoice signature pad"></canvas>
+                    <div class="inv-asset-actions">
+                      <button class="crm-button primary" type="button" id="inv-save-drawn-signature">Save Drawn Signature</button>
+                      <button class="crm-button" type="button" id="inv-clear-signature">Clear Pad</button>
+                      <label class="crm-button inv-asset-file">Upload Asset<input type="file" id="inv-asset-input" /></label>
+                    </div>
+                  </div>
+                  <div class="inv-asset-current">
+                    <strong style="font-size:12px;color:#27364a;">Current signature</strong>
+                    <div id="inv-current-signature"><span style="display:block;margin-top:8px;color:#94a3b8;font-size:11px;">No saved signature</span></div>
+                    <label class="crm-button inv-asset-file" style="margin-top:8px;">Upload Signature<input type="file" id="inv-signature-asset-input" accept="image/*" /></label>
+                  </div>
+                </div>
+                <span id="inv-asset-status" class="inv-asset-status" role="status"></span>
+                <div id="inv-asset-list" class="inv-asset-list"></div>
+              </div>
             </div>
 
             <div class="crm-card" style="padding:18px;margin-top:16px;">
@@ -4926,7 +5000,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <label>Invoice Number<input id="inv-number" class="crm-input" placeholder="INV-001" value="" style="width:100%;" /></label>
                 <label>Invoice Date<input id="inv-date" type="date" class="crm-input" style="width:100%;" /></label>
                 <label>Due Date<input id="inv-due-date" type="date" class="crm-input" style="width:100%;" /></label>
-                <label>Status<select id="inv-status" class="crm-select" style="width:100%;"><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="cancelled">Cancelled</option></select></label>
+                <label>Status<select id="inv-status" class="crm-select" style="width:100%;"><option value="auto">Auto</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="cancelled">Cancelled</option></select></label>
+                <label>Currency<select id="inv-currency" class="crm-select" style="width:100%;"><option value="INR">INR (₹)</option><option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option></select></label>
+                <label>Tax Rate (%)<input id="inv-tax-rate" type="number" min="0" step="0.01" class="crm-input" value="18" style="width:100%;" /></label>
+                <label>Discount<input id="inv-discount" type="number" min="0" step="0.01" class="crm-input" value="0" style="width:100%;" /></label>
+                <label>Received Amount<input id="inv-received" type="number" min="0" step="0.01" class="crm-input" value="0" style="width:100%;" /></label>
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:20px;grid-column: span 2;"><input id="inv-is-recurring" type="checkbox" style="width:16px;height:16px;cursor:pointer;" /><strong>Recurring Invoice</strong></label>
               </div>
             </div>
@@ -4935,14 +5013,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="inv-section-title">Service Items</div>
               <div class="inv-items-editor" id="inv-items-editor">
                 <table>
-                  <thead><tr><th style="width:50%">Service / Description</th><th style="width:12%">Qty</th><th style="width:15%">Rate</th><th style="width:15%">Total</th><th style="width:8%"></th></tr></thead>
+                  <thead><tr><th style="width:42%">Service / Description</th><th style="width:10%">Qty</th><th style="width:12%">Unit</th><th style="width:14%">Rate</th><th style="width:14%">Total</th><th style="width:8%"></th></tr></thead>
                   <tbody id="inv-items-tbody"></tbody>
                 </table>
               </div>
               <button class="crm-button" type="button" id="inv-add-item" style="margin-top:10px;">+ Add Item</button>
               <div class="crm-form-grid" style="margin-top:14px;">
-                <label>Notes / Terms<textarea id="inv-notes" class="crm-input" placeholder="Notes or terms..." rows="2" style="width:100%;min-height:48px;"></textarea></label>
+                <label>Notes<textarea id="inv-notes" class="crm-input" placeholder="Notes for the customer..." rows="2" style="width:100%;min-height:48px;"></textarea></label>
                 <label>Payment Instructions<textarea id="inv-payment" class="crm-input" placeholder="Bank details, UPI, etc." rows="2" style="width:100%;min-height:48px;"></textarea></label>
+                <label class="full">Terms and Conditions<textarea id="inv-terms" class="crm-input" placeholder="One term per line..." rows="3" style="width:100%;min-height:64px;"></textarea></label>
               </div>
             </div>
           </div>
@@ -4954,22 +5033,129 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       </div>`;
     }
 
-    // HTML escape helper to prevent XSS (shared scope)
-    const esc = (str) => {
-      if (!str) return "";
-      return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    };
-
     function initInvoiceBuilder() {
-      // Load saved company settings from Supabase
+      const LOCAL_ASSETS_KEY = 'techmigos.invoice.local-assets.v1';
+      let signing = false;
+      let hasSignatureInk = false;
+
+      function readLocalAssets() {
+        try {
+          const value = JSON.parse(localStorage.getItem(LOCAL_ASSETS_KEY) || '[]');
+          return Array.isArray(value) ? value : [];
+        } catch { return []; }
+      }
+
+      function writeLocalAssets(assets) {
+        try {
+          localStorage.setItem(LOCAL_ASSETS_KEY, JSON.stringify(assets));
+        } catch { throw new Error('Browser storage is full. Delete an old asset and try again.'); }
+      }
+
+      function safeAssetName(name) {
+        return String(name || 'asset').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'asset';
+      }
+
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error || new Error('Could not read file preview.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function getValue(id) { return (document.getElementById(id)?.value || '').trim(); }
+      function isChecked(id) { return !!document.getElementById(id)?.checked; }
+      function getPreviewSrc(id) { return document.getElementById(id)?.querySelector('img')?.src || ''; }
+      function setAssetStatus(message, isError = false) {
+        const element = document.getElementById('inv-asset-status');
+        if (!element) return;
+        element.textContent = message;
+        element.style.color = isError ? 'var(--crm-red)' : 'var(--crm-muted)';
+      }
+
+      function setPreview(id, url) {
+        const element = document.getElementById(id);
+        if (!element) return;
+        element.innerHTML = url
+          ? `<img src="${escapeHtml(url)}" alt="Saved invoice asset" style="max-height:40px;border-radius:4px;">`
+          : '<span>No asset selected</span>';
+      }
+
+      function setCurrentSignature(url) {
+        const element = document.getElementById('inv-current-signature');
+        if (!element) return;
+        element.innerHTML = url
+          ? `<img src="${escapeHtml(url)}" alt="Current saved signature">`
+          : '<span style="display:block;margin-top:8px;color:#94a3b8;font-size:11px;">No saved signature</span>';
+      }
+
+      function renderAssetList() {
+        const element = document.getElementById('inv-asset-list');
+        if (!element) return;
+        const assets = readLocalAssets().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        element.innerHTML = assets.length ? assets.map((asset) => `<div class="inv-asset-row">
+          <div style="min-width:0;"><strong>${escapeHtml(asset.file_name || 'Asset')}</strong><span>${escapeHtml(asset.category || 'asset')} · ${escapeHtml(asset.mime_type || 'file')}</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><a href="${escapeHtml(asset.url || '')}" target="_blank" rel="noopener">Open</a><button class="crm-button danger" type="button" data-delete-invoice-asset="${escapeHtml(asset.id)}" style="min-height:28px;padding:0 8px;font-size:11px;">Delete</button></div>
+        </div>`).join('') : '<div style="color:#94a3b8;font-size:11px;">No browser-stored assets yet.</div>';
+        element.querySelectorAll('[data-delete-invoice-asset]').forEach((button) => button.addEventListener('click', () => deleteLocalAsset(button.dataset.deleteInvoiceAsset)));
+      }
+
+      function deleteLocalAsset(assetId) {
+        const assets = readLocalAssets();
+        const asset = assets.find((row) => row.id === assetId);
+        if (!asset || !confirm('Delete this asset from browser storage?')) return;
+        writeLocalAssets(assets.filter((row) => row.id !== assetId));
+        if (asset.category === 'signature' && getPreviewSrc('inv-sign-preview') === asset.url) {
+          setPreview('inv-sign-preview', '');
+          setCurrentSignature('');
+          updatePreview();
+        }
+        if (asset.category === 'qr_code' && getPreviewSrc('inv-qr-preview') === asset.url) {
+          setPreview('inv-qr-preview', '');
+          updatePreview();
+        }
+        renderAssetList();
+        setAssetStatus('Asset deleted from this browser.');
+      }
+
+      async function saveAsset(file, category, previewId) {
+        if (!file) return null;
+        const fileName = file.name || 'asset';
+        const objectKey = `local/${category}/${Date.now()}-${safeAssetName(fileName)}`;
+        let url = '';
+        let storageMode = 'cloud';
+        setAssetStatus('Saving asset...');
+        try {
+          const path = `invoice-assets/${category}/${Date.now()}-${safeAssetName(fileName)}`;
+          const { error } = await window.tmSupabase.storage.from('invoice-signatures').upload(path, file, { upsert: true });
+          if (error) throw error;
+          const { data } = window.tmSupabase.storage.from('invoice-signatures').getPublicUrl(path);
+          url = data?.publicUrl || '';
+        } catch (error) {
+          storageMode = 'local';
+          url = await fileToDataUrl(file);
+          setAssetStatus(`Cloud storage unavailable; ${fileName} saved in this browser.`);
+        }
+        if (!url) throw new Error('Could not create an asset preview.');
+        const asset = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, object_key: storageMode === 'local' ? objectKey : fileName, url, file_name: fileName, mime_type: file.type || '', size_bytes: file.size || 0, category, storage_mode: storageMode, created_at: new Date().toISOString() };
+        writeLocalAssets([asset, ...readLocalAssets().filter((row) => row.id !== asset.id)]);
+        if (previewId) setPreview(previewId, url);
+        if (category === 'signature') setCurrentSignature(url);
+        renderAssetList();
+        updatePreview();
+        if (storageMode === 'cloud') setAssetStatus(`${fileName} saved.`);
+        return asset;
+      }
+
+      // Load saved company settings from the project's category/settings schema.
       async function loadBuilderSettings() {
         try {
-          const { data } = await window.tmSupabase.from('crm_settings').select('value').eq('key', 'invoice_builder_settings').single();
-          if (data && data.value) {
-            const s = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+          const { data } = await window.tmSupabase.from('crm_settings').select('settings').eq('category', 'invoice').maybeSingle();
+          const s = data?.settings || {};
+          if (Object.keys(s).length) {
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             const setCheckbox = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
-            const setPreview = (id, url) => { const el = document.getElementById(id); if (el && url) el.innerHTML = `<img src="${url}" style="max-height:40px;border-radius:4px;">`; };
 
             setVal('inv-company-name', s.companyName);
             setVal('inv-company-tagline', s.companyTagline);
@@ -4988,10 +5174,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             setVal('inv-status', s.status);
             setVal('inv-notes', s.notes);
             setVal('inv-payment', s.paymentTerms);
+            setVal('inv-terms', s.terms);
+            setVal('inv-currency', s.currency || 'INR');
+            setVal('inv-tax-rate', s.taxRate ?? 18);
+            setVal('inv-discount', s.discount ?? 0);
+            setVal('inv-received', s.received ?? 0);
             setCheckbox('inv-is-recurring', s.isRecurring || s.is_recurring);
-            setPreview('inv-logo-preview', s.logoUrl);
-            setPreview('inv-qr-preview', s.qrUrl);
-            setPreview('inv-sign-preview', s.signUrl);
+            const localAssets = readLocalAssets();
+            setPreview('inv-logo-preview', s.logoUrl || localAssets.find((asset) => asset.category === 'logo')?.url || '');
+            setPreview('inv-qr-preview', s.qrUrl || localAssets.find((asset) => asset.category === 'qr_code')?.url || '');
+            setPreview('inv-sign-preview', s.signUrl || localAssets.find((asset) => asset.category === 'signature')?.url || '');
+            setCurrentSignature(getPreviewSrc('inv-sign-preview'));
 
             // Restore items
             if (s.items && s.items.length) {
@@ -5001,9 +5194,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 s.items.forEach(item => addItemRow(item));
               }
             }
-            updatePreview();
           }
         } catch (e) { console.warn('Could not load builder settings:', e); }
+        renderAssetList();
+        updatePreview();
       }
 
       async function loadInvoiceData(invoiceId) {
@@ -5013,23 +5207,32 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           if (invoice) {
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             const setCheckbox = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
-            const setPreview = (id, url) => { const el = document.getElementById(id); if (el && url) el.innerHTML = `<img src="${url}" style="max-height:40px;border-radius:4px;">`; };
 
             setVal('inv-number', invoice.invoice_number);
             setVal('inv-date', invoice.invoice_date ? invoice.invoice_date.slice(0, 10) : '');
             setVal('inv-due-date', invoice.due_date ? invoice.due_date.slice(0, 10) : '');
-            setVal('inv-status', invoice.status);
+            setVal('inv-status', invoice.status || 'auto');
+            setVal('inv-currency', invoice.currency || 'INR');
+            setVal('inv-tax-rate', invoice.total_amount ? (Number(invoice.tax_amount || 0) / Math.max(Number(invoice.total_amount || 0) - Number(invoice.tax_amount || 0) + Number(invoice.discount_amount || 0), 1) * 100).toFixed(2) : 18);
+            setVal('inv-discount', invoice.discount_amount || 0);
+            setVal('inv-received', invoice.received_amount || 0);
             setVal('inv-notes', invoice.notes);
             setVal('inv-payment', invoice.payment_instructions);
+            setVal('inv-terms', invoice.terms);
             setVal('inv-client-name', invoice.customer_name);
             setVal('inv-client-email', invoice.customer_email);
             setVal('inv-client-phone', invoice.customer_phone);
             setVal('inv-client-address', invoice.billing_address);
             setCheckbox('inv-is-recurring', invoice.is_recurring);
+            const clientSelect = document.getElementById('inv-client-select');
+            if (clientSelect && invoice.client_id) clientSelect.value = String(invoice.client_id);
 
             setVal('inv-company-name', invoice.company_name || '');
             setVal('inv-gst', invoice.gst_number || '');
-            setPreview('inv-sign-preview', invoice.sign_url);
+            if (invoice.sign_url) {
+              setPreview('inv-sign-preview', invoice.sign_url);
+              setCurrentSignature(invoice.sign_url);
+            }
 
             const tbody = document.getElementById('inv-items-tbody');
             if (tbody) {
@@ -5038,6 +5241,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 items.forEach(item => addItemRow({
                   desc: item.description,
                   qty: item.quantity,
+                  unit: item.unit,
+                  notes: item.notes,
                   rate: item.rate
                 }));
               }
@@ -5053,37 +5258,69 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       // File upload handlers
       function setupFileInput(inputId, previewId, fieldKey) {
         const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        if (!input || !preview) return;
+        if (!input) return;
         input.addEventListener('change', async (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            preview.innerHTML = `<span style="font-size:11px;color:#64748b;">Uploading...</span>`;
-            try {
-              const filename = `${fieldKey}/${Date.now()}-${file.name}`;
-              const { data, error: uploadError } = await window.tmSupabase.storage
-                .from('invoice-signatures')
-                .upload(filename, file, { upsert: true });
-              if (uploadError) throw uploadError;
-
-              const { data: urlData } = window.tmSupabase.storage
-                .from('invoice-signatures')
-                .getPublicUrl(filename);
-
-              const publicUrl = urlData.publicUrl;
-              preview.innerHTML = `<img src="${publicUrl}" style="max-height:40px;border-radius:4px;">`;
-              updatePreview();
-            } catch (error) {
-              console.error(error);
-              showToast('Upload failed: ' + (error.message || error), 'error');
-              preview.innerHTML = `<span style="font-size:11px;color:#ef4444;">Upload Failed</span>`;
-            }
-          }
+          const file = e.target.files?.[0];
+          if (file) await saveAsset(file, fieldKey === 'qr' ? 'qr_code' : fieldKey, previewId).catch((error) => setAssetStatus(error.message, true));
+          e.target.value = '';
         });
       }
       setupFileInput('inv-logo-input', 'inv-logo-preview', 'logo');
       setupFileInput('inv-qr-input', 'inv-qr-preview', 'qr');
-      setupFileInput('inv-sign-input', 'inv-sign-preview', 'sign');
+      setupFileInput('inv-sign-input', 'inv-sign-preview', 'signature');
+
+      document.getElementById('inv-asset-input')?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (file) await saveAsset(file, 'asset').catch((error) => setAssetStatus(error.message, true));
+        event.target.value = '';
+      });
+      document.getElementById('inv-signature-asset-input')?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (file) await saveAsset(file, 'signature', 'inv-sign-preview').catch((error) => setAssetStatus(error.message, true));
+        event.target.value = '';
+      });
+
+      const signaturePad = document.getElementById('inv-signature-pad');
+      const signatureContext = signaturePad?.getContext('2d');
+      function signaturePoint(event) {
+        const rect = signaturePad.getBoundingClientRect();
+        return { x: (event.clientX - rect.left) * (signaturePad.width / rect.width), y: (event.clientY - rect.top) * (signaturePad.height / rect.height) };
+      }
+      signaturePad?.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        signaturePad.setPointerCapture(event.pointerId);
+        const point = signaturePoint(event);
+        signing = true;
+        hasSignatureInk = true;
+        signatureContext.beginPath();
+        signatureContext.moveTo(point.x, point.y);
+      });
+      signaturePad?.addEventListener('pointermove', (event) => {
+        if (!signing) return;
+        event.preventDefault();
+        const point = signaturePoint(event);
+        signatureContext.lineTo(point.x, point.y);
+        signatureContext.strokeStyle = '#111827';
+        signatureContext.lineWidth = 4;
+        signatureContext.lineCap = 'round';
+        signatureContext.lineJoin = 'round';
+        signatureContext.stroke();
+      });
+      signaturePad?.addEventListener('pointerup', () => { signing = false; });
+      signaturePad?.addEventListener('pointercancel', () => { signing = false; });
+      document.getElementById('inv-clear-signature')?.addEventListener('click', () => {
+        signatureContext?.clearRect(0, 0, signaturePad.width, signaturePad.height);
+        hasSignatureInk = false;
+      });
+      document.getElementById('inv-save-drawn-signature')?.addEventListener('click', async () => {
+        if (!signaturePad || !hasSignatureInk) return setAssetStatus('Draw a signature before saving.', true);
+        try {
+          const blob = await new Promise((resolve) => signaturePad.toBlob(resolve, 'image/png'));
+          if (!blob) throw new Error('Could not read the signature pad.');
+          const file = new File([blob], `signature-${new Date().toISOString().slice(0, 10)}.png`, { type: 'image/png' });
+          await saveAsset(file, 'signature', 'inv-sign-preview');
+        } catch (error) { setAssetStatus(error.message, true); }
+      });
 
       // Make the entire box clickable to trigger file upload dialog
       document.querySelectorAll('.inv-upload-box').forEach(box => {
@@ -5117,9 +5354,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (!tbody) return;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><input type="text" class="inv-item-desc" value="${data?.desc || ''}" placeholder="Service description" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
-          <td><input type="number" class="inv-item-qty" value="${data?.qty || 1}" min="1" style="width:60px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
-          <td><input type="number" class="inv-item-rate" value="${data?.rate || 0}" step="0.01" style="width:90px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
+          <td><input type="text" class="inv-item-desc" value="${escapeHtml(data?.desc || '')}" placeholder="Service description" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
+          <td><input type="number" class="inv-item-qty" value="${Number(data?.qty || 1)}" min="0" step="0.01" style="width:60px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
+          <td><input type="text" class="inv-item-unit" value="${escapeHtml(data?.unit || 'SERVICE')}" placeholder="Unit" style="width:80px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
+          <td><input type="number" class="inv-item-rate" value="${Number(data?.rate || 0)}" min="0" step="0.01" style="width:90px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></td>
           <td class="inv-item-total" style="font-weight:600;padding:6px 8px;">${formatCurrency((data?.qty || 1) * (data?.rate || 0))}</td>
           <td><button type="button" class="inv-remove-item crm-button" style="background:#fee2e2;color:#dc2626;padding:4px 8px;font-size:12px;">✕</button></td>
         `;
@@ -5137,70 +5375,84 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       // Format currency
       function formatCurrency(amount) {
-        return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const currency = getValue('inv-currency') || 'INR';
+        const symbol = { INR: '₹', USD: '$', EUR: '€', GBP: '£' }[currency] || currency;
+        return `${symbol} ${Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
 
       // Live preview update
       function updatePreview() {
         const preview = document.getElementById('inv-preview-container');
         if (!preview) return;
-        const g = (id) => (document.getElementById(id)?.value || '').trim();
-        const getCheck = (id) => !!document.getElementById(id)?.checked;
-        const getPreviewSrc = (id) => document.getElementById(id)?.querySelector('img')?.src || '';
-        const logoSrc = getPreviewSrc('inv-logo-preview');
+        const g = getValue;
+        const logoSrc = getPreviewSrc('inv-logo-preview') || '/icon.png';
         const qrSrc = getPreviewSrc('inv-qr-preview');
         const signSrc = getPreviewSrc('inv-sign-preview');
 
         // Collect items
         const rows = document.querySelectorAll('#inv-items-tbody tr');
-        let items = [];
+        const items = [];
         let subtotal = 0;
         rows.forEach(row => {
           const desc = row.querySelector('.inv-item-desc')?.value || '';
           const qty = Number(row.querySelector('.inv-item-qty')?.value || 1);
+          const unit = row.querySelector('.inv-item-unit')?.value || 'SERVICE';
           const rate = Number(row.querySelector('.inv-item-rate')?.value || 0);
           const total = qty * rate;
           subtotal += total;
           const totalCell = row.querySelector('.inv-item-total');
           if (totalCell) totalCell.textContent = formatCurrency(total);
-          items.push({ desc, qty, rate, total });
+          items.push({ desc, qty, unit, rate, total });
         });
 
-        const gstRate = 18;
-        const gstAmount = subtotal * gstRate / 100;
-        const grandTotal = subtotal + gstAmount;
+        const taxRate = Math.max(Number(g('inv-tax-rate') || 0), 0);
+        const discount = Math.min(Math.max(Number(g('inv-discount') || 0), 0), subtotal);
+        const taxable = Math.max(subtotal - discount, 0);
+        const taxAmount = taxable * taxRate / 100;
+        const grandTotal = taxable + taxAmount;
+        const received = Math.max(Number(g('inv-received') || 0), 0);
+        const balance = Math.max(grandTotal - received, 0);
+        const selectedStatus = g('inv-status') || 'auto';
+        const status = selectedStatus === 'auto'
+          ? (grandTotal > 0 && balance <= 0 ? 'paid' : received > 0 ? 'sent' : 'draft')
+          : selectedStatus;
+        const statusColor = status === 'paid' ? '#15803d' : status === 'overdue' ? '#dc2626' : '#b45309';
+        const contact = [g('inv-contact-person'), g('inv-contact-number'), g('inv-contact-email')].filter(Boolean).join(' | ');
 
         preview.innerHTML = `
           <div class="inv-preview-sheet">
             <div class="inv-preview-border">
-              ${logoSrc ? `<div style="text-align:center;margin-bottom:8px;"><img src="${logoSrc}" style="max-height:50px;"></div>` : ''}
+              <div style="text-align:center;margin-bottom:8px;"><img src="${escapeHtml(logoSrc)}" style="max-width:110px;max-height:50px;object-fit:contain;" alt="Company logo"></div>
               <div style="text-align:center;margin-bottom:10px;">
-                <h2 style="margin:0;font-size:18px;color:#1e40af;">${esc(g('inv-company-name')) || 'Company Name'}</h2>
-                ${esc(g('inv-company-tagline')) ? `<p style="margin:2px 0 0;font-size:11px;color:#6b7280;">${g('inv-company-tagline')}</p>` : ''}
-                ${esc(g('inv-gst')) ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">GST: ${g('inv-gst')}</p>` : ''}
-                ${[g('inv-contact-person'), g('inv-contact-number'), g('inv-contact-email')].some(v=>v) ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">${esc([g('inv-contact-person'), g('inv-contact-number'), g('inv-contact-email')].filter(Boolean).join(' | '))}</p>` : ''}
+                <h2 style="margin:0;font-size:18px;color:#0f766e;">${escapeHtml(g('inv-company-name')) || 'Company Name'}</h2>
+                ${g('inv-company-tagline') ? `<p style="margin:2px 0 0;font-size:11px;color:#6b7280;">${escapeHtml(g('inv-company-tagline'))}</p>` : ''}
+                ${g('inv-gst') ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">GST: ${escapeHtml(g('inv-gst'))}</p>` : ''}
+                ${contact ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">${escapeHtml(contact)}</p>` : ''}
               </div>
-              <hr style="border:none;border-top:2px solid #1e40af;margin:10px 0;">
+              <hr style="border:none;border-top:2px solid #0f766e;margin:10px 0;">
               <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;">
-                <div><strong>Bill To:</strong><br>${esc(g('inv-client-name')) || 'Client Name'}<br>${esc(g('inv-client-address')) || ''}<br>${esc(g('inv-client-email')) || ''}<br>${esc(g('inv-client-phone')) || ''}</div>
-                <div style="text-align:right;"><strong>Invoice #:</strong> ${esc(g('inv-number')) || 'INV-001'}<br><strong>Date:</strong> ${g('inv-date') || new Date().toISOString().split('T')[0]}<br><strong>Due:</strong> ${esc(g('inv-due-date')) || ''}<br><strong>Status:</strong> <span style="color:${g('inv-status')==='paid'?'#16a34a':g('inv-status')==='overdue'?'#dc2626':'#d97706'}">${g('inv-status') || 'pending'}</span>${getCheck('inv-is-recurring') ? '<br><span style="display:inline-block;padding:2px 6px;background:#fef3c7;color:#d97706;border-radius:4px;font-size:9px;font-weight:700;margin-top:4px;">RECURRING</span>' : ''}</div>
+                <div><strong>Bill To:</strong><br>${escapeHtml(g('inv-client-name')) || 'Client Name'}<br>${escapeHtml(g('inv-client-address'))}<br>${escapeHtml(g('inv-client-email'))}<br>${escapeHtml(g('inv-client-phone'))}</div>
+                <div style="text-align:right;"><strong>Invoice #:</strong> ${escapeHtml(g('inv-number')) || 'INV-001'}<br><strong>Date:</strong> ${escapeHtml(g('inv-date')) || new Date().toISOString().split('T')[0]}<br><strong>Due:</strong> ${escapeHtml(g('inv-due-date')) || '-'}<br><strong>Status:</strong> <span style="color:${statusColor}">${escapeHtml(status)}</span>${isChecked('inv-is-recurring') ? '<br><span style="display:inline-block;padding:2px 6px;background:#fef3c7;color:#b45309;border-radius:4px;font-size:9px;font-weight:700;margin-top:4px;">RECURRING</span>' : ''}</div>
               </div>
               <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">
-                <thead><tr style="background:#1e40af;color:#fff;"><th style="padding:6px 8px;text-align:left;">Description</th><th style="padding:6px 8px;text-align:center;">Qty</th><th style="padding:6px 8px;text-align:right;">Rate</th><th style="padding:6px 8px;text-align:right;">Total</th></tr></thead>
+                <thead><tr style="background:#0f766e;color:#fff;"><th style="padding:6px 8px;text-align:left;">Description</th><th style="padding:6px 8px;text-align:center;">Qty</th><th style="padding:6px 8px;text-align:center;">Unit</th><th style="padding:6px 8px;text-align:right;">Rate</th><th style="padding:6px 8px;text-align:right;">Total</th></tr></thead>
                 <tbody>
-                  ${items.length ? items.map(it => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">${esc(it.desc)}</td><td style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">${it.qty}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${formatCurrency(it.rate)}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;font-weight:600;">${formatCurrency(it.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="padding:10px;text-align:center;color:#9ca3af;">No items added</td></tr>'}
+                  ${items.length ? items.map(it => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(it.desc)}</td><td style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">${it.qty}</td><td style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">${escapeHtml(it.unit)}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${formatCurrency(it.rate)}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;font-weight:600;">${formatCurrency(it.total)}</td></tr>`).join('') : '<tr><td colspan="5" style="padding:10px;text-align:center;color:#9ca3af;">No items added</td></tr>'}
                 </tbody>
               </table>
               <div style="text-align:right;font-size:12px;">
                 <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
-                <div>GST (18%): <strong>${formatCurrency(gstAmount)}</strong></div>
-                <div style="font-size:15px;color:#1e40af;margin-top:4px;">Grand Total: <strong>${formatCurrency(grandTotal)}</strong></div>
+                ${discount ? `<div>Discount: <strong>- ${formatCurrency(discount)}</strong></div>` : ''}
+                ${taxRate ? `<div>Tax (${taxRate}%): <strong>${formatCurrency(taxAmount)}</strong></div>` : ''}
+                <div style="font-size:15px;color:#0f766e;margin-top:4px;">Grand Total: <strong>${formatCurrency(grandTotal)}</strong></div>
+                <div style="margin-top:4px;">Received: <strong>${formatCurrency(received)}</strong> · Balance: <strong>${formatCurrency(balance)}</strong></div>
               </div>
-              ${g('inv-notes') ? `<div style="margin-top:10px;font-size:11px;color:#6b7280;"><strong>Notes:</strong> ${g('inv-notes')}</div>` : ''}
-              ${g('inv-payment') ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;"><strong>Payment Terms:</strong> ${g('inv-payment')}</div>` : ''}
+              ${g('inv-notes') ? `<div style="margin-top:10px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Notes:</strong> ${escapeHtml(g('inv-notes'))}</div>` : ''}
+              ${g('inv-payment') ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Payment Instructions:</strong> ${escapeHtml(g('inv-payment'))}</div>` : ''}
+              ${g('inv-terms') ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Terms:</strong> ${escapeHtml(g('inv-terms'))}</div>` : ''}
               <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:15px;">
-                ${qrSrc ? `<div><img src="${qrSrc}" style="max-height:60px;"><div style="font-size:9px;color:#6b7280;">Scan to Pay</div></div>` : '<div></div>'}
-                ${signSrc ? `<div><img src="${signSrc}" style="max-height:40px;"><div style="font-size:9px;color:#6b7280;">Authorized Signature</div></div>` : ''}
+                ${qrSrc ? `<div><img src="${escapeHtml(qrSrc)}" style="width:74px;height:74px;object-fit:contain;"><div style="font-size:9px;color:#6b7280;">Scan to Pay</div></div>` : '<div></div>'}
+                <div style="text-align:center;">${signSrc ? `<img src="${escapeHtml(signSrc)}" style="max-width:160px;max-height:50px;object-fit:contain;display:block;margin:auto;">` : '<div style="height:50px;"></div>'}<div style="font-size:9px;color:#6b7280;">Authorized Signature For ${escapeHtml(g('inv-company-name') || 'Company')}</div></div>
               </div>
             </div>
           </div>
@@ -5209,9 +5461,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       // Save draft settings
       async function saveBuilderSettings() {
-        const g = (id) => (document.getElementById(id)?.value || '').trim();
-        const getCheck = (id) => !!document.getElementById(id)?.checked;
-        const getPreviewSrc = (id) => document.getElementById(id)?.querySelector('img')?.src || '';
+        const g = getValue;
         const logoSrc = getPreviewSrc('inv-logo-preview');
         const qrSrc = getPreviewSrc('inv-qr-preview');
         const signSrc = getPreviewSrc('inv-sign-preview');
@@ -5221,6 +5471,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           items.push({
             desc: row.querySelector('.inv-item-desc')?.value || '',
             qty: Number(row.querySelector('.inv-item-qty')?.value || 1),
+            unit: row.querySelector('.inv-item-unit')?.value || 'SERVICE',
             rate: Number(row.querySelector('.inv-item-rate')?.value || 0)
           });
         });
@@ -5242,34 +5493,37 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           status: g('inv-status'),
           notes: g('inv-notes'),
           paymentTerms: g('inv-payment'),
+          terms: g('inv-terms'),
+          currency: g('inv-currency') || 'INR',
+          taxRate: Number(g('inv-tax-rate') || 0),
+          discount: Number(g('inv-discount') || 0),
+          received: Number(g('inv-received') || 0),
           logoUrl: logoSrc,
           qrUrl: qrSrc,
           signUrl: signSrc,
-          isRecurring: getCheck('inv-is-recurring'),
+          isRecurring: isChecked('inv-is-recurring'),
           items
         };
         try {
-          const { error } = await window.tmSupabase.from('crm_settings').upsert({ key: 'invoice_builder_settings', value: settings }, { onConflict: 'key' });
-          if (error) throw error;
+          const { data: existing, error: lookupError } = await window.tmSupabase.from('crm_settings').select('id').eq('category', 'invoice').maybeSingle();
+          if (lookupError) throw lookupError;
+          const result = existing
+            ? await window.tmSupabase.from('crm_settings').update({ settings }).eq('id', existing.id)
+            : await window.tmSupabase.from('crm_settings').insert({ category: 'invoice', settings });
+          if (result.error) throw result.error;
           showToast('Invoice builder settings saved', 'success');
         } catch (e) { showToast('Failed to save: ' + e.message, 'error'); }
       }
 
       // Save invoice to Supabase crm_invoices / crm_invoice_items
       async function saveInvoice() {
-        const g = (id) => (document.getElementById(id)?.value || '').trim();
-        const getCheck = (id) => !!document.getElementById(id)?.checked;
+        const g = getValue;
         const clientNameInput = g('inv-client-name');
         if (!clientNameInput) { showToast('Client name is required', 'error'); return; }
         if (!g('inv-number')) { showToast('Invoice number is required', 'error'); return; }
 
-        // Find or map matching client_id from client list
-        const matchedClient = state.data.clients.find(c => (c.company || c.name || '').toLowerCase().includes(clientNameInput.toLowerCase()) || (c.name || '').toLowerCase().includes(clientNameInput.toLowerCase())) || state.data.clients[0];
-        if (!matchedClient && !state.data.clients.length) {
-          showToast('Please create at least one client in Client Management before issuing invoices', 'error');
-          return;
-        }
-        const clientId = matchedClient?.id || 1;
+        const selectedClientId = g('inv-client-select');
+        const matchedClient = state.data.clients.find(c => String(c.id) === String(selectedClientId)) || state.data.clients.find(c => (c.company || c.name || '').toLowerCase() === clientNameInput.toLowerCase());
 
         const rows = document.querySelectorAll('#inv-items-tbody tr');
         let totalAmount = 0;
@@ -5277,97 +5531,63 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         rows.forEach(row => {
           const desc = row.querySelector('.inv-item-desc')?.value || '';
           const qty = Number(row.querySelector('.inv-item-qty')?.value || 1);
+          const unit = row.querySelector('.inv-item-unit')?.value || 'SERVICE';
           const rate = Number(row.querySelector('.inv-item-rate')?.value || 0);
+          const notes = row.querySelector('.inv-item-notes')?.value || '';
           const total = qty * rate;
           totalAmount += total;
-          if (desc.trim()) invoiceItems.push({ description: desc, quantity: qty, rate, total });
+          if (desc.trim()) invoiceItems.push({ description: desc.trim(), quantity: qty, unit: unit.trim(), rate, notes: notes.trim(), total });
         });
-        const gstAmount = totalAmount * 0.18;
-        const grandTotal = totalAmount + gstAmount;
+        if (!invoiceItems.length) { showToast('Add at least one service item', 'error'); return; }
+        const taxRate = Math.max(Number(g('inv-tax-rate') || 0), 0);
+        const discountAmount = Math.min(Math.max(Number(g('inv-discount') || 0), 0), totalAmount);
+        const taxAmount = Math.max(totalAmount - discountAmount, 0) * taxRate / 100;
+        const grandTotal = Math.max(totalAmount - discountAmount, 0) + taxAmount;
+        const receivedAmount = Math.max(Number(g('inv-received') || 0), 0);
+        const selectedStatus = g('inv-status') || 'auto';
+        const status = selectedStatus === 'auto'
+          ? (grandTotal > 0 && receivedAmount >= grandTotal ? 'paid' : receivedAmount > 0 ? 'sent' : 'draft')
+          : selectedStatus;
 
         const payload = {
-          client_id: Number(clientId),
+          client_id: matchedClient?.id || null,
           invoice_number: g('inv-number') || 'INV-' + Date.now(),
           customer_name: clientNameInput,
           customer_email: g('inv-client-email'),
           customer_phone: g('inv-client-phone'),
           billing_address: g('inv-client-address'),
+          currency: g('inv-currency') || 'INR',
+          service_title: invoiceItems[0]?.description || '',
+          discount_amount: discountAmount,
+          tax_amount: taxAmount,
           total_amount: grandTotal,
-          amount: totalAmount,
-          status: g('inv-status') || 'pending',
+          received_amount: receivedAmount,
+          status,
           invoice_date: g('inv-date') || new Date().toISOString().split('T')[0],
           due_date: g('inv-due-date') || null,
           notes: g('inv-notes'),
           payment_instructions: g('inv-payment'),
-          is_recurring: getCheck('inv-is-recurring'),
+          terms: g('inv-terms'),
+          sign_url: getPreviewSrc('inv-sign-preview'),
+          is_recurring: isChecked('inv-is-recurring'),
           items: invoiceItems
         };
 
         try {
           if (state.invoiceBuilderId) {
-            const { data, error } = await window.tmSupabase.from('crm_invoices').update({
-              client_id: payload.client_id,
-              invoice_number: payload.invoice_number,
-              customer_name: payload.customer_name,
-              customer_email: payload.customer_email,
-              customer_phone: payload.customer_phone,
-              billing_address: payload.billing_address,
-              total_amount: payload.total_amount,
-              status: payload.status,
-              invoice_date: payload.invoice_date,
-              due_date: payload.due_date,
-              notes: payload.notes,
-              payment_instructions: payload.payment_instructions,
-              is_recurring: payload.is_recurring
-            }).eq('id', state.invoiceBuilderId).select().single();
+            const { data, error } = await window.tmSupabase.from('crm_invoices').update({ ...payload, items: undefined }).eq('id', state.invoiceBuilderId).select().single();
             if (error) throw error;
 
-            await window.tmSupabase.from('crm_invoice_items').delete().eq('invoice_id', state.invoiceBuilderId);
-            if (invoiceItems.length) {
-              const itemRows = invoiceItems.map((it, idx) => ({
-                invoice_id: state.invoiceBuilderId,
-                description: it.description,
-                quantity: it.quantity,
-                rate: it.rate,
-                amount: it.total,
-                sort_order: idx
-              }));
-              const { error: itemsError } = await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
-              if (itemsError) throw itemsError;
-            }
+            await replaceInvoiceItems(state.invoiceBuilderId, invoiceItems);
 
             const idx = state.data.invoices.findIndex(i => String(i.id) === String(state.invoiceBuilderId));
             if (idx !== -1 && data) state.data.invoices[idx] = data;
             showToast('Invoice updated successfully', 'success');
           } else {
-            const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert({
-              client_id: payload.client_id,
-              invoice_number: payload.invoice_number,
-              customer_name: payload.customer_name,
-              customer_email: payload.customer_email,
-              customer_phone: payload.customer_phone,
-              billing_address: payload.billing_address,
-              total_amount: payload.total_amount,
-              status: payload.status,
-              invoice_date: payload.invoice_date,
-              due_date: payload.due_date,
-              notes: payload.notes,
-              payment_instructions: payload.payment_instructions,
-              is_recurring: payload.is_recurring
-            }).select().single();
+            const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert({ ...payload, items: undefined }).select().single();
             if (error) throw error;
 
-            if (invoiceItems.length && inv) {
-              const itemRows = invoiceItems.map((it, idx) => ({
-                invoice_id: inv.id,
-                description: it.description,
-                quantity: it.quantity,
-                rate: it.rate,
-                amount: it.total,
-                sort_order: idx
-              }));
-              await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
-            }
+            if (inv) await replaceInvoiceItems(inv.id, invoiceItems);
             if (inv) state.data.invoices.unshift(inv);
             showToast('Invoice created successfully', 'success');
           }
@@ -5379,6 +5599,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         } catch (error) {
           showToast(error instanceof Error ? error.message : 'Save invoice failed', 'error');
         }
+      }
+
+      async function replaceInvoiceItems(invoiceId, items) {
+        const { error: deleteError } = await window.tmSupabase.from('crm_invoice_items').delete().eq('invoice_id', invoiceId);
+        if (deleteError) throw deleteError;
+        const itemRows = items.map((item, index) => ({ invoice_id: invoiceId, description: item.description, quantity: item.quantity, rate: item.rate, amount: item.total, unit: item.unit, notes: item.notes, sort_order: index }));
+        const { error } = await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
+        if (error) throw error;
       }
 
       // Bind save buttons
@@ -5394,11 +5622,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       });
 
       // Initial preview
+      const today = new Date().toISOString().slice(0, 10);
+      if (!getValue('inv-company-name')) document.getElementById('inv-company-name').value = 'TechMigos';
+      if (!getValue('inv-number')) document.getElementById('inv-number').value = `TM/INV-${state.data.invoices.length + 1}`;
+      if (!getValue('inv-date')) document.getElementById('inv-date').value = today;
+      if (!getValue('inv-due-date')) document.getElementById('inv-due-date').value = today;
+      if (!document.querySelector('#inv-items-tbody tr')) addItemRow();
       updatePreview();
 
       // Load settings or invoice details
       if (state.invoiceBuilderId) {
-        loadInvoiceData(state.invoiceBuilderId);
+        loadBuilderSettings().then(() => loadInvoiceData(state.invoiceBuilderId));
       } else {
         loadBuilderSettings();
       }
@@ -7059,20 +7293,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function bindFinanceProofUploads() {
       document.querySelectorAll('[data-proof-upload]').forEach((input) => {
+        if (input.dataset.proofBound === 'true') return;
+        input.dataset.proofBound = 'true';
         input.addEventListener('change', async function () {
           const file = this.files?.[0];
           const row = this.closest('[data-row-id]');
           const proofCell = this.closest('[data-proof-cell]');
           const preview = proofCell?.querySelector('[data-proof-preview]');
           const status = proofCell?.querySelector('[data-proof-status]');
-          if (!file || !row) return;
+          const rowId = row?.dataset.rowId || this.dataset.proofRow || this.dataset.proofUpload;
+          if (!file || !rowId) return;
           if (status) {
             status.textContent = 'Uploading proof...';
             status.style.color = '#667599';
           }
           try {
             const res = await uploadFinanceProof(file);
-            await portal(`/api/portal/finances/${row.dataset.rowId}`, {
+            await portal(`/api/portal/finances/${rowId}`, {
               method: 'PATCH',
               body: JSON.stringify({ proof_url: res.proof_url }),
             });
@@ -7083,6 +7320,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             }
             toast('Proof uploaded');
             await loadData();
+            state.accSelectedId = rowId;
             render();
           } catch (error) {
             if (status) {
@@ -7091,7 +7329,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             }
             toast(error instanceof Error ? error.message : 'Proof upload failed');
           }
-        }, { once: true });
+        });
       });
     }
 
