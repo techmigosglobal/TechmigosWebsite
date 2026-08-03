@@ -2652,6 +2652,93 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
     }
 
+    const SETTLED_FINANCE_STATUSES = new Set(['paid', 'received', 'completed']);
+    const SETTLED_EXPENSE_STATUSES = new Set(['paid', 'completed']);
+    const SETTLED_INVOICE_STATUSES = new Set(['paid', 'completed']);
+
+    function normalizedStatus(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function isSettledFinance(item) {
+      const statuses = ['income', 'revenue'].includes(normalizedStatus(item.transaction_type))
+        ? SETTLED_FINANCE_STATUSES
+        : SETTLED_EXPENSE_STATUSES;
+      return statuses.has(normalizedStatus(item.status));
+    }
+
+    function isSettledInvoice(invoice) {
+      return SETTLED_INVOICE_STATUSES.has(normalizedStatus(invoice.status));
+    }
+
+    function invoiceTotal(invoice) {
+      return Math.max(Number(invoice.total_amount || invoice.amount || 0), 0);
+    }
+
+    function invoicePaidAmount(invoice) {
+      const total = invoiceTotal(invoice);
+      if (isSettledInvoice(invoice)) return total;
+      return Math.min(Math.max(Number(invoice.received_amount || 0), 0), total);
+    }
+
+    function invoiceBalance(invoice) {
+      if (normalizedStatus(invoice.status) === 'cancelled') return 0;
+      return Math.max(invoiceTotal(invoice) - invoicePaidAmount(invoice), 0);
+    }
+
+    function invoiceEffectiveStatus(invoice, now = new Date()) {
+      const status = normalizedStatus(invoice.status) || 'draft';
+      if (isSettledInvoice(invoice) || status === 'cancelled') return status;
+      if (invoiceBalance(invoice) > 0 && invoice.due_date) {
+        const dueDate = new Date(`${String(invoice.due_date).slice(0, 10)}T23:59:59`);
+        if (!Number.isNaN(dueDate.getTime()) && dueDate < now) return 'overdue';
+      }
+      return status;
+    }
+
+    function invoiceIncomeRows(invoices = state.data.invoices, finances = state.data.finances) {
+      const linkedFinanceReferences = new Set(
+        finances
+          .filter((item) => ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item))
+          .map((item) => String(item.reference_id || '').trim().toLowerCase())
+          .filter(Boolean),
+      );
+
+      return invoices
+        .filter((invoice) => isSettledInvoice(invoice))
+        .filter((invoice) => !linkedFinanceReferences.has(String(invoice.invoice_number || '').trim().toLowerCase()))
+        .map((invoice) => ({
+          ...invoice,
+          id: `invoice-${invoice.id}`,
+          invoice_id: invoice.id,
+          record_kind: 'invoice',
+          transaction_type: 'income',
+          transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
+          reference_id: invoice.invoice_number,
+          title: invoice.service_title || invoice.invoice_number || 'Invoice income',
+          client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
+          project: projectName(invoice.project_id),
+          amount: invoicePaidAmount(invoice),
+          status: invoiceEffectiveStatus(invoice),
+          source: 'invoice',
+        }));
+    }
+
+    function incomeRows(finances = state.data.finances, invoices = state.data.invoices) {
+      return [
+        ...finances.filter((item) => ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item)),
+        ...invoiceIncomeRows(invoices, finances),
+      ];
+    }
+
+    function expenseRows(finances = state.data.finances) {
+      return finances.filter((item) => ['expense', 'salary'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item));
+    }
+
+    function sumAmounts(rows) {
+      return rows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    }
+
     function nice(value) {
       return escapeHtml(String(value || '').replace(/_/g, ' ') || '-');
     }
@@ -2715,18 +2802,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function isCompanyAdmin() {
       return state.profile?.role === 'company_admin';
-    }
-
-    function financeSeed() {
-      const today = new Date().toISOString().slice(0, 10);
-      const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-      const lastMonth = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-      return [
-        { id: 'fin-sample-1', transaction_date: today, transaction_type: 'income', title: 'Web App Milestone 1 Payment', amount: 75000, status: 'received', client: 'Hastkala Crafts', project: 'Hastkala E-Commerce', payment_method: 'UPI', notes: 'Received via UPI' },
-        { id: 'fin-sample-2', transaction_date: lastWeek, transaction_type: 'expense', title: 'Cloud Server & VPS Hosting', amount: 8500, status: 'paid', department: 'Infrastructure', paid_by: 'TechMigos Operations', payment_method: 'NetBanking', notes: 'Monthly AWS & VPS bill' },
-        { id: 'fin-sample-3', transaction_date: lastMonth, transaction_type: 'salary', title: 'Senior Full Stack Engineer Salary', amount: 65000, status: 'paid', department: 'Engineering', paid_by: 'TechMigos Payroll', payment_method: 'Bank Transfer', notes: 'Monthly payroll' },
-        { id: 'fin-sample-4', transaction_date: today, transaction_type: 'revenue', title: 'SaaS Subscription Renewal', amount: 25000, status: 'received', client: 'Notiva Corp', project: 'Notiva Notes', payment_method: 'Razorpay', notes: 'Annual subscription' },
-      ];
     }
 
     function canWrite(resource) {
@@ -3118,17 +3193,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const projects = state.data.projects;
       const tickets = state.data.tickets;
       const clients = state.data.clients;
-      const finances = state.data.finances;
-      const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const collectedIncome = incomeRows();
+      const settledExpenses = expenseRows();
+      const income = sumAmounts(collectedIncome);
+      const expenses = sumAmounts(settledExpenses);
       const openTickets = tickets.filter((item) => !['resolved', 'closed'].includes(item.status));
       const urgentTickets = openTickets.filter((item) => ['urgent', 'high'].includes(item.priority));
       const weekLabel = currentWeekLabel();
 
       // Accounts Receivable
       const receivable = state.data.invoices
-        .filter((item) => !['paid', 'cancelled'].includes(item.status))
-        .reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+        .filter((item) => invoiceBalance(item) > 0)
+        .reduce((sum, item) => sum + invoiceBalance(item), 0);
 
       // 6-month revenue trend data
       const monthTrend = (() => {
@@ -3140,8 +3216,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           d.setMonth(d.getMonth() - i);
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
           months.push(d.toLocaleString('en-IN', { month: 'short', year: '2-digit' }));
-          incomeByMonth.push(finances.filter((f) => ['income','revenue'].includes(f.transaction_type) && String(f.transaction_date || f.created_at || '').startsWith(key)).reduce((s, f) => s + Number(f.amount || 0), 0));
-          expenseByMonth.push(finances.filter((f) => ['expense','salary'].includes(f.transaction_type) && String(f.transaction_date || f.created_at || '').startsWith(key)).reduce((s, f) => s + Number(f.amount || 0), 0));
+          incomeByMonth.push(collectedIncome.filter((f) => String(f.transaction_date || f.created_at || '').startsWith(key)).reduce((s, f) => s + Number(f.amount || 0), 0));
+          expenseByMonth.push(settledExpenses.filter((f) => String(f.transaction_date || f.created_at || '').startsWith(key)).reduce((s, f) => s + Number(f.amount || 0), 0));
         }
         return { months, incomeByMonth, expenseByMonth };
       })();
@@ -3196,7 +3272,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ${metric('Active Clients', clients.filter((c) => c.status !== 'archived').length, '○', 'green', `${clients.filter((c) => c.status === 'lead').length} in pipeline`)}
           ${metric('Open Tickets', openTickets.length, '◴', openTickets.length ? 'red' : 'green', urgentTickets.length ? `${urgentTickets.length} urgent` : 'Queue under control')}
           ${metric('Revenue Collected', compactMoney(income), '₹', 'green', `${compactMoney(expenses)} expenses`)}
-          ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${state.data.invoices.filter((i) => !['paid','cancelled'].includes(i.status)).length} unpaid invoices` : 'All invoices settled')}
+          ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${state.data.invoices.filter((i) => invoiceBalance(i) > 0).length} unpaid invoices` : 'All invoices settled')}
         </div>
 
         <!-- Main Content: 2 columns -->
@@ -3828,17 +3904,20 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
         project: projectName(invoice.project_id),
         transaction_type: 'invoice',
-        amount: invoice.total_amount || invoice.amount,
+        amount: invoiceTotal(invoice),
+        received_amount: invoicePaidAmount(invoice),
+        status: invoiceEffectiveStatus(invoice),
         notes: invoice.notes,
       }));
       if (state.financeSheet === 'invoices') return invoices;
+      if (state.financeSheet === 'income') return incomeRows();
       return state.data.finances.filter((item) => {
         if (state.financeSheet === 'all') return true;
-        if (state.financeSheet === 'income') return ['income', 'revenue'].includes(item.transaction_type);
+        if (state.financeSheet === 'income') return ['income', 'revenue'].includes(item.transaction_type) && isSettledFinance(item);
         if (state.financeSheet === 'expenses') return item.transaction_type === 'expense';
         if (state.financeSheet === 'salary') return item.transaction_type === 'salary';
         if (state.financeSheet === 'pending') return ['pending', 'half_payment', 'sent'].includes(item.status);
-        if (state.financeSheet === 'paid') return ['paid', 'received'].includes(item.status);
+        if (state.financeSheet === 'paid') return ['paid', 'received', 'completed'].includes(normalizedStatus(item.status));
         return true;
       });
     }
@@ -3888,7 +3967,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function financeSummaryMarkup(rows) {
       const totalValue = rows.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
-      const collectedValue = rows.reduce((sum, item) => sum + Number(item.received_amount || (item.status === 'paid' ? (item.total_amount || item.amount || 0) : 0)), 0);
+      const collectedValue = rows.reduce((sum, item) => sum + Number(item.received_amount || (['paid', 'received', 'completed'].includes(normalizedStatus(item.status)) ? (item.total_amount || item.amount || 0) : 0)), 0);
       const pendingCount = rows.filter((item) => ['pending', 'sent', 'overdue', 'half_payment'].includes(String(item.status || ''))).length;
       const proofCoverage = rows.filter((item) => item.proof_url).length;
       return `<div class="crm-ledger-pinned-summary">
@@ -4143,9 +4222,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       if (state.financeSheet === 'invoices') {
         return rows.map((item) => {
-          const total = Number(item.total_amount || item.amount || 0);
-          const received = Number(item.received_amount || (item.status === 'paid' ? total : 0));
-          const balance = Math.max(total - received, 0);
+          const total = invoiceTotal(item);
+          const received = invoicePaidAmount(item);
+          const balance = invoiceBalance(item);
+          const status = invoiceEffectiveStatus(item);
           return `${financeRowStart('invoices', item)}
             <td><input type="checkbox" data-row-select aria-label="Select invoice ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="invoice_date" type="date" value="${escapeHtml(item.invoice_date || '')}" /></td>
@@ -4156,14 +4236,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td class="crm-numeric"><strong>${compactMoney(total)}</strong></td>
             <td class="crm-numeric"><span class="crm-amount-positive">${compactMoney(received)}</span></td>
             <td class="crm-numeric"><span class="${balance > 0 ? 'crm-amount-negative' : 'crm-amount-positive'}">${compactMoney(balance)}</span></td>
-            <td><select class="crm-edit-select" data-field="status">${['draft','sent','paid','overdue','cancelled'].map((s) => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
+            <td><select class="crm-edit-select" data-field="status">${['draft','sent','paid','overdue','cancelled'].map((s) => `<option value="${s}" ${status === s ? 'selected' : ''}>${nice(s)}</option>`).join('')}</select></td>
             <td><div class="crm-stack">${ledgerStateMarkup('invoices', item.id)}${rowActions('invoices', item.id)}</div></td>
           </tr>`;
         }).join('');
       }
 
       if (state.financeSheet === 'income') {
-        return rows.map((item) => `
+        return rows.map((item) => item.record_kind === 'invoice' ? `
+          <tr data-resource="invoices" data-row-id="${item.invoice_id}">
+            <td><input type="checkbox" data-row-select aria-label="Select invoice ${item.invoice_id}" /></td>
+            <td>${escapeHtml(item.transaction_date || '')}</td>
+            <td>${escapeHtml(item.client || '')}</td>
+            <td>${escapeHtml(item.title || item.reference_id || '')}</td>
+            <td>${escapeHtml(item.received_by || 'Invoice payment')}</td>
+            <td>${escapeHtml(item.payment_method || '—')}</td>
+            <td class="crm-numeric"><span class="crm-amount-positive">${compactMoney(item.amount)}</span></td>
+            <td>${badge(item.status, 'green')}</td>
+            <td>${escapeHtml(item.notes || 'Paid invoice income')}</td>
+            <td>—</td>
+            <td><div class="crm-stack"><span class="crm-ledger-state crm-ledger-state--locked">Invoice</span><button class="crm-mini-action" data-load-invoice="${item.invoice_id}" type="button">View</button></div></td>
+          </tr>` : `
           ${financeRowStart('finances', item)}
             <td><input type="checkbox" data-row-select aria-label="Select record ${item.id}" /></td>
             <td><input class="crm-edit-input" data-field="transaction_date" type="date" value="${escapeHtml(item.transaction_date || '')}" /></td>
@@ -4268,13 +4361,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function renderFinance() {
       const isBuilder = state.financeSheet === 'invoices' && state.invoiceBuilderActive;
-      const income = state.data.finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const operatingExpenses = state.data.finances.filter((item) => item.transaction_type === 'expense').reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const salaries = state.data.finances.filter((item) => item.transaction_type === 'salary').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const collectedIncome = incomeRows();
+      const settledExpenses = expenseRows();
+      const income = sumAmounts(collectedIncome);
+      const operatingExpenses = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'expense'));
+      const salaries = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'salary'));
       const expenses = operatingExpenses + salaries;
-      const recurring = state.data.invoices.filter((item) => item.is_recurring).reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
-      const received = state.data.invoices.reduce((sum, item) => sum + Number(item.received_amount || (item.status === 'paid' ? (item.total_amount || item.amount || 0) : 0)), 0);
-      const receivable = state.data.invoices.filter((item) => !['paid', 'cancelled'].includes(item.status)).reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0);
+      const receivable = state.data.invoices.filter((item) => invoiceBalance(item) > 0).reduce((sum, item) => sum + invoiceBalance(item), 0);
       const availableBalance = income - expenses;
 
       const canWriteFinance = canWrite('finances');
@@ -4297,10 +4390,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const isInc = (t) => ['income', 'revenue'].includes(t);
         const signedINR = (v, t) => (isInc(t) ? '+' : '-') + fmtINR(Math.abs(Number(v) || 0));
         const cashFlowByMonth = {};
-        state.data.finances.forEach((item) => {
+        collectedIncome.forEach((item) => {
           const month = (item.transaction_date || '').slice(0, 7);
           if (!month) return;
-          cashFlowByMonth[month] = (cashFlowByMonth[month] || 0) + (isInc(item.transaction_type) ? Number(item.amount || 0) : -Number(item.amount || 0));
+          cashFlowByMonth[month] = (cashFlowByMonth[month] || 0) + Number(item.amount || 0);
+        });
+        settledExpenses.forEach((item) => {
+          const month = (item.transaction_date || '').slice(0, 7);
+          if (!month) return;
+          cashFlowByMonth[month] = (cashFlowByMonth[month] || 0) - Number(item.amount || 0);
         });
         const cashFlowMonths = Object.keys(cashFlowByMonth).sort().slice(-6);
         const cashFlowValues = cashFlowMonths.map((month) => cashFlowByMonth[month]);
@@ -4314,7 +4412,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           return `<span class="acc-badge ${cls}">${l[t?.toLowerCase()] || 'Other'}</span>`;
         };
         const sBadge = (s) => {
-          const m = { paid: 'acc-status-paid', pending: 'acc-status-pending', overdue: 'acc-status-overdue', draft: 'acc-status-draft', sent: 'acc-status-sent', cancelled: 'acc-status-cancelled' };
+          const m = { paid: 'acc-status-paid', received: 'acc-status-paid', completed: 'acc-status-paid', pending: 'acc-status-pending', overdue: 'acc-status-overdue', draft: 'acc-status-draft', sent: 'acc-status-sent', cancelled: 'acc-status-cancelled' };
           const status = String(s || '').toLowerCase();
           const label = status ? status[0].toUpperCase() + status.slice(1).replace(/_/g, ' ') : '—';
           return `<span class="acc-status-badge ${m[status] || 'acc-status-other'}" aria-label="Status: ${escapeHtml(label)}">${status === 'pending' ? proofIconMarkup('pending', 13) : ''}<span>${escapeHtml(label)}</span></span>`;
@@ -4327,10 +4425,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const getFinRows = () => {
           let rows = [...state.data.finances];
           const sh = state.accSubTab || 'all';
-          if (sh === 'income') rows = rows.filter(r => isInc(r.transaction_type));
+          if (sh === 'income') rows = incomeRows();
           else if (sh === 'expenses') rows = rows.filter(r => r.transaction_type === 'expense');
           else if (sh === 'salary') rows = rows.filter(r => r.transaction_type === 'salary');
-          else if (sh === 'invoices') rows = rows.filter(r => r.transaction_type === 'invoice');
+          else if (sh === 'invoices') rows = state.data.invoices.map((invoice) => ({
+            ...invoice,
+            record_kind: 'invoice',
+            invoice_id: invoice.id,
+            transaction_type: 'invoice',
+            transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
+            title: invoice.service_title || invoice.invoice_number || 'Invoice',
+            amount: invoiceTotal(invoice),
+            status: invoiceEffectiveStatus(invoice),
+          }));
           if (state.accSearch) {
             const q = state.accSearch.toLowerCase();
             rows = rows.filter(r => (r.title || '').toLowerCase().includes(q) || (r.status || '').toLowerCase().includes(q));
@@ -4366,6 +4473,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td><div class="acc-inline-actions"><span class="acc-inline-save-state acc-inline-save-state--draft" data-inline-save-state aria-live="polite">${initialSaveLabel}</span><button class="crm-button" data-cancel-inline-finance type="button">${actionLabel}</button></div></td>
           </tr>`;
         };
+        const invoiceTransactionRow = (record, showProof) => `<tr class="acc-tbl-row" data-row-id="${record.id}" data-record-kind="invoice">
+          <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(record.transaction_date)}</td>
+          <td style="font-weight:600;">${escapeHtml(record.title || record.reference_id || 'Invoice')}</td>
+          <td>${catBadge('invoice')}</td>
+          <td class="acc-amt-pos" style="font-weight:700;">${signedINR(record.amount, 'income')}</td>
+          <td>${sBadge(record.status)}</td>
+          ${showProof ? '<td style="color:#94a3b8;">—</td>' : ''}
+          <td><button class="crm-button" data-load-invoice="${record.invoice_id}" type="button" title="Open invoice">View invoice</button></td>
+        </tr>`;
         const txTable = (rows, showProof = false) => {
           const isAdding = state.accInlineFinanceId === 'new';
           if (!rows.length && !isAdding) return `<p style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No records found.</p>`;
@@ -4373,7 +4489,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Status</th>${showProof ? '<th>Proof</th>' : ''}<th>Actions</th>
           </tr></thead><tbody>
           ${isAdding ? inlineTransactionRow({}, showProof) : ''}
-          ${rows.map(r => state.accInlineFinanceId === String(r.id) ? inlineTransactionRow(r, showProof) : `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}${String(r.status).toLowerCase() === 'pending' ? ' acc-row-pending' : ''}" data-row-id="${r.id}">
+          ${rows.map(r => r.record_kind === 'invoice' ? invoiceTransactionRow(r, showProof) : state.accInlineFinanceId === String(r.id) ? inlineTransactionRow(r, showProof) : `<tr class="acc-tbl-row${state.accSelectedId === String(r.id) ? ' acc-row-selected' : ''}${String(r.status).toLowerCase() === 'pending' ? ' acc-row-pending' : ''}" data-row-id="${r.id}">
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(r.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(r.title || '—')}</td>
             <td>${catBadge(r.transaction_type)}</td>
@@ -4468,7 +4584,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const subTabs = (tabs) => `<div class="acc-sheet-tabs">${tabs.map(([k, l]) => `<button class="acc-sheet-tab${(state.accSubTab || 'all') === k ? ' active' : ''}" data-acc-subtab="${k}" type="button">${l}</button>`).join('')}</div>`;
         const financialPulse = `<section class="acc-financial-pulse" aria-label="Financial summary">
           <div class="acc-pulse-metrics">
-            <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${state.data.finances.filter((item) => isInc(item.transaction_type)).length} entries</small></div>
+            <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${collectedIncome.length} settled entries, including paid invoices</small></div>
             <div class="acc-pulse-metric"><span>Operating expenses</span><strong>${fmtINR(operatingExpenses)}</strong><small>Excludes salaries</small></div>
             <div class="acc-pulse-metric"><span>Total spending</span><strong>${fmtINR(expenses)}</strong><small>Expenses and salaries</small></div>
             <div class="acc-pulse-metric"><span>Outstanding invoices</span><strong>${fmtINR(receivable)}</strong><small>Awaiting collection</small></div>
@@ -4528,14 +4644,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>
           ${state.data.invoices.length === 0
             ? `<div style="text-align:center;padding:60px 20px;"><div style="font-size:48px;margin-bottom:12px;">🧾</div><div style="font-size:15px;font-weight:700;color:#475569;margin-bottom:6px;">No Invoices Yet</div><p style="font-size:13px;color:#94a3b8;">Create your first invoice to get started.</p></div>`
-            : `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Recurring</th><th>Actions</th></tr></thead><tbody>
+            : `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Due Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Recurring</th><th>Actions</th></tr></thead><tbody>
             ${state.data.invoices.map(inv => `<tr class="acc-tbl-row">
               <td style="font-weight:700;color:#0f766e;">${escapeHtml(inv.invoice_number || '—')}</td>
               <td>${escapeHtml(inv.customer_name || '—')}</td>
               <td style="font-size:12px;color:#64748b;">${fmtDate(inv.invoice_date || inv.created_at)}</td>
-              <td style="font-size:12px;color:${inv.due_date && new Date(inv.due_date) < new Date() && inv.status !== 'paid' ? '#dc2626' : '#64748b'}">${fmtDate(inv.due_date)}</td>
-              <td style="font-weight:700;">${fmtINR(inv.total_amount || inv.amount || 0)}</td>
-              <td>${sBadge(inv.status)}</td>
+              <td style="font-size:12px;color:${invoiceEffectiveStatus(inv) === 'overdue' ? '#dc2626' : '#64748b'}">${fmtDate(inv.due_date)}</td>
+              <td style="font-weight:700;">${fmtINR(invoiceTotal(inv))}</td>
+              <td style="font-weight:700;color:#16a34a;">${fmtINR(invoicePaidAmount(inv))}</td>
+              <td style="font-weight:700;color:${invoiceBalance(inv) > 0 ? '#d97706' : '#16a34a'};">${fmtINR(invoiceBalance(inv))}</td>
+              <td>${sBadge(invoiceEffectiveStatus(inv))}</td>
               <td style="font-size:12px;">${inv.is_recurring ? '<span style="color:#6366f1;font-weight:700;">♻ Recurring</span>' : '—'}</td>
               <td><div style="display:flex;gap:4px;align-items:center;">
                 <button class="crm-button primary" data-load-invoice="${inv.id}" type="button" title="Edit Invoice" aria-label="Edit Invoice" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
@@ -4547,7 +4665,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
         // ── REPORTS TAB ──
         const monthMap2 = {};
-        state.data.finances.forEach(r => {
+        [...collectedIncome, ...settledExpenses].forEach(r => {
           const mk = (r.transaction_date || '').slice(0, 7);
           if (!mk || mk.length < 7) return;
           if (!monthMap2[mk]) monthMap2[mk] = { income: 0, expense: 0 };
@@ -4863,7 +4981,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       // ── Row click → proof preview ──
       document.querySelectorAll('.acc-tbl-row[data-row-id]').forEach(tr => {
         tr.addEventListener('click', e => {
-          if (e.target.closest('button')) return;
+          if (e.target.closest('button') || tr.dataset.recordKind === 'invoice') return;
           state.accSelectedId = tr.dataset.rowId;
           renderFinance();
         });
@@ -4979,7 +5097,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         btn.addEventListener('click', () => {
           state.financeSheet = 'invoices';
           state.invoiceBuilderActive = true;
-          state.loadInvoiceId = btn.dataset.loadInvoice;
+          state.invoiceBuilderId = btn.dataset.loadInvoice;
           renderFinance();
         });
       });
@@ -4990,7 +5108,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const W = canvas.offsetWidth || 248, H = 80;
         canvas.width = W; canvas.height = H;
         const monthMap = {};
-        state.data.finances.forEach(r => {
+        [...incomeRows(), ...expenseRows()].forEach(r => {
           const mk = (r.transaction_date || '').slice(0, 7); if (!mk) return;
           if (!monthMap[mk]) monthMap[mk] = 0;
           monthMap[mk] += ['income', 'revenue'].includes(r.transaction_type) ? Number(r.amount || 0) : -Number(r.amount || 0);
@@ -5036,10 +5154,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const today = new Date();
       const aging = { '0\u201330 Days': 0, '31\u201360 Days': 0, '61\u201390 Days': 0, '90+ Days': 0 };
       state.data.invoices
-        .filter((inv) => !['paid', 'cancelled'].includes(inv.status))
+        .filter((inv) => invoiceBalance(inv) > 0)
         .forEach((inv) => {
           const daysLate = inv.due_date ? Math.floor((today - new Date(inv.due_date)) / 86400000) : 0;
-          const amt = Number(inv.total_amount || inv.amount || 0);
+          const amt = invoiceBalance(inv);
           if (daysLate <= 30) aging['0\u201330 Days'] += amt;
           else if (daysLate <= 60) aging['31\u201360 Days'] += amt;
           else if (daysLate <= 90) aging['61\u201390 Days'] += amt;
@@ -5053,7 +5171,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       }
       // Monthly Cash Flow: last 6 months bar chart
       const monthMap = {};
-      state.data.finances.forEach((item) => {
+      [...incomeRows(), ...expenseRows()].forEach((item) => {
         const d = item.transaction_date || (item.created_at || '').slice(0, 10);
         const monthKey = d.slice(0, 7);
         if (!monthKey || monthKey.length < 7) return;
@@ -5363,11 +5481,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             setVal('inv-number', invoice.invoice_number);
             setVal('inv-date', invoice.invoice_date ? invoice.invoice_date.slice(0, 10) : '');
             setVal('inv-due-date', invoice.due_date ? invoice.due_date.slice(0, 10) : '');
-            setVal('inv-status', invoice.status || 'auto');
+            setVal('inv-status', invoiceEffectiveStatus(invoice) || 'auto');
             setVal('inv-currency', invoice.currency || 'INR');
             setVal('inv-tax-rate', invoice.total_amount ? (Number(invoice.tax_amount || 0) / Math.max(Number(invoice.total_amount || 0) - Number(invoice.tax_amount || 0) + Number(invoice.discount_amount || 0), 1) * 100).toFixed(2) : 18);
             setVal('inv-discount', invoice.discount_amount || 0);
-            setVal('inv-received', invoice.received_amount || 0);
+            setVal('inv-received', invoicePaidAmount(invoice));
             setVal('inv-notes', invoice.notes);
             setVal('inv-payment', invoice.payment_instructions);
             setVal('inv-terms', invoice.terms);
@@ -5547,9 +5665,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         let subtotal = 0;
         rows.forEach(row => {
           const desc = row.querySelector('.inv-item-desc')?.value || '';
-          const qty = Number(row.querySelector('.inv-item-qty')?.value || 1);
+          const qty = Math.max(Number(row.querySelector('.inv-item-qty')?.value || 1) || 0, 0);
           const unit = row.querySelector('.inv-item-unit')?.value || 'SERVICE';
-          const rate = Number(row.querySelector('.inv-item-rate')?.value || 0);
+          const rate = Math.max(Number(row.querySelector('.inv-item-rate')?.value || 0) || 0, 0);
           const total = qty * rate;
           subtotal += total;
           const totalCell = row.querySelector('.inv-item-total');
@@ -5557,16 +5675,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           items.push({ desc, qty, unit, rate, total });
         });
 
-        const taxRate = Math.max(Number(g('inv-tax-rate') || 0), 0);
-        const discount = Math.min(Math.max(Number(g('inv-discount') || 0), 0), subtotal);
+        const taxRate = Math.max(Number(g('inv-tax-rate') || 0) || 0, 0);
+        const discount = Math.min(Math.max(Number(g('inv-discount') || 0) || 0, 0), subtotal);
         const taxable = Math.max(subtotal - discount, 0);
         const taxAmount = taxable * taxRate / 100;
         const grandTotal = taxable + taxAmount;
-        const received = Math.max(Number(g('inv-received') || 0), 0);
-        const balance = Math.max(grandTotal - received, 0);
         const selectedStatus = g('inv-status') || 'auto';
+        const requestedReceived = Math.max(Number(g('inv-received') || 0) || 0, 0);
+        const received = selectedStatus === 'paid' ? grandTotal : Math.min(requestedReceived, grandTotal);
+        const balance = Math.max(grandTotal - received, 0);
+        const dueDate = g('inv-due-date');
+        const dueDatePassed = dueDate && new Date(`${dueDate}T23:59:59`) < new Date();
         const status = selectedStatus === 'auto'
-          ? (grandTotal > 0 && balance <= 0 ? 'paid' : received > 0 ? 'sent' : 'draft')
+          ? (grandTotal > 0 && balance <= 0 ? 'paid' : dueDatePassed && balance > 0 ? 'overdue' : received > 0 ? 'sent' : 'draft')
           : selectedStatus;
         const statusColor = status === 'paid' ? '#15803d' : status === 'overdue' ? '#dc2626' : '#b45309';
         const contact = [g('inv-contact-person'), g('inv-contact-number'), g('inv-contact-email')].filter(Boolean).join(' | ');
@@ -5682,23 +5803,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const invoiceItems = [];
         rows.forEach(row => {
           const desc = row.querySelector('.inv-item-desc')?.value || '';
-          const qty = Number(row.querySelector('.inv-item-qty')?.value || 1);
+          const qty = Math.max(Number(row.querySelector('.inv-item-qty')?.value || 1) || 0, 0);
           const unit = row.querySelector('.inv-item-unit')?.value || 'SERVICE';
-          const rate = Number(row.querySelector('.inv-item-rate')?.value || 0);
+          const rate = Math.max(Number(row.querySelector('.inv-item-rate')?.value || 0) || 0, 0);
           const notes = row.querySelector('.inv-item-notes')?.value || '';
           const total = qty * rate;
           totalAmount += total;
           if (desc.trim()) invoiceItems.push({ description: desc.trim(), quantity: qty, unit: unit.trim(), rate, notes: notes.trim(), total });
         });
         if (!invoiceItems.length) { showToast('Add at least one service item', 'error'); return; }
-        const taxRate = Math.max(Number(g('inv-tax-rate') || 0), 0);
-        const discountAmount = Math.min(Math.max(Number(g('inv-discount') || 0), 0), totalAmount);
+        const taxRate = Math.max(Number(g('inv-tax-rate') || 0) || 0, 0);
+        const discountAmount = Math.min(Math.max(Number(g('inv-discount') || 0) || 0, 0), totalAmount);
         const taxAmount = Math.max(totalAmount - discountAmount, 0) * taxRate / 100;
         const grandTotal = Math.max(totalAmount - discountAmount, 0) + taxAmount;
-        const receivedAmount = Math.max(Number(g('inv-received') || 0), 0);
         const selectedStatus = g('inv-status') || 'auto';
+        const requestedReceivedAmount = Math.max(Number(g('inv-received') || 0) || 0, 0);
+        const receivedAmount = selectedStatus === 'paid' ? grandTotal : Math.min(requestedReceivedAmount, grandTotal);
+        const dueDate = g('inv-due-date');
+        const dueDatePassed = dueDate && new Date(`${dueDate}T23:59:59`) < new Date();
+        const balanceAmount = Math.max(grandTotal - receivedAmount, 0);
         const status = selectedStatus === 'auto'
-          ? (grandTotal > 0 && receivedAmount >= grandTotal ? 'paid' : receivedAmount > 0 ? 'sent' : 'draft')
+          ? (grandTotal > 0 && balanceAmount <= 0 ? 'paid' : dueDatePassed && balanceAmount > 0 ? 'overdue' : receivedAmount > 0 ? 'sent' : 'draft')
           : selectedStatus;
 
         const payload = {
@@ -5791,13 +5916,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function renderAnalytics() {
-      const finances = state.data.finances;
+      const collectedIncome = incomeRows();
+      const settledExpenses = expenseRows();
       const tickets = state.data.tickets;
       const projects = state.data.projects;
       const employees = employeeSeed();
 
-      const income = finances.filter((f) => ['income','revenue'].includes(f.transaction_type)).reduce((s, f) => s + Number(f.amount || 0), 0);
-      const expenses = finances.filter((f) => ['expense','salary'].includes(f.transaction_type)).reduce((s, f) => s + Number(f.amount || 0), 0);
+      const income = sumAmounts(collectedIncome);
+      const expenses = sumAmounts(settledExpenses);
       const openTickets = tickets.filter((t) => !['resolved','closed'].includes(t.status)).length;
       const resolvedTickets = tickets.filter((t) => ['resolved','closed'].includes(t.status)).length;
       const resolutionRate = tickets.length ? Math.round((resolvedTickets / tickets.length) * 100) : 0;
@@ -5810,10 +5936,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         return { label: d.toLocaleString('en', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() };
       });
       const monthlyRevenue = months.map(({ year, month }) =>
-        finances.filter((f) => { const d = new Date(f.transaction_date || f.created_at || ''); return d.getFullYear() === year && d.getMonth() === month && ['income','revenue'].includes(f.transaction_type); }).reduce((s, f) => s + Number(f.amount || 0), 0)
+        collectedIncome.filter((f) => { const d = new Date(f.transaction_date || f.created_at || ''); return d.getFullYear() === year && d.getMonth() === month; }).reduce((s, f) => s + Number(f.amount || 0), 0)
       );
       const monthlyExpense = months.map(({ year, month }) =>
-        finances.filter((f) => { const d = new Date(f.transaction_date || f.created_at || ''); return d.getFullYear() === year && d.getMonth() === month && ['expense','salary'].includes(f.transaction_type); }).reduce((s, f) => s + Number(f.amount || 0), 0)
+        settledExpenses.filter((f) => { const d = new Date(f.transaction_date || f.created_at || ''); return d.getFullYear() === year && d.getMonth() === month; }).reduce((s, f) => s + Number(f.amount || 0), 0)
       );
 
       // Project status breakdown
@@ -5863,8 +5989,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="crm-list-row"><span>Total Income</span><strong style="color:#22c55e;">${compactMoney(income)}</strong></div>
               <div class="crm-list-row"><span>Total Expenses</span><strong style="color:#ef4444;">${compactMoney(expenses)}</strong></div>
               <div class="crm-list-row"><span>Net Profit</span><strong style="color:${income >= expenses ? '#22c55e' : '#ef4444'};">${compactMoney(income - expenses)}</strong></div>
-              <div class="crm-list-row"><span>Pending Invoices</span><strong style="color:#f59e0b;">${state.data.invoices.filter((i) => !['paid','cancelled'].includes(i.status)).length}</strong></div>
-              <div class="crm-list-row"><span>Total Transactions</span><strong>${finances.length}</strong></div>
+              <div class="crm-list-row"><span>Pending Invoices</span><strong style="color:#f59e0b;">${state.data.invoices.filter((i) => invoiceBalance(i) > 0).length}</strong></div>
+              <div class="crm-list-row"><span>Settled Transactions</span><strong>${collectedIncome.length + settledExpenses.length}</strong></div>
               <div class="crm-list-row"><span>Total Invoices</span><strong>${state.data.invoices.length}</strong></div>
             </div>
           </section>
@@ -5933,17 +6059,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const projects = state.data.projects.filter((row) => inReportRange(row, ['created_at', 'due_date']));
       const tickets = state.data.tickets.filter((row) => inReportRange(row, ['created_at']));
       const clients = state.data.clients.filter((row) => inReportRange(row, ['created_at']));
-      const income = finances.filter((item) => ['income', 'revenue'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-      const expenses = finances.filter((item) => ['expense', 'salary'].includes(item.transaction_type)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const collectedIncome = incomeRows(finances, invoices);
+      const settledExpenses = expenseRows(finances);
+      const income = sumAmounts(collectedIncome);
+      const expenses = sumAmounts(settledExpenses);
       const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
-      const invoiceReceived = invoices.reduce((sum, item) => sum + Number(item.received_amount || 0), 0);
+      const invoiceOutstanding = invoices.reduce((sum, item) => sum + invoiceBalance(item), 0);
 
       return {
         executive: {
           title: 'Executive Summary Report',
           subtitle: 'Company-wide snapshot across projects, support, finance, and clients.',
           metrics: [
-            ['Revenue', compactMoney(income + invoiceReceived), '₹', 'green'],
+            ['Revenue', compactMoney(income), '₹', 'green'],
             ['Expenses', compactMoney(expenses), '▵', 'red'],
             ['Open Tickets', tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, '◴', 'orange'],
             ['Active Projects', state.data.projects.filter((item) => ['planning', 'active', 'review'].includes(item.status)).length, '▣', 'blue'],
@@ -5951,8 +6079,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           columns: [['area', 'Area'], ['value', 'Value'], ['notes', 'Notes']],
           rows: [
             { area: 'Projects', value: state.data.projects.length, notes: `${state.data.projects.filter((item) => item.health === 'at_risk').length} at risk` },
-            { area: 'Finance', value: compactMoney((income + invoiceReceived) - expenses), notes: 'Net after recorded expenses' },
-            { area: 'Invoices', value: compactMoney(invoiceTotal - invoiceReceived), notes: 'Outstanding balance' },
+            { area: 'Finance', value: compactMoney(income - expenses), notes: 'Net after settled transactions' },
+            { area: 'Invoices', value: compactMoney(invoiceOutstanding), notes: 'Outstanding balance' },
             { area: 'Tickets', value: tickets.length, notes: `${tickets.filter((item) => ['urgent', 'high'].includes(item.priority)).length} high priority` },
             { area: 'Clients', value: clients.length, notes: `${clients.filter((item) => item.status === 'active').length} active` },
           ],
@@ -5964,7 +6092,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             ['Income', compactMoney(income), '₹', 'green'],
             ['Expenses', compactMoney(expenses), '▵', 'red'],
             ['Invoice Total', compactMoney(invoiceTotal), '▱', 'blue'],
-            ['Outstanding', compactMoney(invoiceTotal - invoiceReceived), '!', 'orange'],
+            ['Outstanding', compactMoney(invoiceOutstanding), '!', 'orange'],
           ],
           columns: [['date', 'Date'], ['type', 'Type'], ['title', 'Title'], ['client', 'Client'], ['amount', 'Amount'], ['status', 'Status'], ['proof', 'Proof']],
           rows: [
@@ -6143,16 +6271,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function financePdfRows() {
       return financeSheetRows().map((item) => {
-        const total = Number(item.total_amount || item.amount || 0);
-        const received = Number(item.received_amount || (item.status === 'paid' ? total : 0));
+        const total = invoiceTotal(item);
+        const received = item.record_kind === 'invoice'
+          ? invoicePaidAmount(item)
+          : isSettledFinance(item) ? total : 0;
         const proofLabel = item.proof_url ? (/\.(png|jpe?g|webp|gif|avif)$/i.test(item.proof_url) ? 'Image proof' : 'PDF/link proof') : '-';
         return {
           date: item.transaction_date || item.invoice_date || String(item.created_at || '').slice(0, 10),
           type: item.transaction_type || 'invoice',
           title: item.title || item.reference_id || item.invoice_number || '-',
           client: item.client || item.customer_name || '-',
-          amount: compactMoney(total || item.amount || 0),
-          status: item.status || '-',
+          amount: compactMoney(item.record_kind === 'invoice' && state.financeSheet === 'income' ? received : total),
+          status: item.record_kind === 'invoice' ? invoiceEffectiveStatus(item) : item.status || '-',
           proof: proofLabel,
           proof_url: item.proof_url || item.sign_url || '',
           received: compactMoney(received),
@@ -6281,14 +6411,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const rows = filtered(allClients, ['name', 'company', 'email', 'phone', 'status']).map((client) => {
         const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
         const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
-        const outstandingInvoices = invoices.filter((item) => !['paid', 'cancelled'].includes(item.status));
+        const outstandingInvoices = invoices.filter((item) => invoiceBalance(item) > 0);
         return `<tr data-resource="clients" data-row-id="${client.id}" style="cursor:pointer;" data-client-detail="${client.id}">
           <td><input type="checkbox" data-row-select aria-label="Select client ${escapeHtml(client.company || client.name)}" onclick="event.stopPropagation()" /></td>
           <td><strong>${escapeHtml(client.company || client.name || '')}</strong><br><small style="color:#64748b;">${escapeHtml(client.name || '')}</small></td>
           <td>${escapeHtml(client.email || '—')}</td>
           <td><strong>${projects.length}</strong></td>
           <td><strong>${compactMoney(projects.reduce((sum, item) => sum + Number(item.revenue || item.budget || 0), 0))}</strong></td>
-          <td>${outstandingInvoices.length ? `<strong style="color:#d97706">${compactMoney(outstandingInvoices.reduce((sum, item) => sum + Number(item.total_amount || item.amount || 0), 0))}</strong>` : '<span style="color:#059669">Settled</span>'}</td>
+          <td>${outstandingInvoices.length ? `<strong style="color:#d97706">${compactMoney(outstandingInvoices.reduce((sum, item) => sum + invoiceBalance(item), 0))}</strong>` : '<span style="color:#059669">Settled</span>'}</td>
           <td>${badge(client.status || 'active')}</td>
           <td>${rowActions('clients', client.id, { view: false })}</td>
         </tr>`;
@@ -6296,7 +6426,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const activeCount = state.data.clients.filter((c) => c.status === 'active' || !c.status).length;
       const leadCount = state.data.clients.filter((c) => c.status === 'lead').length;
       const atRiskCount = state.data.projects.filter((p) => p.health === 'at_risk').length;
-      const totalRevenue = state.data.finances.filter((f) => ['income','revenue'].includes(f.transaction_type)).reduce((s, f) => s + Number(f.amount || 0), 0);
+      const totalRevenue = sumAmounts(incomeRows());
       els.view.innerHTML = `
         ${pageHead('Client Management', 'Manage client companies, relationships, project portfolio, billing health, and portal access.', `${canWrite('clients') ? '<button class="crm-button primary" data-create="clients" type="button">+ Add Client</button>' : ''}<button class="crm-button" data-export="clients" type="button">Export</button>`)}
         <div class="crm-grid crm-kpis">
@@ -6327,7 +6457,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <div class="crm-three-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Client Retention</h2></div><div class="crm-list"><div class="crm-list-row"><span>Active clients</span><strong>${activeCount}</strong></div><div class="crm-list-row"><span>Leads</span><strong>${leadCount}</strong></div><div class="crm-list-row"><span>At-risk projects</span><strong>${atRiskCount}</strong></div></div></section>
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="crm-empty">No activity yet.</p>'}</div></section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Outstanding Invoices</h2></div><div class="crm-list">${state.data.invoices.filter((i) => !['paid','cancelled'].includes(i.status)).slice(0, 5).map((i) => `<div class="crm-list-row"><span>${escapeHtml(i.invoice_number || '-')} ${badge(i.status)}</span><strong>${compactMoney(i.total_amount || i.amount)}</strong></div>`).join('') || '<p class="crm-empty">No outstanding invoices.</p>'}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Outstanding Invoices</h2></div><div class="crm-list">${state.data.invoices.filter((i) => invoiceBalance(i) > 0).slice(0, 5).map((i) => `<div class="crm-list-row"><span>${escapeHtml(i.invoice_number || '-')} ${badge(invoiceEffectiveStatus(i))}</span><strong>${compactMoney(invoiceBalance(i))}</strong></div>`).join('') || '<p class="crm-empty">No outstanding invoices.</p>'}</div></section>
         </div>`;
       // Wire search and filter
       document.getElementById('clients-search')?.addEventListener('input', (e) => { state.search = e.target.value; renderClients(); bindActions(); });
@@ -6339,9 +6469,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (!client) return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;"><div style="font-size:32px;">&#9711;</div><p style="color:#94a3b8;font-weight:600;">Select a client to view details</p></div>`;
       const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
       const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
-      const outstanding = invoices.filter((i) => !['paid','cancelled'].includes(i.status));
-      const totalBilling = invoices.reduce((s, i) => s + Number(i.total_amount || i.amount || 0), 0);
-      const received = invoices.reduce((s, i) => s + Number(i.received_amount || (i.status === 'paid' ? (i.total_amount || i.amount || 0) : 0)), 0);
+      const outstanding = invoices.filter((i) => invoiceBalance(i) > 0);
+      const totalBilling = invoices.reduce((s, i) => s + invoiceTotal(i), 0);
       const initials = (client.company || client.name || 'C').slice(0, 2).toUpperCase();
       return `
         <div class="pm-detail">
@@ -6360,11 +6489,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="pm-info-row"><span>Projects</span><strong>${projects.length}</strong></div>
               <div class="pm-info-row"><span>Invoices</span><strong>${invoices.length}</strong></div>
               <div class="pm-info-row"><span>Billed</span><strong style="color:#6366f1;">${compactMoney(totalBilling)}</strong></div>
-              <div class="pm-info-row"><span>Outstanding</span><strong style="color:${outstanding.length ? '#f59e0b' : '#22c55e'};">${outstanding.length ? compactMoney(outstanding.reduce((s, i) => s + Number(i.total_amount || i.amount || 0), 0)) : 'Settled'}</strong></div>
+              <div class="pm-info-row"><span>Outstanding</span><strong style="color:${outstanding.length ? '#f59e0b' : '#22c55e'};">${outstanding.length ? compactMoney(outstanding.reduce((s, i) => s + invoiceBalance(i), 0)) : 'Settled'}</strong></div>
             </div>
           </div>
           ${projects.length ? `<div class="pm-detail-section"><div class="pm-detail-label">PROJECTS (${projects.length})</div>${projects.slice(0, 3).map((p) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:12px;font-weight:700;">${escapeHtml(p.name)}</span>${badge(p.status)}</div>`).join('')}</div>` : ''}
-          ${invoices.length ? `<div class="pm-detail-section"><div class="pm-detail-label">RECENT INVOICES</div>${invoices.slice(0, 3).map((i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:11px;font-weight:700;">${escapeHtml(i.invoice_number || '-')}&nbsp;${badge(i.status)}</span><strong style="font-size:11px;">${compactMoney(i.total_amount || i.amount)}</strong></div>`).join('')}</div>` : ''}
+          ${invoices.length ? `<div class="pm-detail-section"><div class="pm-detail-label">RECENT INVOICES</div>${invoices.slice(0, 3).map((i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:11px;font-weight:700;">${escapeHtml(i.invoice_number || '-')}&nbsp;${badge(invoiceEffectiveStatus(i))}</span><strong style="font-size:11px;">${invoiceBalance(i) > 0 ? `${compactMoney(invoiceBalance(i))} due` : 'Paid'}</strong></div>`).join('')}</div>` : ''}
           <div class="pm-detail-actions">
             ${canWrite('clients') ? `<button class="crm-button" data-create="invoices" type="button">+ Invoice</button>` : ''}
             ${canWrite('clients') ? `<button class="crm-button primary" data-edit-resource="clients" data-edit-id="${client.id}" type="button">Edit</button>` : ''}
@@ -6751,7 +6880,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       renderShell();
       // Update notification badge
       const pendingCount = state.data.tickets.filter((t) => !['resolved','closed'].includes(t.status)).length
-        + state.data.invoices.filter((i) => ['sent','overdue'].includes(i.status)).length;
+        + state.data.invoices.filter((i) => ['sent','overdue'].includes(invoiceEffectiveStatus(i))).length;
       const badgeEl = document.getElementById('crm-badge');
       if (badgeEl) { badgeEl.textContent = pendingCount; badgeEl.style.display = pendingCount ? '' : 'none'; }
       if (state.active === 'dashboard') renderDashboard();
@@ -6958,7 +7087,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function openNotifications() {
       const items = [
         ...state.data.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).slice(0, 4).map((ticket) => ({ title: ticket.subject, meta: `Ticket #TIC-${ticket.id} is ${nice(ticket.status)}`, tone: statusTone(ticket.priority) })),
-        ...state.data.invoices.filter((invoice) => ['pending', 'sent', 'overdue'].includes(invoice.status)).slice(0, 3).map((invoice) => ({ title: invoice.invoice_number || 'Invoice', meta: `${compactMoney(invoice.total_amount || invoice.amount)} ${nice(invoice.status)}`, tone: statusTone(invoice.status) })),
+        ...state.data.invoices.filter((invoice) => invoiceBalance(invoice) > 0 && ['sent', 'overdue'].includes(invoiceEffectiveStatus(invoice))).slice(0, 3).map((invoice) => ({ title: invoice.invoice_number || 'Invoice', meta: `${compactMoney(invoiceBalance(invoice))} ${nice(invoiceEffectiveStatus(invoice))}`, tone: statusTone(invoiceEffectiveStatus(invoice)) })),
       ];
       els.modalTitle.textContent = 'Notifications';
       els.modalBody.innerHTML = `<div class="crm-list">${items.map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.title || 'Notification')}</span>${badge(item.meta || 'new', item.tone)}</div>`).join('') || '<p class="p-4 text-sm font-bold text-slate-500">No pending notifications.</p>'}</div><div class="crm-toolbar p-5 pt-0"><button class="crm-button primary" data-jump="tickets" type="button">Open Tickets</button><button class="crm-button" data-jump="finance" type="button">Open Finance</button></div>`;
@@ -7490,14 +7619,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const items = Array.from(itemEls).map((el, i) => ({
         description: (el.querySelector(`[name="item_desc_${i}"]`)?.value || '').trim(),
         unit: (el.querySelector(`[name="item_unit_${i}"]`)?.value || '').trim(),
-        quantity: parseFloat(el.querySelector(`[name="item_qty_${i}"]`)?.value || 1),
-        rate: parseFloat(el.querySelector(`[name="item_rate_${i}"]`)?.value || 0),
+        quantity: Math.max(parseFloat(el.querySelector(`[name="item_qty_${i}"]`)?.value || 1) || 0, 0),
+        rate: Math.max(parseFloat(el.querySelector(`[name="item_rate_${i}"]`)?.value || 0) || 0, 0),
         notes: (el.querySelector(`[name="item_notes_${i}"]`)?.value || '').trim(),
       })).filter((x) => x.description);
       const subtotal = items.reduce((s, x) => s + x.quantity * x.rate, 0);
-      const discount = parseFloat(data.discount_amount || 0);
-      const tax = parseFloat(data.tax_amount || 0);
+      const discount = Math.max(parseFloat(data.discount_amount || 0) || 0, 0);
+      const tax = Math.max(parseFloat(data.tax_amount || 0) || 0, 0);
       const total_amount = Math.max(0, subtotal - discount + tax);
+      const status = normalizedStatus(data.status) || 'draft';
+      const requestedReceived = Math.max(parseFloat(data.received_amount || 0), 0);
       return {
         client_id: Number(data.client_id),
         project_id: data.project_id ? Number(data.project_id) : undefined,
@@ -7513,8 +7644,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         discount_amount: discount,
         tax_amount: tax,
         total_amount,
-        received_amount: parseFloat(data.received_amount || 0),
-        status: data.status || 'draft',
+        received_amount: status === 'paid' ? total_amount : Math.min(requestedReceived, total_amount),
+        status,
         notes: data.notes?.trim() || undefined,
         payment_instructions: data.payment_instructions?.trim() || undefined,
         terms: data.terms?.trim() || undefined,
@@ -7771,11 +7902,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const billEmail = inv.customer_email || detail.client?.email || '';
       const billAddr = inv.billing_address || '';
 
-      const total = Number(inv.total_amount || inv.amount || 0);
-      const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
-      const balance = Math.max(total - received, 0);
+      const total = invoiceTotal(inv);
+      const received = invoicePaidAmount(inv);
+      const balance = invoiceBalance(inv);
 
-      const statusLabel = String(inv.status || 'draft').toUpperCase().replace(/_/g, ' ');
+      const statusLabel = String(invoiceEffectiveStatus(inv) || 'draft').toUpperCase().replace(/_/g, ' ');
 
       const items = detail.items || [];
       const itemRows = items.map((item, i) => `
@@ -7900,9 +8031,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function buildInvoicePreviewHtml(invoice, items) {
-      const statusClass = statusTone(invoice.status);
+      const effectiveStatus = invoiceEffectiveStatus(invoice);
+      const statusClass = statusTone(effectiveStatus);
+      const total = invoiceTotal(invoice);
+      const received = invoicePaidAmount(invoice);
+      const balance = invoiceBalance(invoice);
       const itemRows = (items || []).map((item) => `<tr><td>${escapeHtml(item.description || '')}</td><td style="text-align:right">${Number(item.quantity || 0)}</td><td style="text-align:right">${escapeHtml(item.unit || 'N/A')}</td><td style="text-align:right">${money(item.rate || item.unit_price)}</td><td style="text-align:right">${money(item.amount || item.total || 0)}</td></tr>`).join('');
-      return `<div class="ihp-head"><h4>${escapeHtml(invoice.invoice_number || 'Invoice')}</h4>${badge(invoice.status, statusClass)}</div>
+      return `<div class="ihp-head"><h4>${escapeHtml(invoice.invoice_number || 'Invoice')}</h4>${badge(effectiveStatus, statusClass)}</div>
         <dl class="ihp-grid">
           <dt>Client</dt><dd>${escapeHtml(invoice.customer_company || invoice.customer_name || clientName(invoice.client_id))}</dd>
           <dt>Date</dt><dd>${escapeHtml(invoice.invoice_date || '').slice(0, 10) || '-'}</dd>
@@ -7910,7 +8045,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <dt>Service</dt><dd>${escapeHtml(invoice.service_title || '-')}</dd>
         </dl>
         ${items && items.length ? `<div class="ihp-items"><table><thead><tr><th>Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${itemRows}</tbody></table></div>` : ''}
-        <div class="ihp-foot"><span>Total</span><span>${money(invoice.total_amount || invoice.amount || 0)}</span></div>`;
+        <div class="ihp-foot"><span>Total</span><span>${money(total)}</span></div>
+        <div class="ihp-foot"><span>Paid</span><span>${money(received)}</span></div>
+        <div class="ihp-foot"><span>Balance</span><span>${money(balance)}</span></div>`;
     }
 
     async function showInvoice(id) {
@@ -7946,10 +8083,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         });
         const results = await Promise.allSettled(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
         results.forEach((r) => { if (r.status === 'fulfilled') { const [name, items] = r.value; state.data[name] = items; } });
-        if (!state.data.finances || !state.data.finances.length) {
-          state.data.finances = financeSeed();
-        }
-        
         try {
           sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
         } catch (e) {
