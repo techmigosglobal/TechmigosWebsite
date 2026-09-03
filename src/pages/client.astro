@@ -10,7 +10,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   noIndex={true}
 >
   <style is:global>
-    @page { size: A4; margin: 10mm; }
+    @page { size: A4 landscape; margin: 10mm; }
 
     @media print {
       body * { visibility: hidden !important; }
@@ -27,7 +27,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       .invoice-print-sheet {
-        width: 190mm !important;
+        width: 277mm !important;
+        max-width: 277mm !important;
         margin: 0 auto !important;
         padding: 0 !important;
         font-size: 9.5px !important;
@@ -197,6 +198,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return branding && typeof branding === 'object' && !Array.isArray(branding) ? branding : {};
     }
 
+    const UPI_ID = 'v5219@slc';
+    const UPI_MERCHANT_NAME = 'TechMigos';
+
+    function buildUpiPaymentUri(upiId, merchantName, invoiceNumber, amount) {
+      const balanceAmount = Math.max(Number(amount) || 0, 0).toFixed(2);
+      const paymentNote = `Invoice ${invoiceNumber}`;
+      return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(merchantName)}&am=${balanceAmount}&cu=INR&tn=${encodeURIComponent(paymentNote)}&tr=${encodeURIComponent(invoiceNumber)}`;
+    }
+
+    function buildUpiQrUrl(upiPaymentUri) {
+      return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&format=png&data=${encodeURIComponent(upiPaymentUri)}`;
+    }
+
     function getInvoicePrintName(value) {
       return String(value || 'invoice').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'invoice';
     }
@@ -209,11 +223,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
       printWindow.document.open();
       printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(filename)}</title><style>
-        @page { size: A4; margin: 10mm; }
+        @page { size: A4 landscape; margin: 10mm; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; background: #fff; color: #111; }
         body { font-family: Arial, Helvetica, sans-serif; }
-        .invoice-print-sheet { width: 190mm; max-width: 190mm; margin: 0 auto; color: #111; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.35; }
+        .invoice-print-sheet { width: 277mm; max-width: 277mm !important; margin: 0 auto; color: #111; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.35; }
         .invoice-print-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .invoice-print-sheet table { border-collapse: collapse; width: 100%; }
         img { max-width: 100%; }
@@ -420,62 +434,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const billCompany = inv.customer_company || detail.client?.company || '';
       const billPhone = inv.customer_phone || detail.client?.phone || '';
       const billEmail = inv.customer_email || detail.client?.email || '';
-      const project = invoiceProjectSnapshot(inv);
       const branding = invoiceBranding(inv);
       const logoUrl = branding.logo_url || '/icon.png';
-      const qrUrl = branding.qr_url || '';
       const signatureUrl = branding.signature_url || inv.sign_url || '';
 
       const total = Number(inv.total_amount || inv.amount || 0);
       const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
       const balance = Math.max(total - received, 0);
-      const statusLabel = String(inv.status || 'draft').toUpperCase().replace(/_/g, ' ');
+      const invoiceNumber = String(inv.invoice_number || inv.id || 'invoice');
+      const upiPaymentUri = buildUpiPaymentUri(UPI_ID, UPI_MERCHANT_NAME, invoiceNumber, balance);
+      const upiQrUrl = buildUpiQrUrl(upiPaymentUri);
       const items = detail.items || [];
 
       const itemRows = items.map((item, i) => `
         <tr>
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${i + 1}</td>
-          <td style="border:1px solid #ccc;padding:6px 8px;vertical-align:top;"><strong>${esc(item.description)}</strong></td>
+          <td style="border:1px solid #ccc;padding:6px 8px;height:92px;vertical-align:top;"><strong>${esc(item.description)}</strong></td>
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${fmtNum(item.quantity)} SERVICE</td>
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.rate)}</td>
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.amount)}</td>
         </tr>`).join('');
 
-      return `<article class="invoice-print-sheet" style="width:100%;max-width:780px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
-        <div style="display:flex;align-items:center;gap:10px;padding:6px 0 8px;border-bottom:1px solid #333;">
-          <span style="font-weight:900;font-size:13px;">BILL OF SUPPLY</span>
-          <span style="border:1px solid #888;padding:2px 8px;font-size:9px;font-weight:700;color:#555;">ORIGINAL FOR RECIPIENT</span>
-          <span style="background:#22c55e;color:#fff;padding:2px 8px;font-size:9px;font-weight:700;">${esc(statusLabel)}</span>
-        </div>
-        <div style="border:1px solid #ccc;margin-top:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <img src="${esc(logoUrl)}" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
-            <div>
+      const subtotal = items.reduce((sum, item) => sum + Number(item.amount || (Number(item.quantity || 0) * Number(item.rate || 0)) || 0), 0);
+
+      return `<article class="invoice-print-sheet" style="width:100%;max-width:840px;margin:0 auto;border:1px solid #222;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="width:24%;padding:10px 12px;text-align:center;vertical-align:middle;border-bottom:1px solid #222;">
+              <img src="${esc(logoUrl)}" style="width:74px;height:74px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
+            </td>
+            <td style="width:52%;padding:10px 8px;text-align:center;vertical-align:middle;border-bottom:1px solid #222;">
               <div style="font-size:18px;font-weight:900;">TechMigos</div>
-              <div style="font-size:10px;color:#555;">Hyderabad, Hyderabad, Telangana, 500097</div>
-              <div style="font-size:10px;color:#555;"><strong>Mobile:</strong> 9959703547 &nbsp; <strong>Email:</strong> info@techmigos.com</div>
-            </div>
-          </div>
-          <div style="text-align:right;font-size:10px;color:#555;">
-            <div style="font-weight:700;color:#111;">${esc(statusLabel)}</div>
-            <div>Due: ${sym} ${fmtNum(balance)}</div>
-            ${inv.due_date ? `<div>Due Date: ${esc(inv.due_date)}</div>` : ''}
-          </div>
-        </div>
+              <div style="font-size:10px;color:#333;margin-top:2px;">Hyderabad, Hyderabad, Telangana, 500097</div>
+              <div style="font-size:10px;color:#333;margin-top:4px;"><strong>Mobile:</strong> 9959703547 &nbsp;&nbsp; <strong>Email:</strong> info@techmigos.com</div>
+            </td>
+            <td style="width:24%;border-bottom:1px solid #222;"></td>
+          </tr>
+        </table>
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <tr>
-            <td style="border:1px solid #ccc;padding:8px 10px;width:45%;vertical-align:top;">
-              <div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;">Bill To</div>
+            <td style="border-bottom:1px solid #222;border-right:1px solid #222;padding:9px 12px;width:50%;vertical-align:top;">
+              <div style="font-size:11px;font-weight:900;text-transform:uppercase;">Bill To</div>
               <div style="font-size:13px;font-weight:900;margin-top:3px;">${esc(billName)}${billCompany && billCompany !== billName ? `<br><span style="font-size:11px;font-weight:600;">${esc(billCompany)}</span>` : ''}</div>
               ${billPhone ? `<div style="font-size:10px;margin-top:2px;"><strong>Mobile:</strong> ${esc(billPhone)}</div>` : ''}
               ${billEmail ? `<div style="font-size:10px;"><strong>Email:</strong> ${esc(billEmail)}</div>` : ''}
             </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Invoice No.</strong><br>${esc(inv.invoice_number)}</td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Invoice Date</strong><br>${esc(inv.invoice_date || '')}</td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;"><strong>Due Date</strong><br>${esc(inv.due_date || '-')}</td>
+            <td style="border-bottom:1px solid #222;padding:9px 12px;width:25%;vertical-align:top;text-align:center;"><strong>Invoice No.</strong><br>${esc(invoiceNumber)}</td>
+            <td style="border-bottom:1px solid #222;padding:9px 12px;width:25%;vertical-align:top;text-align:center;"><strong>Invoice Date</strong><br>${esc(inv.invoice_date || '')}</td>
           </tr>
         </table>
-        ${project.name ? `<div style="margin:0;padding:8px 10px;border:1px solid #ccc;border-top:0;background:#f8fafc;font-size:10px;line-height:1.45;"><strong>Project:</strong> ${esc(project.name)}${project.project_manager ? ` · <strong>Manager:</strong> ${esc(project.project_manager)}` : ''}${project.status ? ` · <strong>Status:</strong> ${esc(String(project.status).replace(/_/g, ' '))}` : ''}${project.health ? ` · <strong>Health:</strong> ${esc(String(project.health).replace(/_/g, ' '))}` : ''}${project.progress !== null && project.progress !== undefined ? ` · <strong>Progress:</strong> ${esc(project.progress)}%` : ''}${project.due_date ? `<br><strong>Project due:</strong> ${esc(String(project.due_date).slice(0, 10))}` : ''}${project.summary ? `<br><strong>Scope:</strong> ${esc(project.summary)}` : ''}</div>` : ''}
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <thead>
             <tr style="background:#f3f4f6;">
@@ -492,29 +499,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </tbody>
           <tfoot>
             <tr style="background:#f3f4f6;">
-              <td colspan="2" style="border:1px solid #ccc;padding:6px 8px;"></td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:700;">TOTAL</td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:900;">${fmt(total)}</td>
+              <td colspan="2" style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:900;">TOTAL</td>
+              <td style="border:1px solid #ccc;padding:8px;text-align:center;font-weight:900;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
+              <td style="border:1px solid #ccc;padding:8px;"></td>
+              <td style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:900;">${fmt(total)}</td>
             </tr>
           </tfoot>
         </table>
+        <div style="padding:7px 12px;text-align:right;font-size:10px;line-height:1.5;">
+          <div><strong>Subtotal:</strong> ${fmt(subtotal)}</div>
+          <div style="font-size:11px;font-weight:900;"><strong>Grand Total:</strong> ${fmt(total)}</div>
+        </div>
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <tr>
-            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Received Amount: ${fmt(received)}</strong></td>
-            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
-            <td style="border:1px solid #ccc;padding:6px 10px;"><strong>Status: ${esc(statusLabel)}</strong></td>
+            <td style="border-top:1px solid #222;border-bottom:1px solid #222;border-right:1px solid #222;padding:8px 12px;width:50%;"><strong>Received Amount: ${fmt(received)}</strong></td>
+            <td style="border-top:1px solid #222;border-bottom:1px solid #222;padding:8px 12px;width:50%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
           </tr>
         </table>
-        ${inv.notes ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
-        ${inv.payment_instructions ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Payment Details:</strong> ${esc(inv.payment_instructions)}</div>` : ''}
+        ${inv.notes ? `<div style="border-bottom:1px solid #222;padding:8px 12px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
         <table style="width:100%;border-collapse:collapse;margin-top:0;">
           <tr>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;width:55%;">
-              ${qrUrl ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><img src="${esc(qrUrl)}" style="width:58px;height:58px;object-fit:contain;" alt="Payment QR code" onerror="this.style.display='none'" /><span style="font-size:9px;color:#555;">Scan to pay</span></div>` : ''}
+            <td style="border-right:1px solid #222;padding:10px 12px;vertical-align:top;width:50%;min-height:108px;">
               ${inv.terms ? `<strong>Terms and Conditions</strong><div style="margin-top:4px;font-size:10px;white-space:pre-line;">${esc(inv.terms)}</div>` : ''}
             </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;text-align:center;vertical-align:bottom;">
+            <td style="border-right:1px solid #222;padding:10px 8px;text-align:center;vertical-align:middle;width:22%;">
+              <a href="${esc(upiPaymentUri)}" style="display:inline-block;line-height:0;" aria-label="Pay invoice ${esc(invoiceNumber)} using UPI">
+                <img src="${esc(upiQrUrl)}" style="width:92px;height:92px;object-fit:contain;" alt="UPI payment QR code for invoice ${esc(invoiceNumber)}" />
+              </a>
+              <div style="margin-top:4px;font-size:9px;font-weight:900;">Scan or tap to pay</div>
+              <div style="margin-top:2px;font-size:8px;word-break:break-word;">${esc(UPI_ID)} · ${fmt(balance)}</div>
+              ${inv.payment_instructions ? `<div style="margin-top:4px;font-size:8px;color:#555;">${esc(inv.payment_instructions)}</div>` : ''}
+            </td>
+            <td style="padding:10px 8px;text-align:center;vertical-align:bottom;width:28%;">
               ${signatureUrl ? `<img src="${esc(signatureUrl)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" onerror="this.style.display='none'" />` : '<div style="height:44px;"></div>'}
               <div style="border-top:1px solid #555;padding-top:4px;font-size:10px;font-weight:700;">Authorised Signatory For<br>TechMigos</div>
             </td>

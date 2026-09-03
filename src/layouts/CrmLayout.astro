@@ -2109,7 +2109,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     @page {
-      size: A4;
+      size: A4 landscape;
       margin: 10mm;
     }
 
@@ -2129,7 +2129,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       }
 
       .invoice-print-sheet {
-        width: 190mm !important;
+        width: 277mm !important;
+        max-width: 277mm !important;
         margin: 0 auto !important;
         padding: 0 !important;
         font-size: 9.5px !important;
@@ -2705,6 +2706,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return Math.max(invoiceTotal(invoice) - invoicePaidAmount(invoice), 0);
     }
 
+    const UPI_ID = 'v5219@slc';
+    const UPI_MERCHANT_NAME = 'TechMigos';
+
+    function buildUpiPaymentUri(upiId, merchantName, invoiceNumber, amount) {
+      const balanceAmount = Math.max(Number(amount) || 0, 0).toFixed(2);
+      const paymentNote = `Invoice ${invoiceNumber}`;
+      return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(merchantName)}&am=${balanceAmount}&cu=INR&tn=${encodeURIComponent(paymentNote)}&tr=${encodeURIComponent(invoiceNumber)}`;
+    }
+
+    function buildUpiQrUrl(upiPaymentUri) {
+      return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&format=png&data=${encodeURIComponent(upiPaymentUri)}`;
+    }
+
     function invoiceEffectiveStatus(invoice, now = new Date()) {
       const status = normalizedStatus(invoice.status) || 'draft';
       if (isSettledInvoice(invoice) || status === 'cancelled') return status;
@@ -2724,6 +2738,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function invoiceBranding(invoice) {
       const branding = invoice?.invoice_branding;
       return branding && typeof branding === 'object' && !Array.isArray(branding) ? branding : {};
+    }
+
+    function findInvoiceIncomeRecord(invoice, finances = state.data.finances) {
+      const reference = String(invoice?.invoice_number || '').trim().toLowerCase();
+      if (!reference) return null;
+      return finances.find((item) =>
+        ['income', 'revenue'].includes(normalizedStatus(item.transaction_type))
+        && String(item.reference_id || '').trim().toLowerCase() === reference,
+      ) || null;
     }
 
     function invoiceIncomeRows(invoices = state.data.invoices, finances = state.data.finances) {
@@ -2881,6 +2904,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (resource === 'finances') {
         if (!payload.transaction_date) return 'Date is required for finance records.';
         if (!payload.transaction_type) return 'Category (transaction type) is required.';
+        if (payload.transaction_type === 'invoice') return 'Use the Invoices tab to create invoice records.';
         if (!['income', 'revenue', 'expense', 'salary'].includes(payload.transaction_type)) return 'Choose a valid finance category.';
         if (!payload.title || !String(payload.title).trim()) return 'Description is required.';
         if (payload.amount === undefined || payload.amount === null || String(payload.amount).trim() === '' || isNaN(Number(payload.amount))) return 'A valid amount is required.';
@@ -4479,12 +4503,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const txTotal = finRows.length;
         const txPageRows = finRows.slice((txPage - 1) * txPer, txPage * txPer);
 
-        const transactionTypeOptions = (selected) => ['income', 'revenue', 'expense', 'salary'].map((type) => `<option value="${type}" ${selected === type ? 'selected' : ''}>${nice(type === 'expense' ? 'expenses' : type)}</option>`).join('');
+        const transactionTypeOptions = (selected) => ['income', 'revenue', 'expense', 'salary', 'invoice'].map((type) => `<option value="${type}" ${selected === type ? 'selected' : ''}>${nice(type === 'expense' ? 'expenses' : type)}</option>`).join('');
         const transactionStatusOptions = (selected) => ['pending', 'paid', 'received', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${selected === status ? 'selected' : ''}>${nice(status)}</option>`).join('');
         const inlineTransactionRow = (record = {}, showProof = false) => {
           const isNew = !record.id;
           const type = record.transaction_type || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
-          const status = record.status || (type === 'income' ? 'received' : 'pending');
+          const status = record.status || (type === 'income' ? 'received' : type === 'invoice' ? 'draft' : 'pending');
           const date = record.transaction_date || new Date().toISOString().slice(0, 10);
           const initialSaveLabel = isNew ? 'Draft · complete required fields' : 'Auto-save ready';
           const proofCellMarkup = showProof
@@ -4503,15 +4527,31 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td><div class="acc-inline-actions"><span class="acc-inline-save-state acc-inline-save-state--draft" data-inline-save-state aria-live="polite">${initialSaveLabel}</span><button class="crm-button" data-cancel-inline-finance type="button">${actionLabel}</button></div></td>
           </tr>`;
         };
-        const invoiceTransactionRow = (record, showProof) => `<tr class="acc-tbl-row" data-row-id="${record.id}" data-record-kind="invoice">
-          <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(record.transaction_date)}</td>
-          <td style="font-weight:600;">${escapeHtml(record.title || record.reference_id || 'Invoice')}</td>
-          <td>${catBadge('invoice')}</td>
-          <td class="acc-amt-pos" style="font-weight:700;">${signedINR(record.amount, 'income')}</td>
-          <td>${sBadge(record.status)}</td>
-          ${showProof ? '<td style="color:#94a3b8;">—</td>' : ''}
-          <td><button class="crm-button" data-load-invoice="${record.invoice_id}" type="button" title="Open invoice">View invoice</button></td>
-        </tr>`;
+        const invoiceTransactionRow = (record, showProof) => {
+          const invoiceId = record.invoice_id || record.id;
+          const invoice = state.data.invoices.find((item) => String(item.id) === String(invoiceId)) || record;
+          const incomeRecord = findInvoiceIncomeRecord(invoice);
+          const proofUrl = incomeRecord?.proof_url || '';
+          const incomeAction = incomeRecord
+            ? '<span style="font-size:10px;color:#15803d;font-weight:700;">Income recorded</span>'
+            : invoicePaidAmount(invoice) > 0
+              ? `<button class="crm-button" data-invoice-income="${invoiceId}" type="button" style="font-size:11px;padding:5px 8px;">+ Add income</button>`
+              : '<span style="font-size:10px;color:#94a3b8;">Awaiting payment</span>';
+          const proofAction = proofUrl
+            ? `<button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview proof</button><label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${invoiceId}" accept="image/*,.pdf" style="display:none;" /></label>`
+            : incomeRecord
+              ? `<label class="crm-mini-action" style="cursor:pointer;">+ Proof<input type="file" data-invoice-proof-upload="${invoiceId}" accept="image/*,.pdf" style="display:none;" /></label>`
+              : '<span style="font-size:10px;color:#94a3b8;">Add income first</span>';
+          return `<tr class="acc-tbl-row" data-row-id="${record.id}" data-record-kind="invoice">
+            <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(record.transaction_date)}</td>
+            <td style="font-weight:600;">${escapeHtml(record.title || record.reference_id || 'Invoice')}</td>
+            <td>${catBadge('invoice')}</td>
+            <td class="acc-amt-pos" style="font-weight:700;">${signedINR(record.amount, 'income')}</td>
+            <td>${sBadge(record.status)}</td>
+            ${showProof ? `<td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${proofAction}</div></td>` : ''}
+            <td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${incomeAction}<button class="crm-button" data-load-invoice="${invoiceId}" type="button" title="Open invoice">View invoice</button></div></td>
+          </tr>`;
+        };
         const txTable = (rows, showProof = false) => {
           const isAdding = state.accInlineFinanceId === 'new';
           if (!rows.length && !isAdding) return `<p style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No records found.</p>`;
@@ -4674,8 +4714,21 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>
           ${state.data.invoices.length === 0
             ? `<div style="text-align:center;padding:60px 20px;"><div style="font-size:48px;margin-bottom:12px;">🧾</div><div style="font-size:15px;font-weight:700;color:#475569;margin-bottom:6px;">No Invoices Yet</div><p style="font-size:13px;color:#94a3b8;">Create your first invoice to get started.</p></div>`
-            : `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Due Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Recurring</th><th>Actions</th></tr></thead><tbody>
-            ${state.data.invoices.map(inv => `<tr class="acc-tbl-row">
+            : `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Due Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Recurring</th><th>Income</th><th>Payment Proof</th><th>Actions</th></tr></thead><tbody>
+            ${state.data.invoices.map((inv) => {
+              const incomeRecord = findInvoiceIncomeRecord(inv);
+              const proofUrl = incomeRecord?.proof_url || '';
+              const incomeAction = incomeRecord
+                ? '<span style="font-size:10px;color:#15803d;font-weight:700;white-space:nowrap;">Recorded</span>'
+                : invoicePaidAmount(inv) > 0
+                  ? `<button class="crm-button" data-invoice-income="${inv.id}" type="button" style="font-size:11px;padding:5px 8px;white-space:nowrap;">+ Add income</button>`
+                  : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">Awaiting payment</span>';
+              const proofAction = proofUrl
+                ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"><button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview</button><label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${inv.id}" accept="image/*,.pdf" style="display:none;" /></label></div>`
+                : incomeRecord
+                  ? `<label class="crm-mini-action" style="cursor:pointer;white-space:nowrap;">+ Upload PDF<input type="file" data-invoice-proof-upload="${inv.id}" accept="image/*,.pdf" style="display:none;" /></label>`
+                  : '<span style="font-size:10px;color:#94a3b8;">Add income first</span>';
+              return `<tr class="acc-tbl-row">
               <td style="font-weight:700;color:#0f766e;">${escapeHtml(inv.invoice_number || '—')}</td>
               <td>${escapeHtml(inv.customer_name || '—')}</td>
               <td style="font-size:12px;color:#64748b;">${fmtDate(inv.invoice_date || inv.created_at)}</td>
@@ -4685,12 +4738,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <td style="font-weight:700;color:${invoiceBalance(inv) > 0 ? '#d97706' : '#16a34a'};">${fmtINR(invoiceBalance(inv))}</td>
               <td>${sBadge(invoiceEffectiveStatus(inv))}</td>
               <td style="font-size:12px;">${inv.is_recurring ? '<span style="color:#6366f1;font-weight:700;">♻ Recurring</span>' : '—'}</td>
+              <td>${incomeAction}</td>
+              <td>${proofAction}</td>
               <td><div style="display:flex;gap:4px;align-items:center;">
                 <button class="crm-button" data-invoice-view="${inv.id}" type="button" title="Preview Invoice" aria-label="Preview Invoice" style="padding:4px 7px;">View</button>
                 <button class="crm-button primary" data-load-invoice="${inv.id}" type="button" title="Edit Invoice" aria-label="Edit Invoice" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                 <button class="crm-button" data-del-invoice="${inv.id}" type="button" title="Delete Invoice" aria-label="Delete Invoice" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:#dc2626;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
               </div></td>
-            </tr>`).join('')}
+            </tr>`;
+            }).join('')}
             </tbody></table></div>`}
         </div>`;
 
@@ -4924,6 +4980,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       }
     }
 
+    function upsertInvoiceRecord(record) {
+      if (!record?.id) return;
+      const index = state.data.invoices.findIndex((item) => String(item.id) === String(record.id));
+      if (index === -1) state.data.invoices.unshift(record);
+      else state.data.invoices[index] = { ...state.data.invoices[index], ...record };
+      try {
+        sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
+      } catch (error) {
+        console.warn('Invoice cache write failed:', error);
+      }
+    }
+
     function scheduleInlineFinanceSave(row) {
       if (!row) return;
       const key = inlineFinanceRowKey(row);
@@ -4987,7 +5055,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.querySelectorAll('[data-inline-finance-row]').forEach((row) => {
         row.querySelectorAll('[data-inline-field]').forEach((field) => {
           field.addEventListener('input', () => scheduleInlineFinanceSave(row));
-          field.addEventListener('change', () => scheduleInlineFinanceSave(row));
+          field.addEventListener('change', () => {
+            if (field.dataset.inlineField === 'transaction_type' && field.value === 'invoice' && row.dataset.inlineFinanceNew !== undefined) {
+              state.accInlineFinanceId = null;
+              openInvoiceCreateIntegrated();
+              return;
+            }
+            scheduleInlineFinanceSave(row);
+          });
         });
       });
     }
@@ -5035,6 +5110,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         button.addEventListener('click', e => {
           e.stopPropagation();
           openProofInNewTab(button.dataset.proofLink);
+        });
+      });
+      document.querySelectorAll('[data-invoice-income]').forEach(button => {
+        button.addEventListener('click', async (event) => {
+          event.stopPropagation();
+          button.disabled = true;
+          button.textContent = 'Saving…';
+          await addInvoiceAsIncome(button.dataset.invoiceIncome);
+          if (button.isConnected) button.disabled = false;
+        });
+      });
+      document.querySelectorAll('[data-invoice-proof-upload]').forEach(input => {
+        input.addEventListener('change', async (event) => {
+          event.stopPropagation();
+          const file = input.files?.[0];
+          if (file) await uploadInvoiceIncomeProof(input.dataset.invoiceProofUpload, file);
+          input.value = '';
         });
       });
       document.querySelectorAll('[data-resolve-finance]').forEach(button => {
@@ -5275,12 +5367,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               </div>
               <div class="inv-upload-grid" style="margin-top:14px;">
                 <div class="inv-upload-box"><label>Company Logo<input type="file" id="inv-logo-input" accept="image/*" style="display:none;" /></label><div class="inv-upload-preview" id="inv-logo-preview"><span>No logo selected</span></div></div>
-                <div class="inv-upload-box"><label>QR Code<input type="file" id="inv-qr-input" accept="image/*" style="display:none;" /></label><div class="inv-upload-preview" id="inv-qr-preview"><span>No QR selected</span></div></div>
+                <div class="inv-upload-box"><label>UPI QR (generated automatically)</label><div class="inv-upload-preview" id="inv-qr-preview"><span>Generated from invoice number and balance</span></div></div>
                 <div class="inv-upload-box"><label>Signature<input type="file" id="inv-sign-input" accept="image/*" style="display:none;" /></label><div class="inv-upload-preview" id="inv-sign-preview"><span>No signature selected</span></div></div>
               </div>
               <div class="inv-assets-panel">
                 <h4>Invoice assets</h4>
-                <p>Logo, QR, and signature are shared invoice defaults for every project. They are saved separately and snapshotted into each invoice so issued PDFs stay stable.</p>
+                <p>Logo and signature are shared invoice defaults for every project. The UPI QR is generated per invoice from its number and balance, so issued PDFs always carry the correct payment details.</p>
                 <div class="inv-assets-tools">
                   <div class="inv-signature-pad-wrap">
                     <strong style="font-size:12px;color:#27364a;">Draw signature</strong>
@@ -5805,7 +5897,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (!preview) return;
         const g = getValue;
         const logoSrc = getPreviewSrc('inv-logo-preview') || '/icon.png';
-        const qrSrc = getPreviewSrc('inv-qr-preview');
         const signSrc = getPreviewSrc('inv-sign-preview');
 
         // Collect items
@@ -5833,52 +5924,78 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const requestedReceived = Math.max(Number(g('inv-received') || 0) || 0, 0);
         const received = selectedStatus === 'paid' ? grandTotal : Math.min(requestedReceived, grandTotal);
         const balance = Math.max(grandTotal - received, 0);
-        const dueDate = g('inv-due-date');
-        const dueDatePassed = dueDate && new Date(`${dueDate}T23:59:59`) < new Date();
-        const status = selectedStatus === 'auto'
-          ? (grandTotal > 0 && balance <= 0 ? 'paid' : dueDatePassed && balance > 0 ? 'overdue' : received > 0 ? 'sent' : 'draft')
-          : selectedStatus;
-        const statusColor = status === 'paid' ? '#15803d' : status === 'overdue' ? '#dc2626' : '#b45309';
         const contact = [g('inv-contact-person'), g('inv-contact-number'), g('inv-contact-email')].filter(Boolean).join(' | ');
-        const project = projectFieldSnapshot();
-        const projectStatus = project.status ? String(project.status).replace(/_/g, ' ') : '';
-        const projectHealth = project.health ? String(project.health).replace(/_/g, ' ') : '';
+        const invoiceNumber = String(g('inv-number') || 'INV-001');
+        const companyName = String(g('inv-company-name') || UPI_MERCHANT_NAME);
+        const upiPaymentUri = buildUpiPaymentUri(UPI_ID, UPI_MERCHANT_NAME, invoiceNumber, balance);
+        const upiQrUrl = buildUpiQrUrl(upiPaymentUri);
+        const terms = String(g('inv-terms') || '').trim();
+        const termsMarkup = terms
+          ? `<div style="white-space:pre-line;">${escapeHtml(terms)}</div>`
+          : '<div style="color:#777;">No terms specified.</div>';
+        const itemRowsMarkup = items.length
+          ? items.map((item, index) => `<tr>
+              <td class="col-sno">${index + 1}</td>
+              <td class="col-services"><div class="inv-svc-title">${escapeHtml(item.desc || 'Service')}</div>${item.notes ? `<div class="inv-svc-desc">${escapeHtml(item.notes)}</div>` : ''}</td>
+              <td class="col-qty">${escapeHtml(String(item.qty))} ${escapeHtml(item.unit)}</td>
+              <td class="col-rate">${formatCurrency(item.rate)}</td>
+              <td class="col-amount">${formatCurrency(item.total)}</td>
+            </tr>`).join('')
+          : '<tr><td colspan="5" style="padding:18px;text-align:center;color:#777;">No items added</td></tr>';
 
         preview.innerHTML = `
           <div class="inv-preview-sheet">
-            <div class="inv-preview-border">
-              <div style="text-align:center;margin-bottom:8px;"><img src="${escapeHtml(logoSrc)}" style="max-width:110px;max-height:50px;object-fit:contain;" alt="Company logo"></div>
-              <div style="text-align:center;margin-bottom:10px;">
-                <h2 style="margin:0;font-size:18px;color:#0f766e;">${escapeHtml(g('inv-company-name')) || 'Company Name'}</h2>
-                ${g('inv-company-tagline') ? `<p style="margin:2px 0 0;font-size:11px;color:#6b7280;">${escapeHtml(g('inv-company-tagline'))}</p>` : ''}
-                ${g('inv-gst') ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">GST: ${escapeHtml(g('inv-gst'))}</p>` : ''}
-                ${contact ? `<p style="margin:2px 0 0;font-size:10px;color:#6b7280;">${escapeHtml(contact)}</p>` : ''}
+            <div class="inv-sheet">
+              <div class="inv-sheet-header">
+                <div><img src="${escapeHtml(logoSrc)}" class="inv-sheet-logo" alt="Company logo"></div>
+                <div class="inv-sheet-company">
+                  <h2>${escapeHtml(companyName)}</h2>
+                  <p>Hyderabad, Hyderabad, Telangana, 500097</p>
+                  ${g('inv-company-tagline') ? `<p>${escapeHtml(g('inv-company-tagline'))}</p>` : ''}
+                  ${g('inv-gst') ? `<p>GST: ${escapeHtml(g('inv-gst'))}</p>` : ''}
+                  ${contact ? `<p>${escapeHtml(contact)}</p>` : ''}
+                </div>
+                <div class="inv-sheet-top-right"></div>
               </div>
-              <hr style="border:none;border-top:2px solid #0f766e;margin:10px 0;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;">
-                <div><strong>Bill To:</strong><br>${escapeHtml(g('inv-client-name')) || 'Client Name'}<br>${escapeHtml(g('inv-client-address'))}<br>${escapeHtml(g('inv-client-email'))}<br>${escapeHtml(g('inv-client-phone'))}</div>
-                <div style="text-align:right;"><strong>Invoice #:</strong> ${escapeHtml(g('inv-number')) || 'INV-001'}<br><strong>Date:</strong> ${escapeHtml(g('inv-date')) || new Date().toISOString().split('T')[0]}<br><strong>Due:</strong> ${escapeHtml(g('inv-due-date')) || '-'}<br><strong>Status:</strong> <span style="color:${statusColor}">${escapeHtml(status)}</span>${isChecked('inv-is-recurring') ? '<br><span style="display:inline-block;padding:2px 6px;background:#fef3c7;color:#b45309;border-radius:4px;font-size:9px;font-weight:700;margin-top:4px;">RECURRING</span>' : ''}</div>
+              <div class="inv-bill-row">
+                <div class="inv-bill-left">
+                  <h3>BILL TO</h3>
+                  <p><strong>${escapeHtml(g('inv-client-name')) || 'Client Name'}</strong></p>
+                  ${g('inv-client-address') ? `<p>${escapeHtml(g('inv-client-address'))}</p>` : ''}
+                  ${g('inv-client-phone') ? `<p>Mobile: ${escapeHtml(g('inv-client-phone'))}</p>` : ''}
+                  ${g('inv-client-email') ? `<p>Email: ${escapeHtml(g('inv-client-email'))}</p>` : ''}
+                </div>
+                <div class="inv-bill-right">
+                  <div><strong>Invoice No.</strong><p>${escapeHtml(invoiceNumber)}</p></div>
+                  <div><strong>Invoice Date</strong><p>${escapeHtml(g('inv-date') || new Date().toISOString().split('T')[0])}</p></div>
+                </div>
               </div>
-              ${project.name ? `<div class="inv-project-summary"><strong>Project:</strong> ${escapeHtml(project.name)}${project.project_manager ? ` · <strong>Manager:</strong> ${escapeHtml(project.project_manager)}` : ''}${projectStatus ? ` · <strong>Status:</strong> ${escapeHtml(projectStatus)}` : ''}${projectHealth ? ` · <strong>Health:</strong> ${escapeHtml(projectHealth)}` : ''}${project.progress !== null && project.progress !== undefined ? ` · <strong>Progress:</strong> ${escapeHtml(project.progress)}%` : ''}${project.due_date ? `<br><strong>Project due:</strong> ${escapeHtml(String(project.due_date).slice(0, 10))}` : ''}${project.summary ? `<br><span style="white-space:pre-line;"><strong>Scope:</strong> ${escapeHtml(project.summary)}</span>` : ''}</div>` : ''}
-              <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">
-                <thead><tr style="background:#0f766e;color:#fff;"><th style="padding:6px 8px;text-align:left;">Description</th><th style="padding:6px 8px;text-align:center;">Qty</th><th style="padding:6px 8px;text-align:center;">Unit</th><th style="padding:6px 8px;text-align:right;">Rate</th><th style="padding:6px 8px;text-align:right;">Total</th></tr></thead>
-                <tbody>
-                  ${items.length ? items.map(it => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(it.desc)}</td><td style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">${it.qty}</td><td style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">${escapeHtml(it.unit)}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">${formatCurrency(it.rate)}</td><td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e5e7eb;font-weight:600;">${formatCurrency(it.total)}</td></tr>`).join('') : '<tr><td colspan="5" style="padding:10px;text-align:center;color:#9ca3af;">No items added</td></tr>'}
-                </tbody>
+              <table class="inv-table">
+                <thead><tr><th class="col-sno">S.NO.</th><th class="col-services">SERVICES</th><th class="col-qty">QTY.</th><th class="col-rate">RATE</th><th class="col-amount">AMOUNT</th></tr></thead>
+                <tbody>${itemRowsMarkup}<tr style="height:30px;"><td colspan="5"></td></tr></tbody>
+                <tfoot><tr class="inv-total-row"><td colspan="2" style="text-align:right;">TOTAL</td><td style="text-align:center;">${items.reduce((sum, item) => sum + item.qty, 0)}</td><td></td><td style="text-align:right;">${formatCurrency(grandTotal)}</td></tr></tfoot>
               </table>
-              <div style="text-align:right;font-size:12px;">
+              <div style="padding:7px 14px;text-align:right;font-size:12px;line-height:1.45;">
                 <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
                 ${discount ? `<div>Discount: <strong>- ${formatCurrency(discount)}</strong></div>` : ''}
                 ${taxRate ? `<div>Tax (${taxRate}%): <strong>${formatCurrency(taxAmount)}</strong></div>` : ''}
-                <div style="font-size:15px;color:#0f766e;margin-top:4px;">Grand Total: <strong>${formatCurrency(grandTotal)}</strong></div>
-                <div style="margin-top:4px;">Received: <strong>${formatCurrency(received)}</strong> · Balance: <strong>${formatCurrency(balance)}</strong></div>
+                <div style="font-size:15px;margin-top:3px;">Grand Total: <strong>${formatCurrency(grandTotal)}</strong></div>
               </div>
-              ${g('inv-notes') ? `<div style="margin-top:10px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Notes:</strong> ${escapeHtml(g('inv-notes'))}</div>` : ''}
-              ${g('inv-payment') ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Payment Instructions:</strong> ${escapeHtml(g('inv-payment'))}</div>` : ''}
-              ${g('inv-terms') ? `<div style="margin-top:4px;font-size:11px;color:#6b7280;white-space:pre-line;"><strong>Terms:</strong> ${escapeHtml(g('inv-terms'))}</div>` : ''}
-              <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:15px;">
-                ${qrSrc ? `<div><img src="${escapeHtml(qrSrc)}" style="width:74px;height:74px;object-fit:contain;"><div style="font-size:9px;color:#6b7280;">Scan to Pay</div></div>` : '<div></div>'}
-                <div style="text-align:center;">${signSrc ? `<img src="${escapeHtml(signSrc)}" style="max-width:160px;max-height:50px;object-fit:contain;display:block;margin:auto;">` : '<div style="height:50px;"></div>'}<div style="font-size:9px;color:#6b7280;">Authorized Signature For ${escapeHtml(g('inv-company-name') || 'Company')}</div></div>
+              <div class="inv-paid-row"><div><strong>Received Amount: ${formatCurrency(received)}</strong></div><div><strong>Balance Amount: ${formatCurrency(balance)}</strong></div></div>
+              ${g('inv-notes') ? `<div class="inv-notes-row"><strong>Notes:</strong> ${escapeHtml(g('inv-notes'))}</div>` : ''}
+              <div class="inv-bottom-row">
+                <div class="inv-terms-box"><h3>Terms and Conditions</h3>${termsMarkup}</div>
+                <div class="inv-sign-box">
+                  <div class="inv-qr-panel">
+                    <a href="${escapeHtml(upiPaymentUri)}" aria-label="Pay invoice ${escapeHtml(invoiceNumber)} using UPI"><img src="${escapeHtml(upiQrUrl)}" alt="UPI payment QR code for invoice ${escapeHtml(invoiceNumber)}"></a>
+                    <div><strong>Scan or tap to Pay</strong></div>
+                    <div>${escapeHtml(UPI_MERCHANT_NAME)}</div>
+                    <div>${escapeHtml(UPI_ID)} · ${formatCurrency(balance)}</div>
+                    <a href="${escapeHtml(upiPaymentUri)}" style="display:block;margin-top:4px;color:#0f766e;font-weight:700;text-decoration:underline;">Tap to pay</a>
+                    ${g('inv-payment') ? `<div style="margin-top:4px;font-size:9px;white-space:pre-line;">${escapeHtml(g('inv-payment'))}</div>` : ''}
+                  </div>
+                  <div class="inv-sign-panel">${signSrc ? `<img src="${escapeHtml(signSrc)}" alt="Authorised signature">` : '<div style="height:60px;"></div>'}<div>Authorised Signatory For<br>${escapeHtml(companyName)}</div></div>
+                </div>
               </div>
             </div>
           </div>
@@ -6013,31 +6130,51 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           items: invoiceItems
         };
 
+        // Keep line items out of the invoice row itself. Passing an `items: undefined`
+        // property relies on the client serializer to drop it and can make the
+        // PostgREST insert/update fail instead of returning the saved invoice.
+        const invoicePayload = { ...payload };
+        delete invoicePayload.items;
+        let savedInvoice = null;
+
         try {
           if (state.invoiceBuilderId) {
-            const { data, error } = await window.tmSupabase.from('crm_invoices').update({ ...payload, items: undefined }).eq('id', state.invoiceBuilderId).select().single();
+            const { data, error } = await window.tmSupabase.from('crm_invoices').update(invoicePayload).eq('id', state.invoiceBuilderId).select().single();
             if (error) throw error;
+            savedInvoice = data;
+            if (data) upsertInvoiceRecord(data);
 
             await replaceInvoiceItems(state.invoiceBuilderId, invoiceItems);
-
-            const idx = state.data.invoices.findIndex(i => String(i.id) === String(state.invoiceBuilderId));
-            if (idx !== -1 && data) state.data.invoices[idx] = data;
-            showToast('Invoice updated successfully', 'success');
+            showToast('Invoice updated successfully');
           } else {
-            const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert({ ...payload, items: undefined }).select().single();
+            const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert(invoicePayload).select().single();
             if (error) throw error;
+            savedInvoice = inv;
+            if (inv) upsertInvoiceRecord(inv);
 
             if (inv) await replaceInvoiceItems(inv.id, invoiceItems);
-            if (inv) state.data.invoices.unshift(inv);
-            showToast('Invoice created successfully', 'success');
+            showToast('Invoice created successfully');
           }
-          await loadData();
+
+          // Open the actual invoice records view after saving. The default
+          // overview only contains finance transactions, so it cannot show
+          // invoices even when the insert succeeded.
+          state.financeSheet = 'invoices';
+          state.accTab = 'invoices';
           state.invoiceBuilderActive = false;
           state.invoiceBuilderId = null;
+
+          // loadData starts from sessionStorage for a fast render. Re-apply the
+          // just-saved row afterwards so a stale cache or a temporary list-fetch
+          // failure cannot hide a successful save from the records table.
+          await loadData();
+          if (savedInvoice) upsertInvoiceRecord(savedInvoice);
           renderFinance();
           bindActions();
         } catch (error) {
-          showToast(error instanceof Error ? error.message : 'Save invoice failed', 'error');
+          const message = error instanceof Error ? error.message : 'Save invoice failed';
+          console.error('Invoice save failed:', error);
+          showToast(message);
         }
       }
 
@@ -7700,17 +7837,74 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       });
     }
 
-    async function uploadFinanceProof(file) {
+    async function uploadFinanceProof(file, recordId = '') {
       const fd = new FormData();
       fd.append('file', file);
       try {
-        return await portal('/api/portal/finances/upload-proof', { method: 'POST', body: fd, headers: {} });
+        const endpoint = recordId
+          ? `/api/portal/finances/${encodeURIComponent(recordId)}/upload-proof`
+          : '/api/portal/finances/upload-proof';
+        return await portal(endpoint, { method: 'POST', body: fd, headers: {} });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Proof upload failed';
         if (/row-level security|violates|status code 400|storage/i.test(message)) {
           throw new Error('Supabase storage policy is blocking uploads for `finance-proofs`. Apply the new storage RLS policy in Supabase, then retry.');
         }
         throw error;
+      }
+    }
+
+    async function addInvoiceAsIncome(invoiceId) {
+      const invoice = state.data.invoices.find((item) => String(item.id) === String(invoiceId));
+      if (!invoice) return toast('Invoice record not found. Refresh and try again.');
+      const existing = findInvoiceIncomeRecord(invoice);
+      if (existing) return toast('This invoice is already recorded as income.');
+      const amount = invoicePaidAmount(invoice);
+      if (amount <= 0) return toast('Record a received amount or mark the invoice paid before adding income.');
+
+      const body = normalizePayload('finances', {
+        transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
+        transaction_type: 'income',
+        reference_id: invoice.invoice_number,
+        title: invoice.service_title || `Invoice ${invoice.invoice_number}`,
+        client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
+        project: projectName(invoice.project_id),
+        received_by: 'Invoice payment',
+        payment_method: 'UPI',
+        amount,
+        status: 'received',
+        notes: `Income recorded from invoice ${invoice.invoice_number}`,
+        source: 'invoice',
+      });
+
+      try {
+        const response = await portal('/api/portal/finances', { method: 'POST', body: JSON.stringify(body) });
+        const savedRecord = response.item;
+        if (!savedRecord?.id) throw new Error('Income record was not returned after saving.');
+        upsertFinanceRecord(savedRecord);
+        toast(`Invoice ${invoice.invoice_number} added to income.`);
+        renderFinance();
+        bindActions();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Could not add invoice to income');
+      }
+    }
+
+    async function uploadInvoiceIncomeProof(invoiceId, file) {
+      const invoice = state.data.invoices.find((item) => String(item.id) === String(invoiceId));
+      const incomeRecord = invoice && findInvoiceIncomeRecord(invoice);
+      if (!incomeRecord) {
+        toast('Add this invoice to income before uploading payment proof.');
+        return;
+      }
+      try {
+        const result = await uploadFinanceProof(file, incomeRecord.id);
+        upsertFinanceRecord({ ...incomeRecord, proof_url: result.proof_url });
+        toast('Invoice payment proof uploaded.');
+        renderFinance();
+        bindActions();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : 'Proof upload failed');
       }
     }
 
@@ -8066,17 +8260,53 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const safeTitle = escapeHtml(filename);
       printWindow.document.open();
       printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${safeTitle}</title><style>
-        @page { size: A4; margin: 10mm; }
+        @page { size: A4 landscape; margin: 10mm; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; background: #fff; color: #111; }
         body { font-family: Arial, Helvetica, sans-serif; }
-        .invoice-print-sheet, .inv-preview-sheet { width: 190mm; max-width: 190mm; margin: 0 auto; color: #111; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.35; }
+        .invoice-print-sheet, .inv-preview-sheet { width: 277mm; max-width: 277mm !important; margin: 0 auto; color: #111; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.35; }
         .invoice-print-sheet *, .inv-preview-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .invoice-print-sheet table, .inv-preview-sheet table { border-collapse: collapse; width: 100%; }
         .inv-no-break, .inv-project-summary, .inv-preview-border { break-inside: avoid; page-break-inside: avoid; }
         img { max-width: 100%; }
         .inv-preview-wrap { padding: 0 !important; background: #fff !important; }
         .inv-preview-border { box-shadow: none !important; }
+        .inv-sheet { background:#fff; color:#111; width:100%; max-width:none; margin:0 auto; border:2px solid #111; font-family:Arial,Helvetica,sans-serif; }
+        .inv-sheet-header { display:grid; grid-template-columns:140px 1fr 140px; align-items:center; min-height:100px; border-bottom:2px solid #111; padding:14px 16px; gap:8px; }
+        .inv-sheet-logo { max-width:100px; max-height:80px; object-fit:contain; }
+        .inv-sheet-company { text-align:center; }
+        .inv-sheet-company h2 { margin:0 0 4px; font-size:22px; }
+        .inv-sheet-company p { margin:3px 0; font-size:12px; }
+        .inv-sheet .inv-bill-row { display:grid; grid-template-columns:1fr 1fr; border-bottom:2px solid #111; min-height:100px; }
+        .inv-sheet .inv-bill-left { border-right:2px solid #111; padding:14px; }
+        .inv-sheet .inv-bill-left h3 { margin:0 0 4px; font-size:16px; }
+        .inv-sheet .inv-bill-left p, .inv-sheet .inv-bill-right p { margin:2px 0; font-size:13px; line-height:1.25; }
+        .inv-sheet .inv-bill-right { display:grid; grid-template-columns:1fr 1fr; place-items:center; text-align:center; padding:14px; }
+        .inv-sheet .inv-bill-right strong { display:block; font-size:15px; margin-bottom:3px; }
+        .inv-sheet .inv-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+        .inv-sheet .inv-table th, .inv-sheet .inv-table td { border-right:2px solid #111; border-bottom:2px solid #111; padding:10px; vertical-align:top; }
+        .inv-sheet .inv-table th:last-child, .inv-sheet .inv-table td:last-child { border-right:0; }
+        .inv-sheet .inv-table th { background:#ddd; text-align:center; font-size:13px; }
+        .inv-sheet .inv-table td { font-size:13px; }
+        .inv-sheet .inv-table .col-sno { width:7%; text-align:center; }
+        .inv-sheet .inv-table .col-services { width:64%; }
+        .inv-sheet .inv-table .col-qty { width:12%; text-align:right; white-space:nowrap; }
+        .inv-sheet .inv-table .col-rate, .inv-sheet .inv-table .col-amount { width:8.5%; text-align:right; white-space:nowrap; }
+        .inv-sheet .inv-svc-title { font-weight:800; font-size:14px; margin-bottom:6px; }
+        .inv-sheet .inv-svc-desc { color:#555; font-size:12px; line-height:1.35; }
+        .inv-sheet .inv-total-row td { background:#ddd; font-weight:800; padding:8px 10px; }
+        .inv-sheet .inv-paid-row { display:grid; grid-template-columns:1fr 1fr; border-bottom:2px solid #111; }
+        .inv-sheet .inv-paid-row div { padding:10px 14px; font-size:14px; }
+        .inv-sheet .inv-paid-row div:first-child { border-right:2px solid #111; }
+        .inv-sheet .inv-notes-row { border-bottom:2px solid #111; padding:10px 14px; font-size:14px; }
+        .inv-sheet .inv-bottom-row { display:grid; grid-template-columns:1fr 1fr; min-height:160px; }
+        .inv-sheet .inv-terms-box { border-right:2px solid #111; padding:14px; }
+        .inv-sheet .inv-terms-box h3 { margin:0 0 10px; font-size:15px; }
+        .inv-sheet .inv-sign-box { padding:14px; display:grid; grid-template-columns:1fr 140px; gap:14px; align-items:end; }
+        .inv-sheet .inv-qr-panel { align-self:start; text-align:center; color:#333; font-size:11px; }
+        .inv-sheet .inv-qr-panel img { width:120px; height:120px; object-fit:contain; border:1px solid #ccc; padding:4px; }
+        .inv-sheet .inv-sign-panel { text-align:center; align-self:end; }
+        .inv-sheet .inv-sign-panel img { max-width:140px; max-height:60px; object-fit:contain; margin-bottom:6px; }
       </style></head><body><main>${markup}</main></body></html>`);
       printWindow.document.close();
       printWindow.document.title = filename;
@@ -8107,23 +8337,22 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const billPhone = inv.customer_phone || detail.client?.phone || '';
       const billEmail = inv.customer_email || detail.client?.email || '';
       const billAddr = inv.billing_address || '';
-      const project = invoiceProjectSnapshot(inv);
       const branding = invoiceBranding(inv);
       const logoUrl = branding.logo_url || '/icon.png';
-      const qrUrl = branding.qr_url || '';
       const signatureUrl = branding.signature_url || inv.sign_url || '';
 
       const total = invoiceTotal(inv);
       const received = invoicePaidAmount(inv);
       const balance = invoiceBalance(inv);
-
-      const statusLabel = String(invoiceEffectiveStatus(inv) || 'draft').toUpperCase().replace(/_/g, ' ');
+      const invoiceNumber = String(inv.invoice_number || inv.id || 'invoice');
+      const upiPaymentUri = buildUpiPaymentUri(UPI_ID, UPI_MERCHANT_NAME, invoiceNumber, balance);
+      const upiQrUrl = buildUpiQrUrl(upiPaymentUri);
 
       const items = detail.items || [];
       const itemRows = items.map((item, i) => `
         <tr>
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;vertical-align:top;">${i + 1}</td>
-          <td style="border:1px solid #ccc;padding:6px 8px;vertical-align:top;">
+          <td style="border:1px solid #ccc;padding:6px 8px;height:92px;vertical-align:top;">
             <strong>${esc(item.description)}</strong>
             ${item.notes ? `<br><span style="color:#666;font-size:9px;">${esc(item.notes)}</span>` : ''}
             ${inv.service_title && i === 0 && item.description !== inv.service_title ? `<br><span style="color:#888;font-size:9px;">${esc(inv.service_title)}</span>` : ''}
@@ -8133,55 +8362,43 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;vertical-align:top;">${fmtNum(item.amount)}</td>
         </tr>`).join('');
 
-      return `<article class="invoice-print-sheet" style="width:100%;max-width:780px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
+      const subtotal = items.reduce((sum, item) => sum + Number(item.amount || (Number(item.quantity || 0) * Number(item.rate || 0)) || 0), 0);
 
-        <!-- BILL OF SUPPLY header bar -->
-        <div style="display:flex;align-items:center;gap:10px;padding:6px 0 8px;border-bottom:1px solid #333;">
-          <span style="font-weight:900;font-size:13px;letter-spacing:0.03em;">BILL OF SUPPLY</span>
-          <span style="border:1px solid #888;padding:2px 8px;font-size:9px;font-weight:700;color:#555;">ORIGINAL FOR RECIPIENT</span>
-          <span style="background:#22c55e;color:#fff;padding:2px 8px;font-size:9px;font-weight:700;">${esc(statusLabel)}</span>
-        </div>
+      return `<article class="invoice-print-sheet" style="width:100%;max-width:840px;margin:0 auto;border:1px solid #222;font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;">
 
-        <!-- Company header box with logo -->
-        <div style="border:1px solid #ccc;margin-top:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <img src="${esc(logoUrl)}" class="inv-logo" style="width:56px;height:56px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
-            <div>
+        <!-- Company header -->
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="width:24%;padding:10px 12px;text-align:center;vertical-align:middle;border-bottom:1px solid #222;">
+              <img src="${esc(logoUrl)}" class="inv-logo" style="width:74px;height:74px;object-fit:contain;" alt="TechMigos" onerror="this.style.display='none'" />
+            </td>
+            <td style="width:52%;padding:10px 8px;text-align:center;vertical-align:middle;border-bottom:1px solid #222;">
               <div style="font-size:18px;font-weight:900;letter-spacing:-0.01em;">TechMigos</div>
-              <div style="font-size:10px;color:#555;">Hyderabad, Hyderabad, Telangana, 500097</div>
-              <div style="font-size:10px;color:#555;"><strong>Mobile:</strong> 9959703547 &nbsp; <strong>Email:</strong> info@techmigos.com</div>
-            </div>
-          </div>
-          <div style="text-align:right;font-size:10px;color:#555;">
-            <div style="font-weight:700;color:#111;">${esc(statusLabel)}</div>
-            <div>Due: ${sym} ${fmtNum(balance)}</div>
-            ${inv.due_date ? `<div>Due Date: ${esc(inv.due_date)}</div>` : ''}
-          </div>
-        </div>
+              <div style="font-size:10px;color:#333;margin-top:2px;">Hyderabad, Hyderabad, Telangana, 500097</div>
+              <div style="font-size:10px;color:#333;margin-top:4px;"><strong>Mobile:</strong> 9959703547 &nbsp;&nbsp; <strong>Email:</strong> info@techmigos.com</div>
+            </td>
+            <td style="width:24%;border-bottom:1px solid #222;"></td>
+          </tr>
+        </table>
 
         <!-- BILL TO + Invoice meta table -->
         <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
           <tr>
-            <td style="border:1px solid #ccc;padding:8px 10px;width:45%;vertical-align:top;">
-              <div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;">Bill To</div>
+            <td style="border-bottom:1px solid #222;border-right:1px solid #222;padding:9px 12px;width:50%;vertical-align:top;">
+              <div style="font-size:11px;font-weight:900;text-transform:uppercase;">Bill To</div>
               <div style="font-size:13px;font-weight:900;margin-top:3px;">${esc(billName)}${billCompany && billCompany !== billName ? `<br><span style="font-size:11px;font-weight:600;">${esc(billCompany)}</span>` : ''}</div>
               ${billPhone ? `<div style="font-size:10px;margin-top:2px;"><strong>Mobile:</strong> ${esc(billPhone)}</div>` : ''}
               ${billEmail ? `<div style="font-size:10px;"><strong>Email:</strong> ${esc(billEmail)}</div>` : ''}
               ${billAddr ? `<div style="font-size:10px;margin-top:2px;white-space:pre-line;">${esc(billAddr)}</div>` : ''}
             </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
-              <strong>Invoice No.</strong><br>${esc(inv.invoice_number)}
+            <td style="border-bottom:1px solid #222;padding:9px 12px;width:25%;vertical-align:top;text-align:center;">
+              <strong>Invoice No.</strong><br>${esc(invoiceNumber)}
             </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
+            <td style="border-bottom:1px solid #222;padding:9px 12px;width:25%;vertical-align:top;text-align:center;">
               <strong>Invoice Date</strong><br>${esc(inv.invoice_date || '')}
-            </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;">
-              <strong>Due Date</strong><br>${esc(inv.due_date || '-')}
             </td>
           </tr>
         </table>
-
-        ${project.name ? `<div class="inv-project-summary"><strong>Project:</strong> ${esc(project.name)}${project.project_manager ? ` · <strong>Manager:</strong> ${esc(project.project_manager)}` : ''}${project.status ? ` · <strong>Status:</strong> ${esc(String(project.status).replace(/_/g, ' '))}` : ''}${project.health ? ` · <strong>Health:</strong> ${esc(String(project.health).replace(/_/g, ' '))}` : ''}${project.progress !== null && project.progress !== undefined ? ` · <strong>Progress:</strong> ${esc(project.progress)}%` : ''}${project.due_date ? `<br><strong>Project due:</strong> ${esc(String(project.due_date).slice(0, 10))}` : ''}${project.summary ? `<br><span style="white-space:pre-line;"><strong>Scope:</strong> ${esc(project.summary)}</span>` : ''}</div>` : ''}
 
         <!-- Line items table -->
         <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
@@ -8201,37 +8418,45 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </tbody>
           <tfoot>
             <tr style="background:#f3f4f6;">
-              <td colspan="2" style="border:1px solid #ccc;padding:6px 8px;"></td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:700;">TOTAL</td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:center;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
-              <td style="border:1px solid #ccc;padding:6px 8px;text-align:right;font-weight:900;">${fmt(total)}</td>
+              <td colspan="2" style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:900;">TOTAL</td>
+              <td style="border:1px solid #ccc;padding:8px;text-align:center;font-weight:900;">${items.reduce((s, x) => s + Number(x.quantity || 0), 0)}</td>
+              <td style="border:1px solid #ccc;padding:8px;"></td>
+              <td style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:900;">${fmt(total)}</td>
             </tr>
           </tfoot>
         </table>
 
-        <!-- Received / Balance / Status row -->
+        <div style="padding:7px 12px;text-align:right;font-size:10px;line-height:1.5;">
+          <div><strong>Subtotal:</strong> ${fmt(subtotal)}</div>
+          <div style="font-size:11px;font-weight:900;"><strong>Grand Total:</strong> ${fmt(total)}</div>
+        </div>
+
+        <!-- Received / Balance row -->
         <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
           <tr>
-            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Received Amount: ${fmt(received)}</strong></td>
-            <td style="border:1px solid #ccc;padding:6px 10px;width:38%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
-            <td style="border:1px solid #ccc;padding:6px 10px;"><strong>Status: ${esc(statusLabel)}</strong></td>
+            <td style="border-top:1px solid #222;border-bottom:1px solid #222;border-right:1px solid #222;padding:8px 12px;width:50%;"><strong>Received Amount: ${fmt(received)}</strong></td>
+            <td style="border-top:1px solid #222;border-bottom:1px solid #222;padding:8px 12px;width:50%;"><strong>Balance Amount: ${fmt(balance)}</strong></td>
           </tr>
         </table>
 
         <!-- Notes -->
-        ${inv.notes ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
+        ${inv.notes ? `<div style="border-bottom:1px solid #222;padding:8px 12px;font-size:10px;"><strong>Notes:</strong> ${esc(inv.notes)}</div>` : ''}
 
-        <!-- Payment Details -->
-        ${inv.payment_instructions ? `<div style="border:1px solid #ccc;border-top:0;padding:6px 10px;font-size:10px;"><strong>Payment Details:</strong> ${esc(inv.payment_instructions)}</div>` : ''}
-
-        <!-- Terms + Signatory -->
+        <!-- Terms + UPI payment + Signatory -->
         <table style="width:100%;border-collapse:collapse;margin-top:0;" class="inv-no-break">
           <tr>
-            <td style="border:1px solid #ccc;padding:8px 10px;vertical-align:top;width:55%;">
-              ${qrUrl ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><img src="${esc(qrUrl)}" style="width:58px;height:58px;object-fit:contain;" alt="Payment QR code" onerror="this.style.display='none'" /><span style="font-size:9px;color:#555;">Scan to pay</span></div>` : ''}
+            <td style="border-right:1px solid #222;padding:10px 12px;vertical-align:top;width:50%;min-height:108px;">
               ${inv.terms ? `<div><strong>Terms and Conditions</strong><div style="margin-top:4px;font-size:10px;white-space:pre-line;">${esc(inv.terms)}</div></div>` : ''}
             </td>
-            <td style="border:1px solid #ccc;padding:8px 10px;text-align:center;vertical-align:bottom;">
+            <td style="border-right:1px solid #222;padding:10px 8px;text-align:center;vertical-align:middle;width:22%;">
+              <a href="${esc(upiPaymentUri)}" style="display:inline-block;line-height:0;" aria-label="Pay invoice ${esc(invoiceNumber)} using UPI">
+                <img src="${esc(upiQrUrl)}" style="width:92px;height:92px;object-fit:contain;" alt="UPI payment QR code for invoice ${esc(invoiceNumber)}" />
+              </a>
+              <div style="margin-top:4px;font-size:9px;font-weight:900;">Scan or tap to pay</div>
+              <div style="margin-top:2px;font-size:8px;word-break:break-word;">${esc(UPI_ID)} · ${fmt(balance)}</div>
+              ${inv.payment_instructions ? `<div style="margin-top:4px;font-size:8px;color:#555;">${esc(inv.payment_instructions)}</div>` : ''}
+            </td>
+            <td style="padding:10px 8px;text-align:center;vertical-align:bottom;width:28%;">
               ${signatureUrl ? `<img src="${esc(signatureUrl)}" style="max-height:52px;max-width:140px;object-fit:contain;" alt="Signature" onerror="this.style.display='none'" />` : '<div style="height:44px;"></div>'}
               <div style="border-top:1px solid #555;padding-top:4px;font-size:10px;font-weight:700;">Authorised Signatory For<br>TechMigos</div>
             </td>
