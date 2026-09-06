@@ -60,7 +60,8 @@ test('invoice ledger entries stay separate from cash income and expenses', () =>
   assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('invoice'), false);
   assert.equal(FINANCE_CASH_TRANSACTION_TYPES.has('income'), true);
   assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('expense'), true);
-  assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'pending' }), true);
+  assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'pending' }), false);
+  assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'received' }), true);
   assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'cancelled' }), false);
   assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'received' }), true);
   assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'pending' }), false);

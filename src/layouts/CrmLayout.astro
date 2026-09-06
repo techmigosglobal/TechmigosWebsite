@@ -2676,6 +2676,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     const SETTLED_FINANCE_STATUSES = new Set(['paid', 'received', 'completed']);
     const SETTLED_EXPENSE_STATUSES = new Set(['paid', 'completed']);
     const SETTLED_INVOICE_STATUSES = new Set(['paid', 'completed']);
+    const SETTLED_INVOICE_TRANSACTION_STATUSES = new Set(['paid', 'received', 'completed']);
 
     function normalizedStatus(value) {
       return String(value || '').trim().toLowerCase();
@@ -2683,7 +2684,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function isSettledFinance(item) {
       const transactionType = normalizedStatus(item.transaction_type);
-      if (transactionType === 'invoice') return normalizedStatus(item.status) !== 'cancelled';
+      if (transactionType === 'invoice') return SETTLED_INVOICE_TRANSACTION_STATUSES.has(normalizedStatus(item.status));
       const statuses = ['income', 'revenue'].includes(transactionType)
         ? SETTLED_FINANCE_STATUSES
         : SETTLED_EXPENSE_STATUSES;
@@ -2707,6 +2708,28 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function invoiceBalance(invoice) {
       if (normalizedStatus(invoice.status) === 'cancelled') return 0;
       return Math.max(invoiceTotal(invoice) - invoicePaidAmount(invoice), 0);
+    }
+
+    function standaloneInvoiceBalance(item, invoices = state.data.invoices) {
+      if (normalizedStatus(item.transaction_type) !== 'invoice' || isSettledFinance(item)) return 0;
+      if (normalizedStatus(item.status) === 'cancelled') return 0;
+      if (item.invoice_id && invoices.some((invoice) => String(invoice.id) === String(item.invoice_id))) return 0;
+      return Math.max(Number(item.amount || 0), 0);
+    }
+
+    function outstandingInvoiceRows(invoices = state.data.invoices, finances = state.data.finances) {
+      return [
+        ...invoices.filter((invoice) => invoiceBalance(invoice) > 0).map((invoice) => ({
+          ...invoice,
+          amount: invoiceBalance(invoice),
+          record_kind: 'invoice',
+        })),
+        ...finances.filter((item) => standaloneInvoiceBalance(item, invoices) > 0),
+      ];
+    }
+
+    function outstandingInvoiceAmount(invoices = state.data.invoices, finances = state.data.finances) {
+      return sumAmounts(outstandingInvoiceRows(invoices, finances));
     }
 
     const UPI_ID = 'v5219@slc';
@@ -2759,7 +2782,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .map((item) => String(item.invoice_id)),
       );
       return invoices
-        .filter((invoice) => normalizedStatus(invoice.status) !== 'cancelled')
+        .filter((invoice) => isSettledInvoice(invoice))
         .filter((invoice) => !linkedInvoiceIds.has(String(invoice.id)))
         .map((invoice) => ({
           ...invoice,
@@ -2772,10 +2795,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: invoice.service_title || invoice.invoice_number || 'Invoice income',
           client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
           project: projectName(invoice.project_id),
-          amount: invoiceTotal(invoice),
+          amount: invoicePaidAmount(invoice),
           status: invoiceEffectiveStatus(invoice),
           source: 'invoice',
         }));
+    }
+
+    function invoiceLedgerEntryRows(finances = state.data.finances) {
+      return finances
+        .filter((item) => normalizedStatus(item.transaction_type) === 'invoice' && !item.invoice_id)
+        .map((item) => ({ ...item, record_kind: 'invoice_ledger' }));
     }
 
     function incomeRows(finances = state.data.finances, invoices = state.data.invoices) {
@@ -3044,9 +3073,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const weekLabel = currentWeekLabel();
 
       // Accounts Receivable
-      const receivable = state.data.invoices
-        .filter((item) => invoiceBalance(item) > 0)
-        .reduce((sum, item) => sum + invoiceBalance(item), 0);
+      const receivableRows = outstandingInvoiceRows();
+      const receivable = sumAmounts(receivableRows);
 
       // 6-month revenue trend data
       const monthTrend = (() => {
@@ -3114,7 +3142,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ${metric('Active Clients', clients.filter((c) => c.status !== 'archived').length, '○', 'green', `${clients.filter((c) => c.status === 'lead').length} in pipeline`)}
           ${metric('Open Tickets', openTickets.length, '◴', openTickets.length ? 'red' : 'green', urgentTickets.length ? `${urgentTickets.length} urgent` : 'Queue under control')}
           ${metric('Revenue Collected', compactMoney(income), '₹', 'green', `${compactMoney(expenses)} expenses`)}
-          ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${state.data.invoices.filter((i) => invoiceBalance(i) > 0).length} unpaid invoices` : 'All invoices settled')}
+          ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${receivableRows.length} outstanding invoices` : 'All invoices settled')}
         </div>
 
         <!-- Main Content: 2 columns -->
@@ -3958,22 +3986,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function proofPreviewMarkup(url) {
       if (!url) return '';
       const resolvedUrl = getResolvedProofUrl(url);
-      const safeUrl = escapeHtml(resolvedUrl);
       const safeRawUrl = escapeHtml(url);
-      if (!resolvedUrl) return `<button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">${proofIconMarkup('paperclip', 14)} Load secure preview</button>`;
-      if (/\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(url) || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(resolvedUrl)) {
-        return `<a href="${safeUrl}" target="_blank" rel="noopener"><img src="${safeUrl}" alt="Proof preview" style="max-width:220px;max-height:160px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff;" /></a>`;
-      }
-      if (/\.pdf(\?|$)/i.test(url) || /\.pdf(\?|$)/i.test(resolvedUrl)) {
-        return `<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff;max-width:260px;">
-          <iframe src="${safeUrl}#toolbar=0" style="width:100%;height:140px;border:none;display:block;" title="PDF Preview"></iframe>
-          <div style="padding:4px 8px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:10px;color:#64748b;font-weight:600;">PDF Preview</span>
-            <button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}" style="font-size:10px;">Full Preview ↗</button>
-          </div>
-        </div>`;
-      }
-      return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="text-decoration:none;">${proofIconMarkup('paperclip', 14)} Open proof</a>`;
+      if (!resolvedUrl) return `<div data-proof-auto-preview data-proof-value="${safeRawUrl}" style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;text-align:center;color:#64748b;font-size:11px;">Loading secure preview…</div>`;
+      return proofDocumentMarkup(url, resolvedUrl, true);
     }
 
     function proofSummaryMarkup(url) {
@@ -4004,6 +4019,48 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       } catch (error) {
         throw error instanceof Error ? error : new Error('Could not create secure proof URL.');
       }
+    }
+
+    function proofDocumentMarkup(rawUrl, resolvedUrl, compact = false) {
+      const safeUrl = escapeHtml(resolvedUrl);
+      const fileName = escapeHtml(String(rawUrl || '').split('/').pop() || 'Proof document');
+      const isPdf = /\.pdf(\?|$)/i.test(resolvedUrl) || /\.pdf(\?|$)/i.test(rawUrl);
+      const isImg = /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(resolvedUrl) || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(rawUrl);
+      if (isPdf) {
+        return `<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff;${compact ? 'max-width:260px;' : 'margin-bottom:10px;'}">
+          <iframe src="${safeUrl}#toolbar=0" style="width:100%;height:${compact ? '140px' : '320px'};border:none;display:block;background:#f8fafc;" title="PDF Preview"></iframe>
+          <div style="padding:6px 8px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <span style="font-size:10px;color:#64748b;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${fileName}">${fileName}</span>
+            <a class="crm-mini-action" href="${safeUrl}" target="_blank" rel="noopener" style="font-size:10px;text-decoration:none;white-space:nowrap;">Open ↗</a>
+          </div>
+        </div>`;
+      }
+      if (isImg) {
+        return `<a href="${safeUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;">
+          <img src="${safeUrl}" alt="Proof preview" style="max-width:${compact ? '220px' : '100%'};max-height:${compact ? '160px' : '320px'};width:auto;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff;" />
+        </a>`;
+      }
+      return `<a href="${safeUrl}" target="_blank" rel="noopener" class="crm-mini-action" style="display:inline-flex;text-decoration:none;">${proofIconMarkup('paperclip', 14)} ${fileName}</a>`;
+    }
+
+    async function loadProofPreviewTarget(target, value) {
+      if (!target || !value || target.dataset.proofLoading === 'true') return;
+      target.dataset.proofLoading = 'true';
+      target.innerHTML = '<div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;text-align:center;color:#64748b;font-size:11px;">Loading secure preview…</div>';
+      try {
+        const resolvedUrl = await resolveProofUrl(value);
+        if (target.isConnected) target.innerHTML = proofDocumentMarkup(value, resolvedUrl, target.dataset.proofCompact === 'true');
+      } catch (error) {
+        if (target.isConnected) target.innerHTML = `<div style="border:1px solid #fecaca;border-radius:8px;padding:12px;text-align:center;color:#b91c1c;font-size:11px;">${escapeHtml(error instanceof Error ? error.message : 'Could not load secure proof preview.')}</div>`;
+      } finally {
+        delete target.dataset.proofLoading;
+      }
+    }
+
+    function loadAutoProofPreviews(root = document) {
+      root.querySelectorAll('[data-proof-auto-preview]').forEach((target) => {
+        loadProofPreviewTarget(target, target.dataset.proofValue);
+      });
     }
 
     async function openProofPreview(value) {
@@ -4200,7 +4257,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const operatingExpenses = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'expense'));
       const salaries = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'salary'));
       const expenses = operatingExpenses + salaries;
-      const receivable = state.data.invoices.filter((item) => invoiceBalance(item) > 0).reduce((sum, item) => sum + invoiceBalance(item), 0);
+      const receivable = outstandingInvoiceAmount();
       const availableBalance = income - expenses;
 
       const canWriteFinance = canWrite('finances');
@@ -4221,9 +4278,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const fmtINR = (v) => '₹' + Math.abs(Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const isInc = (t) => ['income', 'revenue', 'invoice'].includes(t);
-        const signedINR = (v, t) => isInc(t)
-          ? '+' + fmtINR(Math.abs(Number(v) || 0))
-          : '-' + fmtINR(Math.abs(Number(v) || 0));
+        const signedINR = (v, t, status = '') => t === 'invoice' && !SETTLED_INVOICE_TRANSACTION_STATUSES.has(normalizedStatus(status))
+          ? fmtINR(Math.abs(Number(v) || 0))
+          : isInc(t) ? '+' + fmtINR(Math.abs(Number(v) || 0)) : '-' + fmtINR(Math.abs(Number(v) || 0));
         const cashFlowByMonth = {};
         collectedIncome.forEach((item) => {
           const month = (item.transaction_date || '').slice(0, 7);
@@ -4263,16 +4320,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           if (sh === 'income') rows = incomeRows();
           else if (sh === 'expenses') rows = rows.filter(r => r.transaction_type === 'expense');
           else if (sh === 'salary') rows = rows.filter(r => r.transaction_type === 'salary');
-          else if (sh === 'invoices') rows = state.data.invoices.map((invoice) => ({
-            ...invoice,
-            record_kind: 'invoice',
-            invoice_id: invoice.id,
-            transaction_type: 'invoice',
-            transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
-            title: invoice.service_title || invoice.invoice_number || 'Invoice',
-            amount: invoiceTotal(invoice),
-            status: invoiceEffectiveStatus(invoice),
-          }));
+          else if (sh === 'invoices') rows = [
+            ...state.data.invoices.map((invoice) => ({
+              ...invoice,
+              record_kind: 'invoice',
+              invoice_id: invoice.id,
+              transaction_type: 'invoice',
+              transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
+              title: invoice.service_title || invoice.invoice_number || 'Invoice',
+              amount: invoiceTotal(invoice),
+              status: invoiceEffectiveStatus(invoice),
+            })),
+            ...invoiceLedgerEntryRows(),
+          ];
           if (state.accSearch) {
             const q = state.accSearch.toLowerCase();
             rows = rows.filter(r => (r.title || '').toLowerCase().includes(q) || (r.status || '').toLowerCase().includes(q));
@@ -4313,6 +4373,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           const invoice = state.data.invoices.find((item) => String(item.id) === String(invoiceId)) || record;
           const ledger = invoiceLedgerRecord(invoice);
           const proofUrl = ledger?.proof_url || '';
+          const incomeLabel = normalizedStatus(invoice.status) === 'cancelled'
+            ? '<span style="font-size:10px;color:#94a3b8;font-weight:700;">Voided</span>'
+            : isSettledInvoice(invoice)
+              ? '<span style="font-size:10px;color:#15803d;font-weight:700;">Included in income</span>'
+              : '<span style="font-size:10px;color:#a16207;font-weight:700;">Outstanding</span>';
           const proofAction = proofUrl
             ? `<button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview proof</button>${canWriteFinance ? `<label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-proof-upload="${ledger.id}" accept="image/*,.pdf" style="display:none;" /></label>` : ''}`
             : ledger && canWriteFinance
@@ -4322,10 +4387,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(record.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(record.title || record.reference_id || 'Invoice')}</td>
             <td>${catBadge('invoice')}</td>
-            <td class="acc-amt-invoice" style="font-weight:700;">${signedINR(record.amount, 'invoice')}</td>
+            <td class="acc-amt-invoice" style="font-weight:700;">${signedINR(record.amount, 'invoice', record.status)}</td>
             <td>${sBadge(record.status)}</td>
             ${showProof ? `<td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${proofAction}</div></td>` : ''}
-            <td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;color:#15803d;font-weight:700;">Included in income</span><button class="crm-button" data-load-invoice="${invoiceId}" type="button" title="Open invoice">View invoice</button></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${incomeLabel}<button class="crm-button" data-load-invoice="${invoiceId}" type="button" title="Open invoice">View invoice</button></div></td>
           </tr>`;
         };
         const txTable = (rows, showProof = false) => {
@@ -4339,7 +4404,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(r.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(r.title || '—')}</td>
             <td>${catBadge(r.transaction_type)}</td>
-            <td class="${r.transaction_type === 'invoice' ? 'acc-amt-invoice' : isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
+            <td class="${r.transaction_type === 'invoice' ? 'acc-amt-invoice' : isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type, r.status)}</td>
             <td>${sBadge(r.status)}</td>
             ${showProof ? `<td><div class="acc-proof-actions">${proofIcon(r)}${canWriteFinance ? `<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label>` : ''}</div></td>` : ''}
             <td><div style="display:${canWriteFinance ? 'flex' : 'none'};gap:4px;align-items:center;">
@@ -4357,52 +4422,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <div style="font-size:14px;font-weight:700;color:#475569;">Proof Preview</div>
             <p style="font-size:12px;color:#94a3b8;margin-top:6px;max-width:320px;">Click any transaction row to see details and proof/receipt here.</p>
           </div>`;
-          const resolvedUrl = getResolvedProofUrl(row.proof_url);
-          const safeUrl = escapeHtml(resolvedUrl);
           const safeRawUrl = escapeHtml(row.proof_url || '');
-          const fileName = escapeHtml((row.proof_url || '').split('/').pop() || 'Proof Document');
-          const isImg = row.proof_url && /\.(jpg|jpeg|png|webp|gif|avif)/i.test(row.proof_url);
-          const isPdf = row.proof_url && /\.pdf/i.test(row.proof_url);
 
           let proofContentMarkup = '';
           if (row.proof_url) {
-            if (!resolvedUrl) {
-              proofContentMarkup = `<div style="border:1px dashed #cbd5e1;border-radius:10px;padding:20px;text-align:center;color:#64748b;font-size:12px;"><p style="margin:0 0 10px;font-weight:700;">Proof is stored privately.</p><button class="crm-button primary" type="button" data-proof-open="${safeRawUrl}">Load secure preview</button></div>`;
-            } else if (isPdf) {
-              proofContentMarkup = `
-                <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;">
-                  <iframe src="${safeUrl}#toolbar=0" style="width:100%;height:320px;border:none;display:block;background:#f8fafc;" title="PDF Preview"></iframe>
-                  <div style="padding:8px 12px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                    <span style="font-size:11px;color:#64748b;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;" title="${fileName}">${fileName}</span>
-                    <div style="display:flex;gap:6px;">
-                      <button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">Modal ↗</button>
-                      <button class="crm-mini-action" type="button" data-proof-link="${safeRawUrl}">Tab ↗</button>
-                    </div>
-                  </div>
-                </div>`;
-            } else if (isImg) {
-              proofContentMarkup = `
-                <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;text-align:center;">
-                  <img src="${safeUrl}" style="width:100%;max-height:320px;object-fit:contain;display:block;cursor:pointer;background:#fafafa;" data-proof-open="${safeRawUrl}" title="Click to view full preview" />
-                  <div style="padding:8px 12px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                    <span style="font-size:11px;color:#64748b;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;" title="${fileName}">${fileName}</span>
-                    <div style="display:flex;gap:6px;">
-                      <button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">Modal ↗</button>
-                      <button class="crm-mini-action" type="button" data-proof-link="${safeRawUrl}">Tab ↗</button>
-                    </div>
-                  </div>
-                </div>`;
-            } else {
-              proofContentMarkup = `
-                <div style="border:1.5px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;background:#fff;margin-bottom:10px;">
-                  <div class="acc-proof-empty-icon">${proofIconMarkup('paperclip', 30)}</div>
-                  <div style="font-size:12px;color:#64748b;margin-bottom:10px;word-break:break-all;">${fileName}</div>
-                  <div style="display:flex;justify-content:center;gap:6px;">
-                    <button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">Preview ↗</button>
-                    <button class="crm-mini-action" type="button" data-proof-link="${safeRawUrl}">Open ↗</button>
-                  </div>
-                </div>`;
-            }
+            proofContentMarkup = `<div data-proof-auto-preview data-proof-value="${safeRawUrl}" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;background:#fff;margin-bottom:10px;"><p style="margin:0;color:#64748b;font-size:12px;">Loading secure preview…</p></div>`;
           } else {
             proofContentMarkup = `
               <label style="display:${canWriteFinance ? 'flex' : 'none'};flex-direction:column;align-items:center;gap:8px;border:1.5px dashed #d1d5db;border-radius:10px;padding:20px;cursor:pointer;background:#fafafa;transition:background .15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fafafa'">
@@ -4419,7 +4443,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div style="font-size:11px;color:#94a3b8;">${fmtDate(row.transaction_date)}</div>
             </div>
             <div style="padding:14px 16px;">
-              <div style="font-size:22px;font-weight:800;color:${isInc(row.transaction_type) ? '#16a34a' : '#dc2626'};margin-bottom:6px;">${signedINR(row.amount, row.transaction_type)}</div>
+              <div style="font-size:22px;font-weight:800;color:${isInc(row.transaction_type) && (normalizedStatus(row.transaction_type) !== 'invoice' || SETTLED_INVOICE_TRANSACTION_STATUSES.has(normalizedStatus(row.status))) ? '#16a34a' : normalizedStatus(row.transaction_type) === 'invoice' ? '#a16207' : '#dc2626'};margin-bottom:6px;">${signedINR(row.amount, row.transaction_type, row.status)}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${catBadge(row.transaction_type)}${sBadge(row.status)}</div>
               ${String(row.status).toLowerCase() === 'pending' && normalizedStatus(row.transaction_type) !== 'invoice' ? '<div class="acc-pending-note" role="status">' + proofIconMarkup('pending', 16) + '<span><strong>Pending review</strong><small>Update the status after confirming this record.</small></span>' + (canWriteFinance ? `<button class="crm-button" type="button" data-resolve-finance="${row.id}" style="margin-left:auto;white-space:nowrap;padding:5px 8px;font-size:10px;">Mark ${isInc(row.transaction_type) ? 'Received' : 'Paid'}</button>` : '') + '</div>' : ''}
               ${proofContentMarkup}
@@ -4432,7 +4456,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const subTabs = (tabs) => `<div class="acc-sheet-tabs">${tabs.map(([k, l]) => `<button class="acc-sheet-tab${(state.accSubTab || 'all') === k ? ' active' : ''}" data-acc-subtab="${k}" type="button">${l}</button>`).join('')}</div>`;
         const financialPulse = `<section class="acc-financial-pulse" aria-label="Financial summary">
           <div class="acc-pulse-metrics">
-            <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${collectedIncome.length} entries, including active invoices</small></div>
+            <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${collectedIncome.length} settled entries, including paid invoices</small></div>
             <div class="acc-pulse-metric"><span>Operating expenses</span><strong>${fmtINR(operatingExpenses)}</strong><small>Excludes salaries</small></div>
             <div class="acc-pulse-metric"><span>Total spending</span><strong>${fmtINR(expenses)}</strong><small>Expenses and salaries</small></div>
             <div class="acc-pulse-metric"><span>Outstanding invoices</span><strong>${fmtINR(receivable)}</strong><small>Awaiting collection</small></div>
@@ -4498,7 +4522,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               const proofUrl = invoiceLedger?.proof_url || '';
               const incomeState = normalizedStatus(inv.status) === 'cancelled'
                 ? '<span style="font-size:10px;color:#94a3b8;font-weight:700;white-space:nowrap;">Voided</span>'
-                : '<span style="font-size:10px;color:#15803d;font-weight:700;white-space:nowrap;">Included</span>';
+                : isSettledInvoice(inv)
+                  ? '<span style="font-size:10px;color:#15803d;font-weight:700;white-space:nowrap;">Included</span>'
+                  : '<span style="font-size:10px;color:#a16207;font-weight:700;white-space:nowrap;">Outstanding</span>';
               const proofAction = proofUrl
                 ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"><button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview</button>${canWriteFinance ? `<label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-proof-upload="${invoiceLedger.id}" accept="image/*,.pdf" style="display:none;" /></label>` : ''}</div>`
                 : invoiceLedger && canWriteFinance
@@ -4731,6 +4757,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         initInvoiceBuilder();
       } else {
         initAccounting();
+        loadAutoProofPreviews(els.view);
       }
     }
 
@@ -6134,7 +6161,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const income = sumAmounts(collectedIncome);
       const expenses = sumAmounts(settledExpenses);
       const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
-      const invoiceOutstanding = invoices.reduce((sum, item) => sum + invoiceBalance(item), 0);
+      const invoiceOutstanding = outstandingInvoiceAmount(invoices, finances);
 
       return {
         executive: {
@@ -7638,6 +7665,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           status.style.color = 'var(--crm-red)';
         }
       });
+      if (preview) loadAutoProofPreviews(preview);
     }
 
     function bindFinanceProofUploads() {

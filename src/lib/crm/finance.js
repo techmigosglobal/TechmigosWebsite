@@ -4,6 +4,7 @@ export const FINANCE_INCOME_TRANSACTION_TYPES = new Set(['income', 'revenue', 'i
 export const FINANCE_CASH_TRANSACTION_TYPES = new Set(['income', 'revenue']);
 export const FINANCE_EXPENSE_TRANSACTION_TYPES = new Set(['expense', 'salary']);
 export const FINANCE_TRANSACTION_STATUSES = new Set(['pending', 'paid', 'received', 'half_payment', 'cancelled']);
+export const FINANCE_SETTLED_TRANSACTION_STATUSES = new Set(['paid', 'received', 'completed']);
 
 export function normalizedStatus(value) {
   return String(value ?? '').trim().toLowerCase();
@@ -11,9 +12,9 @@ export function normalizedStatus(value) {
 
 export function isIncomeTransaction(transaction = {}) {
   const type = normalizedStatus(transaction.transaction_type);
-  if (type === 'invoice') return normalizedStatus(transaction.status) !== 'cancelled';
+  if (type === 'invoice') return FINANCE_SETTLED_TRANSACTION_STATUSES.has(normalizedStatus(transaction.status));
   return FINANCE_CASH_TRANSACTION_TYPES.has(type)
-    && new Set(['paid', 'received', 'completed']).has(normalizedStatus(transaction.status));
+    && FINANCE_SETTLED_TRANSACTION_STATUSES.has(normalizedStatus(transaction.status));
 }
 export function invoiceTotal(invoice = {}) {
   return Math.max(Number(invoice.total_amount ?? invoice.amount ?? 0) || 0, 0);

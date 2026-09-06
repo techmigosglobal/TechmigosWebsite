@@ -115,11 +115,12 @@ Finance has two intentionally separate record families:
 - `crm_finances` is the transaction ledger. It supports `income`, `expense`, `revenue`, `salary`, and `invoice` entries. An invoice entry records the financial event in Transactions and may link to a generated invoice through `invoice_id`.
 - `crm_invoices` and `crm_invoice_items` are the generated invoice document and its line items. Invoice Generation saves those records atomically; saving a generated invoice also maintains its linked invoice ledger entry automatically.
 
-The Income KPI includes active invoice ledger entries immediately, plus settled `income`/`revenue` rows. Cancelled invoices are excluded. This is billed income/revenue, not a claim that payment was received; invoice payment rows remain separately identifiable when recorded. Finance is company-staff only; clients have no finance-table policy.
+The Income KPI includes settled invoice ledger entries and settled `income`/`revenue` rows. Pending, draft, sent, overdue, and half-payment invoice entries remain outstanding and do not increase Income or Available balance; cancelled invoices are excluded. Finance is company-staff only; clients have no finance-table policy.
 
 The inline transaction row now works as follows:
 
 - Required fields are date, category, description, amount, and status.
+- `invoice` entries are visible in both All Transactions and the Invoices filter. Pending invoice entries are outstanding; only paid/received invoice entries contribute to Income.
 - Once description and amount are present, changes are debounced for 700ms and saved through the finance portal endpoint.
 - The row reports `Draft`, `Changes pending`, `Saving…`, `Saved`, or an actionable error.
 - New rows become persisted records automatically; the old `Save first` proof message and manual row Save dependency are gone.
