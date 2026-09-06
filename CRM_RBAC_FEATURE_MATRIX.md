@@ -115,7 +115,7 @@ Finance has two intentionally separate record families:
 - `crm_finances` is the transaction ledger. It supports `income`, `expense`, `revenue`, `salary`, and `invoice` entries. An invoice entry records the financial event in Transactions and may link to a generated invoice through `invoice_id`.
 - `crm_invoices` and `crm_invoice_items` are the generated invoice document and its line items. Invoice Generation saves those records atomically; saving a generated invoice also maintains its linked invoice ledger entry automatically.
 
-The Income KPI includes settled invoice ledger entries and settled `income`/`revenue` rows. Pending, draft, sent, overdue, and half-payment invoice entries remain outstanding and do not increase Income or Available balance; cancelled invoices are excluded. Finance is company-staff only; clients have no finance-table policy.
+The Income KPI includes settled invoice ledger entries and settled `income`/`revenue` rows. Pending, draft, sent, overdue, and half-payment invoice entries remain outstanding and do not increase Income or Available balance; cancelled invoices are excluded. The Financial Management summary also exposes outstanding expense obligations for unpaid `expense` and `salary` rows; those rows do not reduce Available balance until settled. Finance is company-staff only; clients have no finance-table policy.
 
 The inline transaction row now works as follows:
 

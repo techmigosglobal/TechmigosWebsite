@@ -2732,6 +2732,20 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return sumAmounts(outstandingInvoiceRows(invoices, finances));
     }
 
+    function outstandingExpenseRows(finances = state.data.finances) {
+      return finances.filter((item) => {
+        const type = normalizedStatus(item.transaction_type);
+        return ['expense', 'salary'].includes(type)
+          && normalizedStatus(item.status) !== 'cancelled'
+          && !isSettledFinance(item)
+          && Number(item.amount || 0) > 0;
+      });
+    }
+
+    function outstandingExpenseAmount(finances = state.data.finances) {
+      return sumAmounts(outstandingExpenseRows(finances));
+    }
+
     const UPI_ID = 'v5219@slc';
     const UPI_MERCHANT_NAME = 'TechMigos';
 
@@ -4258,6 +4272,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const salaries = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'salary'));
       const expenses = operatingExpenses + salaries;
       const receivable = outstandingInvoiceAmount();
+      const outstandingExpenses = outstandingExpenseAmount();
+      const outstandingExpenseCount = outstandingExpenseRows().length;
       const availableBalance = income - expenses;
 
       const canWriteFinance = canWrite('finances');
@@ -4460,6 +4476,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <div class="acc-pulse-metric"><span>Operating expenses</span><strong>${fmtINR(operatingExpenses)}</strong><small>Excludes salaries</small></div>
             <div class="acc-pulse-metric"><span>Total spending</span><strong>${fmtINR(expenses)}</strong><small>Expenses and salaries</small></div>
             <div class="acc-pulse-metric"><span>Outstanding invoices</span><strong>${fmtINR(receivable)}</strong><small>Awaiting collection</small></div>
+            <div class="acc-pulse-metric"><span>Outstanding expenses</span><strong>${fmtINR(outstandingExpenses)}</strong><small>${outstandingExpenseCount} unpaid expense${outstandingExpenseCount === 1 ? '' : 's'} and salaries</small></div>
             <div class="acc-pulse-metric ${availableBalance >= 0 ? 'acc-pulse-balance-positive' : 'acc-pulse-balance-negative'}"><span>Available balance</span><strong>${availableBalance < 0 ? '−' : ''}${fmtINR(availableBalance)}</strong><small>${availableBalance >= 0 ? 'Funds remaining' : 'Spending exceeds income'}</small></div>
           </div>
           <div class="acc-pulse-chart">
