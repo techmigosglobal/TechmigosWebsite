@@ -2682,6 +2682,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return String(value || '').trim().toLowerCase();
     }
 
+    function normalizeFinanceRecord(record = {}) {
+      return {
+        ...record,
+        transaction_type: normalizedStatus(record.transaction_type),
+        status: normalizedStatus(record.status),
+      };
+    }
+
+    function normalizeFinanceRecords(records = []) {
+      return Array.isArray(records) ? records.filter(Boolean).map(normalizeFinanceRecord) : [];
+    }
+
     function isSettledFinance(item) {
       const transactionType = normalizedStatus(item.transaction_type);
       if (transactionType === 'invoice') return SETTLED_INVOICE_TRANSACTION_STATUSES.has(normalizedStatus(item.status));
@@ -3797,10 +3809,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (state.financeSheet === 'income') return incomeRows();
       return state.data.finances.filter((item) => {
         if (state.financeSheet === 'all') return true;
-        if (state.financeSheet === 'income') return ['income', 'revenue'].includes(item.transaction_type) && isSettledFinance(item);
-        if (state.financeSheet === 'expenses') return item.transaction_type === 'expense';
-        if (state.financeSheet === 'salary') return item.transaction_type === 'salary';
-        if (state.financeSheet === 'pending') return ['pending', 'half_payment', 'sent'].includes(item.status);
+        if (state.financeSheet === 'income') return ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item);
+        if (state.financeSheet === 'expenses') return normalizedStatus(item.transaction_type) === 'expense';
+        if (state.financeSheet === 'salary') return normalizedStatus(item.transaction_type) === 'salary';
+        if (state.financeSheet === 'pending') return ['pending', 'half_payment', 'sent'].includes(normalizedStatus(item.status));
         if (state.financeSheet === 'paid') return ['paid', 'received', 'completed'].includes(normalizedStatus(item.status));
         return true;
       });
@@ -4268,8 +4280,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const collectedIncome = incomeRows();
       const settledExpenses = expenseRows();
       const income = sumAmounts(collectedIncome);
-      const operatingExpenses = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'expense'));
-      const salaries = sumAmounts(settledExpenses.filter((item) => item.transaction_type === 'salary'));
+      const operatingExpenses = sumAmounts(settledExpenses.filter((item) => normalizedStatus(item.transaction_type) === 'expense'));
+      const salaries = sumAmounts(settledExpenses.filter((item) => normalizedStatus(item.transaction_type) === 'salary'));
       const expenses = operatingExpenses + salaries;
       const receivable = outstandingInvoiceAmount();
       const outstandingExpenses = outstandingExpenseAmount();
@@ -4334,8 +4346,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           let rows = [...state.data.finances];
           const sh = state.accSubTab || 'all';
           if (sh === 'income') rows = incomeRows();
-          else if (sh === 'expenses') rows = rows.filter(r => r.transaction_type === 'expense');
-          else if (sh === 'salary') rows = rows.filter(r => r.transaction_type === 'salary');
+          else if (sh === 'expenses') rows = rows.filter(r => normalizedStatus(r.transaction_type) === 'expense');
+          else if (sh === 'salary') rows = rows.filter(r => normalizedStatus(r.transaction_type) === 'salary');
           else if (sh === 'invoices') rows = [
             ...state.data.invoices.map((invoice) => ({
               ...invoice,
@@ -8264,7 +8276,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       try {
         const cached = sessionStorage.getItem(crmCacheKey('data'));
         if (cached) {
-          state.data = JSON.parse(cached);
+          const cachedData = JSON.parse(cached);
+          state.data = { ...cachedData, finances: normalizeFinanceRecords(cachedData.finances) };
           setStatus('Syncing with database...', 'success');
           render();
         } else {
@@ -8284,7 +8297,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           return true;
         });
         const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
-        results.forEach(([name, items]) => { state.data[name] = items; });
+        results.forEach(([name, items]) => {
+          state.data[name] = name === 'finances' ? normalizeFinanceRecords(items) : items;
+        });
         try {
           sessionStorage.setItem(crmCacheKey('data'), JSON.stringify(state.data));
         } catch (e) {
