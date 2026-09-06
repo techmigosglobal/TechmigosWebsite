@@ -264,78 +264,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     function setStatus(message, tone = 'neutral') {
       statusEl.textContent = message;
       statusEl.className = `mt-4 text-sm ${tone === 'error' ? 'text-red-600' : tone === 'success' ? 'text-emerald-700' : 'text-slate-600'}`;
+      let retry = document.getElementById('client-retry-load');
+      if (tone === 'error') {
+        if (!retry) {
+          retry = document.createElement('button');
+          retry.id = 'client-retry-load';
+          retry.type = 'button';
+          retry.className = 'btn-secondary mt-2';
+          retry.textContent = 'Retry loading workspace';
+          statusEl.insertAdjacentElement('afterend', retry);
+          retry.addEventListener('click', () => loadOverview());
+        }
+        retry.classList.remove('hidden');
+      } else if (retry) {
+        retry.classList.add('hidden');
+      }
     }
 
     async function portal(path, options = {}) {
-      const method = (options.method || 'GET').toUpperCase();
-      const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : null;
-      const sb = window.tmSupabase;
-
-      if (path === '/api/portal/me') {
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-        const { data: profile } = await sb.from('crm_profiles').select('*').eq('auth_user_id', user.id).single();
-        if (!profile) throw new Error('Profile not found');
-        if (profile.status !== 'active') throw new Error('This client account is not active.');
-        return { profile, destination: profile.role === 'client' ? '/client' : '/company' };
-      }
-
-      if (path === '/api/portal/client/overview') {
-        const { data: { user } } = await sb.auth.getUser();
-        const { data: profile } = await sb.from('crm_profiles').select('client_id').eq('auth_user_id', user.id).single();
-        const clientId = profile?.client_id;
-        if (!clientId) throw new Error('No client linked');
-        const [clientRes, projectsRes, invoicesRes, ticketsRes] = await Promise.all([
-          sb.from('crm_clients').select('*').eq('id', clientId).single(),
-          sb.from('crm_projects').select('*').eq('client_id', clientId),
-          sb.from('crm_invoices').select('*').eq('client_id', clientId),
-          sb.from('crm_tickets').select('*').eq('client_id', clientId),
-        ]);
-        return {
-          client: clientRes.data,
-          projects: projectsRes.data || [],
-          invoices: invoicesRes.data || [],
-          tickets: ticketsRes.data || [],
-        };
-      }
-
-      if (path.match(/^\/api\/portal\/client\/tickets\/(\d+)\/messages$/)) {
-        const ticketId = path.match(/tickets\/(\d+)\/messages/)[1];
-        if (method === 'GET') {
-          const { data } = await sb.from('crm_ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at');
-          return { messages: data || [] };
-        }
-        if (method === 'POST') {
-          const { data: { user } } = await sb.auth.getUser();
-          const { data: profile } = await sb.from('crm_profiles').select('name,role').eq('auth_user_id', user.id).single();
-          const { error } = await sb.from('crm_ticket_messages').insert([{
-            ticket_id: Number(ticketId),
-            body: body.body || '',
-            author_name: profile?.name || 'Client',
-            author_role: profile?.role || 'client',
-            visibility: 'external',
-          }]);
-          if (error) throw new Error(error.message);
-          return { ok: true };
-        }
-      }
-
-      if (path === '/api/portal/client/tickets' && method === 'POST') {
-        const { data: { user } } = await sb.auth.getUser();
-        const { data: profile } = await sb.from('crm_profiles').select('client_id').eq('auth_user_id', user.id).single();
-        const { error } = await sb.from('crm_tickets').insert([{ ...body, client_id: profile?.client_id }]);
-        if (error) throw new Error(error.message);
-        return { ok: true };
-      }
-
-      if (path.match(/^\/api\/portal\/client\/invoices\/(\d+)$/)) {
-        const invoiceId = path.match(/invoices\/(\d+)/)[1];
-        const { data: invoice } = await sb.from('crm_invoices').select('*').eq('id', invoiceId).single();
-        const { data: items } = await sb.from('crm_invoice_items').select('*').eq('invoice_id', invoiceId).order('sort_order');
-        return { detail: { invoice, items } };
-      }
-
-      throw new Error(`Unsupported client portal call: ${path}`);
+      if (window.tmCrmReady) await window.tmCrmReady;
+      if (window.tmCrm?.repository) return window.tmCrm.repository.request(path, options);
+      throw new Error('CRM repository is unavailable. Please refresh the page.');
     }
 
     function logout() {
@@ -345,8 +294,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function renderKpis() {
       const openTickets = state.tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length;
-      const openInvoices = state.invoices.filter((invoice) => !['paid', 'void', 'cancelled'].includes(invoice.status));
-      const outstanding = openInvoices.reduce((sum, invoice) => sum + Number(invoice.total_amount || invoice.amount || 0), 0);
+      const invoiceTotal = (invoice) => Math.max(Number(invoice.total_amount ?? invoice.amount ?? 0) || 0, 0);
+      const invoiceReceived = (invoice) => {
+        const total = invoiceTotal(invoice);
+        if (['paid', 'completed'].includes(String(invoice.status || '').toLowerCase())) return total;
+        return Math.min(Math.max(Number(invoice.received_amount || 0) || 0, 0), total);
+      };
+      const invoiceBalance = (invoice) => String(invoice.status || '').toLowerCase() === 'cancelled'
+        ? 0
+        : Math.max(invoiceTotal(invoice) - invoiceReceived(invoice), 0);
+      const openInvoices = state.invoices.filter((invoice) => invoiceBalance(invoice) > 0);
+      const outstanding = openInvoices.reduce((sum, invoice) => sum + invoiceBalance(invoice), 0);
       kpisEl.innerHTML = [
         ['Projects', state.projects.length, 'Linked active work'],
         ['Open tickets', openTickets, 'Support in progress'],
@@ -438,9 +396,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const logoUrl = branding.logo_url || '/icon.png';
       const signatureUrl = branding.signature_url || inv.sign_url || '';
 
-      const total = Number(inv.total_amount || inv.amount || 0);
-      const received = Number(inv.received_amount || (inv.status === 'paid' ? total : 0));
-      const balance = Math.max(total - received, 0);
+      const total = Math.max(Number(inv.total_amount ?? inv.amount ?? 0) || 0, 0);
+      const received = String(inv.status || '').toLowerCase() === 'cancelled'
+        ? 0
+        : ['paid', 'completed'].includes(String(inv.status || '').toLowerCase())
+          ? total
+          : Math.min(Math.max(Number(inv.received_amount || 0) || 0, 0), total);
+      const balance = String(inv.status || '').toLowerCase() === 'cancelled' ? 0 : Math.max(total - received, 0);
       const invoiceNumber = String(inv.invoice_number || inv.id || 'invoice');
       const upiPaymentUri = buildUpiPaymentUri(UPI_ID, UPI_MERCHANT_NAME, invoiceNumber, balance);
       const upiQrUrl = buildUpiQrUrl(upiPaymentUri);
@@ -580,7 +542,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const { data: { session } } = await window.tmSupabase.auth.getSession();
         if (!session) return logout();
         const me = await portal('/api/portal/me');
-        if (me.destination !== '/client') location.href = me.destination;
+        if (me.destination !== '/client') {
+          location.replace(me.destination);
+          return;
+        }
         await loadOverview();
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Could not load portal.', 'error');

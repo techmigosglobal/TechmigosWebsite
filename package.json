@@ -8,6 +8,8 @@
     "build": "astro build",
     "build:vercel": "npm run build",
     "build:full": "npm run build",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
     "preview": "astro preview",
     "astro": "astro",
     "verify:content": "./scripts/verify-blog-content.sh",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@playwright/test": "^1.55.0",
     "@types/node": "^20.12.7",
     "typescript": "^5.9.3"
   },

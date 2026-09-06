@@ -9,6 +9,7 @@ out/
 .vercel/
 exports/
 reports/
+test-results/
 
 # Environment & secrets
 

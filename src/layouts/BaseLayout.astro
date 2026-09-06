@@ -149,6 +149,7 @@ const structuredData = {
       window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
       window.techmigosGetCsrfToken = async function() { return 'no-csrf'; };
       window.tmSupabase = null;
+      window.tmCrmReady = new Promise((resolve) => { window.__resolveTmCrm = resolve; });
 
       try {
         if (sbUrl && sbKey) {
@@ -157,6 +158,13 @@ const structuredData = {
       } catch (e) {
         console.error('Supabase init failed:', e);
       }
+    </script>
+    <script>
+      import { createCrmRepository } from '../lib/crm/repository.js';
+
+      const crmRepository = createCrmRepository(() => window.tmSupabase);
+      window.tmCrm = { repository: crmRepository };
+      window.__resolveTmCrm?.(window.tmCrm);
     </script>
   </head>
   <body class="bg-white text-gray-900">

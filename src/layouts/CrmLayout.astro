@@ -2572,7 +2572,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     ];
 
     const DISABLED_CRM_RESOURCES = new Set(['leads', 'deals', 'followups', 'campaigns']);
-    const ADMIN_ONLY_RESOURCES = new Set(['profiles', 'settings']);
 
     const hoverCache = new Map();
     let hoverGen = 0;
@@ -2585,6 +2584,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       financeEditMode: false,
       financeDensity: 'comfortable',
       profile: null,
+      cacheUserId: null,
       selectedProjectId: null,
       selectedTicketId: null,
       selectedClientId: null,
@@ -2809,22 +2809,22 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function setStatus(message, tone = 'neutral') {
       els.status.textContent = message;
       els.status.style.color = tone === 'error' ? 'var(--crm-red)' : tone === 'success' ? 'var(--crm-green)' : '#667599';
+      let retry = document.getElementById('crm-retry-load');
+      if (tone === 'error') {
+        if (!retry) {
+          retry = document.createElement('button');
+          retry.id = 'crm-retry-load';
+          retry.type = 'button';
+          retry.className = 'crm-button';
+          retry.textContent = 'Retry';
+          els.status.insertAdjacentElement('afterend', retry);
+          retry.addEventListener('click', () => loadData());
+        }
+        retry.style.display = 'inline-flex';
+      } else if (retry) {
+        retry.style.display = 'none';
+      }
     }
-
-    const TABLE_MAP = {
-      leads: 'crm_leads',
-      clients: 'crm_clients',
-      projects: 'crm_projects',
-      deals: 'crm_deals',
-      tickets: 'crm_tickets',
-      invoices: 'crm_invoices',
-      finances: 'crm_finances',
-      followups: 'crm_followups',
-      campaigns: 'crm_campaigns',
-      activities: 'crm_activities',
-      profiles: 'crm_profiles',
-      ticket_messages: 'crm_ticket_messages',
-    };
 
     const RESOURCE_FIELDS = {
       leads: ['name', 'email', 'company', 'phone', 'service', 'budget', 'priority', 'status', 'assigned_to', 'message', 'source', 'source_path'],
@@ -2849,17 +2849,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     const BOOLEAN_FIELDS = new Set(['marketing_opt_in', 'is_recurring']);
 
-    function tableName(resource) {
-      return TABLE_MAP[resource] || resource;
-    }
-
     function isCompanyAdmin() {
       return state.profile?.role === 'company_admin';
     }
 
     function canWrite(resource) {
       const role = state.profile?.role;
-      if (role === 'company_admin' || role === 'company_member') return true;
+      if (role === 'company_admin') return true;
       if (role === 'client') {
         return ['tickets', 'ticket_messages'].includes(resource);
       }
@@ -2868,17 +2864,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function isDisabledResource(resource) {
       return DISABLED_CRM_RESOURCES.has(resource);
-    }
-
-    function ensurePortalAccess(resource) {
-      if (!resource || resource === 'me' || resource === 'client') return;
-      if (!['company_admin', 'company_member'].includes(state.profile?.role)) {
-        throw new Error('This workspace is available to company staff only.');
-      }
-      if (isDisabledResource(resource)) throw new Error(`${nice(resource)} is not enabled in this CRM workspace.`);
-      if (ADMIN_ONLY_RESOURCES.has(resource) && !isCompanyAdmin()) {
-        throw new Error('Only company admins can access this area.');
-      }
     }
 
     function validatePayload(resource, payload) {
@@ -2914,20 +2899,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return '';
     }
 
-    function sanitizeInvoiceItems(items = []) {
-      return items
-        .map((item, index) => ({
-          description: String(item.description || '').trim(),
-          quantity: Number(item.quantity || 1),
-          rate: Number(item.rate || 0),
-          amount: Number(item.amount || ((Number(item.quantity || 1) * Number(item.rate || 0)) || 0)),
-          unit: String(item.unit || '').trim(),
-          notes: String(item.notes || '').trim(),
-          sort_order: Number(item.sort_order ?? index),
-        }))
-        .filter((item) => item.description);
-    }
-
     function sanitizeResourcePayload(resource, payload = {}) {
       const allowed = RESOURCE_FIELDS[resource];
       const clean = {};
@@ -2948,209 +2919,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function portal(path, options = {}) {
-      const method = (options.method || 'GET').toUpperCase();
-      const body = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : null;
-      const parts = path.replace(/^\/api\/portal\//, '').split('/').filter(Boolean);
-      const resource = parts[0];
-      const id = parts[1];
-      const sub = parts[2];
-      const table = tableName(resource);
-
-      if (resource === 'me') {
-        const { data: { user } } = await window.tmSupabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-        const { data: profile } = await window.tmSupabase
-          .from('crm_profiles')
-          .select('*')
-          .eq('auth_user_id', user.id)
-          .single();
-        if (!profile) throw new Error('Profile not found');
-        if (profile.status !== 'active') throw new Error('This company account is not active.');
-        if (profile.role === 'client') throw new Error('Access denied');
-        return { profile, destination: '/company' };
-      }
-
-      ensurePortalAccess(resource);
-
-      if (resource === 'settings') {
-        const category = id || 'company';
-        if (method === 'GET') {
-          const { data } = await window.tmSupabase
-            .from('crm_settings')
-            .select('settings')
-            .eq('category', category)
-            .single();
-          return { settings: data?.settings || {} };
-        }
-        if (method === 'PATCH') {
-          const { data: existing } = await window.tmSupabase
-            .from('crm_settings')
-            .select('id, settings')
-            .eq('category', category)
-            .single();
-          if (existing) {
-            await window.tmSupabase
-              .from('crm_settings')
-              .update({ settings: { ...existing.settings, ...body } })
-              .eq('id', existing.id);
-          }
-          return { ok: true };
-        }
-      }
-
-      if (resource === 'invoices' && id && sub === 'upload-sign') {
-        const file = options.body?.get?.('file');
-        if (!file) throw new Error('No file provided');
-        const path = `signatures/${id}/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await window.tmSupabase.storage
-          .from('invoice-signatures')
-          .upload(path, file, { upsert: true });
-        if (uploadError) throw new Error(uploadError.message);
-        const { data: urlData } = window.tmSupabase.storage
-          .from('invoice-signatures')
-          .getPublicUrl(path);
-        await window.tmSupabase
-          .from('crm_invoices')
-          .update({ sign_url: urlData.publicUrl })
-          .eq('id', id);
-        return { sign_url: urlData.publicUrl };
-      }
-
-      if (resource === 'finances' && (id === 'upload-proof' || sub === 'upload-proof') && method === 'POST') {
-        const file = options.body?.get?.('file');
-        if (!file) throw new Error('No file provided');
-        const uploadName = id && id !== 'upload-proof' ? `records/${id}/${Date.now()}-${file.name}` : `pending/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await window.tmSupabase.storage
-          .from('finance-proofs')
-          .upload(uploadName, file, { upsert: true });
-        if (uploadError) throw new Error(uploadError.message);
-        if (id) {
-          await window.tmSupabase
-            .from('crm_finances')
-            .update({ proof_url: uploadName })
-            .eq('id', id);
-        }
-        return { proof_url: uploadName, proof_key: uploadName };
-      }
-
-      if (resource === 'invoices' && id && sub === undefined && method === 'GET') {
-        const { data: invoice } = await window.tmSupabase
-          .from('crm_invoices')
-          .select('*')
-          .eq('id', id)
-          .single();
-        const { data: items } = await window.tmSupabase
-          .from('crm_invoice_items')
-          .select('*')
-          .eq('invoice_id', id)
-          .order('sort_order');
-        return { detail: { invoice, items } };
-      }
-
-      if (resource === 'client') {
-        if (id === 'overview') {
-          const { data: { user } } = await window.tmSupabase.auth.getUser();
-          const { data: profile } = await window.tmSupabase
-            .from('crm_profiles')
-            .select('client_id')
-            .eq('auth_user_id', user.id)
-            .single();
-          const clientId = profile?.client_id;
-          if (!clientId) throw new Error('No client linked');
-          const [clientRes, projectsRes, invoicesRes, ticketsRes] = await Promise.all([
-            window.tmSupabase.from('crm_clients').select('*').eq('id', clientId).single(),
-            window.tmSupabase.from('crm_projects').select('*').eq('client_id', clientId),
-            window.tmSupabase.from('crm_invoices').select('*').eq('client_id', clientId),
-            window.tmSupabase.from('crm_tickets').select('*').eq('client_id', clientId),
-          ]);
-          return {
-            client: clientRes.data,
-            projects: projectsRes.data || [],
-            invoices: invoicesRes.data || [],
-            tickets: ticketsRes.data || [],
-          };
-        }
-      }
-
-      if (method === 'GET' && !id) {
-        const { data, error } = await window.tmSupabase
-          .from(table)
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) throw new Error(error.message);
-        return { items: data || [] };
-      }
-
-      if (method === 'POST' && !id) {
-        const invoiceItems = resource === 'invoices' ? sanitizeInvoiceItems(body?.items || []) : [];
-        const rows = (Array.isArray(body) ? body : [body]).map((row) => sanitizeResourcePayload(resource, row));
-        const { data, error } = await window.tmSupabase
-          .from(table)
-          .insert(rows)
-          .select();
-        if (error) throw new Error(error.message);
-
-        if (resource === 'invoices' && invoiceItems.length) {
-          const invoiceId = data[0]?.id;
-          if (invoiceId) {
-            const items = invoiceItems.map((item, i) => ({
-              invoice_id: invoiceId,
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              rate: item.rate || 0,
-              amount: (item.quantity || 1) * (item.rate || 0),
-              unit: item.unit || '',
-              notes: item.notes || '',
-              sort_order: i,
-            }));
-            await window.tmSupabase.from('crm_invoice_items').insert(items);
-          }
-        }
-
-        return { item: data?.[0], items: data };
-      }
-
-      if (method === 'PATCH' && id) {
-        const invoiceItems = resource === 'invoices' ? sanitizeInvoiceItems(body?.items || []) : [];
-        const updateBody = sanitizeResourcePayload(resource, body);
-        const { data, error } = await window.tmSupabase
-          .from(table)
-          .update(updateBody)
-          .eq('id', id)
-          .select();
-        if (error) throw new Error(error.message);
-
-        if (resource === 'invoices' && Array.isArray(body?.items)) {
-          await window.tmSupabase.from('crm_invoice_items').delete().eq('invoice_id', id);
-          const items = invoiceItems.map((item, i) => ({
-            invoice_id: id,
-            description: item.description || '',
-            quantity: item.quantity || 1,
-            rate: item.rate || 0,
-            amount: (item.quantity || 1) * (item.rate || 0),
-            unit: item.unit || '',
-            notes: item.notes || '',
-            sort_order: i,
-          }));
-          if (items.length) await window.tmSupabase.from('crm_invoice_items').insert(items);
-        }
-
-        return { item: data?.[0] };
-      }
-
-      if (method === 'DELETE' && id) {
-        const { error } = await window.tmSupabase
-          .from(table)
-          .delete()
-          .eq('id', id);
-        if (error) throw new Error(error.message);
-        return { ok: true };
-      }
-
-      throw new Error(`Unsupported portal call: ${method} ${path}`);
+      if (window.tmCrmReady) await window.tmCrmReady;
+      if (window.tmCrm?.repository) return window.tmCrm.repository.request(path, options);
+      throw new Error('CRM repository is unavailable. Please refresh the page.');
     }
 
     function logout() {
+      window.tmCrm?.repository?.clearSession?.();
+      const userId = state.cacheUserId || state.profile?.auth_user_id;
+      if (userId) {
+        Object.keys(sessionStorage).filter((key) => key.includes(`_${userId}_`)).forEach((key) => sessionStorage.removeItem(key));
+        sessionStorage.removeItem(`tm_crm_profile_${userId}`);
+      }
+      ['tm_crm_profile', 'tm_crm_data'].forEach((key) => sessionStorage.removeItem(key));
       window.tmSupabase.auth.signOut();
       location.href = '/login';
     }
@@ -3216,7 +2997,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function syncNavVisibility() {
       document.querySelectorAll('[data-nav-key]').forEach((link) => {
         const key = link.getAttribute('data-nav-key');
-        const hideForNonAdmin = (key === 'users' || key === 'settings') && !isCompanyAdmin();
+        const hideForNonAdmin = ['employees', 'users', 'settings'].includes(key) && !isCompanyAdmin();
         link.style.display = hideForNonAdmin ? 'none' : '';
       });
     }
@@ -4148,13 +3929,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
             <button class="crm-mini-action" type="button" data-proof-open="${escapeHtml(item.proof_url)}">Preview</button>
             <button class="crm-mini-action" type="button" data-proof-link="${escapeHtml(item.proof_url)}">Open</button>
-            <label class="crm-mini-action" style="cursor:pointer;" title="Replace proof">↑<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+            ${canWrite('finances') ? '<label class="crm-mini-action" style="cursor:pointer;" title="Replace proof">↑<input type="file" data-proof-upload="' + id + '" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>' : ''}
           </div>
           <span class="crm-proof-status" data-proof-status="${id}" style="font-size:10px;color:#667599;"></span>
         </div>`;
       }
       return `<div class="crm-proof-cell" data-proof-cell="${id}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-        <label class="crm-mini-action" style="cursor:pointer;" title="Upload proof">+ Proof<input type="file" data-proof-upload="${id}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>
+        ${canWrite('finances') ? '<label class="crm-mini-action" style="cursor:pointer;" title="Upload proof">+ Proof<input type="file" data-proof-upload="' + id + '" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" /></label>' : '<span class="crm-proof-summary">No proof</span>'}
         <div class="crm-proof-preview-inline" data-proof-preview="${id}">${proofSummaryMarkup('')}</div>
         <span class="crm-proof-status" data-proof-status="${id}" style="font-size:10px;color:#667599;"></span>
       </div>`;
@@ -4164,12 +3945,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const raw = String(value || '').trim();
       if (!raw) return '';
       if (/^https?:\/\//i.test(raw)) return raw;
-      const cleanPath = raw.replace(/^finance-proofs\//, '');
-      if (window.tmSupabase?.storage) {
-        const { data } = window.tmSupabase.storage.from('finance-proofs').getPublicUrl(cleanPath);
-        if (data?.publicUrl) return data.publicUrl;
-      }
-      return raw;
+      return '';
     }
 
     function proofPreviewMarkup(url) {
@@ -4177,6 +3953,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const resolvedUrl = getResolvedProofUrl(url);
       const safeUrl = escapeHtml(resolvedUrl);
       const safeRawUrl = escapeHtml(url);
+      if (!resolvedUrl) return `<button class="crm-mini-action" type="button" data-proof-open="${safeRawUrl}">${proofIconMarkup('paperclip', 14)} Load secure preview</button>`;
       if (/\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(url) || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(resolvedUrl)) {
         return `<a href="${safeUrl}" target="_blank" rel="noopener"><img src="${safeUrl}" alt="Proof preview" style="max-width:220px;max-height:160px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff;" /></a>`;
       }
@@ -4212,19 +3989,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     async function resolveProofUrl(value) {
       const raw = String(value || '').trim();
       if (!raw) return '';
-      const resolvedPublic = getResolvedProofUrl(raw);
       const path = proofStoragePath(raw);
       if (!path && /^https?:\/\//i.test(raw)) return raw;
-      if (!path && resolvedPublic) return resolvedPublic;
-      if (!path) return raw;
+      if (!path) throw new Error('The stored proof path is invalid.');
       try {
-        const { data, error } = await window.tmSupabase.storage
-          .from('finance-proofs')
-          .createSignedUrl(path, 60 * 60);
-        if (error) return resolvedPublic || raw;
-        return data?.signedUrl || resolvedPublic || raw;
-      } catch {
-        return resolvedPublic || raw;
+        return await window.tmCrm.repository.getFinanceProofUrl(path);
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Could not create secure proof URL.');
       }
     }
 
@@ -4261,11 +4032,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function financeProofFieldMarkup(values = {}) {
       const proofUrl = String(values.proof_url || '');
+      const recordId = Number.isInteger(Number(values.id)) ? String(values.id) : '';
       return `<div class="wide" style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;">
         <strong style="font-size:12px;">Payment Proof Attachment</strong>
-        <span style="display:block;font-size:10px;color:#667599;margin-bottom:6px;">Upload a receipt, screenshot, or PDF proof. It will be saved with the transaction and can be included in reports.</span>
+        <span style="display:block;font-size:10px;color:#667599;margin-bottom:6px;">${recordId ? 'Upload a receipt, screenshot, or PDF proof. It will be saved with the transaction and can be included in reports.' : 'Save the finance record first, then reopen it to attach proof.'}</span>
         ${proofUrl ? `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofPreviewMarkup(proofUrl)}</div>` : `<div id="finance-proof-preview" style="margin-bottom:8px;">${proofSummaryMarkup('')}</div>`}
-        <input type="file" id="finance-proof-file" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:block;" />
+        <input type="file" id="finance-proof-file" data-record-id="${escapeHtml(recordId)}" accept="image/*,.pdf,.jpg,.jpeg,.png,.webp" style="display:block;" ${recordId ? '' : 'disabled'} />
         <input type="hidden" name="proof_url" id="finance-proof-url" value="${escapeHtml(proofUrl)}" />
         <span id="finance-proof-status" style="font-size:10px;color:#667599;"></span>
       </div>`;
@@ -4426,7 +4198,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
       const canWriteFinance = canWrite('finances');
       const tabActions = isBuilder
-        ? `<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button>${isCompanyAdmin() ? '<button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button>' : ''}<button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button><button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>`
+        ? `<button class="crm-button" type="button" id="inv-cancel-btn">Back to Invoices</button>${isCompanyAdmin() ? '<button class="crm-button green" type="button" id="inv-save-settings">Save Settings</button><button class="crm-button primary" type="button" id="inv-save-invoice">Save Invoice</button>' : ''}<button class="crm-button" type="button" id="inv-print-btn">Print / PDF</button>`
         : '<button class="crm-button" data-export="finance" type="button">Export CSV</button>';
 
       const subtitles = isBuilder
@@ -4538,8 +4310,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               ? `<button class="crm-button" data-invoice-income="${invoiceId}" type="button" style="font-size:11px;padding:5px 8px;">+ Add income</button>`
               : '<span style="font-size:10px;color:#94a3b8;">Awaiting payment</span>';
           const proofAction = proofUrl
-            ? `<button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview proof</button><label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${invoiceId}" accept="image/*,.pdf" style="display:none;" /></label>`
-            : incomeRecord
+            ? `<button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview proof</button>${canWriteFinance ? `<label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${invoiceId}" accept="image/*,.pdf" style="display:none;" /></label>` : ''}`
+            : incomeRecord && canWriteFinance
               ? `<label class="crm-mini-action" style="cursor:pointer;">+ Proof<input type="file" data-invoice-proof-upload="${invoiceId}" accept="image/*,.pdf" style="display:none;" /></label>`
               : '<span style="font-size:10px;color:#94a3b8;">Add income first</span>';
           return `<tr class="acc-tbl-row" data-row-id="${record.id}" data-record-kind="invoice">
@@ -4565,8 +4337,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td>${catBadge(r.transaction_type)}</td>
             <td class="${isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
             <td>${sBadge(r.status)}</td>
-            ${showProof ? `<td><div class="acc-proof-actions">${proofIcon(r)}<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label></div></td>` : ''}
-            <td><div style="display:flex;gap:4px;align-items:center;">
+            ${showProof ? `<td><div class="acc-proof-actions">${proofIcon(r)}${canWriteFinance ? `<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label>` : ''}</div></td>` : ''}
+            <td><div style="display:${canWriteFinance ? 'flex' : 'none'};gap:4px;align-items:center;">
               <button class="crm-button" data-edit-finance="${r.id}" type="button" title="Edit" aria-label="Edit" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
               <button class="crm-button" data-del-finance="${r.id}" type="button" title="Delete" aria-label="Delete" style="padding:4px 7px;display:inline-flex;align-items:center;justify-content:center;line-height:1;color:#dc2626;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
             </div></td>
@@ -4590,7 +4362,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
           let proofContentMarkup = '';
           if (row.proof_url) {
-            if (isPdf) {
+            if (!resolvedUrl) {
+              proofContentMarkup = `<div style="border:1px dashed #cbd5e1;border-radius:10px;padding:20px;text-align:center;color:#64748b;font-size:12px;"><p style="margin:0 0 10px;font-weight:700;">Proof is stored privately.</p><button class="crm-button primary" type="button" data-proof-open="${safeRawUrl}">Load secure preview</button></div>`;
+            } else if (isPdf) {
               proofContentMarkup = `
                 <div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:10px;">
                   <iframe src="${safeUrl}#toolbar=0" style="width:100%;height:320px;border:none;display:block;background:#f8fafc;" title="PDF Preview"></iframe>
@@ -4627,7 +4401,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             }
           } else {
             proofContentMarkup = `
-              <label style="display:flex;flex-direction:column;align-items:center;gap:8px;border:1.5px dashed #d1d5db;border-radius:10px;padding:20px;cursor:pointer;background:#fafafa;transition:background .15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fafafa'">
+              <label style="display:${canWriteFinance ? 'flex' : 'none'};flex-direction:column;align-items:center;gap:8px;border:1.5px dashed #d1d5db;border-radius:10px;padding:20px;cursor:pointer;background:#fafafa;transition:background .15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fafafa'">
                 <div class="acc-proof-empty-icon">${proofIconMarkup('upload', 30)}</div>
                 <span style="font-size:12px;color:#94a3b8;font-weight:600;">No proof attached</span>
                 <span style="font-size:11px;color:#6366f1;font-weight:700;">Click to Upload</span>
@@ -4710,7 +4484,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ${financialPulse}
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:16px;font-weight:800;color:#1e293b;">Invoices</div>
-            <button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>
+            ${canWriteFinance ? '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>' : ''}
           </div>
           ${state.data.invoices.length === 0
             ? `<div style="text-align:center;padding:60px 20px;"><div style="font-size:48px;margin-bottom:12px;">🧾</div><div style="font-size:15px;font-weight:700;color:#475569;margin-bottom:6px;">No Invoices Yet</div><p style="font-size:13px;color:#94a3b8;">Create your first invoice to get started.</p></div>`
@@ -4720,12 +4494,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               const proofUrl = incomeRecord?.proof_url || '';
               const incomeAction = incomeRecord
                 ? '<span style="font-size:10px;color:#15803d;font-weight:700;white-space:nowrap;">Recorded</span>'
-                : invoicePaidAmount(inv) > 0
+                : invoicePaidAmount(inv) > 0 && canWriteFinance
                   ? `<button class="crm-button" data-invoice-income="${inv.id}" type="button" style="font-size:11px;padding:5px 8px;white-space:nowrap;">+ Add income</button>`
                   : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">Awaiting payment</span>';
               const proofAction = proofUrl
-                ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"><button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview</button><label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${inv.id}" accept="image/*,.pdf" style="display:none;" /></label></div>`
-                : incomeRecord
+                ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"><button class="crm-mini-action" data-proof-open="${escapeHtml(proofUrl)}" type="button">Preview</button>${canWriteFinance ? `<label class="crm-mini-action" style="cursor:pointer;">Replace<input type="file" data-invoice-proof-upload="${inv.id}" accept="image/*,.pdf" style="display:none;" /></label>` : ''}</div>`
+                : incomeRecord && canWriteFinance
                   ? `<label class="crm-mini-action" style="cursor:pointer;white-space:nowrap;">+ Upload PDF<input type="file" data-invoice-proof-upload="${inv.id}" accept="image/*,.pdf" style="display:none;" /></label>`
                   : '<span style="font-size:10px;color:#94a3b8;">Add income first</span>';
               return `<tr class="acc-tbl-row">
@@ -4946,6 +4720,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ${isBuilder ? financeSheetTabs() : ''}
         ${bodyContent}`;
 
+      if (!canWriteFinance) {
+        els.view.querySelectorAll('[data-load-invoice], [data-del-invoice]').forEach((element) => { element.style.display = 'none'; });
+      }
+
       if (isBuilder) {
         initInvoiceBuilder();
       } else {
@@ -4974,7 +4752,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (index === -1) state.data.finances.unshift(record);
       else state.data.finances[index] = { ...state.data.finances[index], ...record };
       try {
-        sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
+        sessionStorage.setItem(crmCacheKey('data'), JSON.stringify(state.data));
       } catch (error) {
         console.warn('Finance cache write failed:', error);
       }
@@ -4986,7 +4764,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (index === -1) state.data.invoices.unshift(record);
       else state.data.invoices[index] = { ...state.data.invoices[index], ...record };
       try {
-        sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
+        sessionStorage.setItem(crmCacheKey('data'), JSON.stringify(state.data));
       } catch (error) {
         console.warn('Invoice cache write failed:', error);
       }
@@ -5197,11 +4975,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         btn.addEventListener('click', async e => {
           e.stopPropagation();
           if (!confirm('Delete this record?')) return;
-          const { error } = await window.tmSupabase.from('crm_finances').delete().eq('id', btn.dataset.delFinance);
-          if (error) { alert('Delete failed: ' + error.message); return; }
-          state.data.finances = state.data.finances.filter(r => String(r.id) !== String(btn.dataset.delFinance));
-          if (state.accSelectedId === btn.dataset.delFinance) state.accSelectedId = null;
-          renderFinance();
+          try {
+            await portal(`/api/portal/finances/${btn.dataset.delFinance}`, { method: 'DELETE' });
+            state.data.finances = state.data.finances.filter(r => String(r.id) !== String(btn.dataset.delFinance));
+            if (state.accSelectedId === btn.dataset.delFinance) state.accSelectedId = null;
+            renderFinance();
+          } catch (error) {
+            toast(error instanceof Error ? error.message : 'Delete failed.');
+          }
         });
       });
       // ── Delete invoice ──
@@ -5209,10 +4990,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         btn.addEventListener('click', async e => {
           e.stopPropagation();
           if (!confirm('Delete invoice?')) return;
-          const { error } = await window.tmSupabase.from('crm_invoices').delete().eq('id', btn.dataset.delInvoice);
-          if (error) { alert('Delete failed: ' + error.message); return; }
-          state.data.invoices = state.data.invoices.filter(r => String(r.id) !== String(btn.dataset.delInvoice));
-          renderFinance();
+          try {
+            await portal(`/api/portal/invoices/${btn.dataset.delInvoice}`, { method: 'DELETE' });
+            state.data.invoices = state.data.invoices.filter(r => String(r.id) !== String(btn.dataset.delInvoice));
+            renderFinance();
+          } catch (error) {
+            toast(error instanceof Error ? error.message : 'Delete failed.');
+          }
         });
       });
       // ── Load invoice into builder ──
@@ -5398,7 +5182,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="inv-section-title">Client Details</div>
               <div style="margin-bottom:14px;">
                 <label style="font-size:12px;font-weight:800;color:#27364a;display:block;margin-bottom:6px;">Select Existing Client</label>
-                <select id="inv-client-select" class="crm-select" style="width:100%;">
+                <select id="inv-client-select" class="crm-select" required style="width:100%;">
                   <option value="">— Choose a Client to Auto-Fetch Details —</option>
                   ${state.data.clients.map(c => `<option value="${c.id}">${escapeHtml(c.company || c.name)}</option>`).join('')}
                 </select>
@@ -5485,6 +5269,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       function getValue(id) { return (document.getElementById(id)?.value || '').trim(); }
       function isChecked(id) { return !!document.getElementById(id)?.checked; }
       function getPreviewSrc(id) { return document.getElementById(id)?.querySelector('img')?.src || ''; }
+      async function resolveInvoiceAsset(path, fallback = '') {
+        if (!path) return fallback;
+        try {
+          return await window.tmCrm.repository.getInvoiceAssetUrl(path);
+        } catch (error) {
+          setAssetStatus(error instanceof Error ? error.message : 'Could not resolve invoice branding asset.', true);
+          return fallback;
+        }
+      }
       function setFieldValue(id, value, dispatch = false) {
         const element = document.getElementById(id);
         if (!element) return;
@@ -5594,11 +5387,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         element.querySelectorAll('[data-delete-invoice-asset]').forEach((button) => button.addEventListener('click', () => deleteLocalAsset(button.dataset.deleteInvoiceAsset)));
       }
 
-      function deleteLocalAsset(assetId) {
+      async function deleteLocalAsset(assetId) {
         const assets = readLocalAssets();
         const asset = assets.find((row) => row.id === assetId);
         if (!asset || !confirm('Delete this asset from browser storage?')) return;
-        writeLocalAssets(assets.filter((row) => row.id !== assetId));
+        try {
+          if (asset.object_key && asset.storage_mode === 'cloud') await window.tmCrm.repository.deleteInvoiceAsset(asset.object_key);
+          writeLocalAssets(assets.filter((row) => row.id !== assetId));
+        } catch (error) {
+          setAssetStatus(error instanceof Error ? error.message : 'Could not delete cloud asset.', true);
+          return;
+        }
         if (asset.category === 'signature' && getPreviewSrc('inv-sign-preview') === asset.url) {
           setPreview('inv-sign-preview', '');
           setCurrentSignature('');
@@ -5609,35 +5408,36 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           updatePreview();
         }
         renderAssetList();
-        setAssetStatus('Asset deleted from this browser.');
+        setAssetStatus('Asset deleted.');
       }
 
       async function saveAsset(file, category, previewId) {
         if (!file) return null;
         const fileName = file.name || 'asset';
-        const objectKey = `local/${category}/${Date.now()}-${safeAssetName(fileName)}`;
         let url = '';
-        let storageMode = 'cloud';
+        let objectKey = '';
         setAssetStatus('Saving asset...');
         try {
-          const path = `invoice-assets/${category}/${Date.now()}-${safeAssetName(fileName)}`;
-          const { error } = await window.tmSupabase.storage.from('invoice-signatures').upload(path, file, { upsert: true });
-          if (error) throw error;
-          const { data } = window.tmSupabase.storage.from('invoice-signatures').getPublicUrl(path);
-          url = data?.publicUrl || '';
+          const result = await window.tmCrm.repository.uploadInvoiceAsset(category, file);
+          url = result.url;
+          objectKey = result.path || '';
         } catch (error) {
-          storageMode = 'local';
-          url = await fileToDataUrl(file);
-          setAssetStatus(`Cloud storage unavailable; ${fileName} saved in this browser.`);
+          setAssetStatus(error instanceof Error ? error.message : 'Could not save asset.', true);
+          throw error;
         }
         if (!url) throw new Error('Could not create an asset preview.');
-        const asset = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, object_key: storageMode === 'local' ? objectKey : fileName, url, file_name: fileName, mime_type: file.type || '', size_bytes: file.size || 0, category, storage_mode: storageMode, created_at: new Date().toISOString() };
+        const asset = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, object_key: objectKey || fileName, url, file_name: fileName, mime_type: file.type || '', size_bytes: file.size || 0, category, storage_mode: 'cloud', created_at: new Date().toISOString() };
         writeLocalAssets([asset, ...readLocalAssets().filter((row) => row.id !== asset.id)]);
         if (previewId) setPreview(previewId, url);
         if (category === 'signature') setCurrentSignature(url);
         renderAssetList();
         updatePreview();
-        saveSharedInvoiceBranding().catch((error) => console.warn('Could not save shared invoice branding:', error));
+        try {
+          await saveSharedInvoiceBranding();
+        } catch (error) {
+          setAssetStatus(error instanceof Error ? error.message : 'Could not save shared invoice branding.', true);
+          throw error;
+        }
         if (storageMode === 'cloud') setAssetStatus(`${fileName} saved.`);
         return asset;
       }
@@ -5647,21 +5447,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           logoUrl: getPreviewSrc('inv-logo-preview'),
           qrUrl: getPreviewSrc('inv-qr-preview'),
           signUrl: getPreviewSrc('inv-sign-preview'),
+          logoPath: readLocalAssets().find((asset) => asset.category === 'logo')?.object_key || '',
+          qrPath: readLocalAssets().find((asset) => asset.category === 'qr_code')?.object_key || '',
+          signPath: readLocalAssets().find((asset) => asset.category === 'signature')?.object_key || '',
         };
-        const { data: existing, error: lookupError } = await window.tmSupabase.from('crm_settings').select('id, settings').eq('category', 'invoice').maybeSingle();
-        if (lookupError) throw lookupError;
-        const settings = { ...(existing?.settings || {}), ...settingsFields };
-        const result = existing
-          ? await window.tmSupabase.from('crm_settings').update({ settings }).eq('id', existing.id)
-          : await window.tmSupabase.from('crm_settings').insert({ category: 'invoice', settings });
-        if (result.error) throw result.error;
+        await portal('/api/portal/settings/invoice', { method: 'PATCH', body: JSON.stringify(settingsFields) });
       }
 
       // Load saved company settings from the project's category/settings schema.
       async function loadBuilderSettings() {
         try {
-          const { data } = await window.tmSupabase.from('crm_settings').select('settings').eq('category', 'invoice').maybeSingle();
-          const s = data?.settings || {};
+          const response = await portal('/api/portal/settings/invoice');
+          const s = response.settings || {};
           if (Object.keys(s).length) {
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
             const setCheckbox = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
@@ -5690,9 +5487,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             setVal('inv-received', s.received ?? 0);
             setCheckbox('inv-is-recurring', s.isRecurring || s.is_recurring);
             const localAssets = readLocalAssets();
-            setPreview('inv-logo-preview', s.logoUrl || localAssets.find((asset) => asset.category === 'logo')?.url || '');
-            setPreview('inv-qr-preview', s.qrUrl || localAssets.find((asset) => asset.category === 'qr_code')?.url || '');
-            setPreview('inv-sign-preview', s.signUrl || localAssets.find((asset) => asset.category === 'signature')?.url || '');
+            setPreview('inv-logo-preview', s.logoUrl || await resolveInvoiceAsset(s.logoPath, localAssets.find((asset) => asset.category === 'logo')?.url || ''));
+            setPreview('inv-qr-preview', s.qrUrl || await resolveInvoiceAsset(s.qrPath, localAssets.find((asset) => asset.category === 'qr_code')?.url || ''));
+            setPreview('inv-sign-preview', s.signUrl || await resolveInvoiceAsset(s.signPath, localAssets.find((asset) => asset.category === 'signature')?.url || ''));
             setCurrentSignature(getPreviewSrc('inv-sign-preview'));
 
             // Restore items
@@ -5747,9 +5544,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             if (invoice.company_name) setVal('inv-company-name', invoice.company_name);
             if (invoice.gst_number) setVal('inv-gst', invoice.gst_number);
             const savedBranding = invoiceBranding(invoice);
-            const signatureUrl = savedBranding.signature_url || invoice.sign_url || getPreviewSrc('inv-sign-preview');
-            if (savedBranding.logo_url) setPreview('inv-logo-preview', savedBranding.logo_url);
-            if (savedBranding.qr_url) setPreview('inv-qr-preview', savedBranding.qr_url);
+            const signatureUrl = savedBranding.signature_url || invoice.sign_url || await resolveInvoiceAsset(savedBranding.signature_path, getPreviewSrc('inv-sign-preview'));
+            if (savedBranding.logo_url || savedBranding.logo_path) setPreview('inv-logo-preview', savedBranding.logo_url || await resolveInvoiceAsset(savedBranding.logo_path));
+            if (savedBranding.qr_url || savedBranding.qr_path) setPreview('inv-qr-preview', savedBranding.qr_url || await resolveInvoiceAsset(savedBranding.qr_path));
             if (signatureUrl) setPreview('inv-sign-preview', signatureUrl);
             setCurrentSignature(signatureUrl);
 
@@ -6048,12 +5845,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           items
         };
         try {
-          const { data: existing, error: lookupError } = await window.tmSupabase.from('crm_settings').select('id').eq('category', 'invoice').maybeSingle();
-          if (lookupError) throw lookupError;
-          const result = existing
-            ? await window.tmSupabase.from('crm_settings').update({ settings }).eq('id', existing.id)
-            : await window.tmSupabase.from('crm_settings').insert({ category: 'invoice', settings });
-          if (result.error) throw result.error;
+          await portal('/api/portal/settings/invoice', { method: 'PATCH', body: JSON.stringify(settings) });
           showToast('Invoice builder settings saved', 'success');
         } catch (e) { showToast('Failed to save: ' + e.message, 'error'); }
       }
@@ -6097,10 +5889,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ? (grandTotal > 0 && balanceAmount <= 0 ? 'paid' : dueDatePassed && balanceAmount > 0 ? 'overdue' : receivedAmount > 0 ? 'sent' : 'draft')
           : selectedStatus;
 
+        const localAssets = readLocalAssets();
         const branding = {
           logo_url: getPreviewSrc('inv-logo-preview'),
           qr_url: getPreviewSrc('inv-qr-preview'),
           signature_url: getPreviewSrc('inv-sign-preview'),
+          logo_path: localAssets.find((asset) => asset.category === 'logo')?.object_key || '',
+          qr_path: localAssets.find((asset) => asset.category === 'qr_code')?.object_key || '',
+          signature_path: localAssets.find((asset) => asset.category === 'signature')?.object_key || '',
         };
         const projectId = projectSnapshot.id ? Number(projectSnapshot.id) : null;
         const payload = {
@@ -6138,23 +5934,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         let savedInvoice = null;
 
         try {
-          if (state.invoiceBuilderId) {
-            const { data, error } = await window.tmSupabase.from('crm_invoices').update(invoicePayload).eq('id', state.invoiceBuilderId).select().single();
-            if (error) throw error;
-            savedInvoice = data;
-            if (data) upsertInvoiceRecord(data);
-
-            await replaceInvoiceItems(state.invoiceBuilderId, invoiceItems);
-            showToast('Invoice updated successfully');
-          } else {
-            const { data: inv, error } = await window.tmSupabase.from('crm_invoices').insert(invoicePayload).select().single();
-            if (error) throw error;
-            savedInvoice = inv;
-            if (inv) upsertInvoiceRecord(inv);
-
-            if (inv) await replaceInvoiceItems(inv.id, invoiceItems);
-            showToast('Invoice created successfully');
-          }
+          const endpoint = state.invoiceBuilderId
+            ? `/api/portal/invoices/${encodeURIComponent(state.invoiceBuilderId)}`
+            : '/api/portal/invoices';
+          const result = await portal(endpoint, {
+            method: state.invoiceBuilderId ? 'PATCH' : 'POST',
+            body: JSON.stringify({ ...invoicePayload, items: invoiceItems }),
+          });
+          savedInvoice = result.item;
+          if (savedInvoice) upsertInvoiceRecord(savedInvoice);
+          showToast(state.invoiceBuilderId ? 'Invoice updated successfully' : 'Invoice created successfully');
 
           // Open the actual invoice records view after saving. The default
           // overview only contains finance transactions, so it cannot show
@@ -6176,14 +5965,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           console.error('Invoice save failed:', error);
           showToast(message);
         }
-      }
-
-      async function replaceInvoiceItems(invoiceId, items) {
-        const { error: deleteError } = await window.tmSupabase.from('crm_invoice_items').delete().eq('invoice_id', invoiceId);
-        if (deleteError) throw deleteError;
-        const itemRows = items.map((item, index) => ({ invoice_id: invoiceId, description: item.description, quantity: item.quantity, rate: item.rate, amount: item.total, unit: item.unit, notes: item.notes, sort_order: index }));
-        const { error } = await window.tmSupabase.from('crm_invoice_items').insert(itemRows);
-        if (error) throw error;
       }
 
       // Bind save buttons
@@ -6802,9 +6583,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function employeeSeed() {
-      const profiles = state.data.profiles.filter((item) => item.role !== 'client');
-      if (profiles.length) return profiles;
-      return [{ id: 'me', name: state.profile?.name || 'Company Admin', email: state.profile?.email || '', role: state.profile?.role || 'company_admin', status: 'active' }];
+      return state.data.profiles.filter((item) => item.role !== 'client');
     }
 
     function renderEmployees() {
@@ -6982,7 +6761,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Overview</h2></div><div class="crm-list"><div class="crm-list-row"><span>Access control model</span><strong>Role-based (RBAC)</strong></div><div class="crm-list-row"><span>Inactive accounts</span><strong>${profiles.filter((item) => item.status === 'inactive').length}</strong></div><div class="crm-list-row"><span>Client logins</span><strong>${profiles.filter((p) => p.role === 'client').length}</strong></div><div class="crm-list-row"><span>Admin accounts</span><strong>${profiles.filter((p) => p.role === 'company_admin').length}</strong></div></div><div class="crm-toolbar" style="padding:12px 18px;"><button class="crm-button" id="btn-reset-password" type="button">Reset Password</button></div></section>
         </div>`;
       document.getElementById('users-search')?.addEventListener('input', (e) => { state.usersSearch = e.target.value; renderUsers(); bindActions(); });
-      document.getElementById('btn-invite-user')?.addEventListener('click', () => toast('Invite sent via password reset email. Ask the user to check their inbox.'));
+      document.getElementById('btn-invite-user')?.addEventListener('click', () => openCreate('profiles'));
     }
 
     function renderCrudResource(resource, title, subtitle, columns) {
@@ -7399,17 +7178,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function openProfileManagement() {
       const profile = state.profile || {};
+      const canEditProfile = isCompanyAdmin();
       els.modalTitle.textContent = 'Profile Management';
       els.modalBody.innerHTML = `<form id="crm-profile-form" class="crm-form-grid">
-        <label>Name<input name="name" value="${escapeHtml(profile.name || '')}" /></label>
-        <label>Email<input name="email" type="email" value="${escapeHtml(profile.email || '')}" /></label>
+        <label>Name<input name="name" value="${escapeHtml(profile.name || '')}" ${canEditProfile ? '' : 'disabled'} /></label>
+        <label>Email<input name="email" type="email" value="${escapeHtml(profile.email || '')}" ${canEditProfile ? '' : 'disabled'} /></label>
         <label>Role<input value="${escapeHtml(profile.role || '')}" disabled /></label>
         <label>Status<input value="${escapeHtml(profile.status || 'active')}" disabled /></label>
-        <button class="crm-button primary wide" type="submit">Update Profile</button>
+        ${canEditProfile ? '<button class="crm-button primary wide" type="submit">Update Profile</button>' : '<p class="crm-help wide">Employee profiles are managed by a company admin.</p>'}
       </form>`;
       els.modal.classList.add('open');
       document.getElementById('crm-profile-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (!canEditProfile) return;
         const body = { name: event.currentTarget.querySelector('[name="name"]').value.trim(), email: event.currentTarget.querySelector('[name="email"]').value.trim() };
         try {
           if (profile.id) {
@@ -7838,20 +7619,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function uploadFinanceProof(file, recordId = '') {
+      if (!recordId || !Number.isInteger(Number(recordId))) {
+        throw new Error('Save the finance record before attaching proof.');
+      }
       const fd = new FormData();
       fd.append('file', file);
-      try {
-        const endpoint = recordId
-          ? `/api/portal/finances/${encodeURIComponent(recordId)}/upload-proof`
-          : '/api/portal/finances/upload-proof';
-        return await portal(endpoint, { method: 'POST', body: fd, headers: {} });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Proof upload failed';
-        if (/row-level security|violates|status code 400|storage/i.test(message)) {
-          throw new Error('Supabase storage policy is blocking uploads for `finance-proofs`. Apply the new storage RLS policy in Supabase, then retry.');
-        }
-        throw error;
-      }
+      return portal(`/api/portal/finances/${encodeURIComponent(recordId)}/upload-proof`, { method: 'POST', body: fd, headers: {} });
     }
 
     async function addInvoiceAsIncome(invoiceId) {
@@ -7919,7 +7692,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         status.textContent = 'Uploading proof...';
         status.style.color = '#667599';
         try {
-          const res = await uploadFinanceProof(file);
+          const recordId = input.dataset.recordId;
+          const res = await uploadFinanceProof(file, recordId);
           urlInput.value = res.proof_url || '';
           preview.innerHTML = proofPreviewMarkup(res.proof_url);
           status.textContent = '✓ Proof uploaded';
@@ -7948,11 +7722,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             status.style.color = '#667599';
           }
           try {
-            const res = await uploadFinanceProof(file);
-            await portal(`/api/portal/finances/${rowId}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ proof_url: res.proof_url }),
-            });
+            const res = await uploadFinanceProof(file, rowId);
             if (preview) preview.innerHTML = proofSummaryMarkup(res.proof_url);
             if (status) {
               status.textContent = `✓ ${file.name}`;
@@ -8492,17 +8262,27 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function showInvoice(id) {
-      const result = await portal(`/api/portal/invoices/${id}`);
-      const detail = result.detail;
-      els.invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
-      els.invoicePreview.innerHTML = invoiceHtml(detail);
-      els.invoicePreview.dataset.invoiceNumber = detail.invoice.invoice_number || id;
-      els.invoiceModal.classList.add('open');
+      try {
+        const result = await portal(`/api/portal/invoices/${id}`);
+        const detail = result.detail;
+        els.invoicePreviewTitle.textContent = `Invoice ${detail.invoice.invoice_number}`;
+        els.invoicePreview.innerHTML = invoiceHtml(detail);
+        els.invoicePreview.dataset.invoiceNumber = detail.invoice.invoice_number || id;
+        els.invoiceModal.classList.add('open');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Could not load invoice.', 'error');
+      }
+    }
+
+    function crmCacheKey(kind) {
+      const userId = state.cacheUserId || state.profile?.auth_user_id || 'session';
+      const role = state.profile?.role || 'unknown';
+      return `tm_crm_${kind}_${userId}_${role}`;
     }
 
     async function loadData() {
       try {
-        const cached = sessionStorage.getItem('tm_crm_data');
+        const cached = sessionStorage.getItem(crmCacheKey('data'));
         if (cached) {
           state.data = JSON.parse(cached);
           setStatus('Syncing with database...', 'success');
@@ -8523,10 +8303,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           if (name === 'profiles' && state.profile?.role !== 'company_admin') return false;
           return true;
         });
-        const results = await Promise.allSettled(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
-        results.forEach((r) => { if (r.status === 'fulfilled') { const [name, items] = r.value; state.data[name] = items; } });
+        const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
+        results.forEach(([name, items]) => { state.data[name] = items; });
         try {
-          sessionStorage.setItem('tm_crm_data', JSON.stringify(state.data));
+          sessionStorage.setItem(crmCacheKey('data'), JSON.stringify(state.data));
         } catch (e) {
           console.warn('Cache write failed:', e);
         }
@@ -8543,6 +8323,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       try {
         const { data: { session } } = await window.tmSupabase.auth.getSession();
         if (!session) return logout();
+        state.cacheUserId = session.user.id;
         if (DISABLED_CRM_RESOURCES.has(state.active)) {
           window.location.replace('/company/dashboard');
           return;
@@ -8569,7 +8350,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
         // Try profile from cache
         try {
-          const cachedProfile = sessionStorage.getItem('tm_crm_profile');
+          const cachedProfile = sessionStorage.getItem(`tm_crm_profile_${state.cacheUserId}`);
           if (cachedProfile) {
             state.profile = JSON.parse(cachedProfile);
             const displayName = state.profile.name || 'TechMigos';
@@ -8585,9 +8366,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         }
 
         const me = await portal('/api/portal/me');
+        if (me.destination !== '/company') {
+          window.location.replace(me.destination);
+          return;
+        }
         state.profile = me.profile;
+        if (['employees', 'users', 'settings'].includes(state.active) && !isCompanyAdmin()) {
+          window.location.replace('/company/dashboard');
+          return;
+        }
         try {
-          sessionStorage.setItem('tm_crm_profile', JSON.stringify(state.profile));
+          sessionStorage.setItem(`tm_crm_profile_${state.cacheUserId}`, JSON.stringify(state.profile));
         } catch (e) {
           console.warn('Profile cache write failed:', e);
         }
