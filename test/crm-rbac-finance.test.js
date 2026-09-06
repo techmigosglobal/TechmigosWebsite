@@ -11,7 +11,9 @@ import {
   calculateInvoiceTotals,
   FINANCE_CASH_TRANSACTION_TYPES,
   FINANCE_EXPENSE_TRANSACTION_TYPES,
+  FINANCE_INCOME_TRANSACTION_TYPES,
   FINANCE_TRANSACTION_TYPES,
+  isIncomeTransaction,
   invoiceBalance,
   invoiceReceived,
   invoiceTotal,
@@ -53,8 +55,13 @@ test('invoice totals normalize line items and settle fully-paid invoices', () =>
 
 test('invoice ledger entries stay separate from cash income and expenses', () => {
   assert.equal(FINANCE_TRANSACTION_TYPES.has('invoice'), true);
+  assert.equal(FINANCE_INCOME_TRANSACTION_TYPES.has('invoice'), true);
   assert.equal(FINANCE_CASH_TRANSACTION_TYPES.has('invoice'), false);
   assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('invoice'), false);
   assert.equal(FINANCE_CASH_TRANSACTION_TYPES.has('income'), true);
   assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('expense'), true);
+  assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'pending' }), true);
+  assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'cancelled' }), false);
+  assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'received' }), true);
+  assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'pending' }), false);
 });

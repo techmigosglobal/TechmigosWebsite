@@ -113,9 +113,9 @@ Tickets support `open`, `in_progress`, `waiting`, `resolved`, and `closed` statu
 Finance has two intentionally separate record families:
 
 - `crm_finances` is the transaction ledger. It supports `income`, `expense`, `revenue`, `salary`, and `invoice` entries. An invoice entry records the financial event in Transactions and may link to a generated invoice through `invoice_id`.
-- `crm_invoices` and `crm_invoice_items` are the generated invoice document and its line items. Invoice Generation saves those records atomically and is not a cash-income entry.
+- `crm_invoices` and `crm_invoice_items` are the generated invoice document and its line items. Invoice Generation saves those records atomically; saving a generated invoice also maintains its linked invoice ledger entry automatically.
 
-Cash KPIs include only settled `income`/`revenue` ledger rows; invoice documents and invoice ledger entries do not inflate cash income. When a customer payment is received, the separate income row can link back to the generated invoice through `invoice_id`. Finance is company-staff only; clients have no finance-table policy.
+The Income KPI includes active invoice ledger entries immediately, plus settled `income`/`revenue` rows. Cancelled invoices are excluded. This is billed income/revenue, not a claim that payment was received; invoice payment rows remain separately identifiable when recorded. Finance is company-staff only; clients have no finance-table policy.
 
 The inline transaction row now works as follows:
 
