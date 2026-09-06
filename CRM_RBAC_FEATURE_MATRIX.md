@@ -110,7 +110,12 @@ Tickets support `open`, `in_progress`, `waiting`, `resolved`, and `closed` statu
 
 ## Finance workflow and the proof/pending fixes
 
-Finance records use `income`, `expense`, `revenue`, or `salary` categories and `pending`, `paid`, `received`, `half_payment`, or `cancelled` statuses ([finance schema](supabase/migrations/20260628062713_init_crm_schema.sql#L178-L200)). Finance is company-staff only; clients have no finance-table policy.
+Finance has two intentionally separate record families:
+
+- `crm_finances` is the transaction ledger. It supports `income`, `expense`, `revenue`, `salary`, and `invoice` entries. An invoice entry records the financial event in Transactions and may link to a generated invoice through `invoice_id`.
+- `crm_invoices` and `crm_invoice_items` are the generated invoice document and its line items. Invoice Generation saves those records atomically and is not a cash-income entry.
+
+Cash KPIs include only settled `income`/`revenue` ledger rows; invoice documents and invoice ledger entries do not inflate cash income. When a customer payment is received, the separate income row can link back to the generated invoice through `invoice_id`. Finance is company-staff only; clients have no finance-table policy.
 
 The inline transaction row now works as follows:
 

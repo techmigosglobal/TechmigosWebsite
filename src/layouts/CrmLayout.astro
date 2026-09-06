@@ -2604,6 +2604,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       accTxPage: 1,
       accSelectedId: null,
       accInlineFinanceId: null,
+      accInlineFinanceType: null,
       projectView: 'board',
       projectSearch: '',
       ticketView: 'board',
@@ -2675,13 +2676,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     const SETTLED_FINANCE_STATUSES = new Set(['paid', 'received', 'completed']);
     const SETTLED_EXPENSE_STATUSES = new Set(['paid', 'completed']);
     const SETTLED_INVOICE_STATUSES = new Set(['paid', 'completed']);
+    const SETTLED_INVOICE_TRANSACTION_STATUSES = new Set(['paid', 'received', 'completed']);
 
     function normalizedStatus(value) {
       return String(value || '').trim().toLowerCase();
     }
 
     function isSettledFinance(item) {
-      const statuses = ['income', 'revenue'].includes(normalizedStatus(item.transaction_type))
+      const transactionType = normalizedStatus(item.transaction_type);
+      if (transactionType === 'invoice') return SETTLED_INVOICE_TRANSACTION_STATUSES.has(normalizedStatus(item.status));
+      const statuses = ['income', 'revenue'].includes(transactionType)
         ? SETTLED_FINANCE_STATUSES
         : SETTLED_EXPENSE_STATUSES;
       return statuses.has(normalizedStatus(item.status));
@@ -2742,46 +2746,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function findInvoiceIncomeRecord(invoice, finances = state.data.finances) {
       const reference = String(invoice?.invoice_number || '').trim().toLowerCase();
-      if (!reference) return null;
+      const invoiceId = String(invoice?.id || '');
+      if (!reference && !invoiceId) return null;
       return finances.find((item) =>
         ['income', 'revenue'].includes(normalizedStatus(item.transaction_type))
-        && String(item.reference_id || '').trim().toLowerCase() === reference,
+        && ((invoiceId && String(item.invoice_id || '') === invoiceId)
+          || (reference && String(item.reference_id || '').trim().toLowerCase() === reference)),
       ) || null;
     }
 
-    function invoiceIncomeRows(invoices = state.data.invoices, finances = state.data.finances) {
-      const linkedFinanceReferences = new Set(
-        finances
-          .filter((item) => ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item))
-          .map((item) => String(item.reference_id || '').trim().toLowerCase())
-          .filter(Boolean),
-      );
-
-      return invoices
-        .filter((invoice) => isSettledInvoice(invoice))
-        .filter((invoice) => !linkedFinanceReferences.has(String(invoice.invoice_number || '').trim().toLowerCase()))
-        .map((invoice) => ({
-          ...invoice,
-          id: `invoice-${invoice.id}`,
-          invoice_id: invoice.id,
-          record_kind: 'invoice',
-          transaction_type: 'income',
-          transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
-          reference_id: invoice.invoice_number,
-          title: invoice.service_title || invoice.invoice_number || 'Invoice income',
-          client: invoice.customer_company || invoice.customer_name || clientName(invoice.client_id),
-          project: projectName(invoice.project_id),
-          amount: invoicePaidAmount(invoice),
-          status: invoiceEffectiveStatus(invoice),
-          source: 'invoice',
-        }));
-    }
-
-    function incomeRows(finances = state.data.finances, invoices = state.data.invoices) {
-      return [
-        ...finances.filter((item) => ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item)),
-        ...invoiceIncomeRows(invoices, finances),
-      ];
+    function incomeRows(finances = state.data.finances) {
+      return finances.filter((item) => ['income', 'revenue'].includes(normalizedStatus(item.transaction_type)) && isSettledFinance(item));
     }
 
     function expenseRows(finances = state.data.finances) {
@@ -2833,7 +2808,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       deals: ['client_id', 'lead_id', 'title', 'stage', 'value', 'currency', 'expected_close_date', 'assigned_to', 'notes'],
       tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to'],
       invoices: ['client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring'],
-      finances: ['transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
+      finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
       followups: ['related_type', 'related_id', 'title', 'due_at', 'status', 'assigned_to', 'notes'],
       campaigns: ['name', 'subject', 'body', 'status', 'msg91_template_id', 'scheduled_at', 'sent_at'],
       profiles: ['auth_user_id', 'email', 'name', 'role', 'status', 'client_id', 'department'],
@@ -2841,7 +2816,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     };
 
     const NUMERIC_FIELDS = new Set([
-      'client_id', 'lead_id', 'project_id', 'ticket_id', 'related_id',
+      'client_id', 'lead_id', 'project_id', 'ticket_id', 'invoice_id', 'related_id',
       'amount', 'budget', 'value', 'progress', 'expenses', 'revenue',
       'discount_amount', 'tax_amount', 'total_amount', 'received_amount',
       'quantity', 'rate', 'sort_order',
@@ -2889,8 +2864,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (resource === 'finances') {
         if (!payload.transaction_date) return 'Date is required for finance records.';
         if (!payload.transaction_type) return 'Category (transaction type) is required.';
-        if (payload.transaction_type === 'invoice') return 'Use the Invoices tab to create invoice records.';
-        if (!['income', 'revenue', 'expense', 'salary'].includes(payload.transaction_type)) return 'Choose a valid finance category.';
+        if (!['income', 'revenue', 'expense', 'salary', 'invoice'].includes(payload.transaction_type)) return 'Choose a valid finance category.';
         if (!payload.title || !String(payload.title).trim()) return 'Description is required.';
         if (payload.amount === undefined || payload.amount === null || String(payload.amount).trim() === '' || isNaN(Number(payload.amount))) return 'A valid amount is required.';
         if (!payload.status) return 'Status is required.';
@@ -4214,7 +4188,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const fmtINR = (v) => '₹' + Math.abs(Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const isInc = (t) => ['income', 'revenue'].includes(t);
-        const signedINR = (v, t) => (isInc(t) ? '+' : '-') + fmtINR(Math.abs(Number(v) || 0));
+        const signedINR = (v, t) => isInc(t)
+          ? '+' + fmtINR(Math.abs(Number(v) || 0))
+          : t === 'invoice' ? fmtINR(Math.abs(Number(v) || 0)) : '-' + fmtINR(Math.abs(Number(v) || 0));
         const cashFlowByMonth = {};
         collectedIncome.forEach((item) => {
           const month = (item.transaction_date || '').slice(0, 7);
@@ -4279,8 +4255,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const transactionStatusOptions = (selected) => ['pending', 'paid', 'received', 'half_payment', 'cancelled'].map((status) => `<option value="${status}" ${selected === status ? 'selected' : ''}>${nice(status)}</option>`).join('');
         const inlineTransactionRow = (record = {}, showProof = false) => {
           const isNew = !record.id;
-          const type = record.transaction_type || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
-          const status = record.status || (type === 'income' ? 'received' : type === 'invoice' ? 'draft' : 'pending');
+          const type = record.transaction_type || state.accInlineFinanceType || (state.accSubTab === 'income' ? 'income' : state.accSubTab === 'expenses' ? 'expense' : state.accSubTab === 'salary' ? 'salary' : 'expense');
+          const status = record.status || (type === 'income' ? 'received' : 'pending');
           const date = record.transaction_date || new Date().toISOString().slice(0, 10);
           const initialSaveLabel = isNew ? 'Draft · complete required fields' : 'Auto-save ready';
           const proofCellMarkup = showProof
@@ -4335,7 +4311,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <td style="white-space:nowrap;font-size:12px;color:#64748b;">${fmtDate(r.transaction_date)}</td>
             <td style="font-weight:600;">${escapeHtml(r.title || '—')}</td>
             <td>${catBadge(r.transaction_type)}</td>
-            <td class="${isInc(r.transaction_type) ? 'acc-amt-pos' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
+            <td class="${isInc(r.transaction_type) ? 'acc-amt-pos' : r.transaction_type === 'invoice' ? 'acc-amt-invoice' : 'acc-amt-neg'}" style="font-weight:700;">${signedINR(r.amount, r.transaction_type)}</td>
             <td>${sBadge(r.status)}</td>
             ${showProof ? `<td><div class="acc-proof-actions">${proofIcon(r)}${canWriteFinance ? `<label class="acc-proof-btn acc-proof-upload" title="Attach or replace proof" aria-label="Attach or replace proof">${proofIconMarkup('upload')}<input type="file" accept="image/*,.pdf" data-proof-upload="${r.id}" style="display:none;" /></label>` : ''}</div></td>` : ''}
             <td><div style="display:${canWriteFinance ? 'flex' : 'none'};gap:4px;align-items:center;">
@@ -4461,7 +4437,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div style="font-size:16px;font-weight:800;color:#1e293b;">All Transactions</div>
               <div style="display:flex;gap:8px;align-items:center;">
                 <input class="crm-input" id="acc-tx-search" placeholder="Search transactions…" value="${escapeHtml(state.accSearch || '')}" style="width:200px;height:36px;font-size:13px;" />
-                ${canWriteFinance ? '<button class="crm-button primary" data-add-inline-finance type="button">+ Add Row</button>' : ''}
+                ${canWriteFinance ? '<button class="crm-button primary" data-add-inline-finance type="button">+ Add Transaction</button><button class="crm-button" data-add-invoice-finance type="button">+ Add Invoice Entry</button>' : ''}
               </div>
             </div>
             ${subTabs([['all', 'All'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Salary'], ['invoices', 'Invoices']])}
@@ -4684,6 +4660,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           .acc-status-other{background:#f1f5f9;color:#94a3b8;}
           .acc-amt-pos{color:#16a34a;}
           .acc-amt-neg{color:#dc2626;}
+          .acc-amt-invoice{color:#a16207;}
           .acc-proof-btn{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid #dbe5f0;border-radius:8px;background:#fff;color:#64748b;cursor:pointer;padding:0;transition:transform .1s,border-color .1s,background .1s,color .1s;line-height:1;}
           .acc-proof-btn:hover{transform:translateY(-1px);border-color:#99f6e4;background:#f0fdfa;color:#0f766e;}
           .acc-proof-btn.has-proof{border-color:#bbf7d0;background:#f0fdf4;color:#15803d;}
@@ -4834,11 +4811,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         row.querySelectorAll('[data-inline-field]').forEach((field) => {
           field.addEventListener('input', () => scheduleInlineFinanceSave(row));
           field.addEventListener('change', () => {
-            if (field.dataset.inlineField === 'transaction_type' && field.value === 'invoice' && row.dataset.inlineFinanceNew !== undefined) {
-              state.accInlineFinanceId = null;
-              openInvoiceCreateIntegrated();
-              return;
-            }
             scheduleInlineFinanceSave(row);
           });
         });
@@ -4941,6 +4913,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (srch) srch.addEventListener('input', () => { state.accSearch = srch.value; state.accTxPage = 1; renderFinance(); });
       document.querySelector('[data-add-inline-finance]')?.addEventListener('click', () => {
         state.accInlineFinanceId = 'new';
+        state.accInlineFinanceType = null;
+        renderFinance();
+        document.querySelector('[data-inline-field="title"]')?.focus();
+      });
+      document.querySelector('[data-add-invoice-finance]')?.addEventListener('click', () => {
+        state.accInlineFinanceId = 'new';
+        state.accInlineFinanceType = 'invoice';
         renderFinance();
         document.querySelector('[data-inline-field="title"]')?.focus();
       });
@@ -4958,6 +4937,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             if (hasRequiredFields) await saveInlineFinanceRow(row);
           }
           state.accInlineFinanceId = null;
+          state.accInlineFinanceType = null;
           render();
         });
       });
@@ -7636,6 +7616,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (amount <= 0) return toast('Record a received amount or mark the invoice paid before adding income.');
 
       const body = normalizePayload('finances', {
+        invoice_id: invoice.id,
         transaction_date: invoice.invoice_date || String(invoice.created_at || '').slice(0, 10),
         transaction_type: 'income',
         reference_id: invoice.invoice_number,

@@ -1,4 +1,8 @@
 export const INVOICE_SETTLED_STATUSES = new Set(['paid', 'completed']);
+export const FINANCE_TRANSACTION_TYPES = new Set(['income', 'revenue', 'expense', 'salary', 'invoice']);
+export const FINANCE_CASH_TRANSACTION_TYPES = new Set(['income', 'revenue']);
+export const FINANCE_EXPENSE_TRANSACTION_TYPES = new Set(['expense', 'salary']);
+export const FINANCE_TRANSACTION_STATUSES = new Set(['pending', 'paid', 'received', 'half_payment', 'cancelled']);
 
 export function normalizedStatus(value) {
   return String(value ?? '').trim().toLowerCase();

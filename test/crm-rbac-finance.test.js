@@ -9,6 +9,9 @@ import {
 } from '../src/lib/crm/permissions.js';
 import {
   calculateInvoiceTotals,
+  FINANCE_CASH_TRANSACTION_TYPES,
+  FINANCE_EXPENSE_TRANSACTION_TYPES,
+  FINANCE_TRANSACTION_TYPES,
   invoiceBalance,
   invoiceReceived,
   invoiceTotal,
@@ -46,4 +49,12 @@ test('invoice totals normalize line items and settle fully-paid invoices', () =>
   assert.equal(totals.received, 950);
   assert.equal(totals.status, 'paid');
   assert.equal(totals.items.length, 2);
+});
+
+test('invoice ledger entries stay separate from cash income and expenses', () => {
+  assert.equal(FINANCE_TRANSACTION_TYPES.has('invoice'), true);
+  assert.equal(FINANCE_CASH_TRANSACTION_TYPES.has('invoice'), false);
+  assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('invoice'), false);
+  assert.equal(FINANCE_CASH_TRANSACTION_TYPES.has('income'), true);
+  assert.equal(FINANCE_EXPENSE_TRANSACTION_TYPES.has('expense'), true);
 });

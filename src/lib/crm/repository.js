@@ -1,4 +1,5 @@
 import { CRM_ROLES, canRead, canWrite, isAdmin, isClient } from './permissions.js';
+import { FINANCE_TRANSACTION_STATUSES, FINANCE_TRANSACTION_TYPES } from './finance.js';
 
 const TABLE_MAP = Object.freeze({
   clients: 'crm_clients',
@@ -20,7 +21,7 @@ const RESOURCE_FIELDS = Object.freeze({
   ticket_messages: ['id', 'ticket_id', 'body', 'author_name', 'author_role', 'visibility', 'created_at'],
   invoices: ['id', 'client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring', 'created_at', 'updated_at'],
   invoice_items: ['id', 'invoice_id', 'description', 'quantity', 'rate', 'amount', 'unit', 'notes', 'sort_order', 'created_at'],
-  finances: ['id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url', 'created_at', 'updated_at'],
+  finances: ['id', 'invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url', 'created_at', 'updated_at'],
   activities: ['id', 'action', 'entity_type', 'entity_id', 'summary', 'user_id', 'created_at'],
   profiles: ['id', 'auth_user_id', 'email', 'name', 'role', 'status', 'client_id', 'department', 'last_login', 'created_at', 'updated_at'],
   settings: ['id', 'category', 'settings', 'updated_at'],
@@ -30,11 +31,11 @@ const WRITE_FIELDS = Object.freeze({
   clients: ['name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes'],
   projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
   tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to'],
-  finances: ['transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
+  finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
   settings: ['settings'],
 });
 
-const NUMERIC_FIELDS = new Set(['client_id', 'project_id', 'ticket_id', 'amount', 'budget', 'expenses', 'revenue', 'progress', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'quantity', 'rate', 'sort_order']);
+const NUMERIC_FIELDS = new Set(['client_id', 'project_id', 'ticket_id', 'invoice_id', 'amount', 'budget', 'expenses', 'revenue', 'progress', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'quantity', 'rate', 'sort_order']);
 const BOOLEAN_FIELDS = new Set(['marketing_opt_in', 'is_recurring']);
 const FILE_LIMIT = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
@@ -126,6 +127,12 @@ export function createCrmRepository(getSupabase) {
       output[key] = value;
     }
     if (resource === 'projects' && output.progress !== undefined) output.progress = Math.max(0, Math.min(100, output.progress));
+    if (resource === 'finances' && output.transaction_type && !FINANCE_TRANSACTION_TYPES.has(output.transaction_type)) {
+      throw new Error('Choose a valid finance category.');
+    }
+    if (resource === 'finances' && output.status && !FINANCE_TRANSACTION_STATUSES.has(output.status)) {
+      throw new Error('Choose a valid finance status.');
+    }
     return output;
   }
 
