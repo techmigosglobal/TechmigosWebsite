@@ -2561,6 +2561,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     const navItems = [
       ['dashboard', 'Dashboard', '⌂'],
       ['projects', 'Projects', '▣'],
+      ['files', 'Project Files', '▱'],
       ['tickets', 'Support Tickets', '◴'],
       ['finance', 'Finance', '▤'],
       ['analytics', 'Analytics', '▥'],
@@ -2607,6 +2608,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       accInlineFinanceType: null,
       projectView: 'board',
       projectSearch: '',
+      fileProjectId: '',
+      fileFolderId: '',
+      fileSearch: '',
       ticketView: 'board',
       ticketStatusFilter: '',
       ticketPriorityFilter: '',
@@ -2625,6 +2629,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         campaigns: [],
         activities: [],
         profiles: [],
+        project_members: [],
+        project_folders: [],
+        project_files: [],
       },
     };
 
@@ -2894,12 +2901,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       clients: ['name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes'],
       projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
       deals: ['client_id', 'lead_id', 'title', 'stage', 'value', 'currency', 'expected_close_date', 'assigned_to', 'notes'],
-      tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to'],
+      tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id'],
       invoices: ['client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring'],
       finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
       followups: ['related_type', 'related_id', 'title', 'due_at', 'status', 'assigned_to', 'notes'],
       campaigns: ['name', 'subject', 'body', 'status', 'msg91_template_id', 'scheduled_at', 'sent_at'],
-      profiles: ['auth_user_id', 'email', 'name', 'role', 'status', 'client_id', 'department'],
+      profiles: ['auth_user_id', 'email', 'username', 'name', 'role', 'status', 'client_id', 'department'],
+      project_members: ['project_id', 'profile_id', 'role'],
+      project_folders: ['project_id', 'parent_id', 'name'],
       ticket_messages: ['ticket_id', 'body', 'author_name', 'author_role', 'visibility'],
     };
 
@@ -2922,6 +2931,20 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (role === 'client') {
         return ['tickets', 'ticket_messages'].includes(resource);
       }
+      return false;
+    }
+
+    function isEmployee() {
+      return state.profile?.role === 'company_member';
+    }
+
+    function canUpdate(resource) {
+      return canWrite(resource) || (isEmployee() && ['projects', 'tickets'].includes(resource));
+    }
+
+    function canReadResource(resource) {
+      if (isCompanyAdmin()) return true;
+      if (isEmployee()) return ['clients', 'projects', 'tickets', 'ticket_messages', 'activities', 'project_members', 'project_folders', 'project_files'].includes(resource);
       return false;
     }
 
@@ -3024,9 +3047,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function rowActions(resource, id, options = {}) {
       const view = options.view ? `<button class="crm-mini-action" ${options.viewAttr || ''} type="button">View</button>` : '';
       const invoice = resource === 'invoices' ? `<button class="crm-mini-action" data-invoice-view="${id}" type="button">Invoice</button>` : '';
-      const editable = canWrite(resource);
+      const editable = canUpdate(resource);
+      const deletable = canWrite(resource);
       const editBtn = editable ? `<button class="crm-mini-action" data-edit-resource="${resource}" data-edit-id="${id}" type="button" title="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : '';
-      const deleteBtn = editable ? `<button class="crm-mini-action danger" data-delete-resource="${resource}" data-delete-id="${id}" type="button" title="Delete"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : '';
+      const deleteBtn = deletable ? `<button class="crm-mini-action danger" data-delete-resource="${resource}" data-delete-id="${id}" type="button" title="Delete"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : '';
       return `<div class="crm-row-actions">
         ${view}${invoice}
         ${editBtn}${deleteBtn}
@@ -3060,7 +3084,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.querySelectorAll('[data-nav-key]').forEach((link) => {
         const key = link.getAttribute('data-nav-key');
         const hideForNonAdmin = ['employees', 'users', 'settings'].includes(key) && !isCompanyAdmin();
-        link.style.display = hideForNonAdmin ? 'none' : '';
+        const hideForEmployee = isEmployee() && ['finance', 'analytics', 'reports', 'clients', 'employees', 'users', 'settings'].includes(key);
+        link.style.display = hideForNonAdmin || hideForEmployee ? 'none' : '';
       });
     }
 
@@ -3087,6 +3112,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     table.labelIndex = 0;
 
     function renderDashboard() {
+      if (isEmployee()) return renderEmployeeDashboard();
       const projects = state.data.projects;
       const tickets = state.data.tickets;
       const clients = state.data.clients;
@@ -3261,6 +3287,26 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           });
         }
       });
+    }
+
+    function renderEmployeeDashboard() {
+      const projects = state.data.projects;
+      const tickets = state.data.tickets;
+      const files = state.data.project_files;
+      const openTickets = tickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status));
+      const activeProjects = projects.filter((project) => ['planning', 'active', 'review'].includes(project.status));
+      const recentFiles = files.slice(0, 5);
+      els.view.innerHTML = `
+        ${pageHead('My delivery workspace', 'Your assigned projects, tickets, and internal files.', '<button class="crm-button primary" data-jump="files" type="button">Open project files</button>')}
+        <div class="crm-grid crm-kpis">
+          ${metric('Assigned projects', projects.length, '▣', 'blue', `${activeProjects.length} active`)}
+          ${metric('Open tickets', openTickets.length, '◴', openTickets.length ? 'orange' : 'green', 'assigned delivery work')}
+          ${metric('Project files', files.length, '▱', 'blue', 'internal only')}
+        </div>
+        <div class="crm-grid mt-5" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">My projects</h2></div><div class="crm-list">${activeProjects.map((project) => `<button class="crm-list-row" data-jump="projects" type="button"><span>${escapeHtml(project.name)}</span><strong>${progress(project.progress)}</strong></button>`).join('') || '<p class="crm-empty">No projects are assigned yet.</p>'}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent files</h2></div><div class="crm-list">${recentFiles.map((file) => `<button class="crm-list-row" data-jump="files" type="button"><span>${escapeHtml(file.original_name)}</span><strong>${Math.ceil(Number(file.size_bytes || 0) / 1024)} KB</strong></button>`).join('') || '<p class="crm-empty">No internal files yet.</p>'}</div></section>
+        </div>`;
     }
 
     // ── PROJECT MANAGEMENT — FULL RECODE ─────────────────────────────────────
@@ -3450,6 +3496,71 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>
         </div>
       `;
+    }
+
+    function renderFiles() {
+      const projects = state.data.projects;
+      const selectedProjectId = String(state.fileProjectId || projects[0]?.id || '');
+      state.fileProjectId = selectedProjectId;
+      const project = projects.find((item) => String(item.id) === selectedProjectId);
+      const folders = state.data.project_folders.filter((folder) => String(folder.project_id) === selectedProjectId);
+      const visibleFiles = state.data.project_files.filter((file) => String(file.project_id) === selectedProjectId && (!state.fileFolderId || String(file.folder_id || '') === String(state.fileFolderId)));
+      const query = state.fileSearch.trim().toLowerCase();
+      const files = query ? visibleFiles.filter((file) => file.original_name.toLowerCase().includes(query)) : visibleFiles;
+      const canManageMembers = isCompanyAdmin();
+      const projectOptions = projects.map((item) => `<option value="${item.id}"${String(item.id) === selectedProjectId ? ' selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
+      const folderOptions = `<option value="">All folders</option>${folders.map((folder) => `<option value="${folder.id}"${String(folder.id) === String(state.fileFolderId) ? ' selected' : ''}>${escapeHtml(folder.name)}</option>`).join('')}`;
+      const fileRows = files.map((file) => `<tr><td><strong>${escapeHtml(file.original_name)}</strong><br><small>${escapeHtml(file.mime_type)}</small></td><td>${Math.max(1, Math.ceil(Number(file.size_bytes || 0) / 1024))} KB</td><td>${new Date(file.created_at).toLocaleDateString('en-IN')}</td><td><div class="crm-row-actions"><button class="crm-mini-action" data-project-file-download="${file.id}" type="button">Download</button>${isCompanyAdmin() || String(file.uploaded_by) === String(state.profile?.auth_user_id) ? `<button class="crm-mini-action danger" data-project-file-delete="${file.id}" type="button">Delete</button>` : ''}</div></td></tr>`).join('');
+      els.view.innerHTML = `
+        ${pageHead('Project files', 'Internal company files for your assigned projects. Client accounts cannot access this area.', '')}
+        <section class="crm-card"><div class="crm-toolbar" style="align-items:end;gap:12px;flex-wrap:wrap;">
+          <label style="min-width:210px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Project</span><select id="project-files-project" class="crm-select">${projectOptions}</select></label>
+          <label style="min-width:180px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Folder</span><select id="project-files-folder" class="crm-select">${folderOptions}</select></label>
+          <label style="min-width:190px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Find a file</span><input id="project-files-search" class="crm-input" value="${escapeHtml(state.fileSearch)}" placeholder="Search file name" /></label>
+          <button id="project-folder-create" class="crm-button" type="button" ${project ? '' : 'disabled'}>New folder</button>
+          <label class="crm-button primary" style="cursor:pointer;" ${project ? '' : 'aria-disabled="true"'}>Upload file<input id="project-file-upload" type="file" hidden ${project ? '' : 'disabled'} /></label>
+          ${canManageMembers && project ? '<button id="project-members-manage" class="crm-button" type="button">Assign team</button>' : ''}
+        </div></section>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">${escapeHtml(project?.name || 'No assigned project')}</h2><span class="text-sm text-slate-500">${folders.length} folders · ${state.data.project_files.filter((file) => String(file.project_id) === selectedProjectId).length} files</span></div>${table(['Name', 'Size', 'Uploaded', 'Actions'], fileRows, project ? 'No files in this location.' : 'No project is assigned to your account.')}</section>`;
+      document.getElementById('project-files-project')?.addEventListener('change', (event) => { state.fileProjectId = event.target.value; state.fileFolderId = ''; renderFiles(); });
+      document.getElementById('project-files-folder')?.addEventListener('change', (event) => { state.fileFolderId = event.target.value; renderFiles(); });
+      document.getElementById('project-files-search')?.addEventListener('input', (event) => { state.fileSearch = event.target.value; renderFiles(); });
+      document.getElementById('project-folder-create')?.addEventListener('click', async () => {
+        const name = prompt('Folder name');
+        if (!name?.trim()) return;
+        try { await portal('/api/portal/project_folders', { method: 'POST', body: JSON.stringify({ project_id: Number(selectedProjectId), name: name.trim(), created_by: state.profile.auth_user_id }) }); await loadData(); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not create folder.'); }
+      });
+      document.getElementById('project-file-upload')?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try { await window.tmCrm.repository.uploadProjectFile(Number(selectedProjectId), state.fileFolderId || null, file); toast('Project file uploaded.'); await loadData(); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not upload project file.'); }
+      });
+      document.querySelectorAll('[data-project-file-download]').forEach((button) => button.addEventListener('click', async () => {
+        try { window.open(await window.tmCrm.repository.getProjectFileUrl(button.dataset.projectFileDownload), '_blank', 'noopener'); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not open project file.'); }
+      }));
+      document.querySelectorAll('[data-project-file-delete]').forEach((button) => button.addEventListener('click', async () => {
+        if (!confirm('Delete this internal project file?')) return;
+        try { await window.tmCrm.repository.deleteProjectFile(button.dataset.projectFileDelete); toast('Project file deleted.'); await loadData(); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not delete project file.'); }
+      }));
+      document.getElementById('project-members-manage')?.addEventListener('click', () => openProjectMembers(selectedProjectId));
+    }
+
+    function openProjectMembers(projectId) {
+      const assigned = new Set(state.data.project_members.filter((member) => String(member.project_id) === String(projectId)).map((member) => String(member.profile_id)));
+      const people = state.data.profiles.filter((profile) => ['company_admin', 'company_member'].includes(profile.role) && profile.status === 'active');
+      els.modalTitle.textContent = 'Assign project team';
+      els.modalBody.innerHTML = `<form id="project-members-form" class="grid gap-3"><p class="text-sm text-slate-500">Only assigned team members can access this project, its tickets, and internal files.</p>${people.map((person) => `<label class="crm-list-row"><span><strong>${escapeHtml(person.name)}</strong><br><small>${escapeHtml(person.username || person.email)}</small></span><input type="checkbox" name="profile_id" value="${person.id}"${assigned.has(String(person.id)) ? ' checked' : ''} /></label>`).join('') || '<p class="crm-empty">No active company users available.</p>'}<button class="crm-button primary" type="submit">Save assignment</button></form>`;
+      els.modal.classList.add('open');
+      document.getElementById('project-members-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const ids = [...new FormData(event.currentTarget).getAll('profile_id')].map(Number);
+        try { await window.tmCrm.repository.setProjectMembers(Number(projectId), ids); els.modal.classList.remove('open'); toast('Project team updated.'); await loadData(); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not update project members.'); }
+      });
     }
 
     function renderProjects() {
@@ -7009,6 +7120,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (badgeEl) { badgeEl.textContent = pendingCount; badgeEl.style.display = pendingCount ? '' : 'none'; }
       if (state.active === 'dashboard') renderDashboard();
       if (state.active === 'projects') renderProjects();
+      if (state.active === 'files') renderFiles();
       if (state.active === 'tickets') renderTickets();
       if (state.active === 'finance') renderFinance();
       if (state.active === 'analytics') renderAnalytics();
@@ -7314,6 +7426,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const projectOpts = () => `<option value="">— None —</option>` + state.data.projects.map((p) => `<option value="${p.id}"${String(values.project_id) === String(p.id) ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
       const leadOpts = () => `<option value="">— None —</option>` + state.data.leads.map((l) => `<option value="${l.id}"${String(values.lead_id) === String(l.id) ? ' selected' : ''}>${escapeHtml(l.name)} (${escapeHtml(l.company || '')})</option>`).join('');
       const empOpts = () => `<option value="">— Unassigned —</option>` + employeeSeed().map((e) => `<option value="${escapeHtml(e.name)}"${values.assigned_to === e.name || values.project_manager === e.name ? ' selected' : ''}>${escapeHtml(e.name)}</option>`).join('');
+      const employeeIdOpts = () => `<option value="">— Unassigned —</option>` + employeeSeed().map((employee) => `<option value="${employee.auth_user_id}"${String(values.assigned_user_id) === String(employee.auth_user_id) ? ' selected' : ''}>${escapeHtml(employee.name || employee.email)}</option>`).join('');
 
       const configs = {
         projects: [
@@ -7337,6 +7450,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           { name: 'project_id',  label: 'Project',      type: 'select', html: `<select name="project_id">${projectOpts()}</select>` },
           { name: 'subject',     label: 'Subject *',    type: 'text', required: true, wide: true, placeholder: 'Brief issue title' },
           { name: 'description', label: 'Description',  type: 'textarea', wide: true, placeholder: 'Detailed issue description...' },
+          { name: 'assigned_user_id', label: 'Assigned user', type: 'select', html: `<select name="assigned_user_id">${employeeIdOpts()}</select>` },
           { name: 'priority',    label: 'Priority',     type: 'select', html: `<select name="priority">${selectOpts([['low','Low'],['medium','Medium'],['high','High'],['urgent','Urgent']], values.priority || 'medium')}</select>` },
           { name: 'assigned_to', label: 'Assigned To',  type: 'select', html: `<select name="assigned_to">${empOpts()}</select>` },
           { name: 'status',      label: 'Status',       type: 'select', html: `<select name="status">${selectOpts([['open','Open'],['in_progress','In Progress'],['waiting','Waiting'],['resolved','Resolved'],['closed','Closed']], values.status || 'open')}</select>` },
@@ -7400,9 +7514,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           { name: 'notes',    label: 'Notes',          type: 'textarea', wide: true, placeholder: 'Optional notes...' },
         ],
         profiles: [
-          { name: 'auth_user_id',        label: 'Auth User ID',       type: 'text',  wide: true, placeholder: 'Optional Supabase auth.users UUID' },
           { name: 'name',               label: 'Full Name *',       type: 'text',  required: true, placeholder: 'Full name' },
+          { name: 'username',           label: 'Username *',        type: 'text',  required: true, placeholder: 'e.g. vishal' },
           { name: 'email',              label: 'Email *',            type: 'email', required: true, placeholder: 'user@example.com' },
+          { name: 'password',           label: 'Initial password',   type: 'password', placeholder: 'Required to create an active account' },
           { name: 'role',               label: 'Role *',             type: 'select', required: true, html: `<select name="role" required>${selectOpts([['company_admin','Company Admin'],['company_member','Company Member'],['client','Client']], values.role || 'company_member')}</select>` },
           { name: 'client_id',          label: 'Client (for client role)', type: 'select', html: `<select name="client_id"><option value="">— None —</option>${state.data.clients.map((c) => `<option value="${c.id}"${String(values.client_id) === String(c.id) ? ' selected' : ''}>${escapeHtml(c.company || c.name)}</option>`).join('')}</select>` },
           { name: 'department',          label: 'Department',         type: 'text', placeholder: 'Operations / Sales / Engineering' },
@@ -7880,7 +7995,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
       els.modalTitle.textContent = `Edit ${resource.replace(/_/g, ' ')}`;
-      els.modalBody.innerHTML = formMarkup(resource, item, 'Save Changes');
+      const employeeEdit = isEmployee() && ['projects', 'tickets'].includes(resource);
+      els.modalBody.innerHTML = employeeEdit ? employeeDeliveryForm(resource, item) : formMarkup(resource, item, 'Save Changes');
       els.modal.classList.add('open');
       if (resource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
@@ -7897,6 +8013,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           toast(error instanceof Error ? error.message : 'Update failed');
         }
       });
+    }
+
+    function employeeDeliveryForm(resource, item) {
+      const fields = resource === 'projects'
+        ? `<label>Status<select name="status">${selectOpts([['planning','Planning'],['active','Active'],['review','Review'],['on_hold','On Hold'],['completed','Completed']], item.status)}</select></label><label>Health<select name="health">${selectOpts([['on_track','On track'],['watch','Watch'],['at_risk','At risk'],['breached','Breached']], item.health)}</select></label><label>Progress %<input name="progress" type="number" min="0" max="100" value="${escapeHtml(item.progress)}" /></label><label class="wide">Delivery summary<textarea name="summary">${escapeHtml(item.summary || '')}</textarea></label><label class="wide">Internal notes<textarea name="notes">${escapeHtml(item.notes || '')}</textarea></label>`
+        : `<label>Status<select name="status">${selectOpts([['open','Open'],['in_progress','In progress'],['waiting','Waiting'],['resolved','Resolved'],['closed','Closed']], item.status)}</select></label><label>Priority<select name="priority">${selectOpts([['low','Low'],['medium','Medium'],['high','High'],['urgent','Urgent']], item.priority)}</select></label><label class="wide">Work update<textarea name="description">${escapeHtml(item.description || '')}</textarea></label>`;
+      return `<form id="crm-edit-form" class="crm-form-grid">${fields}<div class="wide"><button class="crm-button primary" type="submit">Save delivery update</button></div></form>`;
     }
 
     async function duplicateRecord(resource, id) {
@@ -8294,7 +8417,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           if (skipList.has(name)) return false;
           if (isDisabledResource(name)) return false;
           if (name === 'profiles' && state.profile?.role !== 'company_admin') return false;
-          return true;
+          return canReadResource(name);
         });
         const results = await Promise.all(names.map(async (name) => [name, (await portal(`/api/portal/${name}`)).items || []]));
         results.forEach(([name, items]) => {
@@ -8367,6 +8490,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         }
         state.profile = me.profile;
         if (['employees', 'users', 'settings'].includes(state.active) && !isCompanyAdmin()) {
+          window.location.replace('/company/dashboard');
+          return;
+        }
+        if (isEmployee() && ['finance', 'analytics', 'reports', 'clients'].includes(state.active)) {
           window.location.replace('/company/dashboard');
           return;
         }

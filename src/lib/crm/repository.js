@@ -1,4 +1,4 @@
-import { CRM_ROLES, canRead, canWrite, isAdmin, isClient } from './permissions.js';
+import { CRM_ROLES, canCreate, canDelete, canRead, canUpdate, isAdmin, isClient, isEmployee } from './permissions.js';
 import { FINANCE_TRANSACTION_STATUSES, FINANCE_TRANSACTION_TYPES } from './finance.js';
 
 const TABLE_MAP = Object.freeze({
@@ -12,34 +12,51 @@ const TABLE_MAP = Object.freeze({
   activities: 'crm_activities',
   profiles: 'crm_profiles',
   settings: 'crm_settings',
+  project_members: 'crm_project_members',
+  project_folders: 'crm_project_folders',
+  project_files: 'crm_project_files',
 });
 
 const RESOURCE_FIELDS = Object.freeze({
   clients: ['id', 'name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes', 'created_at', 'updated_at'],
   projects: ['id', 'client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes', 'created_at', 'updated_at'],
-  tickets: ['id', 'client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'created_at', 'updated_at'],
+  tickets: ['id', 'client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id', 'created_at', 'updated_at'],
   ticket_messages: ['id', 'ticket_id', 'body', 'author_name', 'author_role', 'visibility', 'created_at'],
   invoices: ['id', 'client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring', 'created_at', 'updated_at'],
   invoice_items: ['id', 'invoice_id', 'description', 'quantity', 'rate', 'amount', 'unit', 'notes', 'sort_order', 'created_at'],
   finances: ['id', 'invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url', 'created_at', 'updated_at'],
   activities: ['id', 'action', 'entity_type', 'entity_id', 'summary', 'user_id', 'created_at'],
-  profiles: ['id', 'auth_user_id', 'email', 'name', 'role', 'status', 'client_id', 'department', 'last_login', 'created_at', 'updated_at'],
+  profiles: ['id', 'auth_user_id', 'email', 'username', 'name', 'role', 'status', 'must_change_password', 'client_id', 'department', 'last_login', 'created_at', 'updated_at'],
   settings: ['id', 'category', 'settings', 'updated_at'],
+  project_members: ['id', 'project_id', 'profile_id', 'role', 'assigned_by', 'created_at'],
+  project_folders: ['id', 'project_id', 'parent_id', 'name', 'created_by', 'created_at'],
+  project_files: ['id', 'project_id', 'folder_id', 'object_path', 'original_name', 'mime_type', 'size_bytes', 'uploaded_by', 'created_at'],
 });
 
 const WRITE_FIELDS = Object.freeze({
   clients: ['name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes'],
   projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
-  tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to'],
+  tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id'],
   finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
   settings: ['settings'],
+  project_members: ['project_id', 'profile_id', 'role'],
+  project_folders: ['project_id', 'parent_id', 'name', 'created_by'],
+  project_files: ['project_id', 'folder_id', 'object_path', 'original_name', 'mime_type', 'size_bytes', 'uploaded_by'],
 });
 
-const NUMERIC_FIELDS = new Set(['client_id', 'project_id', 'ticket_id', 'invoice_id', 'amount', 'budget', 'expenses', 'revenue', 'progress', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'quantity', 'rate', 'sort_order']);
+const NUMERIC_FIELDS = new Set(['client_id', 'project_id', 'ticket_id', 'invoice_id', 'profile_id', 'folder_id', 'amount', 'budget', 'expenses', 'revenue', 'progress', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'size_bytes', 'quantity', 'rate', 'sort_order']);
 const BOOLEAN_FIELDS = new Set(['marketing_opt_in', 'is_recurring']);
 const FILE_LIMIT = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const PROOF_TYPES = new Set([...IMAGE_TYPES, 'application/pdf']);
+const PROJECT_FILE_LIMIT = 50 * 1024 * 1024;
+const PROJECT_FILE_TYPES = new Set([
+  'application/pdf', 'text/plain', 'text/csv', 'application/zip', 'application/x-zip-compressed',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ...IMAGE_TYPES,
+]);
 
 function errorFrom(error, fallback = 'Supabase request failed.') {
   const message = error?.message || fallback;
@@ -66,6 +83,12 @@ function validateFile(file, allowedTypes) {
   if (!file || typeof file.size !== 'number') throw new Error('No file provided.');
   if (!allowedTypes.has(file.type)) throw new Error('Unsupported file type. Use PNG, JPEG, WebP, or PDF.');
   if (file.size > FILE_LIMIT) throw new Error('File is too large. Maximum size is 10 MB.');
+}
+
+function validateProjectFile(file) {
+  if (!file || typeof file.size !== 'number') throw new Error('Choose a file to upload.');
+  if (!PROJECT_FILE_TYPES.has(file.type)) throw new Error('This file type is not allowed for project storage.');
+  if (file.size > PROJECT_FILE_LIMIT) throw new Error('File is too large. Maximum size is 50 MB.');
 }
 
 export function createCrmRepository(getSupabase) {
@@ -107,8 +130,12 @@ export function createCrmRepository(getSupabase) {
     }
     if (method === 'GET') {
       if (!canRead(context?.role, resource)) throw new Error('You do not have access to this CRM resource.');
-    } else if (!canWrite(context?.role, resource)) {
-      throw new Error('This account is read-only for CRM operations.');
+    } else if (method === 'POST' && !canCreate(context?.role, resource)) {
+      throw new Error('You do not have permission to create this CRM resource.');
+    } else if (method === 'PATCH' && !canUpdate(context?.role, resource)) {
+      throw new Error('You do not have permission to update this CRM resource.');
+    } else if (method === 'DELETE' && !canDelete(context?.role, resource)) {
+      throw new Error('You do not have permission to delete this CRM resource.');
     }
   }
 
@@ -305,6 +332,71 @@ export function createCrmRepository(getSupabase) {
     return data?.signedUrl || '';
   }
 
+  async function uploadProjectFile(projectId, folderId, file) {
+    const current = await getContext();
+    if (!isAdmin(current.role) && !isEmployee(current.role)) throw new Error('Only company users can upload project files.');
+    validateProjectFile(file);
+    const numericProjectId = Number(projectId);
+    const numericFolderId = folderId ? Number(folderId) : null;
+    if (!Number.isInteger(numericProjectId)) throw new Error('Choose a project before uploading a file.');
+    if (numericFolderId !== null && !Number.isInteger(numericFolderId)) throw new Error('Invalid project folder.');
+    const path = `projects/${numericProjectId}/${Date.now()}-${cleanPathSegment(file.name)}`;
+    const client = sb();
+    const upload = await client.storage.from('project-files').upload(path, file, { upsert: false, contentType: file.type });
+    if (upload.error) throw errorFrom(upload.error, 'Could not upload the project file.');
+    const { data, error } = await client.from('crm_project_files').insert({
+      project_id: numericProjectId,
+      folder_id: numericFolderId,
+      object_path: path,
+      original_name: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+      uploaded_by: current.user.id,
+    }).select(RESOURCE_FIELDS.project_files.join(',')).single();
+    if (error) {
+      await client.storage.from('project-files').remove([path]);
+      throw errorFrom(error, 'Could not save the project file record.');
+    }
+    return { item: data };
+  }
+
+  async function getProjectFileUrl(id) {
+    await getContext();
+    const fileId = Number(id);
+    if (!Number.isInteger(fileId)) throw new Error('Invalid project file.');
+    const { data: file, error: fileError } = await sb().from('crm_project_files')
+      .select('id, object_path').eq('id', fileId).maybeSingle();
+    if (fileError || !file) throw errorFrom(fileError, 'Project file is unavailable.');
+    const { data, error } = await sb().storage.from('project-files').createSignedUrl(file.object_path, 600);
+    if (error || !data?.signedUrl) throw errorFrom(error, 'Could not create a project file download link.');
+    return data.signedUrl;
+  }
+
+  async function deleteProjectFile(id) {
+    await getContext();
+    const fileId = Number(id);
+    if (!Number.isInteger(fileId)) throw new Error('Invalid project file.');
+    const client = sb();
+    const { data: file, error: fileError } = await client.from('crm_project_files')
+      .select('id, object_path').eq('id', fileId).maybeSingle();
+    if (fileError || !file) throw errorFrom(fileError, 'Project file is unavailable.');
+    const { error: storageError } = await client.storage.from('project-files').remove([file.object_path]);
+    if (storageError) throw errorFrom(storageError, 'Could not remove the stored project file.');
+    const { error } = await client.from('crm_project_files').delete().eq('id', fileId);
+    if (error) throw errorFrom(error, 'Could not remove the project file record.');
+    return { ok: true };
+  }
+
+  async function setProjectMembers(projectId, profileIds) {
+    await getContext();
+    if (!isAdmin(context?.role)) throw new Error('Only company admins can assign project members.');
+    const { error } = await sb().rpc('set_project_members', {
+      p_project_id: Number(projectId),
+      p_profile_ids: [...new Set((profileIds || []).map(Number).filter(Number.isInteger))],
+    });
+    if (error) throw errorFrom(error, 'Could not update project membership.');
+  }
+
   async function clientOverview() {
     const current = await getContext();
     if (!isClient(current.role) || !current.clientId) throw new Error('No active client link is configured.');
@@ -412,6 +504,8 @@ export function createCrmRepository(getSupabase) {
     if (resource === 'invoices' && id && sub === 'upload-sign' && method === 'POST') return uploadInvoiceSign(id, options.body?.get?.('file'));
     if (resource === 'finances' && sub === 'upload-proof' && method === 'POST') return uploadFinanceProof(id, options.body?.get?.('file'));
     if (resource === 'invoices' && id && !sub && method === 'GET') return getInvoiceDetail(id);
+    if (resource === 'project-files' && id && sub === 'download' && method === 'GET') return { url: await getProjectFileUrl(id) };
+    if (resource === 'project-files' && id && method === 'DELETE') return deleteProjectFile(id);
     if (resource === 'invoices' && (method === 'POST' || method === 'PATCH')) {
       return saveInvoice({ ...(body || {}), invoice: { ...(body?.invoice || body || {}), ...(id ? { id } : {}) } });
     }
@@ -426,7 +520,7 @@ export function createCrmRepository(getSupabase) {
       if (error) throw errorFrom(error, `Could not load ${resource}.`);
       return { items: data || [] };
     }
-    if (resource === 'profiles' && method === 'POST' && !id) return adminUserOperation('invite', body || {});
+    if (resource === 'profiles' && method === 'POST' && !id) return adminUserOperation(body?.password ? 'provision' : 'invite', body || {});
     if (resource === 'profiles' && method === 'PATCH' && id) return adminUserOperation('update_profile', { ...(body || {}), profile_id: id });
     if (resource === 'profiles' && method === 'DELETE') throw new Error('Deactivate users from User Management instead of deleting their CRM profile.');
     if (method === 'POST' && !id) {
@@ -438,6 +532,16 @@ export function createCrmRepository(getSupabase) {
     if (method === 'PATCH' && id) {
       const payload = sanitize(resource, body);
       if (!Object.keys(payload).length) throw new Error('No editable fields were supplied.');
+      if (isEmployee(context?.role) && resource === 'projects') {
+        const { data, error } = await client.rpc('employee_update_project', { p_project_id: Number(id), p_patch: payload });
+        if (error) throw errorFrom(error, 'Could not update the assigned project.');
+        return { item: data };
+      }
+      if (isEmployee(context?.role) && resource === 'tickets') {
+        const { data, error } = await client.rpc('employee_update_ticket', { p_ticket_id: Number(id), p_patch: payload });
+        if (error) throw errorFrom(error, 'Could not update the assigned ticket.');
+        return { item: data };
+      }
       const { data, error } = await client.from(table).update(payload).eq('id', Number(id)).select(fields).single();
       if (error) throw errorFrom(error, `Could not update ${resource}.`);
       return { item: data };
@@ -458,6 +562,10 @@ export function createCrmRepository(getSupabase) {
     deleteInvoiceAsset,
     getInvoiceAssetUrl,
     getFinanceProofUrl,
+    uploadProjectFile,
+    getProjectFileUrl,
+    deleteProjectFile,
+    setProjectMembers,
     clearSession() { context = null; contextPromise = null; },
   };
 }

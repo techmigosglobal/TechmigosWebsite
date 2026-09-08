@@ -30,6 +30,19 @@ function normalizedEmail(value: unknown) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+function normalizedUsername(value: unknown) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function validUsername(value: unknown) {
+  return /^[a-z0-9][a-z0-9._-]{2,63}$/.test(normalizedUsername(value));
+}
+
+function validInitialPassword(value: unknown) {
+  const password = String(value ?? '');
+  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+}
+
 function validRole(value: unknown): value is 'company_admin' | 'company_member' | 'client' {
   return ['company_admin', 'company_member', 'client'].includes(String(value));
 }
@@ -69,14 +82,25 @@ async function requireAdmin(request: Request) {
   return { user: authData.user, profile };
 }
 
+async function requireAuthenticatedUser(request: Request) {
+  const authorization = request.headers.get('Authorization') ?? '';
+  const token = authorization.replace(/^Bearer\s+/i, '').trim();
+  if (!token) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+  const { data, error } = await authClient.auth.getUser(token);
+  if (error || !data.user) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+  return data.user;
+}
+
 async function inviteUser(body: Record<string, unknown>) {
   const email = normalizedEmail(body.email);
+  const username = normalizedUsername(body.username);
   const name = String(body.name ?? '').trim();
   const role = body.role;
   const status = validStatus(body.status) ? body.status : 'pending';
   const clientId = body.client_id === '' || body.client_id == null ? null : Number(body.client_id);
 
   if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
+  if (!validUsername(username)) throw new Error('Username must be 3–64 lowercase letters, numbers, dots, underscores, or hyphens.');
   if (!name) throw new Error('Full name is required.');
   if (!validRole(role)) throw new Error('Choose a valid CRM role.');
   await requireClientLink(role, clientId);
@@ -91,13 +115,14 @@ async function inviteUser(body: Record<string, unknown>) {
     .insert({
       auth_user_id: invited.user.id,
       email,
+      username,
       name,
       role,
       status,
       client_id: clientId,
       department: String(body.department ?? '').trim(),
     })
-    .select('id, auth_user_id, email, name, role, status, client_id, department')
+    .select('id, auth_user_id, email, username, name, role, status, must_change_password, client_id, department')
     .single();
 
   if (profileError || !profile) {
@@ -108,13 +133,59 @@ async function inviteUser(body: Record<string, unknown>) {
   return { profile };
 }
 
+async function provisionUser(body: Record<string, unknown>) {
+  const email = normalizedEmail(body.email);
+  const username = normalizedUsername(body.username);
+  const name = String(body.name ?? '').trim();
+  const role = body.role;
+  const department = String(body.department ?? '').trim();
+  const clientId = body.client_id === '' || body.client_id == null ? null : Number(body.client_id);
+  const password = String(body.password ?? '');
+
+  if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
+  if (!validUsername(username)) throw new Error('Username must be 3–64 lowercase letters, numbers, dots, underscores, or hyphens.');
+  if (!name) throw new Error('Full name is required.');
+  if (!validRole(role)) throw new Error('Choose a valid CRM role.');
+  if (!validInitialPassword(password)) throw new Error('Initial password must have at least 8 characters with uppercase, lowercase, number, and symbol.');
+  await requireClientLink(role, clientId);
+
+  const { data: created, error: createError } = await serviceClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name, crm_role: role, force_password_change: true },
+  });
+  if (createError || !created.user) throw new Error(createError?.message || 'Could not create Auth user.');
+
+  const { data: profile, error: profileError } = await serviceClient
+    .from('crm_profiles')
+    .insert({
+      auth_user_id: created.user.id,
+      email,
+      username,
+      name,
+      role,
+      status: 'active',
+      must_change_password: true,
+      client_id: clientId,
+      department,
+    })
+    .select('id, auth_user_id, email, username, name, role, status, must_change_password, client_id, department')
+    .single();
+  if (profileError || !profile) {
+    await serviceClient.auth.admin.deleteUser(created.user.id);
+    throw new Error(profileError?.message || 'Could not create CRM profile.');
+  }
+  return { profile };
+}
+
 async function updateProfile(body: Record<string, unknown>) {
   const profileId = Number(body.profile_id ?? body.id);
   if (!Number.isInteger(profileId) || profileId < 1) throw new Error('A valid profile id is required.');
 
   const { data: existing, error: lookupError } = await serviceClient
     .from('crm_profiles')
-    .select('id, auth_user_id, email, name, role, status, client_id, department')
+    .select('id, auth_user_id, email, username, name, role, status, must_change_password, client_id, department')
     .eq('id', profileId)
     .single();
   if (lookupError || !existing) throw new Error('Profile not found.');
@@ -125,11 +196,13 @@ async function updateProfile(body: Record<string, unknown>) {
   if (!validStatus(status)) throw new Error('Choose a valid account status.');
 
   const email = body.email == null ? existing.email : normalizedEmail(body.email);
+  const username = body.username == null ? existing.username : normalizedUsername(body.username);
   const name = body.name == null ? existing.name : String(body.name).trim();
   const clientId = body.client_id === '' || body.client_id == null
     ? (role === 'client' ? existing.client_id : null)
     : Number(body.client_id);
   if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
+  if (!validUsername(username)) throw new Error('Username must be 3–64 lowercase letters, numbers, dots, underscores, or hyphens.');
   if (!name) throw new Error('Full name is required.');
   await requireClientLink(role, clientId);
 
@@ -146,6 +219,7 @@ async function updateProfile(body: Record<string, unknown>) {
     .from('crm_profiles')
     .update({
       email,
+      username,
       name,
       role,
       status,
@@ -153,10 +227,33 @@ async function updateProfile(body: Record<string, unknown>) {
       department: String(body.department ?? existing.department ?? '').trim(),
     })
     .eq('id', profileId)
-    .select('id, auth_user_id, email, name, role, status, client_id, department')
+    .select('id, auth_user_id, email, username, name, role, status, must_change_password, client_id, department')
     .single();
   if (error || !profile) throw new Error(error?.message || 'Could not update CRM profile.');
   return { profile };
+}
+
+async function changeInitialPassword(request: Request, body: Record<string, unknown>) {
+  const user = await requireAuthenticatedUser(request);
+  const password = String(body.password ?? '');
+  if (!validInitialPassword(password)) throw new Error('Password must have at least 8 characters with uppercase, lowercase, number, and symbol.');
+  const { data: profile, error: profileError } = await serviceClient
+    .from('crm_profiles')
+    .select('id, must_change_password')
+    .eq('auth_user_id', user.id)
+    .maybeSingle();
+  if (profileError || !profile || !profile.must_change_password) throw new Error('This account is not awaiting an initial password change.');
+  const { error: updateError } = await serviceClient.auth.admin.updateUserById(user.id, {
+    password,
+    user_metadata: { ...(user.user_metadata || {}), force_password_change: false },
+  });
+  if (updateError) throw new Error(updateError.message);
+  const { error: profileUpdateError } = await serviceClient
+    .from('crm_profiles')
+    .update({ must_change_password: false })
+    .eq('id', profile.id);
+  if (profileUpdateError) throw new Error(profileUpdateError.message);
+  return { ok: true };
 }
 
 Deno.serve(async (request) => {
@@ -164,10 +261,12 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
 
   try {
-    await requireAdmin(request);
     const body = await request.json() as Record<string, unknown>;
     const operation = String(body.operation ?? '').trim();
+    if (operation === 'change_initial_password') return json(await changeInitialPassword(request, body));
+    await requireAdmin(request);
     if (operation === 'invite') return json(await inviteUser(body), 201);
+    if (operation === 'provision') return json(await provisionUser(body), 201);
     if (operation === 'update_profile' || operation === 'set_status') return json(await updateProfile(body));
     return json({ error: 'Unsupported admin user operation.' }, 400);
   } catch (error) {

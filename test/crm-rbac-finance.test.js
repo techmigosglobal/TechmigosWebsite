@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import {
   CRM_ROLES,
   canManageUsers,
+  canCreate,
+  canDelete,
   canRead,
+  canUpdate,
   canWrite,
 } from '../src/lib/crm/permissions.js';
 import {
@@ -22,12 +25,21 @@ import {
 test('RBAC keeps Admin, Employee, and Client capabilities separate', () => {
   assert.equal(canManageUsers(CRM_ROLES.ADMIN), true);
   assert.equal(canManageUsers(CRM_ROLES.EMPLOYEE), false);
-  assert.equal(canRead(CRM_ROLES.EMPLOYEE, 'finances'), true);
+  assert.equal(canRead(CRM_ROLES.EMPLOYEE, 'finances'), false);
   assert.equal(canWrite(CRM_ROLES.EMPLOYEE, 'finances'), false);
   assert.equal(canRead(CRM_ROLES.CLIENT, 'finances'), false);
   assert.equal(canRead(CRM_ROLES.CLIENT, 'projects'), true);
   assert.equal(canWrite(CRM_ROLES.CLIENT, 'tickets'), true);
   assert.equal(canWrite(CRM_ROLES.CLIENT, 'invoices'), false);
+});
+
+test('employees can update assigned delivery work and manage only internal project files', () => {
+  assert.equal(canUpdate(CRM_ROLES.EMPLOYEE, 'projects'), true);
+  assert.equal(canUpdate(CRM_ROLES.EMPLOYEE, 'tickets'), true);
+  assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'project_files'), true);
+  assert.equal(canDelete(CRM_ROLES.EMPLOYEE, 'project_files'), true);
+  assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'clients'), false);
+  assert.equal(canRead(CRM_ROLES.CLIENT, 'project_files'), false);
 });
 
 test('invoice balances use received amounts and treat cancelled invoices as void', () => {

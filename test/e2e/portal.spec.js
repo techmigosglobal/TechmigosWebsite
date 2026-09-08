@@ -6,10 +6,17 @@ test('login screen exposes the invite-only portal flow', async ({ page }) => {
   await expect(page.getByLabel(/username or email/i)).toBeVisible();
   await expect(page.locator('#password')).toBeVisible();
   await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /forgot password/i })).toBeVisible();
+});
+
+test('password recovery is available without opening the workspace', async ({ page }) => {
+  await page.goto('/reset-password');
+  await expect(page.getByRole('heading', { name: /reset your password/i })).toBeVisible();
+  await expect(page.getByLabel(/work email/i)).toBeVisible();
 });
 
 test('unauthenticated company and client routes return to login', async ({ page }) => {
-  for (const path of ['/company', '/client']) {
+  for (const path of ['/company', '/company/files', '/client']) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login(?:\/|$)/);
   }
