@@ -13,6 +13,8 @@ yarn-error.log
 .tmp-*
 docs/
 scripts/
+!src/scripts/
+!src/scripts/crm-pdf.js
 php-backend/
 public/.htaccess
 data/*
