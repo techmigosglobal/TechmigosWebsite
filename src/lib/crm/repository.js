@@ -154,6 +154,11 @@ export function createCrmRepository(getSupabase) {
       output[key] = value;
     }
     if (resource === 'projects' && output.progress !== undefined) output.progress = Math.max(0, Math.min(100, output.progress));
+    if (resource === 'project_folders' && output.name !== undefined) {
+      output.name = output.name.trim().replace(/\s+/g, ' ');
+      if (!output.name) throw new Error('Folder name is required.');
+      if (output.name.length > 120) throw new Error('Folder names must be 120 characters or fewer.');
+    }
     if (resource === 'finances' && output.transaction_type && !FINANCE_TRANSACTION_TYPES.has(output.transaction_type)) {
       throw new Error('Choose a valid finance category.');
     }
@@ -340,6 +345,13 @@ export function createCrmRepository(getSupabase) {
     const numericFolderId = folderId ? Number(folderId) : null;
     if (!Number.isInteger(numericProjectId)) throw new Error('Choose a project before uploading a file.');
     if (numericFolderId !== null && !Number.isInteger(numericFolderId)) throw new Error('Invalid project folder.');
+    if (numericFolderId !== null) {
+      const { data: folder, error: folderError } = await sb().from('crm_project_folders')
+        .select('id, project_id').eq('id', numericFolderId).maybeSingle();
+      if (folderError || !folder || Number(folder.project_id) !== numericProjectId) {
+        throw errorFrom(folderError, 'Choose a folder in the selected project.');
+      }
+    }
     const path = `projects/${numericProjectId}/${Date.now()}-${cleanPathSegment(file.name)}`;
     const client = sb();
     const upload = await client.storage.from('project-files').upload(path, file, { upsert: false, contentType: file.type });

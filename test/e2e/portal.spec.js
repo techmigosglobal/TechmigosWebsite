@@ -15,6 +15,13 @@ test('password recovery is available without opening the workspace', async ({ pa
   await expect(page.getByLabel(/work email/i)).toBeVisible();
 });
 
+test('report and internal-file routes remain protected from unauthenticated users', async ({ page }) => {
+  for (const path of ['/company/files', '/company/reports', '/company/user-management', '/company/settings']) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/login(?:\/|$)/);
+  }
+});
+
 test('unauthenticated company and client routes return to login', async ({ page }) => {
   for (const path of ['/company', '/company/files', '/client']) {
     await page.goto(path);

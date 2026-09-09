@@ -44,7 +44,7 @@ export function canWrite(role, resource) {
 
 export function canUpdate(role, resource) {
   if (canWrite(role, resource)) return true;
-  return isEmployee(role) && ['projects', 'tickets'].includes(resource);
+  return isEmployee(role) && ['projects', 'tickets', 'project_folders'].includes(resource);
 }
 
 export function canCreate(role, resource) {

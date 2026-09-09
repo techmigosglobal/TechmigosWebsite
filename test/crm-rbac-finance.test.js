@@ -21,6 +21,7 @@ import {
   invoiceReceived,
   invoiceTotal,
 } from '../src/lib/crm/finance.js';
+import { buildCrmReportPdf } from '../src/scripts/crm-pdf.js';
 
 test('RBAC keeps Admin, Employee, and Client capabilities separate', () => {
   assert.equal(canManageUsers(CRM_ROLES.ADMIN), true);
@@ -36,10 +37,20 @@ test('RBAC keeps Admin, Employee, and Client capabilities separate', () => {
 test('employees can update assigned delivery work and manage only internal project files', () => {
   assert.equal(canUpdate(CRM_ROLES.EMPLOYEE, 'projects'), true);
   assert.equal(canUpdate(CRM_ROLES.EMPLOYEE, 'tickets'), true);
+  assert.equal(canUpdate(CRM_ROLES.EMPLOYEE, 'project_folders'), true);
   assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'project_files'), true);
   assert.equal(canDelete(CRM_ROLES.EMPLOYEE, 'project_files'), true);
   assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'clients'), false);
   assert.equal(canRead(CRM_ROLES.CLIENT, 'project_files'), false);
+  assert.equal(canUpdate(CRM_ROLES.CLIENT, 'project_folders'), false);
+});
+
+test('project-folder and file permissions retain company-only boundaries', () => {
+  assert.equal(canCreate(CRM_ROLES.ADMIN, 'project_folders'), true);
+  assert.equal(canUpdate(CRM_ROLES.ADMIN, 'project_folders'), true);
+  assert.equal(canRead(CRM_ROLES.EMPLOYEE, 'project_folders'), true);
+  assert.equal(canRead(CRM_ROLES.CLIENT, 'project_folders'), false);
+  assert.equal(canCreate(CRM_ROLES.CLIENT, 'project_files'), false);
 });
 
 test('invoice balances use received amounts and treat cancelled invoices as void', () => {
@@ -77,4 +88,22 @@ test('invoice ledger entries stay separate from cash income and expenses', () =>
   assert.equal(isIncomeTransaction({ transaction_type: 'invoice', status: 'cancelled' }), false);
   assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'received' }), true);
   assert.equal(isIncomeTransaction({ transaction_type: 'income', status: 'pending' }), false);
+});
+
+test('report export creates a PDF artifact from supplied report rows', () => {
+  const { document, fileName } = buildCrmReportPdf({
+    report: {
+      key: 'tickets',
+      title: 'Support Tickets Report',
+      subtitle: 'Live ticket records.',
+      metrics: [['Open', 1]],
+      columns: [['id', 'Ticket'], ['subject', 'Subject']],
+      rows: [{ id: 'TIC-9', subject: 'Production issue' }],
+    },
+    from: '2026-09-01',
+    to: '2026-09-09',
+  });
+  assert.match(fileName, /^techmigos-tickets-2026-09-01-to-2026-09-09\.pdf$/);
+  const header = Buffer.from(document.output('arraybuffer')).subarray(0, 4).toString('utf8');
+  assert.equal(header, '%PDF');
 });

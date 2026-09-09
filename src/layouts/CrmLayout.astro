@@ -604,6 +604,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
+    .crm-files-command { padding: 18px; }
+    .crm-files-breadcrumb { display:flex; align-items:center; gap:8px; margin-top:16px; color:var(--crm-muted); font-size:12px; font-weight:700; }
+    .crm-files-breadcrumb button { border:0; background:transparent; color:var(--crm-blue); font:inherit; cursor:pointer; padding:0; }
+    .crm-file-folders { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+    .crm-file-folder { display:flex; align-items:center; gap:10px; min-height:78px; border:1px solid var(--crm-line); border-radius:14px; background:var(--crm-surface); padding:12px; box-shadow:0 8px 18px rgba(15,23,42,.04); }
+    .crm-file-folder.is-active { border-color:var(--crm-blue); box-shadow:0 0 0 3px rgba(15,118,110,.1); }
+    .crm-file-folder-open { display:grid; place-items:center; width:38px; height:38px; border:0; border-radius:10px; background:#e6fffb; color:var(--crm-blue); font-size:24px; cursor:pointer; }
+    .crm-file-folder-body { min-width:0; flex:1; display:grid; gap:4px; }
+    .crm-file-folder-name { border:0; padding:0; background:transparent; color:var(--crm-text); font:700 13px/1.2 inherit; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .crm-file-folder-body small { color:var(--crm-muted); font-weight:600; }
+    .crm-folder-rename { min-width:0; height:30px; padding:4px 7px; font-size:13px; }
+
     .crm-kpi {
       display: grid;
       grid-template-columns: 64px 1fr;
@@ -2557,6 +2569,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
   <OverlayLayer />
 
+  <script>
+    import { downloadCrmReportPdf } from '../scripts/crm-pdf.js';
+    window.tmCrmPdf = { downloadCrmReportPdf };
+  </script>
   <script is:inline define:vars={{ activeTab }}>
     const navItems = [
       ['dashboard', 'Dashboard', '⌂'],
@@ -2585,6 +2601,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       financeEditMode: false,
       financeDensity: 'comfortable',
       profile: null,
+      companySettings: {},
       cacheUserId: null,
       selectedProjectId: null,
       selectedTicketId: null,
@@ -2610,6 +2627,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       projectSearch: '',
       fileProjectId: '',
       fileFolderId: '',
+      fileRenameId: null,
       fileSearch: '',
       ticketView: 'board',
       ticketStatusFilter: '',
@@ -3503,40 +3521,78 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const selectedProjectId = String(state.fileProjectId || projects[0]?.id || '');
       state.fileProjectId = selectedProjectId;
       const project = projects.find((item) => String(item.id) === selectedProjectId);
-      const folders = state.data.project_folders.filter((folder) => String(folder.project_id) === selectedProjectId);
+      const folders = state.data.project_folders.filter((folder) => String(folder.project_id) === selectedProjectId).sort((a, b) => String(a.name).localeCompare(String(b.name)));
       const visibleFiles = state.data.project_files.filter((file) => String(file.project_id) === selectedProjectId && (!state.fileFolderId || String(file.folder_id || '') === String(state.fileFolderId)));
       const query = state.fileSearch.trim().toLowerCase();
       const files = query ? visibleFiles.filter((file) => file.original_name.toLowerCase().includes(query)) : visibleFiles;
       const canManageMembers = isCompanyAdmin();
       const projectOptions = projects.map((item) => `<option value="${item.id}"${String(item.id) === selectedProjectId ? ' selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
       const folderOptions = `<option value="">All folders</option>${folders.map((folder) => `<option value="${folder.id}"${String(folder.id) === String(state.fileFolderId) ? ' selected' : ''}>${escapeHtml(folder.name)}</option>`).join('')}`;
-      const fileRows = files.map((file) => `<tr><td><strong>${escapeHtml(file.original_name)}</strong><br><small>${escapeHtml(file.mime_type)}</small></td><td>${Math.max(1, Math.ceil(Number(file.size_bytes || 0) / 1024))} KB</td><td>${new Date(file.created_at).toLocaleDateString('en-IN')}</td><td><div class="crm-row-actions"><button class="crm-mini-action" data-project-file-download="${file.id}" type="button">Download</button>${isCompanyAdmin() || String(file.uploaded_by) === String(state.profile?.auth_user_id) ? `<button class="crm-mini-action danger" data-project-file-delete="${file.id}" type="button">Delete</button>` : ''}</div></td></tr>`).join('');
+      const profileByAuthId = new Map(state.data.profiles.map((profile) => [String(profile.auth_user_id), profile]));
+      const fileRows = files.map((file) => {
+        const uploader = profileByAuthId.get(String(file.uploaded_by));
+        const uploadedBy = String(file.uploaded_by) === String(state.profile?.auth_user_id) ? 'You' : (uploader?.name || 'Company member');
+        return `<tr><td><strong>${escapeHtml(file.original_name)}</strong><br><small>${escapeHtml(file.mime_type || 'File')}</small></td><td>${Math.max(1, Math.ceil(Number(file.size_bytes || 0) / 1024))} KB</td><td>${escapeHtml(uploadedBy)}<br><small>${new Date(file.created_at).toLocaleDateString('en-IN')}</small></td><td><div class="crm-row-actions"><button class="crm-mini-action" data-project-file-open="${file.id}" type="button">Open</button><button class="crm-mini-action" data-project-file-download="${file.id}" type="button">Download</button>${isCompanyAdmin() || String(file.uploaded_by) === String(state.profile?.auth_user_id) ? `<button class="crm-mini-action danger" data-project-file-delete="${file.id}" type="button">Delete</button>` : ''}</div></td></tr>`;
+      }).join('');
+      const folderCards = folders.map((folder) => {
+        const fileCount = state.data.project_files.filter((file) => String(file.folder_id || '') === String(folder.id)).length;
+        const renameable = isCompanyAdmin() || String(folder.created_by) === String(state.profile?.auth_user_id);
+        const isRenaming = String(state.fileRenameId) === String(folder.id);
+        return `<article class="crm-file-folder ${String(state.fileFolderId) === String(folder.id) ? 'is-active' : ''}">
+          <button class="crm-file-folder-open" data-project-folder-open="${folder.id}" type="button" aria-label="Open ${escapeHtml(folder.name)}"><span aria-hidden="true">▰</span></button>
+          <div class="crm-file-folder-body">${isRenaming && renameable ? `<input class="crm-input crm-folder-rename" data-project-folder-rename="${folder.id}" value="${escapeHtml(folder.name)}" aria-label="Rename folder" />` : `<button class="crm-file-folder-name" data-project-folder-open="${folder.id}" type="button">${escapeHtml(folder.name)}</button>`}<small>${fileCount} ${fileCount === 1 ? 'file' : 'files'}</small></div>
+          ${renameable ? `<button class="crm-mini-action" data-project-folder-rename-start="${folder.id}" type="button">Rename</button>` : ''}
+        </article>`;
+      }).join('');
       els.view.innerHTML = `
-        ${pageHead('Project files', 'Internal company files for your assigned projects. Client accounts cannot access this area.', '')}
-        <section class="crm-card"><div class="crm-toolbar" style="align-items:end;gap:12px;flex-wrap:wrap;">
+        ${pageHead('Project files', 'A private company workspace for delivery documents. Client accounts cannot access this area.', '')}
+        <section class="crm-card crm-files-command"><div class="crm-toolbar" style="align-items:end;gap:12px;flex-wrap:wrap;">
           <label style="min-width:210px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Project</span><select id="project-files-project" class="crm-select">${projectOptions}</select></label>
-          <label style="min-width:180px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Folder</span><select id="project-files-folder" class="crm-select">${folderOptions}</select></label>
+          <label style="min-width:180px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Location</span><select id="project-files-folder" class="crm-select">${folderOptions}</select></label>
           <label style="min-width:190px;display:grid;gap:5px;"><span class="text-xs font-bold text-slate-600">Find a file</span><input id="project-files-search" class="crm-input" value="${escapeHtml(state.fileSearch)}" placeholder="Search file name" /></label>
           <button id="project-folder-create" class="crm-button" type="button" ${project ? '' : 'disabled'}>New folder</button>
           <label class="crm-button primary" style="cursor:pointer;" ${project ? '' : 'aria-disabled="true"'}>Upload file<input id="project-file-upload" type="file" hidden ${project ? '' : 'disabled'} /></label>
           ${canManageMembers && project ? '<button id="project-members-manage" class="crm-button" type="button">Assign team</button>' : ''}
-        </div></section>
-        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">${escapeHtml(project?.name || 'No assigned project')}</h2><span class="text-sm text-slate-500">${folders.length} folders · ${state.data.project_files.filter((file) => String(file.project_id) === selectedProjectId).length} files</span></div>${table(['Name', 'Size', 'Uploaded', 'Actions'], fileRows, project ? 'No files in this location.' : 'No project is assigned to your account.')}</section>`;
-      document.getElementById('project-files-project')?.addEventListener('change', (event) => { state.fileProjectId = event.target.value; state.fileFolderId = ''; renderFiles(); });
+        </div><div class="crm-files-breadcrumb"><button data-project-folder-root type="button">${escapeHtml(project?.name || 'No project')}</button>${state.fileFolderId ? `<span>/</span><strong>${escapeHtml(folders.find((folder) => String(folder.id) === String(state.fileFolderId))?.name || 'Folder')}</strong>` : ''}</div></section>
+        <section class="crm-file-folders mt-5" aria-label="Project folders">${folderCards || (project ? '<p class="crm-empty">No folders yet. Create one to organise internal delivery files.</p>' : '')}</section>
+        <section class="crm-card mt-5"><div class="crm-card-head"><h2 class="crm-card-title">${state.fileFolderId ? 'Files in selected folder' : escapeHtml(project?.name || 'No assigned project')}</h2><span class="text-sm text-slate-500">${folders.length} folders · ${state.data.project_files.filter((file) => String(file.project_id) === selectedProjectId).length} files</span></div>${table(['Name', 'Size', 'Uploaded by', 'Actions'], fileRows, project ? 'No files in this location. Upload a company document to get started.' : 'No project is assigned to your account.')}</section>`;
+      document.getElementById('project-files-project')?.addEventListener('change', (event) => { state.fileProjectId = event.target.value; state.fileFolderId = ''; state.fileRenameId = null; renderFiles(); });
       document.getElementById('project-files-folder')?.addEventListener('change', (event) => { state.fileFolderId = event.target.value; renderFiles(); });
       document.getElementById('project-files-search')?.addEventListener('input', (event) => { state.fileSearch = event.target.value; renderFiles(); });
       document.getElementById('project-folder-create')?.addEventListener('click', async () => {
-        const name = prompt('Folder name');
-        if (!name?.trim()) return;
-        try { await portal('/api/portal/project_folders', { method: 'POST', body: JSON.stringify({ project_id: Number(selectedProjectId), name: name.trim(), created_by: state.profile.auth_user_id }) }); await loadData(); }
+        try {
+          const response = await portal('/api/portal/project_folders', { method: 'POST', body: JSON.stringify({ project_id: Number(selectedProjectId), name: 'Untitled folder', created_by: state.profile.auth_user_id }) });
+          state.fileFolderId = String(response.item.id);
+          state.fileRenameId = String(response.item.id);
+          await loadData();
+        }
         catch (error) { toast(error instanceof Error ? error.message : 'Could not create folder.'); }
       });
       document.getElementById('project-file-upload')?.addEventListener('change', async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        try { await window.tmCrm.repository.uploadProjectFile(Number(selectedProjectId), state.fileFolderId || null, file); toast('Project file uploaded.'); await loadData(); }
+        try { await window.tmCrm.repository.uploadProjectFile(Number(selectedProjectId), state.fileFolderId || null, file); event.target.value = ''; toast('Project file uploaded.'); await loadData(); }
         catch (error) { toast(error instanceof Error ? error.message : 'Could not upload project file.'); }
       });
+      document.querySelectorAll('[data-project-folder-open]').forEach((button) => button.addEventListener('click', () => { state.fileFolderId = String(button.dataset.projectFolderOpen); state.fileRenameId = null; renderFiles(); }));
+      document.querySelectorAll('[data-project-folder-rename-start]').forEach((button) => button.addEventListener('click', () => { state.fileRenameId = String(button.dataset.projectFolderRenameStart); renderFiles(); }));
+      document.getElementById('project-files-project')?.closest('.crm-files-command')?.querySelector('[data-project-folder-root]')?.addEventListener('click', () => { state.fileFolderId = ''; state.fileRenameId = null; renderFiles(); });
+      document.querySelectorAll('[data-project-folder-rename]').forEach((input) => {
+        const save = async () => {
+          if (input.dataset.saved === '1') return;
+          const name = input.value.trim().replace(/\s+/g, ' ') || 'Untitled folder';
+          input.dataset.saved = '1';
+          try { await portal(`/api/portal/project_folders/${input.dataset.projectFolderRename}`, { method: 'PATCH', body: JSON.stringify({ name }) }); state.fileRenameId = null; await loadData(); }
+          catch (error) { input.dataset.saved = ''; toast(error instanceof Error ? error.message : 'Could not rename folder.'); }
+        };
+        input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); save(); } if (event.key === 'Escape') { state.fileRenameId = null; renderFiles(); } });
+        input.addEventListener('blur', save, { once: true });
+        if (String(state.fileRenameId) === String(input.dataset.projectFolderRename)) { input.focus(); input.select(); }
+      });
+      document.querySelectorAll('[data-project-file-open]').forEach((button) => button.addEventListener('click', async () => {
+        try { window.open(await window.tmCrm.repository.getProjectFileUrl(button.dataset.projectFileOpen), '_blank', 'noopener'); }
+        catch (error) { toast(error instanceof Error ? error.message : 'Could not open project file.'); }
+      }));
       document.querySelectorAll('[data-project-file-download]').forEach((button) => button.addEventListener('click', async () => {
         try { window.open(await window.tmCrm.repository.getProjectFileUrl(button.dataset.projectFileDownload), '_blank', 'noopener'); }
         catch (error) { toast(error instanceof Error ? error.message : 'Could not open project file.'); }
@@ -3736,7 +3792,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <div class="tic-card-subject">${escapeHtml(ticket.subject || 'Untitled')}</div>
           <div class="tic-card-meta">
             <span>${escapeHtml(clientName(ticket.client_id) || '—')}</span>
-            ${ticket.assigned_to ? `<span style="color:#6366f1;font-weight:700;">@${escapeHtml(ticket.assigned_to)}</span>` : '<span style="color:#94a3b8;">Unassigned</span>'}
+            ${ticket.assigned_user_id || ticket.assigned_to ? `<span style="color:#6366f1;font-weight:700;">@${escapeHtml(assignedUserName(ticket))}</span>` : '<span style="color:#94a3b8;">Unassigned</span>'}
           </div>
           <div class="tic-card-actions">
             ${canWrite('tickets') ? `<button class="pm-btn-sm" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="resolved" type="button" title="Resolve"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>` : ''}
@@ -3771,7 +3827,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <td><strong>${escapeHtml(ticket.subject || '')}</strong></td>
           <td><span style="font-size:11px;">${escapeHtml(clientName(ticket.client_id) || '—')}</span></td>
           <td><span style="font-size:11px;font-weight:700;color:${pc};padding:2px 7px;background:${TIC_PRIORITY_BG[ticket.priority]||'#f1f5f9'};border-radius:99px;">${nice(ticket.priority || 'low')}</span></td>
-          <td><span style="font-size:11px;color:#6366f1;">${escapeHtml(ticket.assigned_to || '—')}</span></td>
+          <td><span style="font-size:11px;color:#6366f1;">${escapeHtml(assignedUserName(ticket))}</span></td>
           <td>${badge(ticket.status)}</td>
           <td>${rowActions('tickets', ticket.id)}</td>
         </tr>`;
@@ -3807,8 +3863,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>
           ${ticket.description ? `<div class="pm-detail-section"><div class="pm-detail-label">DESCRIPTION</div><p style="font-size:12px;line-height:1.7;color:#475569;margin-top:6px;">${escapeHtml(ticket.description)}</p></div>` : ''}
           <div class="pm-detail-actions">
-            ${canWrite('tickets') ? `<button class="crm-button primary" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="resolved" type="button">✓ Resolve</button>` : ''}
-            ${canWrite('tickets') ? `<button class="crm-button" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="in_progress" type="button">Set In Progress</button>` : ''}
+            ${canUpdate('tickets') ? `<button class="crm-button primary" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="resolved" type="button">✓ Resolve</button>` : ''}
+            ${canUpdate('tickets') ? `<button class="crm-button" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="in_progress" type="button">Set In Progress</button>` : ''}
             ${canWrite('tickets') ? `<button class="crm-button" data-edit-resource="tickets" data-edit-id="${ticket.id}" type="button">Reassign</button>` : ''}
           </div>
         </div>`;
@@ -3822,7 +3878,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       let allTickets = state.data.tickets;
       if (ticketStatusFilter) allTickets = allTickets.filter((t) => t.status === ticketStatusFilter);
       if (ticketPriorityFilter) allTickets = allTickets.filter((t) => t.priority === ticketPriorityFilter);
-      if (ticketSearch) allTickets = allTickets.filter((t) => ['subject','assigned_to'].some((k) => String(t[k]||'').toLowerCase().includes(ticketSearch.toLowerCase())));
+      if (ticketSearch) allTickets = allTickets.filter((t) => [t.subject, assignedUserName(t), clientName(t.client_id), projectName(t.project_id)].some((value) => String(value || '').toLowerCase().includes(ticketSearch.toLowerCase())));
 
       const selected = state.data.tickets.find((t) => String(t.id) === String(state.selectedTicketId)) || state.data.tickets[0];
       state.selectedTicketId = selected?.id || null;
@@ -6435,7 +6491,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ['clients', 'Clients'],
       ];
       els.view.innerHTML = `
-        ${pageHead('Report Generation', 'Generate operational reports from live Supabase CRM data.', `<button class="crm-button primary" data-report-print type="button">&#128438; Print PDF</button><button class="crm-button" data-report-export type="button">&#8659; Export CSV</button>`)}
+        ${pageHead('Report Generation', 'Generate operational reports from live Supabase CRM data.', `<button class="crm-button primary" data-report-download-pdf type="button">&#8659; Download PDF</button><button class="crm-button" data-report-print type="button">&#128438; Print</button><button class="crm-button" data-report-export type="button">&#8659; Export CSV</button>`)}
         <section class="crm-card">
           <div class="crm-card-head"><h2 class="crm-card-title">Report Controls</h2></div>
           <div class="crm-form-grid p-5" style="grid-template-columns:1fr 1fr 1fr auto;align-items:end;">
@@ -6450,6 +6506,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             </label>
             <div style="display:flex;gap:6px;padding-bottom:2px;">
               <button class="crm-button primary" data-report-refresh type="button">Generate</button>
+              <button class="crm-button" data-report-download-pdf type="button">PDF</button>
               <button class="crm-button" data-report-export type="button">CSV</button>
             </div>
           </div>
@@ -6504,6 +6561,22 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function exportCurrentReport() {
       downloadCsv(reportCsv(), `techmigos-${state.reportType}-report-${state.reportFrom}-to-${state.reportTo}.csv`);
+    }
+
+    function downloadCurrentReportPdf() {
+      const report = { ...currentReport(), key: state.reportType };
+      const companyName = state.companySettings?.company_name || 'TechMigos';
+      if (!window.tmCrmPdf?.downloadCrmReportPdf) {
+        toast('The PDF generator is still loading. Please try again.');
+        return;
+      }
+      try {
+        const fileName = window.tmCrmPdf.downloadCrmReportPdf({ report, from: state.reportFrom, to: state.reportTo, companyName });
+        toast(`${fileName} downloaded.`);
+      } catch (error) {
+        console.error(error);
+        toast('Could not generate the PDF report.');
+      }
     }
 
     function financePdfRows() {
@@ -6634,7 +6707,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function userRows() {
-      const profiles = state.data.profiles.length ? state.data.profiles : [{ name: state.profile?.name || 'Admin', role: state.profile?.role || 'company_admin', status: 'active', email: state.profile?.email || '' }];
+      const profiles = state.data.profiles;
       return profiles.map((item) => `<tr data-resource="profiles" data-row-id="${item.id || ''}"><td><input type="checkbox" data-row-select aria-label="Select user ${escapeHtml(item.name || item.email)}" /></td><td><strong>${escapeHtml(item.name || item.email)}</strong><br><small>${escapeHtml(item.email || '')}</small></td><td>${badge(item.role, item.role === 'client' ? 'green' : 'blue')}</td><td>${item.role === 'client' ? 'Client' : 'Employee'}</td><td>${escapeHtml(clientName(item.client_id) || 'TechMigos')}</td><td>${item.role === 'company_admin' ? 'Full Access' : item.role === 'client' ? 'Client Portal' : 'Standard Access'}</td><td>${badge(item.status || 'active', 'green')}</td><td>${item.id ? rowActions('profiles', item.id) : '<span class="text-sm font-bold text-slate-400">Session user</span>'}</td></tr>`).join('');
     }
 
@@ -6663,13 +6736,13 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const activeCount = state.data.clients.filter((c) => c.status === 'active' || !c.status).length;
       const leadCount = state.data.clients.filter((c) => c.status === 'lead').length;
       const atRiskCount = state.data.projects.filter((p) => p.health === 'at_risk').length;
-      const totalRevenue = sumAmounts(incomeRows());
+      const totalRevenue = state.data.invoices.reduce((sum, invoice) => sum + invoiceTotal(invoice), 0);
       els.view.innerHTML = `
         ${pageHead('Client Management', 'Manage client companies, relationships, project portfolio, billing health, and portal access.', `${canWrite('clients') ? '<button class="crm-button primary" data-create="clients" type="button">+ Add Client</button>' : ''}<button class="crm-button" data-export="clients" type="button">Export</button>`)}
         <div class="crm-grid crm-kpis">
           ${metric('Total Clients', state.data.clients.length, '○', 'blue', `${activeCount} active`)}
           ${metric('Active Projects', state.data.projects.filter((p) => ['active','review','planning'].includes(p.status)).length, '▣', 'green', 'across all clients')}
-          ${metric('Total Revenue', compactMoney(totalRevenue), '₹', 'purple', `${leadCount} leads in pipeline`)}
+          ${metric('Client Billing', compactMoney(totalRevenue), '₹', 'purple', 'from linked invoices')}
           ${metric('At-Risk Accounts', atRiskCount, '!', 'orange', atRiskCount ? 'need attention' : 'all healthy')}
         </div>
         <div class="crm-two-col mt-5">
@@ -6742,6 +6815,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return state.data.profiles.filter((item) => item.role !== 'client');
     }
 
+    function employeeProjects(employee) {
+      const projectIds = new Set(state.data.project_members
+        .filter((member) => String(member.profile_id) === String(employee.id))
+        .map((member) => String(member.project_id)));
+      return state.data.projects.filter((project) => projectIds.has(String(project.id)) || String(project.owner_user_id) === String(employee.auth_user_id));
+    }
+
+    function employeeTickets(employee, includeClosed = true) {
+      return state.data.tickets.filter((ticket) => String(ticket.assigned_user_id) === String(employee.auth_user_id)
+        && (includeClosed || !['resolved', 'closed'].includes(ticket.status)));
+    }
+
+    function assignedUserName(ticket) {
+      const profile = state.data.profiles.find((item) => String(item.auth_user_id) === String(ticket.assigned_user_id));
+      return profile?.name || profile?.email || ticket.assigned_to || 'Unassigned';
+    }
+
     function renderEmployees() {
       const allEmployees = employeeSeed();
       const searchQuery = state.search.trim().toLowerCase();
@@ -6751,9 +6841,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const selected = employees.find((item) => String(item.id) === String(state.selectedEmployeeId)) || employees[0] || allEmployees[0];
       state.selectedEmployeeId = selected?.id || null;
       const rows = employees.map((employee, index) => {
-        const assignedProjects = state.data.projects.filter((item) => String(item.owner_user_id) === String(employee.auth_user_id) || item.project_manager === employee.name);
-        const assignedTickets = state.data.tickets.filter((item) => item.assigned_to === employee.name);
-        const util = Math.min(98, 58 + (assignedProjects.length * 8) + (assignedTickets.length * 5) + index);
+        const assignedProjects = employeeProjects(employee);
+        const assignedTickets = employeeTickets(employee);
         return `<tr data-resource="profiles" data-row-id="${employee.id || ''}" style="cursor:pointer;" data-employee-detail="${employee.id || ''}">
           <td><input type="checkbox" data-row-select aria-label="Select employee ${escapeHtml(employee.name || '')}" onclick="event.stopPropagation()" /></td>
           <td><strong>${escapeHtml(employee.name || employee.email)}</strong><br><small style="color:#64748b;">${escapeHtml(employee.email || '')}</small></td>
@@ -6770,7 +6859,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ${pageHead('Employee Management', 'Manage team members, departments, utilization, and access status.', `${isCompanyAdmin() ? '<button class="crm-button primary" data-create="profiles" type="button">+ Add Employee</button>' : ''}<button class="crm-button" data-export="employees" type="button">Export</button>`)}
         <div class="crm-grid crm-kpis">
           ${metric('Total Employees', allEmployees.length, '♙', 'blue', `${allEmployees.filter((e) => e.status === 'active' || !e.status).length} active`)}
-          ${metric('Avg. Projects / Person', allEmployees.length ? (state.data.projects.length / allEmployees.length).toFixed(1) : '0', '▣', 'green', 'active assignments')}
+          ${metric('Avg. Projects / Person', allEmployees.length ? (allEmployees.reduce((sum, employee) => sum + employeeProjects(employee).length, 0) / allEmployees.length).toFixed(1) : '0', '▣', 'green', 'assigned projects')}
           ${metric('Open Tickets', state.data.tickets.filter((t) => !['resolved','closed'].includes(t.status)).length, '◴', 'orange', 'across team')}
           ${metric('Departments', depts.length, '◎', 'purple', depts.slice(0,2).join(', ') || 'No depts set')}
         </div>
@@ -6788,7 +6877,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>
         <div class="crm-three-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">By Department</h2></div><div class="crm-list">${depts.map((d) => `<div class="crm-list-row"><span>${escapeHtml(d)}</span><strong>${allEmployees.filter((e) => (e.department || 'Operations') === d).length} people</strong></div>`).join('') || '<p class="crm-empty">No departments set.</p>'}</div></section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Workload Overview</h2></div><div class="crm-list">${allEmployees.slice(0,5).map((e) => { const p = state.data.projects.filter((x) => x.project_manager === e.name).length; const t = state.data.tickets.filter((x) => x.assigned_to === e.name).length; return `<div class="crm-list-row"><span>${escapeHtml(e.name||e.email)}</span><strong>${p} proj, ${t} tickets</strong></div>`; }).join('') || '<p class="crm-empty">No data.</p>'}</div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Workload Overview</h2></div><div class="crm-list">${allEmployees.slice(0,5).map((e) => { const p = employeeProjects(e).length; const t = employeeTickets(e, false).length; return `<div class="crm-list-row"><span>${escapeHtml(e.name||e.email)}</span><strong>${p} projects, ${t} open tickets</strong></div>`; }).join('') || '<p class="crm-empty">No delivery assignments yet.</p>'}</div></section>
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Recent Activity</h2></div><div class="crm-list">${state.data.activities.slice(0, 5).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.summary || item.action)}</span><small>${escapeHtml(String(item.created_at || '').slice(0, 10))}</small></div>`).join('') || '<p class="crm-empty">No activity yet.</p>'}</div></section>
         </div>`;
       // Wire search
@@ -6798,9 +6887,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function employeeDetail(employee) {
       if (!employee) return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;"><div style="font-size:32px;">&#9816;</div><p style="color:#94a3b8;font-weight:600;">Select a team member</p></div>`;
-      const assignedProjects = state.data.projects.filter((item) => String(item.owner_user_id) === String(employee.auth_user_id) || item.project_manager === employee.name);
-      const assignedTickets = state.data.tickets.filter((item) => item.assigned_to === employee.name && !['resolved','closed'].includes(item.status));
-      const util = Math.min(100, 40 + assignedProjects.length * 12 + assignedTickets.length * 8);
+      const assignedProjects = employeeProjects(employee);
+      const assignedTickets = employeeTickets(employee, false);
       const editBtn = employee.id && isCompanyAdmin() ? `<button class="crm-button primary" data-edit-resource="profiles" data-edit-id="${employee.id}" type="button">Edit Profile</button>` : '';
       const emailLink = employee.email ? `<a href="mailto:${escapeHtml(employee.email)}" class="crm-button" style="text-decoration:none;">&#9993; Email</a>` : '';
       const initials = (employee.name || employee.email || 'E').slice(0, 2).toUpperCase();
@@ -6824,10 +6912,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="pm-info-row"><span>Open Tickets</span><strong style="color:${assignedTickets.length ? '#f59e0b' : '#22c55e'};">${assignedTickets.length}</strong></div>
             </div>
           </div>
-          <div class="pm-detail-section">
-            <div class="pm-detail-label">WORKLOAD ${util}%</div>
-            <div style="width:100%;height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-top:6px;"><div style="height:8px;background:${util > 80 ? '#ef4444' : util > 60 ? '#f59e0b' : '#22c55e'};border-radius:99px;width:${util}%;transition:width 0.5s;"></div></div>
-          </div>
+          <div class="pm-detail-section"><div class="pm-detail-label">DELIVERY ASSIGNMENTS</div><p style="font-size:12px;color:#475569;margin-top:6px;">${assignedProjects.length} assigned projects and ${assignedTickets.length} open tickets.</p></div>
           ${assignedProjects.length ? `<div class="pm-detail-section"><div class="pm-detail-label">ASSIGNED PROJECTS</div>${assignedProjects.slice(0, 3).map((p) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:12px;font-weight:700;">${escapeHtml(p.name)}</span>${badge(p.status)}</div>`).join('')}</div>` : ''}
           <div class="pm-detail-actions">${emailLink}${editBtn}</div>
         </div>`;
@@ -6838,14 +6923,15 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const myRole = state.profile?.role || 'company_member';
         const myRoleLabel = myRole === 'company_admin' ? 'Company Admin' : myRole === 'client' ? 'Client' : 'Company Member';
         const myPerms = [
-          ['Dashboard', myRole !== 'client' ? '✅ Full access' : '—'],
-          ['Projects', myRole === 'company_admin' ? '✅ Create, Edit, Delete' : myRole === 'client' ? '👁 View own projects' : '✅ Staff manage'],
-          ['Support Tickets', myRole === 'company_admin' ? '✅ Full' : '✅ Create & manage'],
-          ['Finance', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '✅ Staff manage'],
-          ['Analytics', myRole === 'client' ? '—' : '👁 View'],
-          ['Reports', myRole === 'client' ? '—' : '👁 View & export'],
-          ['Clients', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '✅ Own profile only' : '✅ Staff manage'],
-          ['Employees', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '—' : '👁 Own profile'],
+          ['Dashboard', myRole === 'client' ? '—' : '✅ Assigned-work summary'],
+          ['Projects', myRole === 'company_admin' ? '✅ Create, edit, delete' : myRole === 'client' ? '👁 View own projects' : '✅ Assigned projects only'],
+          ['Project files', myRole === 'company_admin' ? '✅ All internal files' : myRole === 'client' ? '—' : '✅ Assigned projects only'],
+          ['Support Tickets', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '✅ Own tickets' : '✅ Assigned tickets only'],
+          ['Finance', myRole === 'company_admin' ? '✅ Full' : '—'],
+          ['Analytics', myRole === 'company_admin' ? '✅ Full' : '—'],
+          ['Reports', myRole === 'company_admin' ? '✅ Download and export' : '—'],
+          ['Clients', myRole === 'company_admin' ? '✅ Full' : myRole === 'client' ? '✅ Own profile only' : '👁 Linked only'],
+          ['Employees', myRole === 'company_admin' ? '✅ Full' : '—'],
           ['User Management', '🔒 Admin only'],
           ['Settings', '🔒 Admin only'],
         ];
@@ -6874,7 +6960,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </div>`;
         return;
       }
-      const profiles = state.data.profiles.length ? state.data.profiles : employeeSeed();
+      const profiles = state.data.profiles;
       const searchQuery = state.usersSearch || '';
       const filteredProfiles = searchQuery
         ? profiles.filter((p) => ['name','email','role'].some((k) => String(p[k]||'').toLowerCase().includes(searchQuery.toLowerCase())))
@@ -6882,20 +6968,21 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       // Live RBAC matrix — highlight current user's column
       const myColIdx = state.profile?.role === 'company_admin' ? 0 : state.profile?.role === 'client' ? 2 : 1;
       const rbacMatrix = [
-        ['Dashboard',        '✅ Full',   '✅ Full',      '—'],
-        ['Projects',         '✅ Full',   '✅ Staff manage','✅ View own'],
-        ['Tickets',          '✅ Full',   '✅ Full',      '✅ Own only'],
-        ['Finance',          '✅ Full',   '✅ Staff manage','—'],
-        ['Analytics',        '✅ Full',   '✅ View',      '—'],
-        ['Reports',          '✅ Full',   '✅ View/Export','—'],
-        ['Clients',          '✅ Full',   '✅ Staff manage','✅ Own profile'],
-        ['Employees',        '✅ Full',   '👁 Own profile','—'],
+        ['Dashboard',        '✅ Full',   '✅ Assigned work',      '—'],
+        ['Projects',         '✅ Full',   '✅ Assigned only','✅ View own'],
+        ['Project Files',    '✅ Full',   '✅ Assigned only','—'],
+        ['Tickets',          '✅ Full',   '✅ Assigned only',      '✅ Own only'],
+        ['Finance',          '✅ Full',   '—','—'],
+        ['Analytics',        '✅ Full',   '—','—'],
+        ['Reports',          '✅ Full',   '—','—'],
+        ['Clients',          '✅ Full',   '👁 Linked only','✅ Own profile'],
+        ['Employees',        '✅ Full',   '—','—'],
         ['User Management',  '✅ Full',   '🔒 Restricted','—'],
         ['Settings',         '✅ Full',   '🔒 Restricted','—'],
       ];
       const colHeaders = ['Module', 'Admin', 'Member', 'Client'];
       const rbacHtml = `<div class="crm-table-wrap"><table class="crm-table" style="font-size:12px;"><thead><tr>${colHeaders.map((h, i) => `<th style="${i === myColIdx + 1 ? 'background:#ede9fe;color:#7c3aed;' : ''}">${h}${i === myColIdx + 1 ? ' ★' : ''}</th>`).join('')}</tr></thead><tbody>${rbacMatrix.map(([mod,...cols]) => `<tr><td><strong>${mod}</strong></td>${cols.map((c, i) => `<td style="${i === myColIdx ? 'background:#f5f3ff;font-weight:800;' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-      els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" id="btn-invite-user" type="button">Invite User</button><button class="crm-button" data-export="users" type="button">Export</button>')}
+      els.view.innerHTML = `${pageHead('User Management & Access Control', 'Create separate logins for clients and employees, assign roles, and manage permissions securely.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" id="btn-invite-user" type="button">Invite User</button><button class="crm-button" id="btn-data-review" type="button">Review data</button><button class="crm-button" data-export="users" type="button">Export</button>')}
         <div class="crm-grid crm-kpis">${metric('Total Users', profiles.length, '♧', 'blue', 'registered logins')}${metric('Client Logins', profiles.filter((item) => item.role === 'client').length, '○', 'green', 'client portal access')}${metric('Employee Logins', profiles.filter((item) => item.role !== 'client').length, '♙', 'purple', 'staff access')}${metric('Pending', profiles.filter((item) => item.status === 'pending').length, '▹', 'orange', 'awaiting activation')}</div>
         <div class="crm-two-col mt-5">
           <section class="crm-card">
@@ -6914,10 +7001,40 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>
         <div class="crm-two-col mt-5">
           <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Login Status Overview</h2></div><div class="crm-list">${profiles.slice(0, 6).map((item) => `<div class="crm-list-row"><span>${escapeHtml(item.name || item.email)}<br><small style="color:#94a3b8;">${escapeHtml(item.role || '')}</small></span>${badge(item.status || 'active', item.status === 'inactive' ? 'red' : 'green')}</div>`).join('')}</div></section>
-          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Overview</h2></div><div class="crm-list"><div class="crm-list-row"><span>Access control model</span><strong>Role-based (RBAC)</strong></div><div class="crm-list-row"><span>Inactive accounts</span><strong>${profiles.filter((item) => item.status === 'inactive').length}</strong></div><div class="crm-list-row"><span>Client logins</span><strong>${profiles.filter((p) => p.role === 'client').length}</strong></div><div class="crm-list-row"><span>Admin accounts</span><strong>${profiles.filter((p) => p.role === 'company_admin').length}</strong></div></div><div class="crm-toolbar" style="padding:12px 18px;"><button class="crm-button" id="btn-reset-password" type="button">Reset Password</button></div></section>
+          <section class="crm-card"><div class="crm-card-head"><h2 class="crm-card-title">Security Overview</h2></div><div class="crm-list"><div class="crm-list-row"><span>Access control model</span><strong>Role-based (RBAC)</strong></div><div class="crm-list-row"><span>Inactive accounts</span><strong>${profiles.filter((item) => item.status === 'inactive').length}</strong></div><div class="crm-list-row"><span>Client logins</span><strong>${profiles.filter((p) => p.role === 'client').length}</strong></div><div class="crm-list-row"><span>Admin accounts</span><strong>${profiles.filter((p) => p.role === 'company_admin').length}</strong></div></div><div class="crm-toolbar" style="padding:12px 18px;"><a class="crm-button" href="/reset-password" style="text-decoration:none;">Reset Password</a></div></section>
         </div>`;
       document.getElementById('users-search')?.addEventListener('input', (e) => { state.usersSearch = e.target.value; renderUsers(); bindActions(); });
       document.getElementById('btn-invite-user')?.addEventListener('click', () => openCreate('profiles'));
+      document.getElementById('btn-data-review')?.addEventListener('click', openDataReview);
+    }
+
+    function openDataReview() {
+      const resources = [
+        ['clients', 'Clients', state.data.clients, (item) => item.company || item.name || `Client #${item.id}`],
+        ['tickets', 'Tickets', state.data.tickets, (item) => `#TIC-${item.id} ${item.subject || 'Untitled ticket'}`],
+      ];
+      const rows = resources.flatMap(([resource, label, items, describe]) => items.map((item) => `<label class="crm-list-row" style="align-items:flex-start;gap:10px;"><input type="checkbox" name="record" value="${resource}:${item.id}" /><span><strong>${escapeHtml(label)}</strong><br><small>${escapeHtml(describe(item))} · ID ${item.id}</small></span></label>`)).join('');
+      els.modalTitle.textContent = 'Review persisted CRM data';
+      els.modalBody.innerHTML = `<form id="crm-data-review-form" class="grid gap-3"><p class="text-sm text-slate-600">These are real persisted client and ticket records. Select only rows you have confirmed are demo data. Client deletion unlinks related records; ticket deletion removes its messages. This cannot be undone.</p>${rows || '<p class="crm-empty">There are no client or ticket records to review.</p>'}<label class="grid gap-1 text-sm font-bold text-slate-700">Type DELETE to confirm<input class="crm-input" name="confirmation" autocomplete="off" /></label><button class="crm-button danger" type="submit">Delete selected records</button></form>`;
+      els.modal.classList.add('open');
+      document.getElementById('crm-data-review-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const selected = form.getAll('record').map(String);
+        if (!selected.length) return toast('Select at least one confirmed demo record.');
+        if (String(form.get('confirmation') || '') !== 'DELETE') return toast('Type DELETE to confirm permanent removal.');
+        try {
+          for (const entry of selected) {
+            const [resource, id] = entry.split(':');
+            await portal(`/api/portal/${resource}/${id}`, { method: 'DELETE' });
+          }
+          els.modal.classList.remove('open');
+          toast(`${selected.length} confirmed record${selected.length === 1 ? '' : 's'} deleted.`);
+          await loadData();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : 'Could not delete the selected records.');
+        }
+      });
     }
 
     function renderCrudResource(resource, title, subtitle, columns) {
@@ -6950,25 +7067,22 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
                 <div class="crm-list-row"><span>Department</span><strong>${escapeHtml(state.profile?.department || '—')}</strong></div>
               </div>
               <div class="crm-toolbar" style="padding:12px 18px;">
-                <button class="crm-button" id="btn-reset-password" type="button">Change Password</button>
+                <a class="crm-button" href="/reset-password" style="text-decoration:none;">Change Password</a>
               </div>
             </section>
             <section class="crm-card">
-              <div class="crm-card-head"><h2 class="crm-card-title">Company Info</h2></div>
+              <div class="crm-card-head"><h2 class="crm-card-title">Access scope</h2></div>
               <div class="crm-list">
-                <div class="crm-list-row"><span>Company</span><strong>TechMigos</strong></div>
-                <div class="crm-list-row"><span>Location</span><strong>Hyderabad, Telangana, India</strong></div>
-                <div class="crm-list-row"><span>Currency</span><strong>INR (₹)</strong></div>
-                <div class="crm-list-row"><span>Timezone</span><strong>Asia/Kolkata (IST)</strong></div>
-                <div class="crm-list-row"><span>Admin access</span><strong>🔒 Contact admin to modify</strong></div>
+                <div class="crm-list-row"><span>Company settings</span><strong>Managed by administrators</strong></div>
+                <div class="crm-list-row"><span>Project files</span><strong>Only assigned internal projects</strong></div>
+                <div class="crm-list-row"><span>Data visibility</span><strong>Restricted by your role</strong></div>
               </div>
             </section>
           </div>`;
-        document.getElementById('btn-reset-password')?.addEventListener('click', () => toast('Password reset email sent. Check your inbox.'));
         return;
       }
 
-      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, invoice defaults, notifications, and integrations.', '<button class="crm-button primary" type="button" id="settings-save-all-btn">💾 Save All</button>')}
+      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, invoice defaults, and access controls.', '<button class="crm-button primary" type="button" id="settings-save-all-btn">💾 Save All</button>')}
         <p id="settings-status" style="font-size:12px;color:#64748b;margin-bottom:16px;">Loading settings…</p>
 
         <!-- Company Profile -->
@@ -7009,31 +7123,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </form>
         </section>
 
-        <!-- Two-column: Integrations + Security -->
-        <div class="crm-two-col" style="margin-bottom:16px;">
-          <section class="crm-card">
-            <div class="crm-card-head"><h2 class="crm-card-title">Integrations</h2></div>
-            <div class="crm-list">
-              <div class="crm-list-row"><span>Supabase (Database)</span>${badge('connected', 'green')}</div>
-              <div class="crm-list-row"><span>Chart.js (Analytics)</span>${badge('active', 'blue')}</div>
-              <div class="crm-list-row"><span>MSG91 (SMS/Email)</span>${badge('configured', 'blue')}</div>
-              <div class="crm-list-row"><span>Export formats</span><strong>CSV, PDF</strong></div>
-            </div>
-          </section>
-          <section class="crm-card">
+        <section class="crm-card" style="margin-bottom:16px;">
             <div class="crm-card-head"><h2 class="crm-card-title">Security & Access</h2></div>
             <div class="crm-list">
               <div class="crm-list-row"><span>Access model</span><strong>Role-Based (RBAC)</strong></div>
-              <div class="crm-list-row"><span>Admin accounts</span><strong>${(state.data.profiles.filter((p) => p.role === 'company_admin')).length || 1}</strong></div>
+              <div class="crm-list-row"><span>Admin accounts</span><strong>${state.data.profiles.filter((p) => p.role === 'company_admin').length}</strong></div>
               <div class="crm-list-row"><span>Inactive accounts</span><strong>${state.data.profiles.filter((p) => p.status === 'inactive').length}</strong></div>
-              <div class="crm-list-row"><span>Total users</span><strong>${state.data.profiles.length || 1}</strong></div>
+              <div class="crm-list-row"><span>Total users</span><strong>${state.data.profiles.length}</strong></div>
             </div>
             <div class="crm-toolbar" style="padding:12px 18px;">
-              <button class="crm-button" id="btn-reset-password" type="button">Reset Password</button>
+              <a class="crm-button" href="/reset-password" style="text-decoration:none;">Reset Password</a>
               <button class="crm-button" data-jump="users" type="button">Manage Users</button>
             </div>
-          </section>
-        </div>`;
+        </section>`;
 
       // Load real settings from Supabase
       try {
@@ -7242,6 +7344,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         state.reportTo = event.target.value;
       });
       document.querySelectorAll('[data-report-export]').forEach((button) => button.addEventListener('click', exportCurrentReport));
+      document.querySelectorAll('[data-report-download-pdf]').forEach((button) => button.addEventListener('click', downloadCurrentReportPdf));
       document.querySelectorAll('[data-report-print]').forEach((button) => button.addEventListener('click', printCurrentReport));
       bindFinanceProofUploads();
       document.getElementById('crm-collapse')?.addEventListener('click', toggleSidebar);
@@ -8489,6 +8592,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           return;
         }
         state.profile = me.profile;
+        if (isCompanyAdmin()) {
+          try { state.companySettings = (await portal('/api/portal/settings/company')).settings || {}; }
+          catch { state.companySettings = {}; }
+        }
         if (['employees', 'users', 'settings'].includes(state.active) && !isCompanyAdmin()) {
           window.location.replace('/company/dashboard');
           return;
