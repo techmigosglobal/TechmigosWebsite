@@ -24,7 +24,7 @@ const RESOURCE_FIELDS = Object.freeze({
   ticket_messages: ['id', 'ticket_id', 'body', 'author_name', 'author_role', 'visibility', 'created_at'],
   invoices: ['id', 'client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring', 'created_at', 'updated_at'],
   invoice_items: ['id', 'invoice_id', 'description', 'quantity', 'rate', 'amount', 'unit', 'notes', 'sort_order', 'created_at'],
-  finances: ['id', 'invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url', 'created_at', 'updated_at'],
+  finances: ['id', 'invoice_id', 'client_id', 'project_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url', 'created_at', 'updated_at'],
   activities: ['id', 'action', 'entity_type', 'entity_id', 'summary', 'user_id', 'created_at'],
   profiles: ['id', 'auth_user_id', 'email', 'username', 'name', 'role', 'status', 'must_change_password', 'client_id', 'department', 'last_login', 'created_at', 'updated_at'],
   settings: ['id', 'category', 'settings', 'updated_at'],
@@ -37,7 +37,7 @@ const WRITE_FIELDS = Object.freeze({
   clients: ['name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes'],
   projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
   tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id'],
-  finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
+  finances: ['invoice_id', 'client_id', 'project_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
   settings: ['settings'],
   project_members: ['project_id', 'profile_id', 'role'],
   project_folders: ['project_id', 'parent_id', 'name', 'created_by'],
@@ -57,6 +57,18 @@ const PROJECT_FILE_TYPES = new Set([
   'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ...IMAGE_TYPES,
 ]);
+const PROJECT_STATUSES = new Set(['planning', 'active', 'review', 'completed', 'on_hold', 'cancelled']);
+const PROJECT_HEALTH = new Set(['on_track', 'watch', 'at_risk', 'breached']);
+
+export function validateProjectInput(payload = {}, { creating = false } = {}) {
+  if (creating && !String(payload.name || '').trim()) throw new Error('Project name is required.');
+  if (payload.name !== undefined && String(payload.name).trim().length > 160) throw new Error('Project names must be 160 characters or fewer.');
+  if (payload.status && !PROJECT_STATUSES.has(payload.status)) throw new Error('Choose a valid project status.');
+  if (payload.health && !PROJECT_HEALTH.has(payload.health)) throw new Error('Choose a valid project health value.');
+  for (const field of ['budget', 'expenses', 'revenue']) {
+    if (payload[field] !== undefined && payload[field] < 0) throw new Error(`${field} cannot be negative.`);
+  }
+}
 
 function errorFrom(error, fallback = 'Supabase request failed.') {
   const message = error?.message || fallback;
@@ -145,7 +157,12 @@ export function createCrmRepository(getSupabase) {
     for (const [key, rawValue] of Object.entries(input || {})) {
       if (!allowed.includes(key)) continue;
       let value = typeof rawValue === 'string' ? rawValue.trim() : rawValue;
-      if (value === '' || value == null) continue;
+      if (value === '' || value == null) {
+        // An optional client link must be removable. Other empty inputs retain the
+        // existing value so a partial update can never erase data accidentally.
+        if (resource === 'projects' && ['client_id', 'client_name'].includes(key)) output[key] = null;
+        continue;
+      }
       if (NUMERIC_FIELDS.has(key)) {
         value = Number(value);
         if (!Number.isFinite(value)) throw new Error(`${key} must be a valid number.`);
@@ -166,6 +183,10 @@ export function createCrmRepository(getSupabase) {
       throw new Error('Choose a valid finance status.');
     }
     return output;
+  }
+
+  function validateProjectPayload(payload, { creating = false } = {}) {
+    validateProjectInput(payload, { creating });
   }
 
   function sanitizeInvoice(invoice = {}) {
@@ -399,6 +420,25 @@ export function createCrmRepository(getSupabase) {
     return { ok: true };
   }
 
+  async function deleteProject(id) {
+    await getContext();
+    if (!isAdmin(context?.role)) throw new Error('Only company admins can delete projects.');
+    const projectId = Number(id);
+    if (!Number.isInteger(projectId)) throw new Error('Invalid project id.');
+    const client = sb();
+    const { data: files, error: filesError } = await client.from('crm_project_files')
+      .select('object_path').eq('project_id', projectId);
+    if (filesError) throw errorFrom(filesError, 'Could not prepare project file cleanup.');
+    const { error: deleteError } = await client.from('crm_projects').delete().eq('id', projectId);
+    if (deleteError) throw errorFrom(deleteError, 'Could not delete project.');
+    const paths = (files || []).map((file) => file.object_path).filter(Boolean);
+    if (paths.length) {
+      const { error: storageError } = await client.storage.from('project-files').remove(paths);
+      if (storageError) throw errorFrom(storageError, 'Project was deleted, but its stored files could not be removed.');
+    }
+    return { ok: true };
+  }
+
   async function setProjectMembers(projectId, profileIds) {
     await getContext();
     if (!isAdmin(context?.role)) throw new Error('Only company admins can assign project members.');
@@ -518,6 +558,7 @@ export function createCrmRepository(getSupabase) {
     if (resource === 'invoices' && id && !sub && method === 'GET') return getInvoiceDetail(id);
     if (resource === 'project-files' && id && sub === 'download' && method === 'GET') return { url: await getProjectFileUrl(id) };
     if (resource === 'project-files' && id && method === 'DELETE') return deleteProjectFile(id);
+    if (resource === 'projects' && id && method === 'DELETE') return deleteProject(id);
     if (resource === 'invoices' && (method === 'POST' || method === 'PATCH')) {
       return saveInvoice({ ...(body || {}), invoice: { ...(body?.invoice || body || {}), ...(id ? { id } : {}) } });
     }
@@ -537,6 +578,7 @@ export function createCrmRepository(getSupabase) {
     if (resource === 'profiles' && method === 'DELETE') throw new Error('Deactivate users from User Management instead of deleting their CRM profile.');
     if (method === 'POST' && !id) {
       const payload = sanitize(resource, body);
+      if (resource === 'projects') validateProjectPayload(payload, { creating: true });
       const { data, error } = await client.from(table).insert(payload).select(fields).single();
       if (error) throw errorFrom(error, `Could not create ${resource}.`);
       return { item: data };
@@ -544,6 +586,7 @@ export function createCrmRepository(getSupabase) {
     if (method === 'PATCH' && id) {
       const payload = sanitize(resource, body);
       if (!Object.keys(payload).length) throw new Error('No editable fields were supplied.');
+      if (resource === 'projects') validateProjectPayload(payload);
       if (isEmployee(context?.role) && resource === 'projects') {
         const { data, error } = await client.rpc('employee_update_project', { p_project_id: Number(id), p_patch: payload });
         if (error) throw errorFrom(error, 'Could not update the assigned project.');
@@ -577,6 +620,7 @@ export function createCrmRepository(getSupabase) {
     uploadProjectFile,
     getProjectFileUrl,
     deleteProjectFile,
+    deleteProject,
     setProjectMembers,
     clearSession() { context = null; contextPromise = null; },
   };

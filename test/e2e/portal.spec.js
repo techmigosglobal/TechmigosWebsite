@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
 
+async function visitProtectedRoute(page, path) {
+  // The portal redirects on the client as soon as auth state is read. Chromium
+  // may report that navigation as aborted even though the redirect succeeded.
+  await page.goto(path, { waitUntil: 'domcontentloaded' }).catch((error) => {
+    if (!String(error?.message || error).includes('ERR_ABORTED')) throw error;
+  });
+  await expect(page).toHaveURL(/\/login(?:\/|$)/);
+}
+
 test('login screen exposes the invite-only portal flow', async ({ page }) => {
   await page.goto('/login');
   await expect(page).toHaveTitle(/TechMigos/);
@@ -17,15 +26,13 @@ test('password recovery is available without opening the workspace', async ({ pa
 
 test('report and internal-file routes remain protected from unauthenticated users', async ({ page }) => {
   for (const path of ['/company/files', '/company/reports', '/company/user-management', '/company/settings']) {
-    await page.goto(path);
-    await expect(page).toHaveURL(/\/login(?:\/|$)/);
+    await visitProtectedRoute(page, path);
   }
 });
 
 test('unauthenticated company and client routes return to login', async ({ page }) => {
   for (const path of ['/company', '/company/files', '/client']) {
-    await page.goto(path);
-    await expect(page).toHaveURL(/\/login(?:\/|$)/);
+    await visitProtectedRoute(page, path);
   }
 });
 

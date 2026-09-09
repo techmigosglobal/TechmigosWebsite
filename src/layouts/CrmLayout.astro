@@ -2921,7 +2921,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       deals: ['client_id', 'lead_id', 'title', 'stage', 'value', 'currency', 'expected_close_date', 'assigned_to', 'notes'],
       tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id'],
       invoices: ['client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring'],
-      finances: ['invoice_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
+      finances: ['invoice_id', 'client_id', 'project_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
       followups: ['related_type', 'related_id', 'title', 'due_at', 'status', 'assigned_to', 'notes'],
       campaigns: ['name', 'subject', 'body', 'status', 'msg91_template_id', 'scheduled_at', 'sent_at'],
       profiles: ['auth_user_id', 'email', 'username', 'name', 'role', 'status', 'client_id', 'department'],
@@ -2983,8 +2983,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (!payload.company || !String(payload.company).trim()) return 'Company name is required.';
         if (!payload.name || !String(payload.name).trim()) return 'Contact name is required.';
       }
-      if (resource === 'projects' && !payload.client_id) {
-        return 'Select a client for this project.';
+      if (resource === 'projects') {
+        if (!payload.name || !String(payload.name).trim()) return 'Project name is required.';
+        if (String(payload.name).trim().length > 160) return 'Project names must be 160 characters or fewer.';
+        for (const field of ['budget', 'expenses', 'revenue']) {
+          if (payload[field] !== undefined && Number(payload[field]) < 0) return `${nice(field)} cannot be negative.`;
+        }
       }
       if (resource === 'tickets') {
         if (!payload.client_id) return 'Select a client before creating the ticket.';
@@ -3008,7 +3012,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       Object.entries(payload || {}).forEach(([key, value]) => {
         if (!allowed || !allowed.includes(key)) return;
         if (typeof value === 'string') value = value.trim();
-        if (value === '' || value === undefined || value === null) return;
+        if (value === '' || value === undefined || value === null) {
+          if (resource === 'projects' && ['client_id', 'client_name'].includes(key)) clean[key] = null;
+          return;
+        }
         if (NUMERIC_FIELDS.has(key)) value = Number(value);
         if (BOOLEAN_FIELDS.has(key)) value = value === true || value === 'true' || value === 'on' || value === '1';
         clean[key] = value;
@@ -3040,8 +3047,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function clientName(id) {
+      if (id === undefined || id === null || id === '') return '';
       const client = state.data.clients.find((item) => String(item.id) === String(id));
-      return client?.company || client?.name || `Client #${id || '-'}`;
+      return client?.company || client?.name || `Client #${id}`;
     }
 
     function filtered(rows, keys) {
@@ -3366,7 +3374,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             </div>
             ${dueBadge(project.due_date)}
           </div>
-          <div class="pm-card-client">${escapeHtml(project.client_name || clientName(project.client_id) || '—')}</div>
+          <div class="pm-card-client">${escapeHtml(project.client_name || clientName(project.client_id) || 'Internal project')}</div>
           <div class="pm-card-meta">
             <span>PM: ${escapeHtml(project.project_manager || '—')}</span>
             ${openTickets.length ? `<span style="color:#ef4444;">● ${openTickets.length} open tickets</span>` : ''}
@@ -3419,7 +3427,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <td>
             <div style="display:flex;align-items:center;gap:8px;">
               ${projectHealthDot(project.health)}
-              <div><strong>${escapeHtml(project.name)}</strong><br><small style="color:#64748b;">${escapeHtml(project.client_name || clientName(project.client_id) || '—')}</small></div>
+              <div><strong>${escapeHtml(project.name)}</strong><br><small style="color:#64748b;">${escapeHtml(project.client_name || clientName(project.client_id) || 'Internal project')}</small></div>
             </div>
           </td>
           <td>${escapeHtml(project.project_manager || '—')}</td>
@@ -6777,7 +6785,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
 
     function clientDetail(client) {
       if (!client) return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;"><div style="font-size:32px;">&#9711;</div><p style="color:#94a3b8;font-weight:600;">Select a client to view details</p></div>`;
-      const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id) || item.client_name === client.company);
+      const projects = state.data.projects.filter((item) => String(item.client_id) === String(client.id));
       const invoices = state.data.invoices.filter((item) => String(item.client_id) === String(client.id));
       const outstanding = invoices.filter((i) => invoiceBalance(i) > 0);
       const totalBilling = invoices.reduce((s, i) => s + invoiceTotal(i), 0);
@@ -7525,19 +7533,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function createFields(resource, values = {}) {
-      const clientOpts = () => `<option value="">— Select client —</option>` + state.data.clients.map((c) => `<option value="${c.id}"${String(values.client_id) === String(c.id) ? ' selected' : ''}>${escapeHtml(c.company || c.name)}</option>`).join('');
+      const clientOpts = (emptyLabel = '— Select client —') => `<option value="">${emptyLabel}</option>` + state.data.clients.map((c) => `<option value="${c.id}"${String(values.client_id) === String(c.id) ? ' selected' : ''}>${escapeHtml(c.company || c.name)}</option>`).join('');
       const projectOpts = () => `<option value="">— None —</option>` + state.data.projects.map((p) => `<option value="${p.id}"${String(values.project_id) === String(p.id) ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
       const leadOpts = () => `<option value="">— None —</option>` + state.data.leads.map((l) => `<option value="${l.id}"${String(values.lead_id) === String(l.id) ? ' selected' : ''}>${escapeHtml(l.name)} (${escapeHtml(l.company || '')})</option>`).join('');
       const empOpts = () => `<option value="">— Unassigned —</option>` + employeeSeed().map((e) => `<option value="${escapeHtml(e.name)}"${values.assigned_to === e.name || values.project_manager === e.name ? ' selected' : ''}>${escapeHtml(e.name)}</option>`).join('');
       const employeeIdOpts = () => `<option value="">— Unassigned —</option>` + employeeSeed().map((employee) => `<option value="${employee.auth_user_id}"${String(values.assigned_user_id) === String(employee.auth_user_id) ? ' selected' : ''}>${escapeHtml(employee.name || employee.email)}</option>`).join('');
+      const projectManagerOpts = () => `<option value="">— Set later —</option>` + employeeSeed().map((employee) => `<option value="${employee.id}"${String(values.project_manager_profile_id) === String(employee.id) || values.project_manager === employee.name ? ' selected' : ''}>${escapeHtml(employee.name || employee.email)}${employee.department ? ` · ${escapeHtml(employee.department)}` : ''}</option>`).join('');
 
       const configs = {
         projects: [
-          { name: 'client_id',       label: 'Client *',         type: 'select',   required: true,  html: `<select name="client_id" required>${clientOpts()}</select>` },
-          { name: 'name',            label: 'Project Name *',   type: 'text',     required: true,  placeholder: 'e.g. Website Redesign' },
-          { name: 'client_name',     label: 'Client Name',      type: 'text',     placeholder: 'Optional display name' },
-          { name: 'project_manager', label: 'Project Manager',  type: 'select',   html: `<select name="project_manager">${empOpts()}</select>` },
-          { name: 'owner_user_id',   label: 'Owner Auth User ID', type: 'text',   placeholder: 'Optional Supabase auth UUID' },
+          { name: 'name',            label: 'Project Name *',   type: 'text',     required: true,  wide: true, placeholder: 'e.g. Website Redesign' },
+          { name: 'client_id',       label: 'Client',           type: 'select',   html: `<select name="client_id">${clientOpts('— Internal project (no client) —')}</select>` },
+          { name: 'project_manager_profile_id', label: 'Project Manager', type: 'select', html: `<select name="project_manager_profile_id">${projectManagerOpts()}</select>` },
           { name: 'budget',          label: 'Budget (₹)',       type: 'number',   min: '0', step: 'any', placeholder: '0' },
           { name: 'expenses',        label: 'Expenses (₹)',     type: 'number',   min: '0', step: 'any', placeholder: '0' },
           { name: 'revenue',         label: 'Revenue (₹)',      type: 'number',   min: '0', step: 'any', placeholder: '0' },
@@ -7565,8 +7572,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           { name: 'amount',           label: 'Amount (₹) *',    type: 'number',   required: true, min: '0', step: 'any', placeholder: '0' },
           { name: 'status',           label: 'Status *',        type: 'select',   required: true, html: `<select name="status" required>${selectOpts([['pending','Pending'],['paid','Paid'],['received','Received'],['half_payment','Half Payment'],['cancelled','Cancelled']], values.status || 'pending')}</select>` },
           { name: 'reference_id',     label: 'Reference ID',    type: 'text',     placeholder: 'e.g. EXP-001' },
-          { name: 'client',           label: 'Client',          type: 'text',     placeholder: 'Client name' },
-          { name: 'project',          label: 'Project',         type: 'text',     placeholder: 'Project name' },
+          { name: 'client_id',        label: 'Client',          type: 'select',   html: `<select name="client_id">${clientOpts('— Company expense / no client —')}</select>` },
+          { name: 'project_id',       label: 'Project',         type: 'select',   html: `<select name="project_id">${projectOpts()}</select>` },
           { name: 'paid_by',          label: 'Paid By',         type: 'text',     placeholder: 'Person/account' },
           { name: 'received_by',      label: 'Received By',     type: 'text',     placeholder: 'Person/account' },
           { name: 'payment_method',   label: 'Payment Method',  type: 'text',     placeholder: 'UPI / Bank / Cash' },
@@ -7681,7 +7688,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const wide = f.wide ? 'wide' : '';
         const req = f.required ? ' required' : '';
         let input;
-        if (f.type === 'html') {
+        if (f.type === 'html' || f.html) {
           input = f.html;
         } else if (f.type === 'textarea') {
           input = `<textarea name="${f.name}"${req} placeholder="${f.placeholder || ''}">${escapeHtml(values[f.name] ?? '')}</textarea>`;
@@ -7696,7 +7703,65 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         }
         return `<label class="${wide}">${f.label}${input}</label>`;
       });
-      return `<form id="crm-edit-form" class="crm-form-grid">${rows.join('')}<button class="crm-button primary wide" type="submit">${submitLabel}</button></form>`;
+      const projectTeam = resource === 'projects' ? projectTeamMarkup(values) : '';
+      return `<form id="crm-edit-form" class="crm-form-grid" autocomplete="off">${rows.join('')}${projectTeam}<button class="crm-button primary wide" type="submit">${submitLabel}</button></form>`;
+    }
+
+    function projectTeamMarkup(values = {}) {
+      const current = new Set(state.data.project_members
+        .filter((member) => String(member.project_id) === String(values.id))
+        .map((member) => String(member.profile_id)));
+      const people = employeeSeed().filter((profile) => profile.status === 'active');
+      if (!people.length) return '<p class="crm-help wide">No active company users are available to assign yet. You can create the project and assign a team later.</p>';
+      return `<fieldset class="wide" style="border:1px solid var(--crm-line);border-radius:10px;padding:12px 14px;margin-top:2px;"><legend style="padding:0 6px;font-size:12px;font-weight:800;color:#334155;">Delivery team</legend><p class="crm-help" style="margin:0 0 8px;">Assigned users can access this project, its support tickets, and its internal files.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px;">${people.map((person) => `<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#334155;"><input type="checkbox" name="project_member_id" value="${person.id}"${current.has(String(person.id)) ? ' checked' : ''} /><span>${escapeHtml(person.name || person.email)}</span></label>`).join('')}</div></fieldset>`;
+    }
+
+    function projectPayloadFromForm(raw) {
+      const payload = { ...raw };
+      const client = state.data.clients.find((item) => String(item.id) === String(raw.client_id));
+      if (client) {
+        payload.client_id = client.id;
+        payload.client_name = client.company || client.name || '';
+      } else {
+        payload.client_id = null;
+        payload.client_name = null;
+      }
+      const manager = state.data.profiles.find((profile) => String(profile.id) === String(raw.project_manager_profile_id)
+        && ['company_admin', 'company_member'].includes(profile.role) && profile.status === 'active');
+      if (manager) {
+        payload.project_manager = manager.name || manager.email || '';
+        payload.owner_user_id = manager.auth_user_id || '';
+      }
+      return normalizePayload('projects', payload);
+    }
+
+    function projectMemberIds(formData, raw) {
+      const selected = formData.getAll('project_member_id').map(Number).filter(Number.isInteger);
+      const managerId = Number(raw.project_manager_profile_id);
+      if (Number.isInteger(managerId)) selected.push(managerId);
+      return [...new Set(selected)];
+    }
+
+    function bindLinkedClientProjectFields(form) {
+      const clientSelect = form?.querySelector('[name="client_id"]');
+      const projectSelect = form?.querySelector('[name="project_id"]');
+      if (!clientSelect || !projectSelect) return;
+      const selectedProjectId = String(projectSelect.value || '');
+      const refreshProjects = () => {
+        const selectedClientId = String(clientSelect.value || '');
+        const previous = String(projectSelect.value || '');
+        const allowed = state.data.projects.filter((project) => !selectedClientId
+          || !project.client_id
+          || String(project.client_id) === selectedClientId);
+        projectSelect.innerHTML = `<option value="">— None —</option>${allowed.map((project) => `<option value="${project.id}">${escapeHtml(project.name)}</option>`).join('')}`;
+        projectSelect.value = allowed.some((project) => String(project.id) === previous) ? previous : '';
+      };
+      clientSelect.addEventListener('change', refreshProjects);
+      projectSelect.addEventListener('change', () => {
+        const project = state.data.projects.find((item) => String(item.id) === String(projectSelect.value));
+        if (project?.client_id) clientSelect.value = String(project.client_id);
+      });
+      if (selectedProjectId) refreshProjects();
     }
 
     function invoiceLineItemsHtml(items) {
@@ -7996,7 +8061,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     function openTicketCreate() {
       const clientOpts = state.data.clients.map((c) => `<option value="${c.id}">${escapeHtml(c.company || c.name)}</option>`).join('');
       const projectOpts = state.data.projects.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-      const empOpts = employeeSeed().map((e) => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+      const empOpts = employeeSeed().filter((e) => e.status === 'active').map((e) => `<option value="${escapeHtml(e.auth_user_id)}">${escapeHtml(e.name || e.email)}</option>`).join('');
       els.modalTitle.textContent = 'Create Support Ticket';
       els.modalBody.innerHTML = `<form id="crm-edit-form" class="crm-form-grid">
         <label>Client *<select name="client_id" required><option value="">— Select client —</option>${clientOpts}</select></label>
@@ -8004,14 +8069,17 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <label>Priority<select name="priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
         <label class="wide">Subject *<input name="subject" required placeholder="Brief description of the issue" /></label>
         <label class="wide">Description<textarea name="description" rows="3" placeholder="Detailed description..."></textarea></label>
-        <label>Assigned To<select name="assigned_to"><option value="">Unassigned</option>${empOpts}</select></label>
+        <label>Assigned To<select name="assigned_user_id"><option value="">Unassigned</option>${empOpts}</select></label>
         <label>Status<select name="status"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="waiting">Waiting</option></select></label>
         <button class="crm-button primary wide" type="submit">Create Ticket</button>
       </form>`;
       els.modal.classList.add('open');
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const body = normalizePayload('tickets', Object.fromEntries(new FormData(event.currentTarget).entries()));
+        const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+        const assignee = state.data.profiles.find((profile) => String(profile.auth_user_id) === String(raw.assigned_user_id));
+        if (assignee) raw.assigned_to = assignee.name || assignee.email || '';
+        const body = normalizePayload('tickets', raw);
         try {
           await portal('/api/portal/tickets', { method: 'POST', body: JSON.stringify(body) });
           els.modal.classList.remove('open');
@@ -8051,17 +8119,23 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       els.modalTitle.textContent = titleMap[resource] || `Create ${resource.replace(/_/g, ' ')}`;
       els.modalBody.innerHTML = formMarkup(isFinSub ? resource : actualResource, defaults, titleMap[resource] || 'Create');
       els.modal.classList.add('open');
+      if (actualResource === 'finances') bindLinkedClientProjectFields(document.getElementById('crm-edit-form'));
       if (actualResource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+        const formData = new FormData(event.currentTarget);
+        const raw = Object.fromEntries(formData.entries());
         if (isFinSub) raw.transaction_type = resource;
         if (actualResource === 'finances' && !raw.transaction_type) raw.transaction_type = 'expense';
-        const body = normalizePayload(actualResource, raw);
+        const body = actualResource === 'projects' ? projectPayloadFromForm(raw) : normalizePayload(actualResource, raw);
         const validationError = validatePayload(actualResource, body);
         if (validationError) return toast(validationError);
         try {
-          await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
+          const result = await portal(`/api/portal/${actualResource}`, { method: 'POST', body: JSON.stringify(body) });
+          if (actualResource === 'projects') {
+            const members = projectMemberIds(formData, raw);
+            if (members.length) await window.tmCrm.repository.setProjectMembers(Number(result?.item?.id), members);
+          }
           els.modal.classList.remove('open');
           toast(`${nice(resource)} created successfully`);
           await loadData();
@@ -8101,14 +8175,20 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const employeeEdit = isEmployee() && ['projects', 'tickets'].includes(resource);
       els.modalBody.innerHTML = employeeEdit ? employeeDeliveryForm(resource, item) : formMarkup(resource, item, 'Save Changes');
       els.modal.classList.add('open');
+      if (resource === 'finances') bindLinkedClientProjectFields(document.getElementById('crm-edit-form'));
       if (resource === 'finances') bindFinanceProofField();
       document.getElementById('crm-edit-form')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const body = normalizePayload(resource, Object.fromEntries(new FormData(event.currentTarget).entries()));
+        const formData = new FormData(event.currentTarget);
+        const raw = Object.fromEntries(formData.entries());
+        const body = resource === 'projects' && !employeeEdit ? projectPayloadFromForm(raw) : normalizePayload(resource, raw);
         const validationError = validatePayload(resource, body);
         if (validationError) return toast(validationError);
         try {
           await portal(`/api/portal/${resource}/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+          if (resource === 'projects' && !employeeEdit && isCompanyAdmin()) {
+            await window.tmCrm.repository.setProjectMembers(Number(id), projectMemberIds(formData, raw));
+          }
           els.modal.classList.remove('open');
           toast('Saved');
           await loadData();

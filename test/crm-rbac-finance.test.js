@@ -22,6 +22,7 @@ import {
   invoiceTotal,
 } from '../src/lib/crm/finance.js';
 import { buildCrmReportPdf } from '../src/scripts/crm-pdf.js';
+import { validateProjectInput } from '../src/lib/crm/repository.js';
 
 test('RBAC keeps Admin, Employee, and Client capabilities separate', () => {
   assert.equal(canManageUsers(CRM_ROLES.ADMIN), true);
@@ -51,6 +52,21 @@ test('project-folder and file permissions retain company-only boundaries', () =>
   assert.equal(canRead(CRM_ROLES.EMPLOYEE, 'project_folders'), true);
   assert.equal(canRead(CRM_ROLES.CLIENT, 'project_folders'), false);
   assert.equal(canCreate(CRM_ROLES.CLIENT, 'project_files'), false);
+});
+
+test('project input accepts internal projects but rejects incomplete or unsafe values', () => {
+  assert.doesNotThrow(() => validateProjectInput({
+    name: 'Internal operations refresh',
+    client_id: null,
+    budget: 0,
+    expenses: 0,
+    revenue: 0,
+    status: 'planning',
+    health: 'on_track',
+  }, { creating: true }));
+  assert.throws(() => validateProjectInput({ name: ' ', status: 'planning' }, { creating: true }), /Project name is required/);
+  assert.throws(() => validateProjectInput({ name: 'Launch', budget: -1 }, { creating: true }), /budget cannot be negative/);
+  assert.throws(() => validateProjectInput({ name: 'Launch', status: 'unknown' }, { creating: true }), /valid project status/);
 });
 
 test('invoice balances use received amounts and treat cancelled invoices as void', () => {
