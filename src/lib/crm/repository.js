@@ -50,13 +50,6 @@ const FILE_LIMIT = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const PROOF_TYPES = new Set([...IMAGE_TYPES, 'application/pdf']);
 const PROJECT_FILE_LIMIT = 50 * 1024 * 1024;
-const PROJECT_FILE_TYPES = new Set([
-  'application/pdf', 'text/plain', 'text/csv', 'application/zip', 'application/x-zip-compressed',
-  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ...IMAGE_TYPES,
-]);
 const PROJECT_STATUSES = new Set(['planning', 'active', 'review', 'completed', 'on_hold', 'cancelled']);
 const PROJECT_HEALTH = new Set(['on_track', 'watch', 'at_risk', 'breached']);
 
@@ -67,6 +60,14 @@ export function validateProjectInput(payload = {}, { creating = false } = {}) {
   if (payload.health && !PROJECT_HEALTH.has(payload.health)) throw new Error('Choose a valid project health value.');
   for (const field of ['budget', 'expenses', 'revenue']) {
     if (payload[field] !== undefined && payload[field] < 0) throw new Error(`${field} cannot be negative.`);
+  }
+}
+
+export function validateProfileInput(payload = {}) {
+  if (String(payload.role || '') !== 'client') return;
+  const clientId = Number(payload.client_id);
+  if (!Number.isSafeInteger(clientId) || clientId < 1) {
+    throw new Error('Select a CRM client before creating a client login.');
   }
 }
 
@@ -87,6 +88,13 @@ function parseBody(options) {
   return options.body;
 }
 
+function fallbackProfileUsername(body = {}) {
+  const emailPrefix = String(body.email ?? '').split('@')[0];
+  const source = emailPrefix || String(body.name ?? 'user');
+  const base = source.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+  return base.length >= 3 ? base : 'user';
+}
+
 function cleanPathSegment(value) {
   return String(value ?? '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100) || 'file';
 }
@@ -99,8 +107,21 @@ function validateFile(file, allowedTypes) {
 
 function validateProjectFile(file) {
   if (!file || typeof file.size !== 'number') throw new Error('Choose a file to upload.');
-  if (!PROJECT_FILE_TYPES.has(file.type)) throw new Error('This file type is not allowed for project storage.');
   if (file.size > PROJECT_FILE_LIMIT) throw new Error('File is too large. Maximum size is 50 MB.');
+}
+
+function projectFileDisplayName(file, fallback = 'file') {
+  const raw = String(file?.webkitRelativePath || file?.name || fallback).replace(/\\/g, '/');
+  const segments = raw.split('/').filter((segment) => segment && segment !== '.' && segment !== '..');
+  return (segments.join('/').slice(0, 255) || fallback);
+}
+
+function cleanProjectFolderName(value) {
+  return String(value || 'Uploaded folder')
+    .replace(/[\\/]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120) || 'Uploaded folder';
 }
 
 export function createCrmRepository(getSupabase) {
@@ -133,6 +154,13 @@ export function createCrmRepository(getSupabase) {
       return context;
     })();
     try { return await contextPromise; } catch (error) { contextPromise = null; throw error; }
+  }
+
+  async function requireProjectAccess(current, projectId) {
+    if (isAdmin(current.role)) return;
+    const { data, error } = await sb().from('crm_projects')
+      .select('id').eq('id', projectId).maybeSingle();
+    if (error || !data) throw errorFrom(error, 'You can only access files for projects assigned to you.');
   }
 
   function requireResource(resource, method = 'GET') {
@@ -366,6 +394,7 @@ export function createCrmRepository(getSupabase) {
     const numericFolderId = folderId ? Number(folderId) : null;
     if (!Number.isInteger(numericProjectId)) throw new Error('Choose a project before uploading a file.');
     if (numericFolderId !== null && !Number.isInteger(numericFolderId)) throw new Error('Invalid project folder.');
+    await requireProjectAccess(current, numericProjectId);
     if (numericFolderId !== null) {
       const { data: folder, error: folderError } = await sb().from('crm_project_folders')
         .select('id, project_id').eq('id', numericFolderId).maybeSingle();
@@ -373,16 +402,21 @@ export function createCrmRepository(getSupabase) {
         throw errorFrom(folderError, 'Choose a folder in the selected project.');
       }
     }
-    const path = `projects/${numericProjectId}/${Date.now()}-${cleanPathSegment(file.name)}`;
     const client = sb();
-    const upload = await client.storage.from('project-files').upload(path, file, { upsert: false, contentType: file.type });
+    return (await storeProjectFile(client, current, numericProjectId, numericFolderId, file, projectFileDisplayName(file))).item;
+  }
+
+  async function storeProjectFile(client, current, projectId, folderId, file, originalName, sequence = 0) {
+    const mimeType = String(file.type || 'application/octet-stream');
+    const path = `projects/${projectId}/${Date.now()}-${sequence}-${cleanPathSegment(file.name)}`;
+    const upload = await client.storage.from('project-files').upload(path, file, { upsert: false, contentType: mimeType });
     if (upload.error) throw errorFrom(upload.error, 'Could not upload the project file.');
     const { data, error } = await client.from('crm_project_files').insert({
-      project_id: numericProjectId,
-      folder_id: numericFolderId,
+      project_id: projectId,
+      folder_id: folderId,
       object_path: path,
-      original_name: file.name,
-      mime_type: file.type,
+      original_name: originalName,
+      mime_type: mimeType,
       size_bytes: file.size,
       uploaded_by: current.user.id,
     }).select(RESOURCE_FIELDS.project_files.join(',')).single();
@@ -390,23 +424,76 @@ export function createCrmRepository(getSupabase) {
       await client.storage.from('project-files').remove([path]);
       throw errorFrom(error, 'Could not save the project file record.');
     }
-    return { item: data };
+    return { item: data, path };
   }
 
-  async function getProjectFileUrl(id) {
-    await getContext();
+  async function uploadProjectFolder(projectId, files, folderName) {
+    const current = await getContext();
+    if (!isAdmin(current.role) && !isEmployee(current.role)) throw new Error('Only company users can upload project files.');
+    const numericProjectId = Number(projectId);
+    if (!Number.isInteger(numericProjectId)) throw new Error('Choose a project before uploading a folder.');
+    await requireProjectAccess(current, numericProjectId);
+    const fileList = Array.from(files || []).filter((file) => file && typeof file.size === 'number');
+    if (!fileList.length) throw new Error('Choose a folder that contains at least one file.');
+    if (fileList.length > 500) throw new Error('A folder upload can contain up to 500 files at a time.');
+    fileList.forEach(validateProjectFile);
+
+    const name = cleanProjectFolderName(folderName || projectFileDisplayName(fileList[0]).split('/')[0]);
+    const client = sb();
+    const { data: folder, error: folderError } = await client.from('crm_project_folders').insert({
+      project_id: numericProjectId,
+      parent_id: null,
+      name,
+      created_by: current.user.id,
+    }).select(RESOURCE_FIELDS.project_folders.join(',')).single();
+    if (folderError || !folder) throw errorFrom(folderError, 'Could not create the uploaded project folder.');
+
+    const items = [];
+    const paths = [];
+    try {
+      for (let index = 0; index < fileList.length; index += 1) {
+        const file = fileList[index];
+        const fullName = projectFileDisplayName(file);
+        const segments = fullName.split('/');
+        const originalName = segments[0] === name && segments.length > 1 ? segments.slice(1).join('/') : fullName;
+        const stored = await storeProjectFile(client, current, numericProjectId, Number(folder.id), file, originalName, index);
+        items.push(stored.item);
+        paths.push(stored.path);
+      }
+    } catch (error) {
+      try {
+        if (items.length) await client.from('crm_project_files').delete().in('id', items.map((item) => item.id));
+        if (paths.length) await client.storage.from('project-files').remove(paths);
+        await client.from('crm_project_folders').delete().eq('id', folder.id);
+      } catch {
+        // Keep the original upload error for the user; cleanup is best effort.
+      }
+      throw errorFrom(error, 'Could not upload the project folder.');
+    }
+    return { folder, items };
+  }
+
+  async function getProjectFileUrl(id, { download = false } = {}) {
+    const current = await getContext();
+    if (!isAdmin(current.role) && !isEmployee(current.role)) throw new Error('Only company users can access project files.');
     const fileId = Number(id);
     if (!Number.isInteger(fileId)) throw new Error('Invalid project file.');
     const { data: file, error: fileError } = await sb().from('crm_project_files')
-      .select('id, object_path').eq('id', fileId).maybeSingle();
+      .select('id, project_id, object_path').eq('id', fileId).maybeSingle();
     if (fileError || !file) throw errorFrom(fileError, 'Project file is unavailable.');
-    const { data, error } = await sb().storage.from('project-files').createSignedUrl(file.object_path, 600);
+    await requireProjectAccess(current, Number(file.project_id));
+    const { data, error } = await sb().storage.from('project-files').createSignedUrl(
+      file.object_path,
+      600,
+      download ? { download: true } : undefined,
+    );
     if (error || !data?.signedUrl) throw errorFrom(error, 'Could not create a project file download link.');
     return data.signedUrl;
   }
 
   async function deleteProjectFile(id) {
-    await getContext();
+    const current = await getContext();
+    if (!isAdmin(current.role)) throw new Error('Only company admins can manage project files.');
     const fileId = Number(id);
     if (!Number.isInteger(fileId)) throw new Error('Invalid project file.');
     const client = sb();
@@ -527,7 +614,17 @@ export function createCrmRepository(getSupabase) {
   async function adminUserOperation(operation, body) {
     if (!isAdmin(context?.role)) throw new Error('Only company admins can manage users.');
     const { data, error } = await sb().functions.invoke('admin-users', { body: { operation, ...body } });
-    if (error) throw errorFrom(error, 'Could not complete the admin user operation.');
+    if (error) {
+      let message = error.message || 'Could not complete the admin user operation.';
+      try {
+        const response = error.context?.clone ? error.context.clone() : error.context;
+        const payload = response?.json ? await response.json() : null;
+        if (payload?.error) message = payload.error;
+      } catch {
+        // Keep the SDK error when the function response is not JSON.
+      }
+      throw errorFrom({ ...error, message }, 'Could not complete the admin user operation.');
+    }
     if (data?.error) throw new Error(data.error);
     return data;
   }
@@ -573,8 +670,22 @@ export function createCrmRepository(getSupabase) {
       if (error) throw errorFrom(error, `Could not load ${resource}.`);
       return { items: data || [] };
     }
-    if (resource === 'profiles' && method === 'POST' && !id) return adminUserOperation(body?.password ? 'provision' : 'invite', body || {});
-    if (resource === 'profiles' && method === 'PATCH' && id) return adminUserOperation('update_profile', { ...(body || {}), profile_id: id });
+    if (resource === 'profiles' && method === 'POST' && !id) {
+      const profileBody = { ...(body || {}) };
+      if (!String(profileBody.username || '').trim()) profileBody.username = fallbackProfileUsername(profileBody);
+      validateProfileInput(profileBody);
+      if (profileBody.role && profileBody.role !== CRM_ROLES.CLIENT) profileBody.client_id = null;
+      const operation = profileBody.operation === 'provision' || profileBody.operation === 'invite'
+        ? profileBody.operation
+        : profileBody.password ? 'provision' : 'invite';
+      return adminUserOperation(operation, profileBody);
+    }
+    if (resource === 'profiles' && method === 'PATCH' && id) {
+      const profileBody = { ...(body || {}), profile_id: id };
+      validateProfileInput(profileBody);
+      if (profileBody.role && profileBody.role !== CRM_ROLES.CLIENT) profileBody.client_id = null;
+      return adminUserOperation('update_profile', profileBody);
+    }
     if (resource === 'profiles' && method === 'DELETE') throw new Error('Deactivate users from User Management instead of deleting their CRM profile.');
     if (method === 'POST' && !id) {
       const payload = sanitize(resource, body);
@@ -618,6 +729,7 @@ export function createCrmRepository(getSupabase) {
     getInvoiceAssetUrl,
     getFinanceProofUrl,
     uploadProjectFile,
+    uploadProjectFolder,
     getProjectFileUrl,
     deleteProjectFile,
     deleteProject,

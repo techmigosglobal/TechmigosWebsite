@@ -6,8 +6,6 @@ export const crmNavItems = [
   ['finance', 'Finance', 'finance', '/company/finance'],
   ['analytics', 'Analytics', 'analytics', '/company/analytics'],
   ['reports', 'Reports', 'reports', '/company/reports'],
-  ['clients', 'Clients', 'clients', '/company/clients'],
-  ['employees', 'Employees', 'employees', '/company/employees'],
   ['users', 'User Management', 'users', '/company/user-management'],
   ['settings', 'Settings', 'settings', '/company/settings'],
 ] as const;

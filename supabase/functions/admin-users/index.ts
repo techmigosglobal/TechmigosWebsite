@@ -34,6 +34,33 @@ function normalizedUsername(value: unknown) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+function usernameBase(value: unknown) {
+  const normalized = normalizedUsername(value)
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  return normalized.length >= 3 ? normalized : 'user';
+}
+
+async function uniqueUsername(preferred: unknown, fallback: unknown) {
+  const base = usernameBase(preferred || fallback);
+  const { data, error } = await serviceClient
+    .from('crm_profiles')
+    .select('username')
+    .ilike('username', `${base}%`)
+    .limit(1000);
+  if (error) throw new Error('Could not prepare a unique username.');
+
+  const used = new Set((data || []).map((profile) => normalizedUsername(profile.username)));
+  if (!used.has(base)) return base;
+  for (let suffix = 2; suffix < 10000; suffix += 1) {
+    const suffixText = `-${suffix}`;
+    const candidate = `${base.slice(0, 64 - suffixText.length)}${suffixText}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  throw new Error('Could not generate a unique username.');
+}
+
 function validUsername(value: unknown) {
   return /^[a-z0-9][a-z0-9._-]{2,63}$/.test(normalizedUsername(value));
 }
@@ -57,6 +84,12 @@ async function requireClientLink(role: unknown, clientId: number | null) {
   const { data, error } = await serviceClient.from('crm_clients').select('id').eq('id', clientId).maybeSingle();
   if (error || !data) throw new Error('The selected CRM client does not exist.');
   return clientId;
+}
+
+function parsedClientId(value: unknown) {
+  if (value === '' || value == null) return null;
+  const clientId = Number(value);
+  return Number.isSafeInteger(clientId) && clientId > 0 ? clientId : Number.NaN;
 }
 
 async function requireAdmin(request: Request) {
@@ -93,11 +126,12 @@ async function requireAuthenticatedUser(request: Request) {
 
 async function inviteUser(body: Record<string, unknown>) {
   const email = normalizedEmail(body.email);
-  const username = normalizedUsername(body.username);
   const name = String(body.name ?? '').trim();
+  const username = await uniqueUsername(body.username, email.split('@')[0] || name);
   const role = body.role;
   const status = validStatus(body.status) ? body.status : 'pending';
-  const clientId = body.client_id === '' || body.client_id == null ? null : Number(body.client_id);
+  const requestedClientId = parsedClientId(body.client_id);
+  const clientId = role === 'client' ? requestedClientId : null;
 
   if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
   if (!validUsername(username)) throw new Error('Username must be 3–64 lowercase letters, numbers, dots, underscores, or hyphens.');
@@ -135,11 +169,12 @@ async function inviteUser(body: Record<string, unknown>) {
 
 async function provisionUser(body: Record<string, unknown>) {
   const email = normalizedEmail(body.email);
-  const username = normalizedUsername(body.username);
   const name = String(body.name ?? '').trim();
+  const username = await uniqueUsername(body.username, email.split('@')[0] || name);
   const role = body.role;
   const department = String(body.department ?? '').trim();
-  const clientId = body.client_id === '' || body.client_id == null ? null : Number(body.client_id);
+  const requestedClientId = parsedClientId(body.client_id);
+  const clientId = role === 'client' ? requestedClientId : null;
   const password = String(body.password ?? '');
 
   if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
@@ -198,9 +233,10 @@ async function updateProfile(body: Record<string, unknown>) {
   const email = body.email == null ? existing.email : normalizedEmail(body.email);
   const username = body.username == null ? existing.username : normalizedUsername(body.username);
   const name = body.name == null ? existing.name : String(body.name).trim();
-  const clientId = body.client_id === '' || body.client_id == null
+  const requestedClientId = body.client_id === '' || body.client_id == null
     ? (role === 'client' ? existing.client_id : null)
-    : Number(body.client_id);
+    : parsedClientId(body.client_id);
+  const clientId = role === 'client' ? requestedClientId : null;
   if (!email || !email.includes('@')) throw new Error('A valid email address is required.');
   if (!validUsername(username)) throw new Error('Username must be 3–64 lowercase letters, numbers, dots, underscores, or hyphens.');
   if (!name) throw new Error('Full name is required.');
