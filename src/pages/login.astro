@@ -35,10 +35,10 @@ const slides = [
 
         <form id="portal-login-form" class="login-form">
           <label for="login-id">
-            <span class="field-label">Client ID / Employee ID</span>
+            <span class="field-label">Username or email</span>
             <span class="input-wrap">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></svg>
-              <input id="login-id" name="login_id" type="text" required autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="Client ID / Employee ID" />
+              <input id="login-id" name="login_id" type="text" required autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="Username or email" />
             </span>
           </label>
 
@@ -217,9 +217,10 @@ const slides = [
 
 <style>
   :global(body) { margin: 0; background: #dbe5ef; }
-  .portal-shell { min-height: 100vh; box-sizing: border-box; padding: 24px; display: grid; place-items: center; background: radial-gradient(circle at 72% 18%, rgba(255,255,255,.9), transparent 34%), linear-gradient(135deg, #dbe5ef 0%, #eef3f8 47%, #c8d6e5 100%); }
-  .portal-card { width: min(1500px, 100%); min-height: min(760px, calc(100vh - 48px)); display: grid; grid-template-columns: minmax(330px, .72fr) minmax(0, 1.28fr); overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 22px; background: rgba(255,255,255,.58); box-shadow: 0 32px 90px rgba(15, 36, 67, .2); backdrop-filter: blur(24px); }
-  .login-panel { position: relative; z-index: 2; display: flex; flex-direction: column; padding: clamp(28px, 4vw, 58px); border-right: 1px solid rgba(255,255,255,.62); color: #0b1d50; background: linear-gradient(145deg, rgba(255,255,255,.66), rgba(242,247,252,.42)); backdrop-filter: blur(22px) saturate(125%); }
+  .portal-shell { min-height: 100vh; box-sizing: border-box; padding: 16px; display: grid; place-items: center; background: radial-gradient(circle at 12% 18%, rgba(102,164,255,.42), transparent 32%), radial-gradient(circle at 88% 82%, rgba(38,194,206,.3), transparent 34%), radial-gradient(circle at 72% 18%, rgba(255,255,255,.82), transparent 30%), linear-gradient(135deg, #c7d8e8 0%, #edf4fa 47%, #bfd0e2 100%); }
+  .portal-card { position: relative; isolation: isolate; width: min(1240px, 100%); min-height: min(700px, calc(100vh - 32px)); display: grid; grid-template-columns: minmax(300px, .86fr) minmax(0, 1.14fr); overflow: hidden; border: 1px solid rgba(255,255,255,.7); border-radius: 20px; background: rgba(255,255,255,.2); box-shadow: 0 28px 72px rgba(15, 36, 67, .18); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+  .portal-card::before { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 12% 18%, rgba(255,255,255,.38), transparent 28%), radial-gradient(circle at 85% 82%, rgba(107,177,255,.22), transparent 35%); content: ''; pointer-events: none; }
+  .login-panel { position: relative; z-index: 2; display: flex; flex-direction: column; padding: clamp(24px, 3vw, 40px); border-right: 1px solid rgba(255,255,255,.44); color: #0b1d50; background: linear-gradient(145deg, rgba(255,255,255,.23), rgba(241,247,255,.08) 52%, rgba(183,211,240,.13)); box-shadow: inset -1px 0 rgba(255,255,255,.2), inset 0 1px rgba(255,255,255,.3); backdrop-filter: blur(30px) saturate(145%); -webkit-backdrop-filter: blur(30px) saturate(145%); }
   .brand-lockup { display: inline-flex; align-items: center; gap: 12px; width: max-content; color: #09184d; text-decoration: none; }
   .brand-mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; background: rgba(255,255,255,.72); box-shadow: 0 8px 22px rgba(35, 78, 133, .12); }
   .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
@@ -227,17 +228,18 @@ const slides = [
   .brand-lockup small { display: block; margin-top: 5px; color: #3d5d9a; font-size: 10px; }
   .back-home { display: inline-flex; width: max-content; margin-top: 24px; color: #285da5; font-size: 11px; font-weight: 800; text-decoration: none; }
   .back-home:hover { color: #075cf2; text-decoration: underline; }
-  .login-heading { margin-top: clamp(45px, 8vh, 92px); }
+  .login-heading { margin-top: clamp(30px, 5vh, 54px); }
   .overline, .field-label { text-transform: uppercase; font-weight: 800; letter-spacing: .12em; }
   .overline { margin: 0 0 13px; color: #1761d2; font-size: 11px; }
-  .login-heading h1 { margin: 0; color: #07164e; font-size: clamp(32px, 3.5vw, 50px); line-height: .98; letter-spacing: -.06em; }
-  .login-heading > p:last-child { margin: 15px 0 0; color: #526b99; font-size: 14px; }
-  .login-form { margin-top: 31px; }
-  .login-form label { display: block; margin-top: 16px; }
+  .login-heading h1 { margin: 0; color: #07164e; font-size: clamp(30px, 3vw, 44px); line-height: .98; letter-spacing: -.06em; }
+  .login-heading > p:last-child { margin: 12px 0 0; color: #526b99; font-size: 13px; }
+  .login-form { margin-top: 24px; }
+  .login-form label { display: block; margin-top: 13px; }
   .field-label { display: block; margin-bottom: 7px; color: #26477f; font-size: 10px; }
   .input-wrap { position: relative; display: flex; align-items: center; }
   .input-wrap > svg { position: absolute; left: 16px; width: 19px; height: 19px; color: #3764a4; pointer-events: none; }
-  .input-wrap input { width: 100%; height: 52px; box-sizing: border-box; border: 1px solid rgba(126, 159, 202, .42); border-radius: 10px; padding: 0 48px; color: #08184d; background: rgba(255,255,255,.8); outline: none; box-shadow: inset 0 1px 2px rgba(43, 76, 123, .04); font: inherit; font-size: 13px; }
+  .input-wrap input { width: 100%; height: 48px; box-sizing: border-box; border: 1px solid rgba(126, 159, 202, .42); border-radius: 10px; padding: 0 48px; color: #08184d; background: rgba(255,255,255,.34); outline: none; box-shadow: inset 0 1px 2px rgba(43, 76, 123, .04); font: inherit; font-size: 13px; }
+  .input-wrap input:-webkit-autofill { -webkit-text-fill-color: #08184d; -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,.34) inset; transition: background-color 9999s ease-in-out 0s; }
   .input-wrap input::placeholder { color: #6b82aa; }
   .input-wrap input:focus { border-color: #1769f5; box-shadow: 0 0 0 4px rgba(23,105,245,.13); }
   #password-toggle { position: absolute; right: 6px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 8px; color: #1d4485; background: transparent; cursor: pointer; }
@@ -248,7 +250,7 @@ const slides = [
   .remember-option input { width: 15px; height: 15px; margin: 0; accent-color: #1769f5; }
   .form-options a, .login-footer a { color: #075cf2; font-weight: 800; text-decoration: none; }
   .form-options a:hover, .login-footer a:hover { text-decoration: underline; }
-  .sign-in-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin-top: 23px; border: 0; border-radius: 10px; color: white; background: linear-gradient(105deg, #075cf2, #1675f7); box-shadow: 0 12px 25px rgba(7,92,242,.26); cursor: pointer; font: inherit; font-size: 14px; font-weight: 800; }
+  .sign-in-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; margin-top: 18px; border: 0; border-radius: 10px; color: white; background: linear-gradient(105deg, #075cf2, #1675f7); box-shadow: 0 12px 25px rgba(7,92,242,.26); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
   .sign-in-button:hover { background: linear-gradient(105deg, #064fd4, #0d65e4); transform: translateY(-1px); }
   .sign-in-button:focus-visible, #password-toggle:focus-visible, .showcase-controls button:focus-visible, .slide-dots button:focus-visible { outline: 3px solid rgba(15, 103, 246, .35); outline-offset: 3px; }
   .sign-in-button svg { width: 18px; height: 18px; }
@@ -257,24 +259,24 @@ const slides = [
   .spinner.is-visible { display: block; }
   .login-status { min-height: 20px; margin: 9px 0 0; color: #58709b; font-size: 11px; }
   .login-status.is-error { color: #c33147; }
-  .secure-note { display: flex; gap: 12px; margin-top: auto; padding-top: 30px; color: #17386e; }
+  .secure-note { display: flex; gap: 12px; margin-top: auto; padding-top: 22px; color: #17386e; }
   .secure-icon { display: grid; flex: 0 0 auto; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #1a4b9c; background: #d9e6f8; }
   .secure-icon svg { width: 17px; height: 17px; }
   .secure-note strong, .secure-note small { display: block; }
   .secure-note strong { font-size: 11px; }
   .secure-note small { max-width: 235px; margin-top: 4px; color: #61789e; font-size: 10px; line-height: 1.5; }
-  .login-footer { margin-top: 28px; padding-top: 18px; border-top: 1px solid rgba(95, 126, 170, .24); color: #61789e; font-size: 10px; }
+  .login-footer { margin-top: 22px; padding-top: 15px; border-top: 1px solid rgba(95, 126, 170, .24); color: #61789e; font-size: 10px; }
   .login-footer p { margin: 0 0 11px; font-size: 11px; }
   .login-footer div { display: flex; gap: 9px; }
   .login-footer small { display: block; margin-top: 11px; }
-  .showcase { position: relative; min-height: 640px; overflow: hidden; color: white; background: #172b50; }
+  .showcase { position: relative; min-height: 560px; overflow: hidden; color: white; background: #172b50; }
   .portal-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility .7s ease; }
   .portal-slide.is-active { opacity: 1; visibility: visible; }
   .portal-slide > img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
   .showcase-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5, 22, 57, .62), rgba(5, 22, 57, .05) 68%), linear-gradient(0deg, rgba(3, 13, 36, .58), transparent 45%); }
   .slide-copy { position: absolute; inset: clamp(38px, 7vw, 100px) clamp(30px, 6vw, 100px) 120px; max-width: 520px; }
-  .slide-eyebrow { margin: 0 0 26px; color: #c9dcff; font-family: Georgia, serif; font-size: clamp(17px, 2vw, 25px); font-style: italic; }
-  .slide-copy h2 { margin: 0; max-width: 590px; color: white; font-size: clamp(42px, 5vw, 78px); line-height: .94; letter-spacing: -.065em; text-wrap: balance; }
+  .slide-eyebrow { margin: 0 0 21px; color: #c9dcff; font-family: Georgia, serif; font-size: clamp(16px, 1.7vw, 22px); font-style: italic; }
+  .slide-copy h2 { margin: 0; max-width: 520px; color: white; font-size: clamp(36px, 4vw, 62px); line-height: .94; letter-spacing: -.065em; text-wrap: balance; }
   .slide-copy h2 span { display: inline; color: #5d9cff; }
   .portal-slide:nth-child(2) .slide-copy h2 span { color: #9766ff; }
   .portal-slide:nth-child(3) .slide-copy h2 span { color: #50caff; }
@@ -296,9 +298,9 @@ const slides = [
   @media (max-width: 900px) {
     .portal-shell { padding: 0; display: block; }
     .portal-card { min-height: 100vh; grid-template-columns: 1fr; border: 0; border-radius: 0; }
-    .login-panel { min-height: 650px; padding: 30px clamp(22px, 7vw, 54px); }
-    .login-heading { margin-top: 48px; }
-    .showcase { min-height: 470px; }
+    .login-panel { min-height: 610px; padding: 28px clamp(22px, 7vw, 54px); }
+    .login-heading { margin-top: 38px; }
+    .showcase { min-height: 430px; }
     .slide-copy { inset: 45px 28px 100px; }
     .slide-copy h2 { font-size: clamp(38px, 10vw, 62px); }
   }

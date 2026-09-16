@@ -1,10 +1,10 @@
 ---
 import Icon from './Icon.astro';
-const { icon='folder', label, value, delta='', tone='blue', trend='up', progress=0 } = Astro.props;
+const { icon='folder', label, value, delta='', tone='blue', trend='up', progress=0, showProgress=true } = Astro.props;
 ---
 <div class="stat-card">
   <div class={`stat-icon tone-${tone}`}><Icon name={icon} size={20}/></div>
   <div class="stat-label">{label}</div>
   <div class="stat-value-row"><strong>{value}</strong>{delta && <span class={`trend ${trend}`}>{trend === 'down' ? '↓' : '↑'} {delta}</span>}</div>
-  <div class="mini-progress"><span class={`fill tone-${tone}`} style={`width:${progress}%`}></span></div>
+  {showProgress && <div class="mini-progress"><span class={`fill tone-${tone}`} style={`width:${progress}%`}></span></div>}
 </div>

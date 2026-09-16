@@ -1,22 +1,53 @@
 ---
-import { crmNavIcon, crmNavItems } from '../../lib/crmNav';
+import Icon from '../../features/operations/components/Icon.astro';
+import { crmNavItems } from '../../lib/crmNav';
 
 interface Props {
   activeTab: string;
 }
 
 const { activeTab } = Astro.props;
+const groups = [...new Set(crmNavItems.map((item) => item.group))];
+const navKeyByPath: Record<string, string> = {
+  '/company': 'dashboard',
+  '/company/projects': 'projects',
+  '/company/files': 'files',
+  '/company/support': 'tickets',
+  '/company/finance': 'finance',
+  '/company/analytics': 'analytics',
+  '/company/reports': 'reports',
+  '/company/users': 'users',
+  '/company/settings': 'settings',
+};
 ---
 
 <aside class="crm-sidebar">
-  <div class="crm-brand"><img src="/icon.png" class="crm-logo" alt="TechMigos" /><span>TechMigos CRM</span></div>
+  <div class="crm-brand"><img src="/icon.png" class="crm-logo" alt="TechMigos" /><span>TechMigos</span></div>
   <nav class="crm-nav" aria-label="Company CRM navigation" id="crm-nav">
-    {crmNavItems.map(([key, label, icon, path]) => (
-      <a href={path} class={`crm-nav-item ${activeTab === key ? 'active' : ''}`} style="text-decoration:none;" data-nav-key={key}>
-        <span class="crm-nav-icon" set:html={crmNavIcon(icon)} />
-        <span class="crm-nav-label">{label}</span>
-      </a>
+    {groups.map((group) => (
+      <div class="crm-nav-group">
+        <span class="crm-nav-section">{group}</span>
+        {crmNavItems.filter((item) => item.group === group).map((item) => {
+          const key = navKeyByPath[item.href] || item.href;
+          return (
+            <a
+              href={item.href}
+              class={`crm-nav-item ${activeTab === key ? 'active' : ''}`}
+              style="text-decoration:none;"
+              title={item.label}
+              data-nav-key={key}
+              data-required-role={item.requiredRole || ''}
+              data-required-resource={item.resource || ''}
+            >
+              <span class="crm-nav-icon"><Icon name={item.icon} size={18} /></span>
+              <span class="crm-nav-label">{item.label}</span>
+            </a>
+          );
+        })}
+      </div>
     ))}
   </nav>
-  <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
+  <div class="crm-sidebar-footer">
+    <button id="crm-collapse" class="crm-button crm-collapse" type="button" aria-label="Collapse sidebar">⇤</button>
+  </div>
 </aside>

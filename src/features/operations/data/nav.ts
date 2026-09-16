@@ -1,4 +1,13 @@
-export const nav = [
+export type OperationsNavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  group: string;
+  resource?: string;
+  requiredRole?: string;
+};
+
+export const nav: OperationsNavItem[] = [
   { href: '/company', label: 'Dashboard', icon: 'dashboard', group: 'Work', resource: 'projects' },
   { href: '/company/projects', label: 'Projects', icon: 'folder', group: 'Work', resource: 'projects' },
   { href: '/company/files', label: 'Files', icon: 'report', group: 'Work', resource: 'project_files' },

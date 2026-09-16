@@ -1,6 +1,200 @@
 /* Operations & Management presentation layer. Non-finance content is scoped;
    Finance keeps its ledger/invoice rendering and receives the shared rail only. */
 
+/* Finance and the legacy operations dashboard share one navigation contract.
+   Keep the Finance shell's ledger styling separate, but make its rail stable
+   when users move between company routes. */
+.crm-app:has(.finance-page) {
+  --crm-blue: #1464f4;
+  --crm-blue-dark: #0b4bc1;
+  --crm-navy: #10224a;
+  --crm-text: #243a68;
+  --crm-muted: #687ba5;
+  --crm-line: #e1eaf7;
+  --crm-bg: #f7faff;
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f7faff;
+}
+
+.crm-app.sidebar-collapsed:has(.finance-page) {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.crm-app:has(.finance-page) .crm-sidebar {
+  z-index: 40;
+  width: auto;
+  height: 100vh;
+  border-right: 1px solid #dfe7f2;
+  background: #fff;
+  color: #243a68;
+  box-shadow: 2px 0 14px rgba(34, 67, 119, 0.025);
+}
+
+.crm-app:has(.finance-page) .crm-brand {
+  min-height: 66px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #e5edf8;
+  color: #10224a;
+}
+
+.crm-app:has(.finance-page) .crm-nav {
+  gap: 0;
+  padding: 12px 8px;
+  background: #fff;
+}
+
+.crm-app:has(.finance-page) .crm-nav-group {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 22px;
+}
+
+.crm-app:has(.finance-page) .crm-nav-section {
+  display: block;
+  padding: 6px 16px 7px;
+  color: #7584a3;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.crm-app:has(.finance-page) .crm-nav-item {
+  min-height: 34px;
+  gap: 10px;
+  border: 0;
+  border-radius: 12px;
+  padding: 7px 10px;
+  color: #1f2b44;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.crm-app:has(.finance-page) .crm-nav-item:hover {
+  background: #f4f7fc;
+  color: #1464f4;
+  transform: none;
+}
+
+.crm-app:has(.finance-page) .crm-nav-item.active {
+  border: 0;
+  background: #eaf1fc;
+  color: #233b70;
+  box-shadow: none;
+}
+
+.crm-app:has(.finance-page) .crm-nav-icon {
+  width: 18px;
+  height: 18px;
+  color: #27354e;
+}
+
+.crm-app:has(.finance-page) .crm-nav-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.crm-app:has(.finance-page) .crm-nav-item.active .crm-nav-icon {
+  color: #315fbf;
+}
+
+.crm-app:has(.finance-page) .crm-sidebar-footer {
+  display: flex;
+  align-items: center;
+  min-height: 66px;
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid #e5edf8;
+}
+
+.crm-app:has(.finance-page) .crm-collapse {
+  min-height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #26354f;
+  font-size: 13px;
+  box-shadow: none;
+}
+
+.crm-app:has(.finance-page) .crm-collapse:hover {
+  background: #edf3fd;
+  color: #1464f4;
+}
+
+.crm-app.sidebar-collapsed:has(.finance-page) .crm-brand {
+  justify-content: center;
+  padding: 13px 0;
+}
+
+.crm-app.sidebar-collapsed:has(.finance-page) .crm-nav {
+  padding: 12px 8px;
+}
+
+.crm-app.sidebar-collapsed:has(.finance-page) .crm-nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.crm-app.sidebar-collapsed:has(.finance-page) .crm-sidebar-footer {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+@media (max-width: 900px) {
+  .crm-app:has(.finance-page),
+  .crm-app.sidebar-collapsed:has(.finance-page) {
+    display: block;
+  }
+
+  .crm-app:has(.finance-page) .crm-sidebar {
+    position: sticky;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid #dfe7f2;
+  }
+
+  .crm-app:has(.finance-page) .crm-brand {
+    min-height: 54px;
+    padding: 10px 16px;
+  }
+
+  .crm-app:has(.finance-page) .crm-nav {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 12px 10px;
+  }
+
+  .crm-app:has(.finance-page) .crm-nav-group {
+    display: contents;
+  }
+
+  .crm-app:has(.finance-page) .crm-nav-section,
+  .crm-app:has(.finance-page) .crm-sidebar-footer {
+    display: none;
+  }
+
+  .crm-app:has(.finance-page) .crm-nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    padding: 8px 11px;
+  }
+
+  .crm-app.sidebar-collapsed:has(.finance-page) .crm-brand span,
+  .crm-app.sidebar-collapsed:has(.finance-page) .crm-nav-label {
+    display: inline;
+    max-width: 200px;
+    opacity: 1;
+  }
+}
+
 .crm-app:has(.operations-page) {
   --crm-blue: #1464f4;
   --crm-blue-dark: #0b4bc1;
@@ -301,8 +495,7 @@
 
 .crm-app:has(.operations-page) .crm-company-pill,
 .crm-app:has(.operations-page) .crm-topbar-clock,
-.crm-app:has(.operations-page) .crm-sync-status,
-.crm-app:has(.operations-page) .crm-logout-btn {
+.crm-app:has(.operations-page) .crm-sync-status {
   display: none;
 }
 
@@ -1918,6 +2111,78 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
   white-space: nowrap;
 }
 
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview {
+  position: relative;
+  display: grid;
+  min-height: 164px;
+  margin: 0 14px 4px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #e1eaf6;
+  border-radius: 10px;
+  background: #f5f8fd;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview img,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview iframe {
+  display: block;
+  width: 100%;
+  min-height: 164px;
+  border: 0;
+  background: #fff;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview img {
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-loading,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-empty {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 24px 16px;
+  color: #7182a4;
+  text-align: center;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(245, 248, 253, 0.92);
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-loading > span,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-empty > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: #e8f1ff;
+  color: #1464f4;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-loading svg,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-empty svg {
+  width: 20px;
+  height: 20px;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-loading p,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-empty p {
+  margin: 0;
+  font-size: 11px;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-preview-empty strong {
+  color: #243a68;
+  font-size: 12px;
+}
+
 .crm-app:has(.operations-page.crm-files-page) .files-reference-detail-meta {
   display: grid;
   gap: 0;
@@ -3341,8 +3606,7 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
 .crm-app:has(.finance-page) .crm-topbar::before,
 .crm-app:has(.finance-page) .crm-company-pill,
 .crm-app:has(.finance-page) .crm-topbar-clock,
-.crm-app:has(.finance-page) .crm-sync-status,
-.crm-app:has(.finance-page) .crm-logout-btn {
+.crm-app:has(.finance-page) .crm-sync-status {
   display: none;
 }
 
@@ -4133,6 +4397,23 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
   box-sizing: border-box;
   gap: 10px !important;
   padding: 13px 16px !important;
+  color: #10224a !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
+
+.crm-app:has(.operations-page) .crm-logo,
+.crm-app:has(.finance-page) .crm-logo {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 11px !important;
+}
+
+.crm-app.sidebar-collapsed:has(.operations-page) .crm-logo,
+.crm-app.sidebar-collapsed:has(.finance-page) .crm-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
 }
 
 .crm-app:has(.operations-page) .crm-nav,
@@ -4144,9 +4425,111 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
 .crm-app:has(.operations-page) .crm-nav-item,
 .crm-app:has(.finance-page) .crm-nav-item {
   min-height: 34px !important;
+  height: 36px !important;
+  box-sizing: border-box;
   border-radius: 12px !important;
   padding: 7px 10px !important;
   font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.crm-app:has(.operations-page) .crm-topbar,
+.crm-app:has(.finance-page) .crm-topbar {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 470px) auto !important;
+  align-items: center !important;
+  gap: 18px !important;
+  min-height: 66px !important;
+  height: 66px !important;
+  box-sizing: border-box;
+  padding: 0 26px !important;
+}
+
+.crm-app:has(.operations-page) .crm-search,
+.crm-app:has(.finance-page) .crm-search {
+  width: 100% !important;
+  max-width: 470px !important;
+  min-width: 0;
+}
+
+.crm-app:has(.operations-page) .crm-search input,
+.crm-app:has(.finance-page) .crm-search input {
+  width: 100% !important;
+  height: 40px !important;
+  box-sizing: border-box;
+  border-radius: 9px !important;
+  padding: 0 54px 0 50px !important;
+  font-size: 14px !important;
+}
+
+.crm-app:has(.operations-page) .crm-search > span:first-child,
+.crm-app:has(.finance-page) .crm-search > span:first-child {
+  left: 19px !important;
+  font-size: 17px !important;
+}
+
+.crm-app:has(.operations-page) .crm-top-actions,
+.crm-app:has(.finance-page) .crm-top-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0;
+}
+
+.crm-app:has(.operations-page) .crm-icon-button,
+.crm-app:has(.finance-page) .crm-icon-button {
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  box-sizing: border-box;
+  border-radius: 9px !important;
+}
+
+.crm-app:has(.operations-page) .crm-user,
+.crm-app:has(.finance-page) .crm-user {
+  min-height: 46px !important;
+  height: 46px !important;
+  box-sizing: border-box;
+  border-radius: 12px !important;
+  padding: 5px 12px 5px 6px !important;
+}
+
+.crm-app:has(.operations-page) .crm-avatar,
+.crm-app:has(.finance-page) .crm-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 12px !important;
+}
+
+.crm-app:has(.operations-page) .crm-user-text span:first-child,
+.crm-app:has(.finance-page) .crm-user-text span:first-child {
+  font-size: 14px !important;
+}
+
+/* Dashboard has a more-specific historical identity scale; keep its loaded
+   user control aligned with the same header on every other company route. */
+.crm-app.crm-app:has(.operations-page) .crm-user-text span:first-child,
+.crm-app.crm-app:has(.finance-page) .crm-user-text span:first-child {
+  font-size: 14px !important;
+}
+
+.crm-app:has(.operations-page) .crm-user-text span:last-child,
+.crm-app:has(.finance-page) .crm-user-text span:last-child {
+  font-size: 11px !important;
+}
+
+.crm-app.crm-app:has(.operations-page) .crm-user-text span:last-child,
+.crm-app.crm-app:has(.finance-page) .crm-user-text span:last-child {
+  font-size: 11px !important;
+}
+
+.crm-app:has(.operations-page) .crm-logout-btn,
+.crm-app:has(.finance-page) .crm-logout-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  box-sizing: border-box;
+  border-radius: 9px !important;
 }
 
 .crm-app:has(.operations-page) .crm-content,
@@ -4236,10 +4619,44 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
 }
 
 @media (max-width: 900px) {
+  .crm-app:has(.operations-page),
+  .crm-app:has(.finance-page),
+  .crm-app.sidebar-collapsed:has(.operations-page),
+  .crm-app.sidebar-collapsed:has(.finance-page) {
+    display: grid !important;
+    grid-template-columns: 56px minmax(0, 1fr) !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-sidebar,
+  .crm-app:has(.finance-page) .crm-sidebar {
+    position: sticky !important;
+    width: 56px !important;
+    height: 100vh !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-main,
+  .crm-app:has(.finance-page) .crm-main {
+    min-width: 0 !important;
+    min-height: 100vh !important;
+    grid-template-rows: 66px minmax(0, 1fr) !important;
+  }
+
   .crm-app:has(.operations-page) .crm-brand,
   .crm-app:has(.finance-page) .crm-brand {
     justify-content: center;
     padding: 13px 0 !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-topbar,
+  .crm-app:has(.finance-page) .crm-topbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    padding: 0 16px !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-search,
+  .crm-app:has(.finance-page) .crm-search {
+    max-width: none !important;
   }
 
   .crm-app:has(.operations-page) .crm-nav-item,
@@ -4262,8 +4679,224 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
     height: 60px !important;
   }
 
+  .crm-app:has(.operations-page) .crm-main,
+  .crm-app:has(.finance-page) .crm-main {
+    grid-template-rows: 60px minmax(0, 1fr) !important;
+  }
+
   .crm-app:has(.operations-page) .crm-content,
   .crm-app:has(.finance-page) .crm-content {
     padding: 18px 12px 26px !important;
+  }
+}
+
+/* Files visual language: keep the reference's category color cues while
+   retaining the TechMigos blue shell and live-drive layout. */
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card {
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card > button:first-child {
+  min-height: 126px;
+  padding: 12px;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-icon {
+  display: grid;
+  width: 48px;
+  height: 42px;
+  place-items: center;
+  border-radius: 10px;
+  background: #eaf2ff;
+  color: #1464f4;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--blue .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--blue .files-reference-project-nav-icon {
+  background: #eaf2ff;
+  color: #1464f4;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--orange .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--orange .files-reference-project-nav-icon {
+  background: #fff2dc;
+  color: #d98900;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--green .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--green .files-reference-project-nav-icon {
+  background: #e4f8ef;
+  color: #0ea86e;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--purple .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--purple .files-reference-project-nav-icon {
+  background: #f0eaff;
+  color: #7651e8;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--red .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--red .files-reference-project-nav-icon {
+  background: #ffebed;
+  color: #e64b59;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-folder-card--brown .files-reference-folder-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item--brown .files-reference-project-nav-icon {
+  background: #f4ece8;
+  color: #987262;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-project-nav-item.active .files-reference-project-nav-icon {
+  box-shadow: inset 0 0 0 1px rgba(20, 100, 244, 0.08);
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card {
+  position: relative;
+  border-radius: 12px;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-icon {
+  background: #eef5ff;
+  color: #1464f4;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--image .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--image {
+  background: #eaf2ff;
+  color: #1464f4;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--pdf .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--pdf {
+  background: #ffebed;
+  color: #e64b59;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--design .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--design {
+  background: #f0eaff;
+  color: #7651e8;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--archive .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--archive {
+  background: #fff2dc;
+  color: #d98900;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--spreadsheet .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--spreadsheet {
+  background: #e4f8ef;
+  color: #0ea86e;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--presentation .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--presentation {
+  background: #fff0e2;
+  color: #df7625;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--document .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--document {
+  background: #eaf2ff;
+  color: #2e72d0;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--video .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--video {
+  background: #ffebf1;
+  color: #d94c73;
+}
+
+.crm-app:has(.operations-page.crm-files-page) .files-reference-file-card--generic .files-reference-file-icon,
+.crm-app:has(.operations-page.crm-files-page) .files-reference-detail-icon--generic {
+  background: #f1f4f8;
+  color: #687b99;
+}
+
+@media (min-width: 561px) {
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 9px;
+    min-height: 158px;
+    padding: 10px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-icon {
+    width: 100%;
+    height: 88px;
+    border-radius: 9px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-copy {
+    gap: 4px;
+    padding: 0 2px 2px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-copy strong {
+    font-size: 11px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-chevron {
+    position: absolute;
+    top: 8px;
+    right: 9px;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-card.active::after {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 999px;
+    background: #1464f4;
+    color: #fff;
+    content: '✓';
+    font-size: 12px;
+    font-weight: 900;
+  }
+}
+
+@media (max-width: 560px) {
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    min-height: 132px;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-icon {
+    width: 100%;
+    height: 58px;
+  }
+
+  .crm-app:has(.operations-page.crm-files-page) .files-reference-files-grid .files-reference-file-chevron {
+    display: none;
   }
 }

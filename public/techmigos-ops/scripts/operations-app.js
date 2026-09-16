@@ -10,7 +10,37 @@
   };
   const openDrawer = id => document.getElementById(id)?.classList.add('open');
   const closeDrawer = id => document.getElementById(id)?.classList.remove('open');
-  const closeFloating = () => $$('.context-menu,.filter-popover').forEach(x => x.remove());
+  const floatingSelectors = '.context-menu,.filter-popover,.notifications-popover,.help-popover,.profile-menu';
+  const closeFloating = () => {
+    $$(floatingSelectors).forEach(node => node.remove());
+    $$('[data-action="toggle-notifications"],[data-action="open-help"],[data-action="profile-menu"]').forEach(trigger => trigger.setAttribute('aria-expanded', 'false'));
+  };
+  const syncDesktopSidebar = () => {
+    const collapsed = document.body.classList.contains('sidebar-collapsed');
+    const toggle = $('.sidebar-toggle');
+    toggle?.setAttribute('aria-expanded', String(!collapsed));
+    toggle?.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+  };
+  const syncMobileSidebar = () => {
+    const open = document.body.classList.contains('mobile-nav-open');
+    $('.mobile-menu')?.setAttribute('aria-expanded', String(open));
+    $('.mobile-menu')?.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  };
+  const setSidebarState = collapsed => {
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    syncDesktopSidebar();
+  };
+  const setMobileSidebarState = open => {
+    document.body.classList.toggle('mobile-nav-open', open);
+    syncMobileSidebar();
+  };
+  const setNotificationCount = value => {
+    const badge = $('#notification-count');
+    if (!badge) return;
+    const count = Math.max(0, Number(value) || 0);
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.hidden = count === 0;
+  };
   const positionFloating = (node, anchor) => {
     const r = anchor.getBoundingClientRect();
     const width = parseFloat(getComputedStyle(node).width) || 180;
@@ -26,9 +56,13 @@
     }
     const action = actionEl.dataset.action;
     if (action === 'toggle-sidebar') {
-      if (innerWidth <= 900) document.body.classList.toggle('mobile-nav-open');
-      else document.body.classList.toggle('sidebar-collapsed');
+      if (innerWidth <= 900) setMobileSidebarState(!document.body.classList.contains('mobile-nav-open'));
+      else setSidebarState(!document.body.classList.contains('sidebar-collapsed'));
     }
+    if (action === 'toggle-notifications') toggleNotifications(actionEl);
+    if (action === 'open-help') toggleHelp(actionEl);
+    if (action === 'profile-menu') toggleProfileMenu(actionEl);
+    if (action === 'sign-out') await signOut(actionEl);
     if (action === 'open-drawer') openDrawer(actionEl.dataset.target);
     if (action === 'close-drawer') closeDrawer(actionEl.dataset.target);
     if (action === 'close-detail') $('#file-detail')?.classList.remove('open');
@@ -63,6 +97,58 @@
     if (action === 'add-integration') toast('Integration manager is ready for provider configuration.');
     if (action === 'export-report') exportCSV();
   });
+
+  function toggleNotifications(anchor) {
+    if ($('.notifications-popover')) { closeFloating(); return; }
+    closeFloating();
+    const count = $('#notification-count')?.textContent?.trim() || '0';
+    const summary = $('#dashboard-ticket-summary')?.textContent?.trim() || (count === '0' ? 'No new workspace alerts.' : `${count} workspace alerts need review.`);
+    const popover = document.createElement('div');
+    popover.className = 'notifications-popover';
+    const isAdmin = document.body.dataset.crmRole === 'company_admin';
+    popover.innerHTML = `<strong>Workspace notifications</strong><p>${escapeHtml(summary)}</p>${isAdmin ? '<a href="/company/support">Review support queue</a>' : '<small>Support notifications are managed by company admins.</small>'}`;
+    document.body.append(popover);
+    positionFloating(popover, anchor);
+    anchor.setAttribute('aria-expanded', 'true');
+  }
+
+  function toggleHelp(anchor) {
+    if ($('.help-popover')) { closeFloating(); return; }
+    closeFloating();
+    const popover = document.createElement('div');
+    popover.className = 'help-popover';
+    popover.innerHTML = '<strong>Need help?</strong><p>Contact TechMigos support for workspace access or account questions.</p><a href="/contact">Contact support</a>';
+    document.body.append(popover);
+    positionFloating(popover, anchor);
+    anchor.setAttribute('aria-expanded', 'true');
+  }
+
+  function toggleProfileMenu(anchor) {
+    if ($('.profile-menu')) { closeFloating(); return; }
+    closeFloating();
+    const name = $('[data-profile-name]')?.textContent?.trim() || 'Company user';
+    const role = $('[data-profile-role]')?.textContent?.trim() || 'Company account';
+    const isAdmin = document.body.dataset.crmRole === 'company_admin';
+    const popover = document.createElement('div');
+    popover.className = 'profile-menu';
+    popover.innerHTML = `<strong>${escapeHtml(name)}</strong><small>${escapeHtml(role)}</small>${isAdmin ? '<a href="/company/settings">Workspace settings</a>' : ''}<button type="button" data-action="sign-out">Sign out</button>`;
+    document.body.append(popover);
+    positionFloating(popover, anchor);
+    anchor.setAttribute('aria-expanded', 'true');
+  }
+
+  async function signOut(button) {
+    try {
+      if (!window.tmSupabase) throw new Error('Auth client is not ready. Please refresh the page.');
+      button.disabled = true;
+      const { error } = await window.tmSupabase.auth.signOut();
+      if (error) throw error;
+      window.location.replace('/login');
+    } catch (error) {
+      button.disabled = false;
+      toast(error.message || 'Could not sign out.');
+    }
+  }
 
   function showFilterMenu(anchor) {
     closeFloating();
@@ -280,7 +366,37 @@
   const statusTone = value => ({ planning:'slate', active:'blue', review:'orange', completed:'green', on_hold:'orange', cancelled:'red', open:'blue', pending:'orange', resolved:'green', closed:'slate', invited:'orange', inactive:'slate' }[String(value || '').toLowerCase()] || 'slate');
   const money = value => Number(value || 0).toLocaleString('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 });
   const initials = value => String(value || 'User').split(/\s+/).map(x => x[0]).slice(0,2).join('').toUpperCase();
-  const setStat = (label, value) => $$('.stat-card').find(card => $('.stat-label', card)?.textContent?.trim() === label)?.querySelector('.stat-value-row strong')?.replaceChildren(document.createTextNode(String(value)));
+  const setStat = (label, value, progress) => {
+    const card = $$('.stat-card').find(item => $('.stat-label', item)?.textContent?.trim() === label);
+    if (!card) return;
+    $('.stat-value-row strong', card)?.replaceChildren(document.createTextNode(String(value)));
+    if (Number.isFinite(progress)) $('.mini-progress .fill', card)?.style.setProperty('width', `${Math.max(0, Math.min(100, progress))}%`);
+  };
+  const ratio = (value, total) => total ? Math.round((value / total) * 100) : 0;
+  const isSettled = value => ['paid', 'received', 'completed'].includes(String(value || '').toLowerCase());
+  const isCollectedRevenue = finance => {
+    const type = String(finance.transaction_type || '').toLowerCase();
+    return isSettled(finance.status) && ['income', 'revenue', 'invoice'].includes(type);
+  };
+  const currentMonth = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  })();
+  const activityMarkup = (item, profilesById = new Map()) => {
+    const actor = profilesById.get(String(item.user_id));
+    const actorLabel = actor?.name || actor?.email || 'TechMigos';
+    const activityLabel = item.summary || `${item.action || 'Activity recorded'} ${item.entity_type || 'CRM record'}`;
+    return `<div class="activity"><span class="avatar avatar-sm avatar-tone-1">${escapeHtml(initials(actorLabel))}</span><div><p><strong>${escapeHtml(actorLabel)}</strong> ${escapeHtml(activityLabel)}</p><small>${escapeHtml(dateLabel(item.created_at))}</small></div></div>`;
+  };
+  const dashboardProjectRows = () => $$('#dashboard-projects tbody tr[data-record-id]');
+  const bindDashboardProjectRows = () => {
+    dashboardProjectRows().forEach(row => {
+      row.tabIndex = 0;
+      const openProject = () => { if (row.dataset.recordId) window.location.href = `/company/projects?project=${encodeURIComponent(row.dataset.recordId)}`; };
+      row.addEventListener('click', openProject);
+      row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openProject(); } });
+    });
+  };
   const renderProjectRow = (p, compact = false) => {
     const name = p.name || 'Untitled project';
     const status = statusLabel(p.status);
@@ -301,16 +417,45 @@
     const projects = projectResponse?.items || [];
     window.__TECHMIGOS_DEFAULT_PROJECT_ID__ = projects[0]?.id || null;
     if (path === '/company' || path === '/company/') {
-      const tickets = isAdmin ? (await api().list?.('tickets'))?.items || [] : [];
-      const users = isAdmin ? (await api().list?.('profiles'))?.items || [] : [];
-      const finances = isAdmin ? (await api().list?.('finances'))?.items || [] : [];
-      const table = $('#dashboard-projects tbody'); if (table) table.innerHTML = projects.slice(0, 5).map(p => renderProjectRow(p, true)).join('');
-      const activity = $('#dashboard-activity'); if (activity) activity.innerHTML = '';
-      setStat('Active Projects', projects.filter(p => ['active','review'].includes(p.status)).length);
-      setStat('Completed', projects.filter(p => p.status === 'completed').length);
-      setStat('Open Tickets', tickets.filter(t => ['open','pending'].includes(t.status)).length);
-      setStat('Active Users', isAdmin ? users.filter(u => u.status === 'active').length : '—');
-      setStat('Monthly Revenue', isAdmin ? money(finances.filter(f => f.status === 'paid').reduce((sum, f) => sum + Number(f.amount || 0), 0)) : '—');
+      const [tickets, users, finances, activities] = isAdmin
+        ? await Promise.all([
+          api().list?.('tickets').then(response => response?.items || []),
+          api().list?.('profiles').then(response => response?.items || []),
+          api().list?.('finances').then(response => response?.items || []),
+          api().list?.('activities').then(response => response?.items || []),
+        ])
+        : [[], [], [], []];
+      const table = $('#dashboard-projects tbody');
+      if (table) {
+        const projectRows = projects.slice(0, 5).map(p => renderProjectRow(p, true)).join('');
+        table.innerHTML = projectRows || '<tr><td colspan="5" class="empty-state">No projects are assigned to this workspace.</td></tr>';
+      }
+      const activity = $('#dashboard-activity');
+      const profilesById = new Map(users.flatMap(user => [
+        user.id == null ? [] : [[String(user.id), user]],
+        user.auth_user_id == null ? [] : [[String(user.auth_user_id), user]],
+      ]));
+      if (activity) activity.innerHTML = isAdmin
+        ? activities.slice(0, 5).map(item => activityMarkup(item, profilesById)).join('') || '<p class="empty-state">No recent activity recorded.</p>'
+        : '<p class="empty-state">Activity is available to company admins.</p>';
+      const activeProjects = projects.filter(p => ['active', 'review'].includes(p.status)).length;
+      const completedProjects = projects.filter(p => p.status === 'completed').length;
+      const openTickets = tickets.filter(t => ['open', 'pending'].includes(t.status)).length;
+      const activeUsers = users.filter(u => u.status === 'active').length;
+      const monthlyRevenue = finances
+        .filter(finance => isCollectedRevenue(finance) && String(finance.transaction_date || finance.created_at || '').slice(0, 7) === currentMonth)
+        .reduce((sum, finance) => sum + Number(finance.amount || 0), 0);
+      setStat('Active Projects', activeProjects, ratio(activeProjects, projects.length));
+      setStat('Completed', completedProjects, ratio(completedProjects, projects.length));
+      setStat('Open Tickets', isAdmin ? openTickets : '—', ratio(openTickets, tickets.length));
+      setStat('Active Users', isAdmin ? activeUsers : '—', ratio(activeUsers, users.length));
+      setStat('Monthly Revenue', isAdmin ? money(monthlyRevenue) : '—');
+      const ticketSummary = $('#dashboard-ticket-summary');
+      if (ticketSummary) ticketSummary.textContent = isAdmin ? `${openTickets} open tickets need review` : 'Admin support queue';
+      setNotificationCount(isAdmin ? openTickets : 0);
+      const status = $('#dashboard-status');
+      if (status) status.textContent = `Live data synced ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+      bindDashboardProjectRows();
     }
     if (path === '/company/projects') {
       const table = $('#projects-table tbody'); if (table) table.innerHTML = projects.map(p => renderProjectRow(p)).join('');
@@ -342,6 +487,7 @@
       const tickets = (await api().list?.('tickets'))?.items || [];
       const table = $('#tickets-table tbody'); if (table) table.innerHTML = tickets.map(renderTicketRow).join('');
       setStat('Total Tickets', tickets.length); setStat('Open', tickets.filter(t => ['open','pending'].includes(t.status)).length); setStat('Resolved', tickets.filter(t => ['resolved','closed'].includes(t.status)).length);
+      setNotificationCount(tickets.filter(t => ['open', 'pending'].includes(t.status)).length);
       ticketRows().forEach(row => row.addEventListener('click', e => { if (!e.target.matches('input,button')) showTicket(row); }));
       if (ticketRows()[0]) showTicket(ticketRows()[0]);
       else {
@@ -363,10 +509,23 @@
   window.tmCrmReady?.then(() => loadLiveData().catch(error => { console.error(error); toast(error.message || 'Could not load live CRM data.'); }));
 
   // Sidebar preference + keyboard shortcuts
-  if(innerWidth>900&&localStorage.getItem('techmigos.sidebar')==='expanded')document.body.classList.remove('sidebar-collapsed');
+  if(innerWidth>900) setSidebarState(localStorage.getItem('techmigos.sidebar') === 'collapsed');
+  else setMobileSidebarState(false);
   new MutationObserver(()=>{if(innerWidth>900)localStorage.setItem('techmigos.sidebar',document.body.classList.contains('sidebar-collapsed')?'collapsed':'expanded');}).observe(document.body,{attributes:true,attributeFilter:['class']});
+  addEventListener('resize', () => {
+    if (innerWidth > 900) {
+      setMobileSidebarState(false);
+      setSidebarState(localStorage.getItem('techmigos.sidebar') === 'collapsed');
+    } else {
+      setSidebarState(false);
+      syncMobileSidebar();
+    }
+  });
+  document.addEventListener('click', event => {
+    if (event.target.closest('.nav-item') && innerWidth <= 900) setMobileSidebarState(false);
+  });
   addEventListener('keydown',e=>{
     if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search')?.focus();}
-    if(e.key==='Escape'){closeFloating();$$('.drawer.open').forEach(x=>x.classList.remove('open'));$('.detail-panel.open')?.classList.remove('open');document.body.classList.remove('mobile-nav-open');}
+    if(e.key==='Escape'){closeFloating();$$('.drawer.open').forEach(x=>x.classList.remove('open'));$('.detail-panel.open')?.classList.remove('open');setMobileSidebarState(false);}
   });
 })();

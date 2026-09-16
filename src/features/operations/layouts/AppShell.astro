@@ -6,18 +6,18 @@ import Avatar from '../components/Avatar.astro';
 import { nav } from '../data/nav';
 import '../styles/operations-portal.css';
 
-const { title = 'TechMigos Operations', description = 'Company operations portal', drawer = false } = Astro.props;
+const { title = 'TechMigos Operations', description = 'Secure TechMigos company operations workspace for projects, files, support, finance, team access, and workspace administration.', drawer = false } = Astro.props;
 const current = Astro.url.pathname;
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL || '';
 const groups = [...new Set(nav.map((n) => n.group))];
 ---
 
 <BaseLayout title={title} description={description} noIndex={true} hideNavbar={true} isCrm={true}>
-  <div class="operations-portal" data-page={current} class:list={{ 'has-drawer': drawer, 'sidebar-collapsed': true }}>
+  <div class="operations-portal" data-page={current} class:list={{ 'has-drawer': drawer }}>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a href="/" class="logo-link"><Logo /></a>
-        <button class="icon-button sidebar-toggle" data-action="toggle-sidebar" aria-label="Toggle navigation"><Icon name="chevronLeft" size={17}/></button>
+        <button class="icon-button sidebar-toggle" data-action="toggle-sidebar" aria-label="Collapse navigation" aria-expanded="true" aria-controls="sidebar"><Icon name="chevronLeft" size={17}/></button>
       </div>
       <div class="workspace-card"><span class="workspace-badge">T</span><div><strong>TechMigos</strong><small>Operations portal</small></div></div>
       <nav class="sidebar-nav" aria-label="Operations navigation">
@@ -32,14 +32,14 @@ const groups = [...new Set(nav.map((n) => n.group))];
           </div>
         ))}
       </nav>
-      <div class="sidebar-user"><Avatar name="Admin" size="sm" tone={1}/><div><strong data-profile-name>Loading…</strong><small data-profile-role>Checking access</small></div><button class="icon-button" data-action="sign-out" aria-label="Sign out"><Icon name="more" size={17}/></button></div>
+      <div class="sidebar-user"><Avatar name="Admin" size="sm" tone={1}/><div><strong data-profile-name>Loading…</strong><small data-profile-role>Checking access</small></div><button class="icon-button" data-action="profile-menu" aria-label="Open account menu" aria-expanded="false"><Icon name="more" size={17}/></button></div>
     </aside>
 
     <div class="app-frame">
       <header class="topbar">
-        <button class="icon-button mobile-menu" data-action="toggle-sidebar" aria-label="Open navigation"><Icon name="list" size={20}/></button>
+        <button class="icon-button mobile-menu" data-action="toggle-sidebar" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><Icon name="list" size={20}/></button>
         <label class="global-search"><Icon name="search" size={18}/><input id="global-search" placeholder="Search projects, clients, or anything…" autocomplete="off" /><kbd>⌘ K</kbd></label>
-        <div class="top-actions"><button class="icon-button notification-button" aria-label="Notifications"><Icon name="bell" size={20}/><span>3</span></button><button class="icon-button" aria-label="Help"><Icon name="help" size={20}/></button><div class="profile-compact"><Avatar name="Admin" size="sm" tone={1}/><div><strong data-profile-name>Loading…</strong><small data-profile-role>Checking access</small></div><Icon name="chevronDown" size={14}/></div></div>
+        <div class="top-actions"><button class="icon-button notification-button" data-action="toggle-notifications" aria-label="Notifications" aria-expanded="false"><Icon name="bell" size={20}/><span id="notification-count" hidden>0</span></button><button class="icon-button" data-action="open-help" aria-label="Open help" aria-expanded="false"><Icon name="help" size={20}/></button><button class="profile-compact profile-trigger" type="button" data-action="profile-menu" aria-label="Open account menu" aria-expanded="false"><Avatar name="Admin" size="sm" tone={1}/><div><strong data-profile-name>Loading…</strong><small data-profile-role>Checking access</small></div><Icon name="chevronDown" size={14}/></button></div>
       </header>
       <main class="main-content"><slot /></main>
     </div>
@@ -58,21 +58,22 @@ const groups = [...new Set(nav.map((n) => n.group))];
       try {
         const context = await repository.getContext();
         if (context.role === 'client') { window.location.replace('/client'); return; }
+        document.body.dataset.crmRole = context.role;
         document.querySelectorAll('[data-profile-name]').forEach((node) => { node.textContent = context.profile.name || context.profile.email || 'Company user'; });
         document.querySelectorAll('[data-profile-role]').forEach((node) => { node.textContent = context.role === 'company_admin' ? 'Company Admin' : 'Company Member'; });
+        document.querySelectorAll('[data-required-role]').forEach((link) => {
+          const requiredRole = link.getAttribute('data-required-role');
+          if (requiredRole && context.role !== requiredRole) link.remove();
+        });
         document.querySelectorAll('[data-required-resource]').forEach((link) => {
           const resource = link.getAttribute('data-required-resource');
           const allowed = context.role === 'company_admin' || (context.role === 'company_member' && ['projects', 'project_files'].includes(resource));
           if (!allowed) link.remove();
         });
         const resource = routeAccess[window.location.pathname];
-        const allowed = context.role === 'company_admin' || (context.role === 'company_member' && ['projects', 'project_files'].includes(resource));
+        const allowed = context.role === 'company_admin' || (context.role === 'company_member' && ['dashboard', 'projects', 'project_files'].includes(resource));
         if (!allowed) window.location.replace('/company');
       } catch (error) { console.error(error); redirectToLogin(); }
-    });
-    document.querySelector('[data-action="sign-out"]')?.addEventListener('click', async () => {
-      await window.tmSupabase?.auth.signOut();
-      window.location.replace('/login');
     });
   </script>
 </BaseLayout>
