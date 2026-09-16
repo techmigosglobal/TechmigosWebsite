@@ -5,19 +5,36 @@ import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/crm/Sidebar.astro';
 import Topbar from '../components/crm/Topbar.astro';
 import OverlayLayer from '../components/crm/OverlayLayer.astro';
+import '../styles/operations.css';
 
 interface Props {
   activeTab: string;
   title?: string;
 }
 
-const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
+const { activeTab, title } = Astro.props;
+const pageTitle = title || 'TechMigos Finance';
+const pageDescription = 'Private TechMigos Finance workspace for invoices, transactions, proof uploads, reporting, and secure payment actions.';
+const viewClass = activeTab === 'dashboard'
+  ? 'crm-dashboard'
+  : activeTab === 'projects'
+    ? 'crm-projects-page'
+    : activeTab === 'tickets'
+      ? 'crm-tickets-page'
+      : activeTab === 'files'
+        ? 'crm-files-page'
+        : activeTab === 'analytics'
+          ? 'crm-analytics-shell'
+          : activeTab === 'reports'
+            ? 'crm-reports-shell'
+            : '';
+const shellClass = activeTab === 'finance' ? 'finance-page' : 'operations-page';
 
 ---
 
 <BaseLayout
-  title={title}
-  description="TechMigos company CRM for projects, tickets, finance, analytics, clients, employees, and secure access management."
+  title={pageTitle}
+  description={pageDescription}
   noIndex={true}
   hideNavbar={true}
   isCrm={true}
@@ -11255,10 +11272,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     <Sidebar activeTab={activeTab} />
 
     <main class="crm-main">
-      <Topbar />
+      <Topbar activeTab={activeTab} />
 
       <section class="crm-content">
-        <p id="crm-status" class="mb-4 text-sm font-bold text-slate-500" role="status">Loading CRM data…</p>
+        <p id="crm-status" class="mb-4 text-sm font-bold text-slate-500" role="status">Loading TechMigos Finance data…</p>
         <div id="crm-actionbar" class="crm-actionbar">
           <span id="crm-selected-count">0 selected</span>
           <div class="crm-toolbar">
@@ -11267,7 +11284,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <button class="crm-button" type="button" data-clear-selection>Clear</button>
           </div>
         </div>
-        <div id="crm-view" class={activeTab === 'dashboard' ? 'crm-dashboard' : activeTab === 'projects' ? 'crm-projects-page' : activeTab === 'tickets' ? 'crm-tickets-page' : activeTab === 'files' ? 'crm-files-page' : activeTab === 'analytics' ? 'crm-analytics-shell' : activeTab === 'reports' ? 'crm-reports-shell' : ''}><slot /></div>
+        <div id="crm-view" class={`${shellClass} ${viewClass}`}><slot /></div>
       </section>
     </main>
   </div>
@@ -11280,15 +11297,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
   </script>
   <script is:inline define:vars={{ activeTab }}>
     const navItems = [
-      ['dashboard', 'Dashboard', '⌂'],
-      ['projects', 'Projects', '▣'],
-      ['files', 'Project Files', '▱'],
-      ['tickets', 'Support Tickets', '◴'],
       ['finance', 'Finance', '▤'],
-      ['analytics', 'Analytics', '▥'],
-      ['reports', 'Reports', '▧'],
-      ['users', 'User Management', '♧'],
-      ['settings', 'Settings', '⚙'],
     ];
 
     const DISABLED_CRM_RESOURCES = new Set(['leads', 'deals', 'followups', 'campaigns']);
@@ -11320,6 +11329,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       clientStatusFilter: '',
       usersSearch: '',
       usersRoleFilter: 'all',
+      usersStatusFilter: 'all',
       usersSection: 'directory',
       userCreateClientId: '',
       accTab: 'overview',
@@ -11335,8 +11345,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       dashboardProjectStatusFilter: '',
       fileProjectId: '',
       fileFolderId: '',
+      fileProjectPicker: false,
       fileRenameId: null,
       fileSearch: '',
+      fileView: 'grid',
+      fileSelectedId: null,
       ticketView: 'list',
       ticketStatusFilter: '',
       ticketPriorityFilter: '',
@@ -11358,6 +11371,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         project_members: [],
         project_folders: [],
         project_files: [],
+        ticket_messages: [],
       },
     };
 
@@ -11795,7 +11809,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     async function portal(path, options = {}) {
       if (window.tmCrmReady) await window.tmCrmReady;
       if (window.tmCrm?.repository) return window.tmCrm.repository.request(path, options);
-      throw new Error('CRM repository is unavailable. Please refresh the page.');
+      throw new Error('Operations repository is unavailable. Please refresh the page.');
     }
 
     function logout() {
@@ -11877,6 +11891,30 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         const hideForEmployee = isEmployee() && ['tickets', 'finance', 'analytics', 'reports', 'users', 'settings'].includes(key);
         link.style.display = hideForNonAdmin || hideForEmployee ? 'none' : '';
       });
+      document.querySelectorAll('.crm-nav-group').forEach((group) => {
+        const links = [...group.querySelectorAll('[data-nav-key]')];
+        group.hidden = links.length > 0 && links.every((link) => link.style.display === 'none');
+      });
+    }
+
+    function roleLabel(role) {
+      return ({ company_admin: 'Admin', company_member: 'Employee', client: 'Client' }[role] || nice(role || 'Operations'));
+    }
+
+    function syncIdentity(profile) {
+      const displayName = profile?.name || 'TechMigos';
+      const initials = displayName.split(' ').filter(Boolean).map((word) => word[0].toUpperCase()).slice(0, 2).join('');
+      const label = roleLabel(profile?.role);
+      const setText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      };
+      setText('crm-user-name', displayName);
+      setText('crm-avatar', initials || 'TM');
+      setText('crm-user-role', label);
+      setText('crm-sidebar-name', displayName);
+      setText('crm-sidebar-avatar', initials || 'TM');
+      setText('crm-sidebar-role', label);
     }
 
     function renderShell() {
@@ -11988,16 +12026,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         monthTrend.expenseByMonth.push(settledExpenses.filter((item) => String(item.transaction_date || item.created_at || '').startsWith(key)).reduce((sum, item) => sum + Number(item.amount || 0), 0));
       }
 
-      els.view.innerHTML = `${pageHead('Operations Dashboard', `${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — Welcome back, ${escapeHtml(state.profile?.name || 'Team')}.`, '<div class="dashboard-welcome-note"><span class="dashboard-welcome-icon">&#9728;</span><span>Great things happen with<br />focused teams.</span></div>')}
+      els.view.innerHTML = `${pageHead('Operations Dashboard', `${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — Welcome back, ${escapeHtml(state.profile?.name || 'Team')}.`, `<div class="dashboard-welcome-note"><span class="dashboard-welcome-icon">${crmProjectIcon('layers')}</span><span>Great things happen with<br />focused teams.</span></div>`)}
         <div class="crm-grid crm-kpis dashboard-reference-kpis">
-          ${metric('Active Projects', activeProjects.length, '▣', 'blue', `${projects.filter((project) => project.status === 'completed').length} completed`)}
-          ${metric('Open Tickets', openTickets.length, '◴', openTickets.length ? 'red' : 'green', openTickets.length ? `${openTickets.length} in queue` : 'Queue clear')}
-          ${metric('Revenue Collected', compactMoney(income), '₹', 'green', `${compactMoney(expenses)} expenses`)}
-          ${metric('Receivables', compactMoney(receivable), '◈', receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${receivableRows.length} outstanding invoices` : 'All invoices settled')}
+          ${metric('Active Projects', activeProjects.length, crmProjectIcon('folder'), 'blue', `${projects.filter((project) => project.status === 'completed').length} completed`)}
+          ${metric('Open Tickets', openTickets.length, crmProjectIcon('tickets'), openTickets.length ? 'red' : 'green', openTickets.length ? `${openTickets.length} in queue` : 'Queue clear')}
+          ${metric('Revenue Collected', compactMoney(income), crmProjectIcon('currency'), 'green', `${compactMoney(expenses)} expenses`)}
+          ${metric('Receivables', compactMoney(receivable), crmProjectIcon('reports'), receivable > 0 ? 'orange' : 'green', receivable > 0 ? `${receivableRows.length} outstanding invoices` : 'All invoices settled')}
         </div>
         <div class="dashboard-reference-main">
           <section class="crm-card dashboard-reference-card dashboard-revenue-card"><div class="crm-card-head"><h2 class="crm-card-title">Revenue vs Expenses (6 months)</h2><button class="crm-link dashboard-period-link" data-jump="finance" type="button">Last 6 months <span aria-hidden="true">⌄</span></button></div><div class="dashboard-reference-chart-wrap"><canvas id="dash-revenue-chart"></canvas></div></section>
-          <section class="crm-card dashboard-reference-card dashboard-focus-card"><div class="dashboard-focus-heading"><span class="dashboard-focus-icon" aria-hidden="true">✦</span><div><h2 class="crm-card-title">Today's Focus</h2><p>Quick actions to keep things moving.</p></div></div><div class="dashboard-focus-actions">${canWrite('projects') ? '<button class="dashboard-focus-action primary" data-create="projects" type="button"><span aria-hidden="true">＋</span>New Project</button>' : ''}${canWrite('tickets') ? '<button class="dashboard-focus-action" data-create="tickets" type="button"><span aria-hidden="true">◴</span>New Ticket</button>' : ''}${canWrite('clients') ? '<button class="dashboard-focus-action" data-create="clients" type="button"><span aria-hidden="true">♙</span>Add Client</button>' : ''}<button class="dashboard-focus-action" data-jump="reports" type="button"><span aria-hidden="true">▥</span>Open Reports</button></div></section>
+          <section class="crm-card dashboard-reference-card dashboard-focus-card"><div class="dashboard-focus-heading"><span class="dashboard-focus-icon" aria-hidden="true">${crmProjectIcon('layers')}</span><div><h2 class="crm-card-title">Today's Focus</h2><p>Quick actions to keep things moving.</p></div></div><div class="dashboard-focus-actions">${canWrite('projects') ? `<button class="dashboard-focus-action primary" data-create="projects" type="button"><span aria-hidden="true">${crmProjectIcon('folder')}</span>New Project</button>` : ''}${canWrite('tickets') ? `<button class="dashboard-focus-action" data-create="tickets" type="button"><span aria-hidden="true">${crmProjectIcon('tickets')}</span>New Ticket</button>` : ''}${canWrite('clients') ? `<button class="dashboard-focus-action" data-create="clients" type="button"><span aria-hidden="true">${crmProjectIcon('clients')}</span>Add Client</button>` : ''}<button class="dashboard-focus-action" data-jump="reports" type="button"><span aria-hidden="true">${crmProjectIcon('reports')}</span>Open Reports</button></div></section>
         </div>`;
 
       requestAnimationFrame(() => {
@@ -12258,7 +12296,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       `;
     }
 
-    function renderFiles() {
+    function renderFilesLegacy() {
       els.view.classList.remove('employee-projects-view');
       const projects = state.data.projects;
       const projectFolders = state.data.project_folders || [];
@@ -12424,6 +12462,104 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.getElementById('project-members-manage')?.addEventListener('click', () => openProjectMembers(selectedProjectId));
     }
 
+    function renderFilesReferenceV2() {
+      const projects = state.data.projects || [];
+      const projectFolders = state.data.project_folders || [];
+      const projectFiles = state.data.project_files || [];
+      const requestedProjectId = String(state.fileProjectId || '');
+      const selectedProjectId = state.fileProjectPicker ? '' : (projects.some((project) => String(project.id) === requestedProjectId) ? requestedProjectId : String(projects[0]?.id || ''));
+      const project = projects.find((item) => String(item.id) === selectedProjectId);
+      state.fileProjectId = selectedProjectId;
+      const selectedFolderId = String(state.fileFolderId || '');
+      const folders = projectFolders.filter((folder) => String(folder.project_id) === selectedProjectId).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      const query = String(state.fileSearch || '').trim().toLowerCase();
+      const visibleFiles = projectFiles.filter((file) => String(file.project_id) === selectedProjectId && (!selectedFolderId || String(file.folder_id || '') === selectedFolderId));
+      const files = (query ? visibleFiles.filter((file) => String(file.original_name || '').toLowerCase().includes(query)) : visibleFiles).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+      const selectedFile = files.find((file) => String(file.id) === String(state.fileSelectedId)) || visibleFiles.find((file) => String(file.id) === String(state.fileSelectedId));
+      const profileByAuthId = new Map((state.data.profiles || []).map((profile) => [String(profile.auth_user_id), profile]));
+      const humanSize = (size) => {
+        const bytes = Number(size || 0);
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${Math.max(1, Math.ceil(bytes / 1024))} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      };
+      const fileIcon = (file) => String(file?.mime_type || '').startsWith('image/') ? crmProjectIcon('layers') : String(file?.mime_type || '').includes('pdf') ? crmProjectIcon('reports') : crmProjectIcon('folder');
+      const fileDate = (file) => file?.created_at ? new Date(file.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+      const fileCount = (projectId, folderId = null) => projectFiles.filter((file) => String(file.project_id) === String(projectId) && (folderId === null || String(file.folder_id || '') === String(folderId))).length;
+      const projectNav = projects.map((item) => `<button class="files-reference-project-nav-item${String(item.id) === selectedProjectId ? ' active' : ''}" data-project-files-select="${item.id}" type="button"><span class="files-reference-project-nav-icon">${crmProjectIcon('folder')}</span><span><strong>${escapeHtml(item.name)}</strong><small>${fileCount(item.id)} ${fileCount(item.id) === 1 ? 'file' : 'files'}</small></span></button>`).join('');
+      const folderCards = folders.map((folder) => `<article class="files-reference-folder-card${String(folder.id) === selectedFolderId ? ' active' : ''}"><button data-project-folder-open="${folder.id}" type="button"><span>${crmProjectIcon('folder')}</span><strong>${escapeHtml(folder.name)}</strong><small>${fileCount(selectedProjectId, folder.id)} ${fileCount(selectedProjectId, folder.id) === 1 ? 'file' : 'files'}</small></button>${isCompanyAdmin() ? `<button class="files-reference-folder-more" data-project-folder-rename-start="${folder.id}" type="button" aria-label="Rename ${escapeHtml(folder.name)}">•••</button>` : ''}</article>`).join('');
+      const fileCards = files.map((file) => {
+        const uploader = profileByAuthId.get(String(file.uploaded_by));
+        return `<button class="files-reference-file-card${String(file.id) === String(state.fileSelectedId) ? ' active' : ''}" data-project-file-select="${file.id}" type="button"><span class="files-reference-file-icon">${fileIcon(file)}</span><span class="files-reference-file-copy"><strong>${escapeHtml(file.original_name || 'Untitled file')}</strong><small>${escapeHtml(file.mime_type || 'File')} · ${humanSize(file.size_bytes)}</small><small>${escapeHtml(uploader?.name || 'Company member')} · ${fileDate(file)}</small></span><span class="files-reference-file-chevron" aria-hidden="true">›</span></button>`;
+      }).join('');
+      const selectedFileDetail = selectedFile ? `<div class="files-reference-detail-heading"><span class="files-reference-detail-icon">${fileIcon(selectedFile)}</span><div><h2>${escapeHtml(selectedFile.original_name || 'Untitled file')}</h2><p>${escapeHtml(selectedFile.mime_type || 'File')} · ${humanSize(selectedFile.size_bytes)}</p></div></div><dl class="files-reference-detail-meta"><div><dt>Uploaded by</dt><dd>${escapeHtml(profileByAuthId.get(String(selectedFile.uploaded_by))?.name || 'Company member')}</dd></div><div><dt>Added</dt><dd>${fileDate(selectedFile)}</dd></div><div><dt>Access</dt><dd><span class="files-reference-visibility">${crmProjectIcon('lock')} Internal workspace</span></dd></div></dl><div class="files-reference-detail-actions"><button class="crm-button primary" data-project-file-open="${selectedFile.id}" type="button">Preview</button><button class="crm-button" data-project-file-download="${selectedFile.id}" type="button">Download</button><button class="crm-button" data-project-file-share="${selectedFile.id}" type="button">Copy link</button>${isCompanyAdmin() ? `<button class="crm-button danger" data-project-file-delete="${selectedFile.id}" type="button">Delete</button>` : ''}</div>` : `<div class="files-reference-detail-empty"><span>${crmProjectIcon('folder')}</span><strong>Select a file</strong><p>Choose a file to preview metadata and available actions.</p></div>`;
+      const emptyWorkspace = !project ? `<div class="files-reference-empty"><div class="files-reference-empty-illustration">${crmProjectIcon('folder')}</div><h2>${projects.length ? 'Select a project' : 'No projects assigned'}</h2><p>${projects.length ? 'Choose a project to browse its live files and folders.' : 'Your assigned project files will appear here.'}</p></div>` : (!folders.length && !files.length ? `<div class="files-reference-empty"><div class="files-reference-empty-illustration">${crmProjectIcon('folder')}</div><h2>No files yet</h2><p>Upload a document or create a folder to get started.</p><button class="files-reference-empty-action" data-project-folder-create type="button">+ New folder</button></div>` : '');
+      const uploadAllowed = Boolean(project && canWrite('project_files'));
+      const folderContent = folders.length ? `<div class="files-reference-folder-grid" aria-label="Folders">${folderCards}</div>` : '';
+      const fileContent = files.length ? `<div class="files-reference-files-${state.fileView === 'list' ? 'list' : 'grid'}" aria-label="Files">${fileCards}</div>` : '';
+
+      els.view.innerHTML = `<section class="files-reference-header"><div><h1>Project Files</h1><p>Organize, access, and share project documents securely.</p></div>${uploadAllowed ? `<label class="crm-button primary files-reference-header-upload">+ Upload files<input type="file" data-project-file-upload="${selectedProjectId}" multiple hidden /></label>` : ''}</section><section class="files-reference-layout"><aside class="files-reference-project-nav" aria-label="Project navigation"><div class="files-reference-project-nav-head"><div><h2>Projects</h2><p>Choose a workspace</p></div><span>${projects.length}</span></div><div class="files-reference-project-nav-list">${projectNav || '<p class="crm-empty">No assigned projects.</p>'}</div></aside><div class="files-reference-browser"><header class="files-reference-browser-head"><div><div class="files-reference-breadcrumb"><span>Project Files</span><b>/</b><strong>${escapeHtml(project?.name || 'No project')}</strong>${selectedFolderId ? `<b>/</b><strong>${escapeHtml(folders.find((folder) => String(folder.id) === selectedFolderId)?.name || 'Folder')}</strong>` : ''}</div><p>${files.length} ${files.length === 1 ? 'file' : 'files'} in this workspace</p></div><div class="files-reference-browser-actions"><button class="files-reference-view-button${state.fileView !== 'list' ? ' active' : ''}" data-project-files-view="grid" type="button" aria-label="Grid view" aria-pressed="${state.fileView !== 'list'}">${crmProjectIcon('layers')}</button><button class="files-reference-view-button${state.fileView === 'list' ? ' active' : ''}" data-project-files-view="list" type="button" aria-label="List view" aria-pressed="${state.fileView === 'list'}">${crmProjectIcon('reports')}</button><select id="project-files-folder" class="files-reference-sort" aria-label="Filter by folder"><option value="">All folders</option>${folders.map((folder) => `<option value="${folder.id}"${String(folder.id) === selectedFolderId ? ' selected' : ''}>${escapeHtml(folder.name)}</option>`).join('')}</select><button class="crm-button" data-project-folder-create type="button" ${project ? '' : 'disabled'}>+ New folder</button>${isCompanyAdmin() && project ? '<button class="crm-button" id="project-members-manage" type="button">Assign team</button>' : ''}</div></header><label class="files-reference-dropzone${uploadAllowed ? '' : ' is-disabled'}"><span class="files-reference-dropzone-icon">${crmProjectIcon('upload')}</span><span><strong>${uploadAllowed ? 'Drop files here or browse' : 'File upload unavailable'}</strong><small>${uploadAllowed ? 'Documents, images, and PDFs up to 50 MB' : 'You do not have upload permission for this workspace.'}</small></span>${uploadAllowed ? `<input type="file" data-project-file-upload="${selectedProjectId}" multiple hidden />` : ''}</label><div class="files-reference-content">${emptyWorkspace || folderContent || fileContent || '<p class="crm-empty">No files match the current search.</p>'}</div></div><aside class="files-reference-detail" aria-label="File details"><header><h2>File details</h2><button class="files-reference-detail-close" data-project-file-clear type="button" aria-label="Close file details">×</button></header>${selectedFileDetail}</aside></section>`;
+      const browserActions = els.view.querySelector('.files-reference-browser-actions');
+      if (browserActions) browserActions.insertAdjacentHTML('afterbegin', `<label class="files-reference-field files-reference-field--search"><span class="sr-only">Find a file</span><span class="files-reference-search-wrap"><span class="files-reference-search-icon" aria-hidden="true">⌕</span><input id="project-files-search" class="files-reference-input" value="${escapeHtml(state.fileSearch)}" placeholder="Search files" /></span></label>`);
+      const projectNavAside = els.view.querySelector('.files-reference-project-nav');
+      if (projectNavAside && project) {
+        const clientLabel = project.client_name || clientName(project.client_id) || 'Internal project';
+      projectNavAside.innerHTML = `<button class="files-reference-projects-back" data-files-projects-back type="button">←&nbsp; Projects</button><div class="files-reference-selected-project"><span class="files-reference-selected-project-mark">${escapeHtml(String(project.name || 'P').trim().slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(project.name)}</strong><small>Project #${escapeHtml(project.id)} · ${escapeHtml(clientLabel)}</small></span><button type="button" aria-label="Project actions" title="Project actions">${crmProjectIcon('more')}</button></div><div class="files-reference-project-nav-list"><button class="files-reference-project-nav-item${!selectedFolderId ? ' active' : ''}" data-project-folder-open="" type="button"><span class="files-reference-project-nav-icon">${crmProjectIcon('folder')}</span><span><strong>All Files</strong><small>${fileCount(selectedProjectId)} ${fileCount(selectedProjectId) === 1 ? 'file' : 'files'}</small></span></button>${folders.map((folder) => `<button class="files-reference-project-nav-item${String(folder.id) === selectedFolderId ? ' active' : ''}" data-project-folder-open="${folder.id}" type="button"><span class="files-reference-project-nav-icon">${crmProjectIcon('folder')}</span><span><strong>${escapeHtml(folder.name)}</strong><small>${fileCount(selectedProjectId, folder.id)} ${fileCount(selectedProjectId, folder.id) === 1 ? 'file' : 'files'}</small></span></button>`).join('')}</div><button class="files-reference-new-folder" data-project-folder-create type="button">+&nbsp; New Folder</button>`;
+        const filesHeading = els.view.querySelector('.files-reference-header h1');
+        const filesSubtitle = els.view.querySelector('.files-reference-header p');
+        if (filesHeading) filesHeading.textContent = 'All Files';
+        if (filesSubtitle) filesSubtitle.textContent = `${project.name} · ${files.length} ${files.length === 1 ? 'item' : 'items'}`;
+      }
+
+      const upload = async (input, fileList) => {
+        const uploadFiles = Array.from(fileList || []).filter((file) => file && typeof file.size === 'number');
+        if (!uploadFiles.length || !selectedProjectId) return;
+        input && (input.disabled = true);
+        try {
+          for (const file of uploadFiles) await window.tmCrm.repository.uploadProjectFile(Number(selectedProjectId), selectedFolderId ? Number(selectedFolderId) : null, file);
+          toast(`${uploadFiles.length} ${uploadFiles.length === 1 ? 'file' : 'files'} uploaded.`);
+          state.fileSelectedId = null;
+          await loadData();
+        } catch (error) { toast(error instanceof Error ? error.message : 'Could not upload project files.'); }
+        finally { if (input?.isConnected) { input.disabled = false; input.value = ''; } }
+      };
+      document.querySelectorAll('[data-project-file-upload]').forEach((input) => input.addEventListener('change', () => upload(input, input.files)));
+      document.querySelectorAll('.files-reference-dropzone').forEach((zone) => {
+        zone.addEventListener('dragover', (event) => { event.preventDefault(); zone.classList.add('is-dragging'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('is-dragging'));
+        zone.addEventListener('drop', (event) => { event.preventDefault(); zone.classList.remove('is-dragging'); if (uploadAllowed) upload(null, event.dataTransfer?.files); });
+      });
+      document.querySelectorAll('[data-project-files-select]').forEach((button) => button.addEventListener('click', () => { state.fileProjectPicker = false; state.fileProjectId = button.dataset.projectFilesSelect || ''; state.fileFolderId = ''; state.fileSelectedId = null; state.fileSearch = ''; renderFiles(); bindActions(); }));
+      document.querySelectorAll('[data-files-projects-back]').forEach((button) => button.addEventListener('click', () => { state.fileProjectPicker = true; state.fileProjectId = ''; state.fileFolderId = ''; state.fileSelectedId = null; state.fileSearch = ''; renderFiles(); bindActions(); }));
+      document.querySelectorAll('[data-project-files-view]').forEach((button) => button.addEventListener('click', () => { state.fileView = button.dataset.projectFilesView || 'grid'; renderFiles(); bindActions(); }));
+      document.getElementById('project-files-folder')?.addEventListener('change', (event) => { state.fileFolderId = event.target.value; state.fileSelectedId = null; renderFiles(); bindActions(); });
+      document.getElementById('project-files-search')?.addEventListener('input', (event) => { state.fileSearch = event.target.value; renderFiles(); bindActions(); });
+      document.querySelectorAll('[data-project-folder-create]').forEach((button) => button.addEventListener('click', async () => { if (!selectedProjectId) return; const name = window.prompt('Folder name', 'New folder'); if (!name || !name.trim()) return; try { const response = await portal('/api/portal/project_folders', { method: 'POST', body: JSON.stringify({ project_id: Number(selectedProjectId), name: name.trim(), created_by: state.profile.auth_user_id }) }); state.fileFolderId = String(response.item.id); await loadData(); } catch (error) { toast(error instanceof Error ? error.message : 'Could not create folder.'); } }));
+      document.querySelectorAll('[data-project-folder-open]').forEach((button) => button.addEventListener('click', () => { state.fileFolderId = button.dataset.projectFolderOpen || ''; state.fileSelectedId = null; renderFiles(); bindActions(); }));
+      document.querySelectorAll('[data-project-folder-rename-start]').forEach((button) => button.addEventListener('click', async () => {
+        if (!isCompanyAdmin()) return;
+        const folder = folders.find((item) => String(item.id) === String(button.dataset.projectFolderRenameStart));
+        const name = window.prompt('Folder name', folder?.name || '');
+        if (!name || !name.trim() || name.trim() === folder?.name) return;
+        try {
+          await portal(`/api/portal/project_folders/${encodeURIComponent(button.dataset.projectFolderRenameStart)}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim() }) });
+          toast('Folder renamed.');
+          await loadData();
+        } catch (error) { toast(error instanceof Error ? error.message : 'Could not rename folder.'); }
+      }));
+      document.querySelectorAll('[data-project-file-select]').forEach((button) => button.addEventListener('click', () => { state.fileSelectedId = button.dataset.projectFileSelect; renderFiles(); bindActions(); }));
+      document.querySelector('[data-project-file-clear]')?.addEventListener('click', () => { state.fileSelectedId = null; renderFiles(); bindActions(); });
+      document.querySelectorAll('[data-project-file-open]').forEach((button) => button.addEventListener('click', async () => { try { window.open(await window.tmCrm.repository.getProjectFileUrl(button.dataset.projectFileOpen), '_blank', 'noopener'); } catch (error) { toast(error instanceof Error ? error.message : 'Could not open project file.'); } }));
+      document.querySelectorAll('[data-project-file-download]').forEach((button) => button.addEventListener('click', async () => { try { window.open(await window.tmCrm.repository.getProjectFileUrl(button.dataset.projectFileDownload, { download: true }), '_blank', 'noopener'); } catch (error) { toast(error instanceof Error ? error.message : 'Could not download project file.'); } }));
+      document.querySelectorAll('[data-project-file-share]').forEach((button) => button.addEventListener('click', async () => { const link = `${window.location.origin}/company/files?project=${encodeURIComponent(selectedProjectId)}&file=${encodeURIComponent(button.dataset.projectFileShare || '')}`; try { await navigator.clipboard.writeText(link); toast('Workspace link copied.'); } catch { toast(link); } }));
+      document.querySelectorAll('[data-project-file-delete]').forEach((button) => button.addEventListener('click', async () => { if (!confirm('Delete this internal project file?')) return; try { await window.tmCrm.repository.deleteProjectFile(button.dataset.projectFileDelete); state.fileSelectedId = null; toast('Project file deleted.'); await loadData(); } catch (error) { toast(error instanceof Error ? error.message : 'Could not delete project file.'); } }));
+      document.getElementById('project-members-manage')?.addEventListener('click', () => openProjectMembers(selectedProjectId));
+    }
+
+    function renderFiles() {
+      return renderFilesReferenceV2();
+    }
+
     function openProjectMembers(projectId) {
       const assigned = new Set(state.data.project_members.filter((member) => String(member.project_id) === String(projectId)).map((member) => String(member.profile_id)));
       const people = projectDeliveryPeople();
@@ -12452,6 +12588,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         tickets: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5V11a2 2 0 0 0-2 2 2 2 0 0 0 2 2v2.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5V15a2 2 0 0 0 2-2 2 2 0 0 0-2-2Z"></path><path d="M9 8h6"></path><path d="M9 16h6"></path></svg>',
         finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"></path><path d="M7 15V9"></path><path d="M12 15V5"></path><path d="M17 15v-3"></path></svg>',
         reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path><path d="M10 13h6"></path><path d="M10 17h6"></path></svg>',
+        download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>',
+        print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3h10v5"></path><path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path><path d="M7 14h10v7H7z"></path></svg>',
+        more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg>',
+        settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>',
+        lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8" 10V7a4 4 0 0 1 8 0v3"></path></svg>',
+        upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"></path><path d="m7 9 5-5 5 5"></path><path d="M5 14v5h14v-5"></path></svg>',
       };
       return icons[name] || icons.folder;
     }
@@ -12519,10 +12661,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <section class="project-reference-quick-actions" aria-label="Quick actions">
           <div class="project-reference-quick-title"><span>${crmProjectIcon('reports')}</span><div><h2>Quick Actions</h2><p>Get things done faster</p></div></div>
           <div class="project-reference-quick-buttons">
-            ${canWrite('projects') ? '<button class="project-reference-quick-button primary" data-create="projects" type="button"><span>＋</span>New Project</button>' : ''}
-            ${canWrite('clients') ? '<button class="project-reference-quick-button blue" data-create="clients" type="button"><span>♙</span>Add Client</button>' : ''}
-            ${canWrite('tickets') ? '<button class="project-reference-quick-button orange" data-create="tickets" type="button"><span>◴</span>Create Ticket</button>' : ''}
-            ${isEmployee() ? '<button class="project-reference-quick-button purple" data-jump="files" type="button"><span>▱</span>Project Files</button>' : '<button class="project-reference-quick-button purple" data-jump="reports" type="button"><span>▥</span>View Reports</button>'}
+            ${canWrite('projects') ? `<button class="project-reference-quick-button primary" data-create="projects" type="button"><span>${crmProjectIcon('folder')}</span>New Project</button>` : ''}
+            ${canWrite('clients') ? `<button class="project-reference-quick-button blue" data-create="clients" type="button"><span>${crmProjectIcon('clients')}</span>Add Client</button>` : ''}
+            ${canWrite('tickets') ? `<button class="project-reference-quick-button orange" data-create="tickets" type="button"><span>${crmProjectIcon('tickets')}</span>Create Ticket</button>` : ''}
+            ${isEmployee() ? `<button class="project-reference-quick-button purple" data-jump="files" type="button"><span>${crmProjectIcon('folder')}</span>Project Files</button>` : `<button class="project-reference-quick-button purple" data-jump="reports" type="button"><span>${crmProjectIcon('reports')}</span>View Reports</button>`}
           </div>
         </section>
 
@@ -12562,8 +12704,87 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       }));
     }
 
+    function renderProjectReferenceV2() {
+      const allProjects = state.data.projects;
+      const isActiveProject = (project) => ['planning', 'active', 'review'].includes(project.status);
+      const isAtRiskProject = (project) => ['watch', 'at_risk', 'breached'].includes(project.health);
+      const statusFilter = state.projectStatusFilter || '';
+      const searchQ = state.projectSearch || '';
+      const searchLower = searchQ.trim().toLowerCase();
+      const activeProjectCount = allProjects.filter(isActiveProject).length;
+      const atRiskCount = allProjects.filter(isAtRiskProject).length;
+      const completedCount = allProjects.filter((project) => project.status === 'completed').length;
+      const milestoneCount = allProjects.reduce((total, project) => total + (Array.isArray(project.milestones) ? project.milestones.length : 0), 0);
+      const filteredProjects = allProjects.filter((project) => {
+        const statusMatch = !statusFilter
+          || (statusFilter === 'active' ? isActiveProject(project) : statusFilter === 'at_risk' ? isAtRiskProject(project) : project.status === statusFilter);
+        const searchMatch = !searchLower || ['name', 'client_name', 'project_manager', 'status', 'health'].some((key) => String(project[key] || '').toLowerCase().includes(searchLower));
+        return statusMatch && searchMatch;
+      });
+      const statusLabel = (status) => ({ planning: 'Planning', active: 'Active', review: 'In Review', on_hold: 'On Hold', completed: 'Completed', cancelled: 'Cancelled' }[status] || nice(status));
+      const dateLabel = (date) => date ? new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+      const projectTeam = (project) => {
+        const memberIds = new Set(state.data.project_members.filter((member) => String(member.project_id) === String(project.id)).map((member) => String(member.profile_id)));
+        const people = state.data.profiles.filter((profile) => memberIds.has(String(profile.id)) || String(profile.auth_user_id) === String(project.owner_user_id));
+        const names = people.map((person) => person.name || person.email).filter(Boolean);
+        return names.length ? names : (project.project_manager ? [project.project_manager] : []);
+      };
+      const stat = (label, value, icon, tone, note) => `<article class="project-reference-stat ${tone}"><span class="project-reference-stat-icon">${crmProjectIcon(icon)}</span><div class="project-reference-stat-content"><p>${label}</p><strong>${value}</strong><div class="project-reference-stat-notes"><span><i></i>${note}</span></div></div></article>`;
+      const rows = filteredProjects.map((project) => {
+        const progressValue = Math.max(0, Math.min(100, Number(project.progress || 0)));
+        const budget = Number(project.budget || 0);
+        const client = project.client_name || clientName(project.client_id) || 'Internal project';
+        const team = projectTeam(project);
+        const teamLabel = team.length ? team.slice(0, 2).join(', ') : 'Unassigned';
+        const teamExtra = team.length > 2 ? ` +${team.length - 2}` : '';
+        const statusToneClass = isAtRiskProject(project) ? 'red' : statusTone(project.status);
+        const menuId = `project-menu-${project.id}`;
+        return `<tr class="project-reference-row" data-resource="projects" data-row-id="${project.id}">
+          <td class="project-reference-select-cell" data-label="Select"><input type="checkbox" data-row-select aria-label="Select ${escapeHtml(project.name)}" onclick="event.stopPropagation()" /></td>
+          <td data-label="Project"><div class="project-reference-name"><strong>${escapeHtml(project.name)}</strong><small>${escapeHtml(project.summary || 'No summary added yet.')}</small></div></td>
+          <td data-label="Client"><div class="project-reference-client"><span>${crmProjectIcon('clients')}</span><strong>${escapeHtml(client)}</strong></div></td>
+          <td data-label="Progress"><div class="project-reference-progress"><strong>${progressValue}%</strong><span><i style="width:${progressValue}%"></i></span></div></td>
+          <td data-label="Status"><span class="project-reference-status ${statusToneClass}"><i></i>${escapeHtml(statusLabel(project.status))}</span></td>
+          <td data-label="Team"><div class="project-reference-team"><span class="project-reference-team-avatars">${team.slice(0, 3).map((person) => `<i title="${escapeHtml(person)}">${escapeHtml(String(person).trim().slice(0, 1).toUpperCase())}</i>`).join('') || '<i class="is-empty">—</i>'}</span><strong>${escapeHtml(teamLabel)}${teamExtra}</strong></div></td>
+          <td data-label="Budget"><div class="project-reference-budget"><strong>${compactMoney(budget)}</strong><small>${Number(project.expenses || 0) ? `${compactMoney(project.expenses)} spent` : 'No spend recorded'}</small></div></td>
+          <td data-label="Due date" class="project-reference-due">${dateLabel(project.due_date)}</td>
+          <td data-label="Actions"><div class="project-reference-actions"><button class="project-reference-more" data-project-menu-trigger="${project.id}" type="button" aria-controls="${menuId}" aria-label="Actions for ${escapeHtml(project.name)}" aria-expanded="false">${crmProjectIcon('more')}</button><div class="project-reference-menu" id="${menuId}" data-project-menu-panel="${project.id}"><button data-project-detail="${project.id}" type="button">View details</button><button data-project-files-open="${project.id}" type="button">Open files</button>${canUpdate('projects') ? `<button data-edit-resource="projects" data-edit-id="${project.id}" type="button">Edit project</button>` : ''}${canWrite('projects') ? `<button class="danger" data-delete-resource="projects" data-delete-id="${project.id}" type="button">Delete</button>` : ''}</div></div></td>
+        </tr>`;
+      }).join('');
+      const tabs = [['', 'All Projects', allProjects.length], ['active', 'Active', activeProjectCount], ['at_risk', 'At Risk', atRiskCount], ['completed', 'Completed', completedCount]].map(([key, label, count]) => `<button type="button" class="project-reference-tab${statusFilter === key ? ' active' : ''}" data-project-status-tab="${key}" role="tab" aria-selected="${statusFilter === key ? 'true' : 'false'}">${label}<small>${count}</small></button>`).join('');
+
+      els.view.innerHTML = `<section class="project-reference-header"><div><h1>Project Management</h1><p>Plan. Track. Collaborate. Deliver.</p></div>${canWrite('projects') ? '<button class="project-reference-header-action crm-button primary" data-create="projects" type="button">+ New Project</button>' : ''}</section>
+        <section class="project-reference-stats" aria-label="Project overview">${stat('Total Projects', allProjects.length, 'folder', 'blue', 'Live workspace total')}${stat('Active Projects', activeProjectCount, 'layers', 'green', 'Planning, active, and review')}${stat('At Risk', atRiskCount, 'tickets', 'red', atRiskCount ? 'Needs attention' : 'No risk flags')}${stat('Completed', completedCount, 'reports', 'green', 'Delivered projects')}${stat('Milestones', milestoneCount, 'calendar', 'purple', 'From linked milestone data')}</section>
+        <nav class="project-reference-tabs" aria-label="Project status filters">${tabs}</nav>
+        <section class="project-reference-table-card"><header class="project-reference-table-head"><div class="project-reference-table-title"><span>${crmProjectIcon('folder')}</span><div><h2>All Projects</h2><p>Every project at a glance</p></div></div><div class="project-reference-table-tools"><label><span class="sr-only">Search projects</span><b>${crmProjectIcon('reports')}</b><input id="pm-search" type="search" placeholder="Search projects..." value="${escapeHtml(searchQ)}" /></label><select id="project-status-filter" aria-label="Filter projects by status"><option value="">All Statuses</option><option value="planning" ${statusFilter === 'planning' ? 'selected' : ''}>Planning</option><option value="active" ${statusFilter === 'active' ? 'selected' : ''}>Active</option><option value="review" ${statusFilter === 'review' ? 'selected' : ''}>In Review</option><option value="on_hold" ${statusFilter === 'on_hold' ? 'selected' : ''}>On Hold</option><option value="completed" ${statusFilter === 'completed' ? 'selected' : ''}>Completed</option><option value="at_risk" ${statusFilter === 'at_risk' ? 'selected' : ''}>At Risk</option></select><button class="project-reference-filter-button" type="button" data-project-clear-filters ${!statusFilter && !searchQ ? 'disabled' : ''}>Clear filters</button></div></header><div class="project-reference-table-wrap"><table class="project-reference-table"><thead><tr><th aria-label="Select"></th><th>PROJECT</th><th>CLIENT</th><th>PROGRESS</th><th>STATUS</th><th>TEAM</th><th>BUDGET</th><th>DUE DATE</th><th>ACTIONS</th></tr></thead><tbody>${rows || '<tr><td colspan="9"><p class="crm-empty">No projects found.</p></td></tr>'}</tbody></table></div></section>`;
+
+      document.getElementById('pm-search')?.addEventListener('input', (event) => { state.projectSearch = event.target.value; renderProjects(); bindActions(); });
+      document.getElementById('project-status-filter')?.addEventListener('change', (event) => { state.projectStatusFilter = event.target.value; renderProjects(); bindActions(); });
+      document.querySelectorAll('[data-project-status-tab]').forEach((button) => button.addEventListener('click', () => { state.projectStatusFilter = button.dataset.projectStatusTab || ''; renderProjects(); bindActions(); }));
+      document.querySelector('[data-project-clear-filters]')?.addEventListener('click', () => { state.projectStatusFilter = ''; state.projectSearch = ''; renderProjects(); bindActions(); });
+      document.querySelectorAll('[data-project-menu-trigger]').forEach((button) => button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        document.querySelectorAll('.project-reference-menu.is-open').forEach((menu) => menu.classList.remove('is-open'));
+        const menu = document.querySelector(`[data-project-menu-panel="${button.dataset.projectMenuTrigger}"]`);
+        menu?.classList.toggle('is-open');
+        button.setAttribute('aria-expanded', menu?.classList.contains('is-open') ? 'true' : 'false');
+      }));
+      document.querySelectorAll('[data-project-files-open]').forEach((button) => button.addEventListener('click', () => { window.location.href = `/company/files?project=${encodeURIComponent(button.dataset.projectFilesOpen || '')}`; }));
+      document.querySelectorAll('[data-project-detail]').forEach((button) => button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const project = allProjects.find((item) => String(item.id) === String(button.dataset.projectDetail));
+        if (!project) return;
+        els.modalTitle.textContent = 'Project details';
+        els.modalBody.innerHTML = projectDetail(project);
+        els.modal.classList.add('open');
+        els.modalBody.querySelectorAll('[data-jump]').forEach((action) => action.addEventListener('click', () => { window.location.href = `/company/${action.dataset.jump === 'users' ? 'user-management' : action.dataset.jump}`; }));
+        els.modalBody.querySelectorAll('[data-edit-resource]').forEach((action) => action.addEventListener('click', () => openEdit(action.dataset.editResource, action.dataset.editId)));
+        els.modalBody.querySelectorAll('[data-create]').forEach((action) => action.addEventListener('click', () => openCreate(action.dataset.create)));
+      }));
+    }
+
     function renderProjects() {
-      return renderProjectReference();
+      return renderProjectReferenceV2();
     }
 
     function renderProjectsLegacy() {
@@ -12731,7 +12952,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const pc = TIC_PRIORITY_COLORS[ticket.priority] || '#94a3b8';
       const pb = TIC_PRIORITY_BG[ticket.priority] || '#f1f5f9';
       return `
-        <div class="tic-card ${isSelected ? 'tic-card--selected' : ''}" data-ticket-detail="${ticket.id}" data-dnd-card="${ticket.id}" draggable="true" tabindex="0" role="button">
+        <div class="tic-card ${isSelected ? 'tic-card--selected' : ''}" data-ticket-detail="${ticket.id}" data-resource="tickets" data-dnd-card="${ticket.id}" draggable="true" tabindex="0" role="button">
           <div class="tic-card-top">
             <span style="font-size:10px;font-weight:700;background:${pb};color:${pc};padding:2px 7px;border-radius:99px;">${nice(ticket.priority || 'low')}</span>
             <span style="font-size:10px;color:#94a3b8;font-weight:600;">#${ticket.id}</span>
@@ -12786,10 +13007,18 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (!ticket) return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;"><div style="font-size:32px;">&#9716;</div><p style="color:#94a3b8;font-weight:600;">Select a ticket to view details</p></div>`;
       const pc = TIC_PRIORITY_COLORS[ticket.priority] || '#94a3b8';
       const pb = TIC_PRIORITY_BG[ticket.priority] || '#f1f5f9';
+      const messages = (state.data.ticket_messages || []).filter((message) => String(message.ticket_id) === String(ticket.id));
+      const conversation = [
+        ticket.description ? { author_name: clientName(ticket.client_id) || 'Requester', author_role: 'client', body: ticket.description, created_at: ticket.created_at, visibility: 'external' } : null,
+        ...messages,
+      ].filter(Boolean);
+      const conversationHtml = conversation.length
+        ? conversation.map((message) => `<article class="ticket-reference-message${message.author_role === 'client' ? ' ticket-reference-message--client' : ''}"><div class="ticket-reference-message-head"><strong>${escapeHtml(message.author_name || (message.author_role === 'client' ? 'Client' : 'Operations team'))}</strong><time>${escapeHtml(String(message.created_at || '').slice(0, 16).replace('T', ' '))}</time></div><p>${escapeHtml(message.body || '')}</p><small>${message.visibility === 'internal' ? 'Internal note' : 'External reply'}</small></article>`).join('')
+        : '<p class="ticket-reference-conversation-empty">No conversation messages are recorded for this ticket.</p>';
       return `
         <div class="pm-detail">
           <div class="pm-detail-hero">
-            <div class="pm-detail-icon" style="background:linear-gradient(135deg,${pc},${pc}99);">&#9716;</div>
+            <div class="pm-detail-icon" style="background:linear-gradient(135deg,${pc},${pc}99);">${crmProjectIcon('tickets')}</div>
             <div style="flex:1;min-width:0;">
               <h2 class="pm-detail-title">#TIC-${ticket.id}</h2>
               <p class="pm-detail-client">${escapeHtml(ticket.subject || 'Untitled ticket')}</p>
@@ -12808,7 +13037,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div class="pm-info-row"><span>Status</span>${badge(ticket.status)}</div>
             </div>
           </div>
-          ${ticket.description ? `<div class="pm-detail-section"><div class="pm-detail-label">DESCRIPTION</div><p style="font-size:12px;line-height:1.7;color:#475569;margin-top:6px;">${escapeHtml(ticket.description)}</p></div>` : ''}
+          <div class="pm-detail-section ticket-reference-conversation" aria-label="Ticket conversation"><div class="pm-detail-label">CONVERSATION</div><div class="ticket-reference-conversation-list">${conversationHtml}</div><p class="ticket-reference-conversation-note">Conversation history is shown from live ticket data. Replies are sent by the linked client portal.</p></div>
           <div class="pm-detail-actions">
             ${canUpdate('tickets') ? `<button class="crm-button primary" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="resolved" type="button">✓ Resolve</button>` : ''}
             ${canUpdate('tickets') ? `<button class="crm-button" data-quick-patch="tickets" data-quick-id="${ticket.id}" data-quick-field="status" data-quick-value="in_progress" type="button">Set In Progress</button>` : ''}
@@ -12922,10 +13151,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       });
 
       const openTickets = tickets.filter((ticket) => !isClosed(ticket));
-      const highPriorityTickets = openTickets.filter((ticket) => ['high', 'urgent'].includes(ticket.priority));
       const resolvedTickets = tickets.filter(isClosed);
-      const unassignedTickets = openTickets.filter((ticket) => !ticket.assigned_user_id && !ticket.assigned_to);
-      const selected = state.selectedTicketId ? tickets.find((ticket) => String(ticket.id) === String(state.selectedTicketId)) : null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const overdueTickets = openTickets.filter((ticket) => ticket.due_date && new Date(ticket.due_date) < today);
       const icon = (name) => crmProjectIcon(name);
       const clockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3 2"></path></svg>';
       const alertIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 3.5 19h17L12 4Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>';
@@ -12951,11 +13180,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ? `<div class="ticket-reference-board">${renderTicketKanban(filteredTickets)}</div>`
           : `<div class="ticket-reference-table">${renderTicketTable(filteredTickets)}</div>`)
         : emptyState;
-      const details = selected ? `<section class="ticket-reference-detail">
-        <button id="tic-detail-close" class="ticket-reference-detail-close" type="button">Close</button>
-        ${ticketDetail(selected)}
-      </section>` : '';
-
       els.view.innerHTML = `
         <section class="ticket-reference-header">
           <h1>Support Tickets</h1>
@@ -12989,10 +13213,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           ${canWrite('tickets') ? '<button class="ticket-reference-toolbar-button primary" data-create="tickets" type="button">+&nbsp; New Ticket</button>' : ''}
         </section>
         <section class="ticket-reference-kpis" aria-label="Ticket metrics">
-          ${metricCard('Open Tickets', openTickets.length, `${openTickets.filter((ticket) => ticket.priority === 'urgent').length} urgent`, 'green', clockIcon)}
-          ${metricCard('High Priority', highPriorityTickets.length, 'needs attention', 'orange', alertIcon)}
+          ${metricCard('Total Tickets', tickets.length, `${openTickets.length} open`, 'green', clockIcon)}
+          ${metricCard('Open Tickets', openTickets.length, `${openTickets.filter((ticket) => ['high', 'urgent'].includes(ticket.priority)).length} high priority`, 'orange', alertIcon)}
           ${metricCard('Resolved', resolvedTickets.length, `${resolvedTickets.length ? tickets.length - resolvedTickets.length : 0} remaining`, 'green', checkIcon)}
-          ${metricCard('Unassigned', unassignedTickets.length, 'need agent', 'red', unassignedIcon)}
+          ${metricCard('Overdue', overdueTickets.length, overdueTickets.length ? 'needs attention' : 'No overdue tickets', 'red', unassignedIcon)}
         </section>
         <section class="ticket-reference-main">
           <article class="ticket-reference-card ticket-reference-list-card">
@@ -13001,7 +13225,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div><h2>Support Tickets</h2><p>Latest support tickets across all projects.</p></div>
             </header>
             ${ticketBody}
-            ${details}
           </article>
           <aside class="ticket-reference-aside ticket-reference-aside--shortcuts">
             <article class="ticket-reference-card ticket-reference-side-card">
@@ -13023,7 +13246,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.getElementById('tic-status-filter')?.addEventListener('change', (event) => { state.ticketStatusFilter = event.target.value; renderTickets(); bindActions(); });
       document.getElementById('tic-priority-filter')?.addEventListener('change', (event) => { state.ticketPriorityFilter = event.target.value; renderTickets(); bindActions(); });
       document.getElementById('tic-search')?.addEventListener('input', (event) => { state.ticketSearch = event.target.value; renderTickets(); bindActions(); });
-      document.getElementById('tic-detail-close')?.addEventListener('click', () => { state.selectedTicketId = null; renderTickets(); bindActions(); });
+      document.querySelectorAll('[data-ticket-detail][data-resource="tickets"]').forEach((row) => {
+        const openDetails = () => {
+          const ticket = tickets.find((item) => String(item.id) === String(row.dataset.ticketDetail));
+          if (!ticket) return;
+          state.selectedTicketId = ticket.id;
+          els.modalTitle.textContent = 'Ticket details';
+          els.modalBody.innerHTML = `<div class="ticket-reference-drawer-content">${ticketDetail(ticket)}</div>`;
+          els.modal.classList.add('open');
+          bindActions();
+        };
+        row.addEventListener('click', (event) => { if (!event.target.closest('[data-row-select],[data-edit-resource],[data-delete-resource]')) openDetails(); });
+        row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetails(); } });
+      });
       document.getElementById('tic-knowledge-base')?.addEventListener('click', () => showToast('Knowledge Base is ready for your support articles.', 'info'));
       if (view === 'board' && filteredTickets.length) wireKanbanDnd('tickets', 'status', () => { renderTickets(); bindActions(); });
     }
@@ -13718,7 +13953,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         };
 
         // Build sub-tab pills
-        const subTabs = (tabs) => `<div class="acc-sheet-tabs">${tabs.map(([k, l]) => `<button class="acc-sheet-tab${(state.accSubTab || 'all') === k ? ' active' : ''}" data-acc-subtab="${k}" type="button">${l}</button>`).join('')}</div>`;
+        const subTabs = (tabs) => `<div class="acc-sheet-tabs" role="tablist" aria-label="Finance record filters">${tabs.map(([k, l]) => `<button class="acc-sheet-tab${(state.accSubTab || 'all') === k ? ' active' : ''}" data-acc-subtab="${k}" type="button" role="tab" aria-selected="${(state.accSubTab || 'all') === k}">${l}</button>`).join('')}</div>`;
         const financialPulse = `<section class="acc-financial-pulse" aria-label="Financial summary">
           <div class="acc-pulse-metrics">
             <div class="acc-pulse-metric acc-pulse-income"><span>Income</span><strong>${fmtINR(income)}</strong><small>${collectedIncome.length} settled entries, including paid invoices</small></div>
@@ -13735,7 +13970,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </section>`;
 
         // ── OVERVIEW TAB ──
-        const overviewTab = `<div style="display:flex;flex-direction:column;gap:18px;">
+        const overviewTab = `<div class="finance-tab-stack finance-overview-stack" style="display:flex;flex-direction:column;gap:18px;">
           ${financialPulse}
           <div style="display:grid;grid-template-columns:1fr 620px;gap:14px;">
             <div class="crm-card" style="padding:18px;">
@@ -13747,7 +13982,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>`;
 
         // ── TRANSACTIONS TAB ──
-        const transactionsTab = `<div style="display:flex;flex-direction:column;gap:18px;">
+        const transactionsTab = `<div class="finance-tab-stack finance-transactions-stack" style="display:flex;flex-direction:column;gap:18px;">
           ${financialPulse}
           <div class="acc-transactions-workspace">
           <div class="acc-transactions-left">
@@ -13774,14 +14009,14 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>`;
 
         // ── INVOICES TAB ──
-        const invoicesTab = `<div style="display:flex;flex-direction:column;gap:14px;">
+        const invoicesTab = `<div class="finance-tab-stack finance-invoices-stack" style="display:flex;flex-direction:column;gap:14px;">
           ${financialPulse}
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:16px;font-weight:800;color:#1e293b;">Invoices</div>
             ${canWriteFinance ? '<button class="crm-button primary" data-create="invoices" type="button">+ New Invoice</button>' : ''}
           </div>
           ${state.data.invoices.length === 0
-            ? `<div style="text-align:center;padding:60px 20px;"><div style="font-size:48px;margin-bottom:12px;">🧾</div><div style="font-size:15px;font-weight:700;color:#475569;margin-bottom:6px;">No Invoices Yet</div><p style="font-size:13px;color:#94a3b8;">Create your first invoice to get started.</p></div>`
+            ? `<div class="finance-empty-state"><div class="finance-empty-icon">${crmProjectIcon('reports')}</div><div>No Invoices Yet</div><p>Create your first invoice to get started.</p></div>`
             : `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Due Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Recurring</th><th>Income</th><th>Proof (optional)</th><th>Actions</th></tr></thead><tbody>
             ${state.data.invoices.map((inv) => {
               const invoiceLedger = invoiceLedgerRecord(inv);
@@ -13805,7 +14040,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <td style="font-weight:700;color:#16a34a;">${fmtINR(invoicePaidAmount(inv))}</td>
               <td style="font-weight:700;color:${invoiceBalance(inv) > 0 ? '#d97706' : '#16a34a'};">${fmtINR(invoiceBalance(inv))}</td>
               <td>${sBadge(invoiceEffectiveStatus(inv))}</td>
-              <td style="font-size:12px;">${inv.is_recurring ? '<span style="color:#6366f1;font-weight:700;">♻ Recurring</span>' : '—'}</td>
+              <td style="font-size:12px;">${inv.is_recurring ? '<span class="finance-recurring-badge">Recurring</span>' : '—'}</td>
               <td>${incomeState}</td>
               <td>${proofAction}</td>
               <td><div style="display:flex;gap:4px;align-items:center;">
@@ -13866,7 +14101,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             return arc;
           }).join('');
         })();
-        const reportsTab = `<div style="display:flex;flex-direction:column;gap:18px;">
+        const reportsTab = `<div class="finance-tab-stack finance-reports-stack" style="display:flex;flex-direction:column;gap:18px;">
           ${financialPulse}
           <div class="acc-reports-workspace">
           <div style="display:flex;flex-direction:column;gap:14px;">
@@ -13906,8 +14141,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <div style="height:8px;background:#1e2a1e;border-radius:4px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;background:#22f25a;border-radius:4px;width:${pct}%;transition:width .5s;"></div></div>
               <div style="font-size:11px;color:#555;margin-bottom:16px;">You have reached ${pct}% of your annual goal.</div>
               <div style="display:flex;gap:8px;">
-                <button class="crm-button" data-export="finance" type="button" style="flex:1;background:#22f25a;color:#111;font-weight:800;border:none;font-size:12px;">📊 Export CSV</button>
-                <button class="crm-button" data-export-pdf="finance" type="button" style="flex:1;font-size:12px;">📄 PDF</button>
+                <button class="crm-button" data-export="finance" type="button" style="flex:1;font-size:12px;"><span class="finance-button-icon">${crmProjectIcon('reports')}</span> Export CSV</button>
+                <button class="crm-button" data-export-pdf="finance" type="button" style="flex:1;font-size:12px;"><span class="finance-button-icon">${crmProjectIcon('reports')}</span> PDF</button>
               </div>
             </div>
           </div>
@@ -14004,16 +14239,25 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           @media (max-width:1180px){.acc-financial-pulse{grid-template-columns:1fr;}.acc-pulse-metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.acc-transactions-workspace{grid-template-columns:minmax(0,1fr) 360px;}.acc-reports-workspace{grid-template-columns:minmax(0,1fr) 230px;}}
           @media (max-width:820px){.acc-pulse-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.acc-transactions-workspace,.acc-reports-workspace{grid-template-columns:1fr;}.acc-transactions-left{padding-left:0;}.acc-pulse-chart{grid-template-columns:80px 1fr;}}
         </style>
-        <div class="acc-tab-nav">
-          ${tabDefs.map(([k, l]) => `<button class="acc-tab-btn${accTab === k ? ' active' : ''}" data-acc-tab="${k}" type="button">${l}</button>`).join('')}
+        <div class="acc-tab-nav" role="tablist" aria-label="Finance views">
+          ${tabDefs.map(([k, l]) => `<button class="acc-tab-btn${accTab === k ? ' active' : ''}" data-acc-tab="${k}" type="button" role="tab" aria-selected="${accTab === k}">${l}</button>`).join('')}
         </div>
-        <div id="acc-tab-content">${tabContent}</div>`;
+        <div id="acc-tab-content" role="tabpanel" aria-live="polite">${tabContent}</div>`;
       }
 
       els.view.innerHTML = `
         ${pageHead('Financial Management', subtitles, tabActions)}
         ${isBuilder ? financeSheetTabs() : ''}
         ${bodyContent}`;
+
+      els.view.querySelectorAll('.acc-tbl').forEach((table) => {
+        const labels = [...table.querySelectorAll('thead th')].map((cell) => cell.textContent.trim());
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          row.querySelectorAll('td').forEach((cell, index) => {
+            cell.dataset.label = labels[index] || '';
+          });
+        });
+      });
 
       if (!canWriteFinance) {
         els.view.querySelectorAll('[data-load-invoice], [data-del-invoice]').forEach((element) => { element.style.display = 'none'; });
@@ -15325,10 +15569,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         <div class="crm-analytics-page">
           ${pageHead('Analytics Dashboard', 'Live performance insights across projects, support, finance, and team.', `<button class="crm-button" id="analytics-period" type="button">${currentWeekLabel()}</button>`)}
           <div class="crm-grid crm-kpis analytics-kpis">
-            ${metric('Total Revenue', compactMoney(income), '&#8377;', 'green', `${compactMoney(expenses)} in expenses`)}
-            ${metric('Net Profit', compactMoney(income - expenses), '&#9651;', income >= expenses ? 'green' : 'red', income >= expenses ? 'profitable' : 'expenses exceed income')}
-            ${metric('Ticket Resolution', resolutionRate + '%', '&#9716;', resolutionRate >= 80 ? 'green' : 'orange', `${openTickets} still open`)}
-            ${metric('Active Projects', activeProjects, '&#9632;', 'blue', `${projects.filter((p) => p.health === 'at_risk').length} at risk`)}
+            ${metric('Total Revenue', compactMoney(income), crmProjectIcon('currency'), 'green', `${compactMoney(expenses)} in expenses`)}
+            ${metric('Net Profit', compactMoney(income - expenses), crmProjectIcon('reports'), income >= expenses ? 'green' : 'red', income >= expenses ? 'profitable' : 'expenses exceed income')}
+            ${metric('Ticket Resolution', resolutionRate + '%', crmProjectIcon('tickets'), resolutionRate >= 80 ? 'green' : 'orange', `${openTickets} still open`)}
+            ${metric('Active Projects', activeProjects, crmProjectIcon('folder'), 'blue', `${projects.filter((p) => p.health === 'at_risk').length} at risk`)}
           </div>
           <div class="analytics-reference-middle">
             <section class="crm-card analytics-card analytics-revenue-card">
@@ -15438,10 +15682,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: 'Executive Summary Report',
           subtitle: 'Company-wide snapshot across projects, support, finance, and clients.',
           metrics: [
-            ['Revenue', compactMoney(income), '₹', 'green'],
-            ['Expenses', compactMoney(expenses), '▵', 'red'],
-            ['Open Tickets', tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, '◴', 'orange'],
-            ['Active Projects', state.data.projects.filter((item) => ['planning', 'active', 'review'].includes(item.status)).length, '▣', 'blue'],
+            ['Revenue', compactMoney(income), 'currency', 'green'],
+            ['Expenses', compactMoney(expenses), 'reports', 'red'],
+            ['Open Tickets', tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, 'tickets', 'orange'],
+            ['Active Projects', state.data.projects.filter((item) => ['planning', 'active', 'review'].includes(item.status)).length, 'folder', 'blue'],
           ],
           columns: [['area', 'Area'], ['value', 'Value'], ['notes', 'Notes']],
           rows: [
@@ -15456,10 +15700,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: 'Finance Report',
           subtitle: 'Invoices, income, expense, salary, and payment status in the selected period.',
           metrics: [
-            ['Income', compactMoney(income), '₹', 'green'],
-            ['Expenses', compactMoney(expenses), '▵', 'red'],
-            ['Invoice Total', compactMoney(invoiceTotal), '▱', 'blue'],
-            ['Outstanding', compactMoney(invoiceOutstanding), '!', 'orange'],
+            ['Income', compactMoney(income), 'currency', 'green'],
+            ['Expenses', compactMoney(expenses), 'reports', 'red'],
+            ['Invoice Total', compactMoney(invoiceTotal), 'folder', 'blue'],
+            ['Outstanding', compactMoney(invoiceOutstanding), 'tickets', 'orange'],
           ],
           columns: [['date', 'Date'], ['type', 'Type'], ['title', 'Title'], ['client', 'Client'], ['amount', 'Amount'], ['status', 'Status'], ['proof', 'Proof']],
           rows: [
@@ -15487,10 +15731,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: 'Projects Report',
           subtitle: 'Project status, owner, budget, progress, and delivery health.',
           metrics: [
-            ['Total Projects', projects.length, '▣', 'blue'],
-            ['Completed', projects.filter((item) => item.status === 'completed').length, '✓', 'green'],
-            ['At Risk', projects.filter((item) => ['watch', 'at_risk', 'breached'].includes(item.health)).length, '!', 'orange'],
-            ['Budget', compactMoney(projects.reduce((sum, item) => sum + Number(item.budget || 0), 0)), '₹', 'blue'],
+            ['Total Projects', projects.length, 'folder', 'blue'],
+            ['Completed', projects.filter((item) => item.status === 'completed').length, 'reports', 'green'],
+            ['At Risk', projects.filter((item) => ['watch', 'at_risk', 'breached'].includes(item.health)).length, 'tickets', 'orange'],
+            ['Budget', compactMoney(projects.reduce((sum, item) => sum + Number(item.budget || 0), 0)), 'currency', 'blue'],
           ],
           columns: [['name', 'Project'], ['client', 'Client'], ['manager', 'Manager'], ['status', 'Status'], ['health', 'Health'], ['progress', 'Progress'], ['budget', 'Budget']],
           rows: projects.map((item) => ({
@@ -15507,10 +15751,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: 'Support Tickets Report',
           subtitle: 'Ticket load, priorities, assignments, and resolution status.',
           metrics: [
-            ['Tickets', tickets.length, '◴', 'blue'],
-            ['Open', tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, '!', 'orange'],
-            ['Resolved', tickets.filter((item) => ['resolved', 'closed'].includes(item.status)).length, '✓', 'green'],
-            ['Urgent', tickets.filter((item) => item.priority === 'urgent').length, '△', 'red'],
+            ['Tickets', tickets.length, 'tickets', 'blue'],
+            ['Open', tickets.filter((item) => !['resolved', 'closed'].includes(item.status)).length, 'tickets', 'orange'],
+            ['Resolved', tickets.filter((item) => ['resolved', 'closed'].includes(item.status)).length, 'reports', 'green'],
+            ['Urgent', tickets.filter((item) => item.priority === 'urgent').length, 'tickets', 'red'],
           ],
           columns: [['id', 'Ticket'], ['subject', 'Subject'], ['client', 'Client'], ['priority', 'Priority'], ['assigned_to', 'Assigned To'], ['status', 'Status']],
           rows: tickets.map((item) => ({
@@ -15526,10 +15770,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           title: 'Clients Report',
           subtitle: 'Client records, contacts, project count, and billing total.',
           metrics: [
-            ['Clients', clients.length, '○', 'blue'],
-            ['Active', clients.filter((item) => item.status === 'active').length, '✓', 'green'],
-            ['Lead Clients', clients.filter((item) => item.status === 'lead').length, '◎', 'orange'],
-            ['Archived', clients.filter((item) => item.status === 'archived').length, '×', 'red'],
+            ['Clients', clients.length, 'clients', 'blue'],
+            ['Active', clients.filter((item) => item.status === 'active').length, 'reports', 'green'],
+            ['Lead Clients', clients.filter((item) => item.status === 'lead').length, 'clients', 'orange'],
+            ['Archived', clients.filter((item) => item.status === 'archived').length, 'clients', 'red'],
           ],
           columns: [['company', 'Company'], ['name', 'Contact'], ['email', 'Email'], ['phone', 'Phone'], ['status', 'Status'], ['projects', 'Projects'], ['billing', 'Billing']],
           rows: clients.map((item) => ({
@@ -15566,7 +15810,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       ];
       els.view.innerHTML = `
         <div class="crm-reports-page">
-          ${pageHead('Report Generation', 'Generate operational reports from live Supabase CRM data.', `<button class="crm-button primary report-head-button" data-report-download-pdf type="button">&#8659; Download PDF</button><button class="crm-button report-head-button" data-report-print type="button">&#128438; Print</button><button class="crm-button report-head-button" data-report-export type="button">&#8659; Export CSV</button>`)}
+          ${pageHead('Report Generation', 'Generate operational reports from live Supabase Operations &amp; Management data.', `<button class="crm-button primary report-head-button" data-report-download-pdf type="button">${crmProjectIcon('download')} Download PDF</button><button class="crm-button report-head-button" data-report-print type="button">${crmProjectIcon('print')} Print</button><button class="crm-button report-head-button" data-report-export type="button">${crmProjectIcon('download')} Export CSV</button>`)}
           <section class="crm-card reports-controls-card">
             <div class="crm-card-head reports-controls-head"><h2 class="crm-card-title">Report Controls</h2></div>
             <div class="reports-controls-grid">
@@ -15587,7 +15831,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             </div>
           </section>
           <div class="crm-grid crm-kpis reports-kpis">
-            ${report.metrics.map(([label, value, icon, color]) => metric(label, value, icon, color)).join('')}
+            ${report.metrics.map(([label, value, icon, color]) => metric(label, value, crmProjectIcon(icon), color)).join('')}
           </div>
           <div class="reports-summary-grid">
             <section class="crm-card reports-table-card" id="report-preview">
@@ -15749,7 +15993,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
             <h1>${escapeHtml(report.title)}</h1>
             <p class="subtitle">${escapeHtml(report.subtitle)}</p>
           </div>
-          <div class="brand">TECHMIGOS CRM</div>
+          <div class="brand">TECHMIGOS OPERATIONS</div>
         </div>
         <div class="meta">Period: ${escapeHtml(state.reportFrom)} to ${escapeHtml(state.reportTo)} &nbsp;&bull;&nbsp; Generated: ${new Date().toLocaleString('en-IN')} &nbsp;&bull;&nbsp; Report type: ${escapeHtml(state.reportType)}</div>
         <div class="metrics">${report.metrics.map(([label, value]) => `<div class="metric"><div class="label">${escapeHtml(String(label))}</div><div class="value">${escapeHtml(String(value))}</div></div>`).join('')}</div>
@@ -15827,10 +16071,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ${pageHead(embeddedInUsers ? 'User Management' : 'Client Management', embeddedInUsers ? 'Client details, linked projects, billing health, and portal access for administrators.' : 'Manage client companies, relationships, project portfolio, billing health, and portal access.', `${canWrite('clients') ? '<button class="crm-button primary" data-create="clients" type="button">+ Add Client</button>' : ''}<button class="crm-button" data-export="clients" type="button">Export</button>`)}
         ${embeddedInUsers ? usersAdminTabs('clients') : ''}
         <div class="crm-grid crm-kpis">
-          ${metric('Total Clients', state.data.clients.length, '○', 'blue', `${activeCount} active`)}
-          ${metric('Active Projects', state.data.projects.filter((p) => ['active','review','planning'].includes(p.status)).length, '▣', 'green', 'across all clients')}
-          ${metric('Client Billing', compactMoney(totalRevenue), '₹', 'purple', 'from linked invoices')}
-          ${metric('At-Risk Accounts', atRiskCount, '!', 'orange', atRiskCount ? 'need attention' : 'all healthy')}
+          ${metric('Total Clients', state.data.clients.length, crmProjectIcon('clients'), 'blue', `${activeCount} active`)}
+          ${metric('Active Projects', state.data.projects.filter((p) => ['active','review','planning'].includes(p.status)).length, crmProjectIcon('folder'), 'green', 'across all clients')}
+          ${metric('Client Billing', compactMoney(totalRevenue), crmProjectIcon('currency'), 'purple', 'from linked invoices')}
+          ${metric('At-Risk Accounts', atRiskCount, crmProjectIcon('tickets'), 'orange', atRiskCount ? 'need attention' : 'all healthy')}
         </div>
         <div class="crm-two-col mt-5">
           <section class="crm-card">
@@ -15947,10 +16191,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ${pageHead(embeddedInUsers ? 'User Management' : 'Employee Management', embeddedInUsers ? 'Employee details, project assignments, delivery workload, and access status for administrators.' : 'Manage team members, departments, utilization, and access status.', `${isCompanyAdmin() ? '<button class="crm-button primary" data-create="profiles" type="button">+ Add Employee</button>' : ''}<button class="crm-button" data-export="employees" type="button">Export</button>`)}
         ${embeddedInUsers ? usersAdminTabs('employees') : ''}
         <div class="crm-grid crm-kpis">
-          ${metric('Total Employees', allEmployees.length, '♙', 'blue', `${allEmployees.filter((e) => e.status === 'active' || !e.status).length} active`)}
-          ${metric('Avg. Projects / Person', allEmployees.length ? (allEmployees.reduce((sum, employee) => sum + employeeProjects(employee).length, 0) / allEmployees.length).toFixed(1) : '0', '▣', 'green', 'assigned projects')}
-          ${metric('Open Tickets', state.data.tickets.filter((t) => !['resolved','closed'].includes(t.status)).length, '◴', 'orange', 'across team')}
-          ${metric('Departments', depts.length, '◎', 'purple', depts.slice(0,2).join(', ') || 'No depts set')}
+          ${metric('Total Employees', allEmployees.length, crmProjectIcon('clients'), 'blue', `${allEmployees.filter((e) => e.status === 'active' || !e.status).length} active`)}
+          ${metric('Avg. Projects / Person', allEmployees.length ? (allEmployees.reduce((sum, employee) => sum + employeeProjects(employee).length, 0) / allEmployees.length).toFixed(1) : '0', crmProjectIcon('folder'), 'green', 'assigned projects')}
+          ${metric('Open Tickets', state.data.tickets.filter((t) => !['resolved','closed'].includes(t.status)).length, crmProjectIcon('tickets'), 'orange', 'across team')}
+          ${metric('Departments', depts.length, crmProjectIcon('layers'), 'purple', depts.slice(0,2).join(', ') || 'No depts set')}
         </div>
         <div class="crm-two-col mt-5">
           <section class="crm-card">
@@ -16134,15 +16378,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         };
       };
       const roleFilter = state.usersRoleFilter || 'all';
+      const statusFilter = state.usersStatusFilter || 'all';
       const searchQuery = (state.usersSearch || '').trim().toLowerCase();
       const visibleEntries = entries.filter((entry) => {
         if (roleFilter !== 'all' && entry.role !== roleFilter) return false;
+        if (statusFilter !== 'all' && (entry.entryKind === 'client-record' || (entry.status || 'active') !== statusFilter)) return false;
         if (!searchQuery) return true;
         return [entry.name, entry.email, entry.company, entry.department, roleLabel(entry.role)].some((value) => String(value || '').toLowerCase().includes(searchQuery));
       });
       const adminCount = profiles.filter((profile) => profile.role === 'company_admin').length;
       const employeeCount = profiles.filter((profile) => profile.role === 'company_member').length;
       const clientCount = entries.filter((entry) => entry.role === 'client').length;
+      const activeUserCount = profiles.filter((profile) => !profile.status || profile.status === 'active').length;
+      const inactiveUserCount = profiles.filter((profile) => profile.status === 'inactive').length;
       const pendingCount = profiles.filter((profile) => profile.status === 'pending').length;
       const rows = visibleEntries.map((entry) => {
         const scope = projectScope(entry);
@@ -16163,21 +16411,29 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           <td>${actions}</td>
         </tr>`;
       }).join('');
-      const roleCards = [
-        ['Admin', adminCount, 'Full company access', 'Can view and manage all projects and CRM modules.', 'purple'],
-        ['Employee', employeeCount, 'Project details only', 'Can view assigned project details and nothing beyond that.', 'blue'],
-        ['Client', clientCount, 'Own project details only', 'Can view projects linked to the client account.', 'green'],
-      ].map(([label, count, scope, detail, tone]) => `<article class="users-role-card ${tone}"><div class="users-role-card-top"><span class="users-role-dot"></span><strong>${label}</strong><b>${count}</b></div><p>${scope}</p><small>${detail}</small></article>`).join('');
       const accessMatrix = [
         ['Projects', 'All projects', 'Assigned projects only', 'Own linked projects only'],
-        ['Other CRM modules', 'Full access', 'No access', 'Client portal scope'],
+        ['Other operations modules', 'Full access', 'No access', 'Client portal scope'],
         ['User management', 'Manage users', 'No access', 'No access'],
       ];
       const matrixHtml = `<div class="crm-table-wrap users-matrix-wrap"><table class="crm-table users-matrix"><thead><tr><th>AREA</th><th>ADMIN</th><th>EMPLOYEE</th><th>CLIENT</th></tr></thead><tbody>${accessMatrix.map(([area, ...values]) => `<tr><td><strong>${area}</strong></td>${values.map((value) => `<td>${value}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+      const statusTabs = [
+        ['all', 'All Users', profiles.length],
+        ['active', 'Active', activeUserCount],
+        ['inactive', 'Inactive', inactiveUserCount],
+        ['pending', 'Pending', pendingCount],
+      ].map(([key, label, count]) => `<button class="users-reference-tab${statusFilter === key ? ' active' : ''}" type="button" data-users-status-filter="${key}" aria-current="${statusFilter === key ? 'page' : 'false'}">${label}<small>${count}</small></button>`).join('');
 
       els.view.innerHTML = `${pageHead('User Management', 'Manage admin, employee, and client access from one directory.', '<button class="crm-button primary" data-create="profiles" type="button">+ Create Login</button><button class="crm-button" id="btn-invite-user" type="button">Invite User</button><button class="crm-button" id="btn-data-review" type="button">Review data</button><button class="crm-button" data-export="users" type="button">Export</button>')}
         ${usersAdminTabs('directory')}
-        <section class="users-role-grid" aria-label="Role access summary">${roleCards}</section>
+        <nav class="users-reference-tabs" aria-label="User status filters">${statusTabs}</nav>
+        <section class="users-reference-kpis" aria-label="User overview">
+          ${metric('Total Users', profiles.length, crmProjectIcon('clients'), 'blue', 'registered logins')}
+          ${metric('Active', activeUserCount, crmProjectIcon('reports'), 'green', 'available accounts')}
+          ${metric('Inactive', inactiveUserCount, crmProjectIcon('lock'), 'red', 'disabled accounts')}
+          ${metric('Pending', pendingCount, crmProjectIcon('tickets'), 'orange', 'awaiting activation')}
+          ${metric('Admins', adminCount, crmProjectIcon('clients'), 'purple', 'full access accounts')}
+        </section>
         <section class="crm-card users-directory-card">
           <div class="crm-card-head users-directory-head"><div><h2 class="crm-card-title">People &amp; access</h2><p class="users-directory-subtitle">Admins, employees, and clients with their project visibility.</p></div><div class="crm-toolbar"><select class="crm-select" id="users-role-filter" aria-label="Filter users by role"><option value="all" ${roleFilter === 'all' ? 'selected' : ''}>All roles</option><option value="company_admin" ${roleFilter === 'company_admin' ? 'selected' : ''}>Admins</option><option value="company_member" ${roleFilter === 'company_member' ? 'selected' : ''}>Employees</option><option value="client" ${roleFilter === 'client' ? 'selected' : ''}>Clients</option></select><input class="crm-input" id="users-search" placeholder="Search people..." value="${escapeHtml(state.usersSearch || '')}" /></div></div>
           ${table(['', 'Person', 'Role', 'Company / team', 'Project visibility', 'Status', 'Actions'], rows, 'No people found.', 'users-directory-table')}
@@ -16188,6 +16444,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         </div>`;
       document.getElementById('users-search')?.addEventListener('input', (event) => { state.usersSearch = event.target.value; renderUsers(); bindActions(); });
       document.getElementById('users-role-filter')?.addEventListener('change', (event) => { state.usersRoleFilter = event.target.value; renderUsers(); bindActions(); });
+      document.querySelectorAll('[data-users-status-filter]').forEach((button) => button.addEventListener('click', () => { state.usersStatusFilter = button.dataset.usersStatusFilter || 'all'; renderUsers(); bindActions(); }));
       document.querySelectorAll('[data-create-profile-client]').forEach((button) => button.addEventListener('click', () => { state.userCreateClientId = button.dataset.createProfileClient || ''; openCreate('profiles'); state.userCreateClientId = ''; }));
       document.getElementById('btn-invite-user')?.addEventListener('click', () => openCreate('profiles', { invite: true }));
       document.getElementById('btn-data-review')?.addEventListener('click', openDataReview);
@@ -16199,7 +16456,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ['tickets', 'Tickets', state.data.tickets, (item) => `#TIC-${item.id} ${item.subject || 'Untitled ticket'}`],
       ];
       const rows = resources.flatMap(([resource, label, items, describe]) => items.map((item) => `<label class="crm-list-row" style="align-items:flex-start;gap:10px;"><input type="checkbox" name="record" value="${resource}:${item.id}" /><span><strong>${escapeHtml(label)}</strong><br><small>${escapeHtml(describe(item))} · ID ${item.id}</small></span></label>`)).join('');
-      els.modalTitle.textContent = 'Review persisted CRM data';
+      els.modalTitle.textContent = 'Review persisted Operations & Management data';
       els.modalBody.innerHTML = `<form id="crm-data-review-form" class="grid gap-3"><p class="text-sm text-slate-600">These are real persisted client and ticket records. Select only rows you have confirmed are demo data. Client deletion unlinks related records; ticket deletion removes its messages. This cannot be undone.</p>${rows || '<p class="crm-empty">There are no client or ticket records to review.</p>'}<label class="grid gap-1 text-sm font-bold text-slate-700">Type DELETE to confirm<input class="crm-input" name="confirmation" autocomplete="off" /></label><button class="crm-button danger" type="submit">Delete selected records</button></form>`;
       els.modal.classList.add('open');
       document.getElementById('crm-data-review-form')?.addEventListener('submit', async (event) => {
@@ -16267,11 +16524,25 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         return;
       }
 
-      els.view.innerHTML = `${pageHead('Settings & Configuration', 'Configure company profile, invoice defaults, and access controls.', '<button class="crm-button primary" type="button" id="settings-save-all-btn">💾 Save All</button>')}
-        <p id="settings-status" style="font-size:12px;color:#64748b;margin-bottom:16px;">Loading settings…</p>
+      els.view.innerHTML = `<div class="settings-reference-page">
+        ${pageHead('Settings', 'Manage your workspace', '<a class="crm-button" href="/" target="_blank" rel="noopener" style="text-decoration:none;">↗ View Public Profile</a><button class="crm-button primary" type="button" id="settings-save-all-btn">Save All</button>')}
+        <div class="settings-reference-layout">
+          <aside class="settings-reference-nav" aria-label="Settings sections">
+            <button class="active" type="button" data-settings-section="settings-company">${crmProjectIcon('clients')}<span>Company Profile</span></button>
+            <button type="button" data-settings-section="settings-branding">${crmProjectIcon('layers')}<span>Branding</span></button>
+            <button type="button" data-settings-section="settings-project-defaults">${crmProjectIcon('folder')}<span>Project Settings</span></button>
+            <button type="button" data-settings-section="settings-notifications">${crmProjectIcon('tickets')}<span>Notifications</span></button>
+            <button type="button" data-settings-section="settings-security">${crmProjectIcon('reports')}<span>Security</span></button>
+            <button type="button" data-settings-section="settings-integrations">${crmProjectIcon('layers')}<span>Integrations</span></button>
+            <button type="button" data-settings-section="settings-invoice">${crmProjectIcon('finance')}<span>Billing</span></button>
+            <button type="button" data-settings-section="settings-team">${crmProjectIcon('clients')}<span>Team &amp; Permissions</span></button>
+            <button type="button" data-settings-section="settings-preferences">${crmProjectIcon('settings')}<span>System Preferences</span></button>
+          </aside>
+          <div class="settings-reference-grid">
+            <p id="settings-status" style="font-size:12px;color:#64748b;margin-bottom:0;">Loading settings…</p>
 
         <!-- Company Profile -->
-        <section class="crm-card" style="margin-bottom:16px;">
+        <section id="settings-company" class="crm-card settings-reference-card" style="margin-bottom:16px;">
           <div class="crm-card-head">
             <h2 class="crm-card-title">Company Profile</h2>
             <div class="crm-toolbar">
@@ -16289,8 +16560,39 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </form>
         </section>
 
+        <section id="settings-branding" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head">
+            <div><h2 class="crm-card-title">Branding Preview</h2><p class="settings-reference-help">How your workspace identity appears to signed-in users.</p></div>
+            <span class="settings-reference-live">Live</span>
+          </div>
+          <div class="settings-branding-preview">
+            <img src="/icon.png" alt="TechMigos brand mark" />
+            <div><strong id="settings-brand-name">TechMigos</strong><span id="settings-brand-tagline">Operations &amp; Management portal</span></div>
+          </div>
+          <p class="settings-reference-help">The brand mark is shared with the authenticated workspace and invoice presentation.</p>
+        </section>
+
+        <section id="settings-project-defaults" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head"><div><h2 class="crm-card-title">Default Project Settings</h2><p class="settings-reference-help">Defaults used by the live project creation workflow.</p></div><span class="settings-reference-readonly">Read only</span></div>
+          <div class="settings-reference-facts">
+            <div><span>Default status</span><strong>Planning</strong></div>
+            <div><span>Default progress</span><strong>0%</strong></div>
+            <div><span>Team access</span><strong>Assigned project members</strong></div>
+            <div><span>Due date</span><strong>Optional</strong></div>
+          </div>
+        </section>
+
+        <section id="settings-notifications" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head"><div><h2 class="crm-card-title">Notification Preferences</h2><p class="settings-reference-help">Live alerts surfaced from the workspace.</p></div></div>
+          <div class="settings-reference-list">
+            <div><span><strong>Project updates</strong><small>Shown from current project status and activity.</small></span><b class="settings-reference-indicator is-on">On</b></div>
+            <div><span><strong>Support tickets</strong><small>Open and unresolved tickets appear in the notification count.</small></span><b class="settings-reference-indicator is-on">On</b></div>
+            <div><span><strong>Invoice status</strong><small>Pending and overdue invoices are included in workspace alerts.</small></span><b class="settings-reference-indicator is-on">On</b></div>
+          </div>
+        </section>
+
         <!-- Invoice Defaults -->
-        <section class="crm-card" style="margin-bottom:16px;">
+        <section id="settings-invoice" class="crm-card settings-reference-card" style="margin-bottom:16px;">
           <div class="crm-card-head">
             <h2 class="crm-card-title">Invoice Defaults</h2>
             <div class="crm-toolbar">
@@ -16308,7 +16610,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           </form>
         </section>
 
-        <section class="crm-card" style="margin-bottom:16px;">
+        <section id="settings-security" class="crm-card settings-reference-card" style="margin-bottom:16px;">
             <div class="crm-card-head"><h2 class="crm-card-title">Security & Access</h2></div>
             <div class="crm-list">
               <div class="crm-list-row"><span>Access model</span><strong>Role-Based (RBAC)</strong></div>
@@ -16320,7 +16622,28 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
               <a class="crm-button" href="/reset-password" style="text-decoration:none;">Reset Password</a>
               <button class="crm-button" data-jump="users" type="button">Manage Users</button>
             </div>
-        </section>`;
+        </section>
+
+        <section id="settings-integrations" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head"><div><h2 class="crm-card-title">Integrations</h2><p class="settings-reference-help">Connections available to this workspace.</p></div><span class="settings-reference-readonly">Live status</span></div>
+          <div class="settings-reference-empty">
+            <span class="settings-reference-empty-icon">${crmProjectIcon('layers')}</span>
+            <strong>No integrations configured</strong>
+            <p>There is no integration contract configured for this workspace yet. Live data remains managed through Supabase.</p>
+          </div>
+        </section>
+        <section id="settings-team" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head"><div><h2 class="crm-card-title">Team &amp; Permissions</h2><p class="settings-reference-help">Review role-based access for the delivery team.</p></div><span class="settings-reference-readonly">Live access</span></div>
+          <div class="settings-reference-facts"><div><span>Admin accounts</span><strong>${state.data.profiles.filter((p) => p.role === 'company_admin').length}</strong></div><div><span>Employee accounts</span><strong>${state.data.profiles.filter((p) => p.role === 'company_member').length}</strong></div><div><span>Client accounts</span><strong>${state.data.profiles.filter((p) => p.role === 'client').length}</strong></div><div><span>Access model</span><strong>Role-based access</strong></div></div>
+          <div class="crm-toolbar" style="margin-top:14px;"><button class="crm-button" data-jump="users" type="button">Open User Management</button></div>
+        </section>
+        <section id="settings-preferences" class="crm-card settings-reference-card" style="margin-bottom:16px;">
+          <div class="crm-card-head"><div><h2 class="crm-card-title">System Preferences</h2><p class="settings-reference-help">Workspace behavior follows the active browser and live portal configuration.</p></div><span class="settings-reference-readonly">Read only</span></div>
+          <div class="settings-reference-list"><div><span><strong>Workspace language</strong><small>English interface labels are active.</small></span><b class="settings-reference-indicator is-on">English</b></div><div><span><strong>Motion</strong><small>Respect the browser reduced-motion preference.</small></span><b class="settings-reference-indicator is-on">Supported</b></div><div><span><strong>Data source</strong><small>Records are loaded from the live Supabase workspace.</small></span><b class="settings-reference-indicator is-on">Live</b></div></div>
+        </section>
+          </div>
+        </div>
+      </div>`;
 
       // Load real settings from Supabase
       try {
@@ -16330,6 +16653,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         ]);
         const cs = companyRes.settings || {};
         const inv = invoiceRes.settings || {};
+        const brandName = document.getElementById('settings-brand-name');
+        if (brandName && cs.company_name) brandName.textContent = cs.company_name;
         const cf = document.getElementById('form-company');
         const inf = document.getElementById('form-invoice');
         if (cf) {
@@ -16391,6 +16716,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         document.getElementById('btn-save-invoice')?.click();
       });
 
+      document.querySelectorAll('[data-settings-section]').forEach((button) => button.addEventListener('click', () => {
+        document.querySelectorAll('[data-settings-section]').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        const target = document.getElementById(button.dataset.settingsSection || '');
+        if (target) target.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      }));
+
       document.getElementById('btn-reset-password')?.addEventListener('click', () => toast('Password reset email sent. Check your inbox.'));
     }
 
@@ -16431,10 +16766,6 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       document.querySelectorAll('[data-project-detail]').forEach((button) => button.addEventListener('click', () => {
         state.selectedProjectId = button.dataset.projectDetail;
         renderProjects();
-      }));
-      document.querySelectorAll('[data-ticket-detail]').forEach((button) => button.addEventListener('click', () => {
-        state.selectedTicketId = button.dataset.ticketDetail;
-        renderTickets();
       }));
       document.querySelectorAll('[data-client-detail]').forEach((button) => button.addEventListener('click', () => {
         state.selectedClientId = button.dataset.clientDetail;
@@ -16607,7 +16938,10 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       app.classList.toggle('sidebar-collapsed');
       const collapsed = app.classList.contains('sidebar-collapsed');
       localStorage.setItem('tm_crm_sidebar_collapsed', collapsed ? '1' : '0');
-      document.getElementById('crm-collapse').textContent = collapsed ? '⇥' : '⇤';
+      const collapseControl = document.getElementById('crm-collapse');
+      collapseControl?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      collapseControl?.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+      collapseControl?.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     }
 
     function openNotifications() {
@@ -16643,7 +16977,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           } else {
             // Simple admin session — update local state only (no DB row)
             state.profile = { ...state.profile, ...body };
-            document.getElementById('crm-user-name').textContent = body.name || state.profile.name;
+            syncIdentity({ ...state.profile, ...body });
           }
           els.modal.classList.remove('open');
           toast('Profile updated');
@@ -16859,7 +17193,114 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       return configs[resource] || configs.clients;
     }
 
+    function operationsFieldMarkup(field, values = {}, resource, { invite = false } = {}) {
+      if (!field) return '';
+      const wide = field.wide ? 'wide' : '';
+      const req = field.required ? ' required' : '';
+      let input;
+      if (field.type === 'html' || field.html) {
+        input = field.html;
+      } else if (field.type === 'textarea') {
+        input = `<textarea name="${field.name}"${req} placeholder="${field.placeholder || ''}">${escapeHtml(values[field.name] ?? '')}</textarea>`;
+      } else {
+        const extra = [
+          field.min !== undefined ? `min="${field.min}"` : '',
+          field.max !== undefined ? `max="${field.max}"` : '',
+          field.step ? `step="${field.step}"` : '',
+          field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : '',
+        ].filter(Boolean).join(' ');
+        input = `<input name="${field.name}" type="${field.type}"${req} value="${escapeHtml(values[field.name] ?? '')}" ${extra} />`;
+      }
+      const profilePasswordHint = resource === 'profiles' && !values.id && field.name === 'password'
+        ? `<small class="operations-field-hint">${invite ? 'Optional: leave blank to send an email invitation.' : 'Optional: leave blank to auto-generate a temporary password.'}</small>`
+        : '';
+      return `<label class="${wide}">${field.label}${profilePasswordHint}${input}</label>`;
+    }
+
+    function operationsDrawerSection(title, iconName, content, sectionId) {
+      return `<section class="operations-drawer-section" data-drawer-section="${sectionId}">
+        <header class="operations-drawer-section-head"><span class="operations-drawer-section-icon">${crmProjectIcon(iconName)}</span><h3>${title}</h3><button class="operations-drawer-section-toggle" data-drawer-section-toggle="${sectionId}" type="button" aria-label="Toggle ${title}" aria-expanded="true">${operationsChevronIcon(true)}</button></header>
+        <div class="operations-drawer-section-body" data-drawer-section-body="${sectionId}">${content}</div>
+      </section>`;
+    }
+
+    function operationsChevronIcon(open = true) {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${open ? 'm6 14 6-6 6 6' : 'm6 10 6 6 6-6'}"></path></svg>`;
+    }
+
+    function operationsProfilePermissions(values = {}) {
+      const permissionItems = [
+        ['projects', 'Projects', 'folder', 'company_admin,company_member,client'],
+        ['operations', 'Operations', 'layers', 'company_admin'],
+        ['files', 'Files', 'reports', 'company_admin,company_member'],
+        ['support', 'Support', 'tickets', 'company_admin,client'],
+      ];
+      const currentRole = values.role || 'company_member';
+      const cards = permissionItems.map(([key, label, iconName, allowedRoles]) => {
+        const allowed = allowedRoles.split(',').includes(currentRole);
+        return `<label class="operations-permission-card"><input type="checkbox" disabled data-permission-key="${key}" data-permission-roles="${allowedRoles}"${allowed ? ' checked' : ''} aria-label="${label} permission" /><span class="operations-permission-icon">${crmProjectIcon(iconName)}</span><strong>${label}</strong></label>`;
+      }).join('');
+      return `<div class="operations-permission-note" data-permission-role-note>Preview for the selected role. Access is enforced by the live Operations &amp; Management permission contract.</div><div class="operations-permission-grid">${cards}</div>`;
+    }
+
+    function operationsProjectFormMarkup(values = {}, submitLabel = 'Save', { invite = false } = {}) {
+      const fields = createFields('projects', values);
+      const field = (name) => operationsFieldMarkup(fields.find((item) => item.name === name), values, 'projects', { invite });
+      const validation = '';
+      return `<form id="crm-edit-form" class="operations-drawer-form" autocomplete="off"${validation}>
+        ${operationsDrawerSection('Basic Information', 'folder', `<div class="operations-drawer-grid">${field('name')}${field('client_id')}${field('project_manager_profile_id')}</div>`, 'project-basic')}
+        ${operationsDrawerSection('Timeline & Status', 'calendar', `<div class="operations-drawer-grid">${field('due_date')}${field('status')}${field('health')}${field('progress')}</div>`, 'project-timeline')}
+        ${operationsDrawerSection('Financials', 'currency', `<div class="operations-drawer-grid">${field('budget')}${field('expenses')}${field('revenue')}</div>`, 'project-financials')}
+        ${operationsDrawerSection('Team & Resources', 'clients', `<div class="operations-drawer-grid">${projectTeamMarkup(values)}</div>`, 'project-team')}
+        ${operationsDrawerSection('Additional Details', 'reports', `<div class="operations-drawer-grid">${field('summary')}${field('notes')}</div>`, 'project-details')}
+        <p class="crm-form-submit-status operations-drawer-status" data-form-submit-status role="status" aria-live="polite"></p>
+        <footer class="operations-drawer-footer"><button class="crm-button" data-drawer-cancel type="button">Cancel</button><button class="crm-button primary" type="submit">${submitLabel}</button></footer>
+      </form>`;
+    }
+
+    function operationsProfileFormMarkup(values = {}, submitLabel = 'Save', { invite = false } = {}) {
+      const fields = createFields('profiles', values);
+      const field = (name) => operationsFieldMarkup(fields.find((item) => item.name === name), values, 'profiles', { invite });
+      const validation = !values.id && !invite ? ' novalidate' : '';
+      return `<form id="crm-edit-form" class="operations-drawer-form" autocomplete="off"${validation}>
+        ${operationsDrawerSection('Basic Information', 'clients', `<div class="operations-drawer-grid">${field('name')}${field('email')}${field('role')}${field('status')}</div>`, 'profile-basic')}
+        ${operationsDrawerSection('Organization', 'folder', `<div class="operations-drawer-grid">${field('client_id')}${field('department')}${field('username')}</div>`, 'profile-organization')}
+        ${operationsDrawerSection('Permissions', 'lock', `<div class="operations-drawer-grid operations-drawer-grid--single">${operationsProfilePermissions(values)}</div>`, 'profile-permissions')}
+        ${operationsDrawerSection('Security', 'lock', `<div class="operations-drawer-grid operations-drawer-grid--single">${field('password')}<p class="operations-drawer-help">Passwords and invitations are handled by the existing Supabase admin-user operation.</p></div>`, 'profile-security')}
+        <p class="crm-form-submit-status operations-drawer-status" data-form-submit-status role="status" aria-live="polite"></p>
+        <footer class="operations-drawer-footer"><button class="crm-button" data-drawer-cancel type="button">Cancel</button><button class="crm-button primary" type="submit">${submitLabel}</button></footer>
+      </form>`;
+    }
+
+    function bindOperationsDrawerSections(form = document.getElementById('crm-edit-form')) {
+      form?.querySelectorAll('[data-drawer-section-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const sectionId = button.dataset.drawerSectionToggle;
+          const body = form.querySelector(`[data-drawer-section-body="${sectionId}"]`);
+          const open = button.getAttribute('aria-expanded') !== 'false';
+          button.setAttribute('aria-expanded', open ? 'false' : 'true');
+          if (body) body.hidden = open;
+          button.innerHTML = operationsChevronIcon(!open);
+        });
+      });
+      const roleSelect = form?.querySelector('[name="role"]');
+      const permissionNote = form?.querySelector('[data-permission-role-note]');
+      const syncPermissionPreview = () => {
+        if (!roleSelect) return;
+        const role = roleSelect.value || 'company_member';
+        form.querySelectorAll('[data-permission-key]').forEach((control) => {
+          control.checked = String(control.dataset.permissionRoles || '').split(',').includes(role);
+        });
+        if (permissionNote) permissionNote.textContent = `Preview for ${role === 'company_admin' ? 'Admin' : role === 'client' ? 'Client' : 'Employee'}. Access is enforced by the live Operations & Management permission contract.`;
+      };
+      roleSelect?.addEventListener('change', syncPermissionPreview);
+      syncPermissionPreview();
+      form?.querySelector('[data-drawer-cancel]')?.addEventListener('click', () => els.modal.classList.remove('open'));
+    }
+
     function formMarkup(resource, values = {}, submitLabel = 'Save', { invite = false } = {}) {
+      if (resource === 'projects') return operationsProjectFormMarkup(values, submitLabel, { invite });
+      if (resource === 'profiles') return operationsProfileFormMarkup(values, submitLabel, { invite });
       const fields = createFields(resource, values);
       const rows = fields.map((f) => {
         const wide = f.wide ? 'wide' : '';
@@ -16937,7 +17378,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (!isClient) clientSelect.value = '';
         clientSelect.required = isClient;
         clientSelect.setCustomValidity(isClient && !clientSelect.value
-          ? 'Select the CRM client this login belongs to.'
+          ? 'Select the client account this login belongs to.'
           : '');
         clientSelect.closest('label')?.classList.toggle('profile-client-link-required', isClient);
       };
@@ -17319,7 +17760,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function openCreate(resource, { invite = false } = {}) {
-      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in Operations & Management.`);
       if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can create new logins.');
       if (resource === 'invoices') return openInvoiceCreateIntegrated();
       if (resource === 'tickets') return openTicketCreate();
@@ -17327,9 +17768,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       const actualResource = isFinSub ? 'finances' : resource;
       const defaults = smartDefaults(resource);
       const titleMap = { salary: 'Add Salary', income: 'Add Income', expense: 'Add Expense', finances: 'Add Transaction' };
-      els.modalTitle.textContent = invite ? 'Invite User' : titleMap[resource] || `Create ${resource.replace(/_/g, ' ')}`;
-      els.modalBody.innerHTML = formMarkup(isFinSub ? resource : actualResource, defaults, invite ? 'Send Invitation' : titleMap[resource] || 'Create', { invite });
+      els.modalTitle.textContent = invite ? 'Invite User' : actualResource === 'projects' ? 'Create / Edit Project' : actualResource === 'profiles' ? 'Create / Edit User' : titleMap[resource] || `Create ${resource.replace(/_/g, ' ')}`;
+      const createLabel = invite ? 'Send Invitation' : actualResource === 'projects' ? 'Create Project' : actualResource === 'profiles' ? 'Create User' : titleMap[resource] || 'Create';
+      els.modalBody.innerHTML = formMarkup(isFinSub ? resource : actualResource, defaults, createLabel, { invite });
       els.modal.classList.add('open');
+      bindOperationsDrawerSections();
       if (actualResource === 'finances') bindLinkedClientProjectFields(document.getElementById('crm-edit-form'));
       if (actualResource === 'finances') bindFinanceProofField();
       if (actualResource === 'profiles') bindProfileClientLinkFields(document.getElementById('crm-edit-form'));
@@ -17406,15 +17849,16 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     function openEdit(resource, id) {
-      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in Operations & Management.`);
       if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can update user roles and access.');
       if (resource === 'invoices') return openInvoiceEditIntegrated(id);
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
-      els.modalTitle.textContent = `Edit ${resource.replace(/_/g, ' ')}`;
+      els.modalTitle.textContent = resource === 'projects' ? 'Create / Edit Project' : resource === 'profiles' ? 'Create / Edit User' : `Edit ${resource.replace(/_/g, ' ')}`;
       const employeeEdit = isEmployee() && ['projects', 'tickets'].includes(resource);
       els.modalBody.innerHTML = employeeEdit ? employeeDeliveryForm(resource, item) : formMarkup(resource, item, 'Save Changes');
       els.modal.classList.add('open');
+      bindOperationsDrawerSections();
       if (resource === 'finances') bindLinkedClientProjectFields(document.getElementById('crm-edit-form'));
       if (resource === 'finances') bindFinanceProofField();
       if (resource === 'profiles') bindProfileClientLinkFields(document.getElementById('crm-edit-form'));
@@ -17447,7 +17891,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function duplicateRecord(resource, id) {
-      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in Operations & Management.`);
       if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can duplicate user records.');
       const item = findRecord(resource, id);
       if (!item) return toast('Record not found');
@@ -17467,7 +17911,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     }
 
     async function deleteRecord(resource, id) {
-      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in this CRM.`);
+      if (isDisabledResource(resource)) return toast(`${nice(resource)} is not enabled in Operations & Management.`);
       if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can delete user records.');
       if (!id || !confirm(`Delete this ${resource.slice(0, -1) || resource}? This cannot be undone.`)) return;
       try {
@@ -17510,7 +17954,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
     async function bulkDelete() {
       const rows = selectedRows();
       if (!rows.length || !confirm(`Delete ${rows.length} selected records?`)) return;
-      if (rows.some((row) => isDisabledResource(row.dataset.resource))) return toast('One or more selected records belong to disabled CRM modules.');
+        if (rows.some((row) => isDisabledResource(row.dataset.resource))) return toast('One or more selected records belong to disabled Operations & Management modules.');
       if (rows.some((row) => row.dataset.resource === 'profiles') && !isCompanyAdmin()) return toast('Only company admins can bulk delete user records.');
       try {
         await Promise.all(rows.map((row) => portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'DELETE' })));
@@ -17825,20 +18269,19 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (cached) {
           const cachedData = JSON.parse(cached);
           state.data = { ...cachedData, finances: normalizeFinanceRecords(cachedData.finances) };
+          state.data.ticket_messages = Array.isArray(state.data.ticket_messages) ? state.data.ticket_messages : [];
           setStatus('Syncing with database...', 'success');
           render();
         } else {
-          setStatus('Loading CRM data...');
+          setStatus('Loading TechMigos Finance data...');
         }
       } catch (e) {
         console.warn('Cache load failed:', e);
-        setStatus('Loading CRM data...');
+        setStatus('Loading TechMigos Finance data...');
       }
 
       try {
-        const skipList = new Set(['ticket_messages']);
         const names = Object.keys(state.data).filter((name) => {
-          if (skipList.has(name)) return false;
           if (isDisabledResource(name)) return false;
           if (name === 'profiles' && state.profile?.role !== 'company_admin') return false;
           return canReadResource(name);
@@ -17867,16 +18310,24 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         if (!session) return logout();
         state.cacheUserId = session.user.id;
         if (state.active === 'files') {
-          state.fileProjectId = new URLSearchParams(window.location.search).get('project') || '';
+          const fileParams = new URLSearchParams(window.location.search);
+          state.fileProjectId = fileParams.get('project') || '';
+          state.fileSelectedId = fileParams.get('file') || null;
+          state.fileProjectPicker = !fileParams.get('project');
         }
         if (DISABLED_CRM_RESOURCES.has(state.active)) {
-          window.location.replace('/company/dashboard');
+          window.location.replace('/company/finance');
           return;
         }
-        if (localStorage.getItem('tm_crm_sidebar_collapsed') === '1') {
+        const sidebarCollapsed = localStorage.getItem('tm_crm_sidebar_collapsed') === '1'
+          || window.matchMedia('(max-width: 900px)').matches;
+        if (sidebarCollapsed) {
           document.querySelector('.crm-app')?.classList.add('sidebar-collapsed');
-          document.getElementById('crm-collapse').textContent = '⇥';
         }
+        const collapseControl = document.getElementById('crm-collapse');
+        collapseControl?.setAttribute('aria-expanded', sidebarCollapsed ? 'false' : 'true');
+        collapseControl?.setAttribute('aria-label', sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        collapseControl?.setAttribute('title', sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
 
         // Live clock
         function updateClock() {
@@ -17890,7 +18341,7 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         setInterval(updateClock, 30000);
 
         document.getElementById('crm-logout-btn')?.addEventListener('click', () => {
-          if (confirm('Sign out of TechMigos CRM?')) logout();
+          if (confirm('Sign out of TechMigos Finance?')) logout();
         });
 
         // Try profile from cache
@@ -17898,12 +18349,8 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           const cachedProfile = sessionStorage.getItem(`tm_crm_profile_${state.cacheUserId}`);
           if (cachedProfile) {
             state.profile = JSON.parse(cachedProfile);
-            const displayName = state.profile.name || 'TechMigos';
-            const initials = displayName.split(' ').filter(Boolean).map((w) => w[0].toUpperCase()).slice(0, 2).join('');
-          document.getElementById('crm-user-name').textContent = displayName;
-          document.getElementById('crm-avatar').textContent = initials || 'TM';
+          syncIdentity(state.profile);
           document.getElementById('crm-company-name').textContent = 'TechMigos';
-          document.getElementById('crm-user-role').textContent = String(state.profile.role || 'company').replace(/_/g, ' ');
           syncNavVisibility();
         }
         } catch (e) {
@@ -17911,8 +18358,9 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
         }
 
         const me = await portal('/api/portal/me');
-        if (me.destination !== '/company') {
-          window.location.replace(me.destination);
+        if (me.destination !== '/company' || me.profile?.role !== 'company_admin') {
+          await window.tmSupabase.auth.signOut();
+          window.location.replace('/login');
           return;
         }
         state.profile = me.profile;
@@ -17921,11 +18369,11 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           catch { state.companySettings = {}; }
         }
         if (['clients', 'employees', 'users', 'settings'].includes(state.active) && !isCompanyAdmin()) {
-          window.location.replace('/company/dashboard');
+          window.location.replace('/company/finance');
           return;
         }
         if (isEmployee() && !['dashboard', 'projects', 'files'].includes(state.active)) {
-          window.location.replace('/company/dashboard');
+          window.location.replace('/company/finance');
           return;
         }
         try {
@@ -17934,16 +18382,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
           console.warn('Profile cache write failed:', e);
         }
 
-        const displayName = me.profile.name || 'TechMigos';
-        const initials = displayName.split(' ').filter(Boolean).map((w) => w[0].toUpperCase()).slice(0, 2).join('');
-        document.getElementById('crm-user-name').textContent = displayName;
-        document.getElementById('crm-avatar').textContent = initials || 'TM';
+        syncIdentity(me.profile);
         document.getElementById('crm-company-name').textContent = 'TechMigos';
-        document.getElementById('crm-user-role').textContent = String(me.profile.role || 'company').replace(/_/g, ' ');
         syncNavVisibility();
         await loadData();
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Could not load CRM.', 'error');
+        setStatus(error instanceof Error ? error.message : 'Could not load TechMigos Finance.', 'error');
         setTimeout(logout, 1200);
       }
     }
@@ -17956,6 +18400,12 @@ const { activeTab, title = "TechMigos Company CRM" } = Astro.props;
       if (event.key === '/' && document.activeElement !== els.search) {
         event.preventDefault();
         els.search.focus();
+      }
+      if (event.key === 'Escape') {
+        els.modal?.classList.remove('open');
+        els.invoiceModal?.classList.remove('open');
+        els.proofPreviewModal?.classList.remove('open');
+        document.querySelectorAll('.project-reference-menu.is-open, .dashboard-demo-menu.is-open').forEach((menu) => menu.classList.remove('is-open'));
       }
     });
     document.getElementById('crm-modal-close')?.addEventListener('click', () => els.modal.classList.remove('open'));

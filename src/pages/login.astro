@@ -2,99 +2,108 @@
 export const prerender = true;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const slides = [
+  { image: '/login-slides/team.png', eyebrow: 'Ideas · People · Progress', title: 'For Our Team', accent: 'Team', description: 'Everything your team needs to plan, build, and deliver.', meta: 'Employees · Managers · Administrators', metric: '82%', metricLabel: 'Website development' },
+  { image: '/login-slides/clients.png', eyebrow: 'Your Vision · Our Commitment', title: 'For Our Clients', accent: 'Clients', description: 'Stay connected to your project from beginning to delivery.', meta: 'Clients · Partners · Collaborators', metric: '74%', metricLabel: 'Project progress' },
+  { image: '/login-slides/connected.png', eyebrow: 'Different People · One Purpose', title: 'One Workspace. Everything Connected.', accent: 'Connected.', description: 'From the first idea to final delivery, your work stays connected.', meta: 'Projects · Tasks · Files · Teams · Support', metric: '24', metricLabel: 'Active workstreams' },
+  { image: '/login-slides/security.png', eyebrow: 'A Safer · Brighter Tomorrow', title: 'Your Work. Protected.', accent: 'Protected.', description: 'Enterprise-grade security for your peace of mind.', meta: 'Trust · Security · Growth · Together', metric: '24/7', metricLabel: 'Secure access' },
+];
 ---
 
 <BaseLayout
   title="TechMigos Secure Portal Login"
   description="Secure TechMigos portal login for clients and company team members to access projects, support, invoices, finance, and CRM workflows."
   noIndex={true}
+  hideNavbar={true}
+  hideFooter={true}
 >
-  <section class="min-h-screen bg-slate-100 px-4 py-10 sm:py-16">
-    <div class="mx-auto grid max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.12)] lg:grid-cols-[0.92fr_1.08fr]">
-      <aside class="bg-slate-950 p-7 text-white sm:p-10">
-        <a href="/" class="inline-flex items-center gap-3" aria-label="TechMigos home">
-          <img src="/icon.png" alt="" width="42" height="42" class="h-11 w-11 rounded-lg bg-white/10 object-contain p-1" />
-          <span class="text-lg font-black tracking-tight">TechMigos</span>
+  <section class="portal-shell" aria-label="TechMigos portal sign in">
+    <div class="portal-card">
+      <div class="login-panel">
+        <a href="/" class="brand-lockup" aria-label="TechMigos home">
+          <span class="brand-mark"><img src="/icon.png" alt="" width="54" height="54" /></span>
+          <span><strong>TechMigos</strong><small>Build Today&nbsp; For a Smarter Tomorrow</small></span>
         </a>
-        <div class="mt-16 max-w-sm">
-          <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Company portal</p>
-          <h1 class="mt-4 text-4xl font-black leading-tight">Work starts with the right access.</h1>
-          <p class="mt-5 text-sm leading-7 text-slate-300">Use your assigned username or work email. Your access is checked before opening your workspace.</p>
+        <a href="/" class="back-home">← Back to home</a>
+
+        <div class="login-heading">
+          <p class="overline">Secure workspace</p>
+          <h1>Welcome back</h1>
+          <p>Sign in to your company workspace.</p>
         </div>
-        <div class="mt-12 border-t border-white/10 pt-5 text-xs leading-6 text-slate-400">Need access or a password reset? Contact your TechMigos administrator.</div>
-      </aside>
 
-      <div class="p-6 text-slate-950 sm:p-10">
-        <div class="mx-auto max-w-md">
-          <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Secure sign in</p>
-          <h2 class="mt-3 text-3xl font-black tracking-tight">Welcome back</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-500">Enter your account details to continue.</p>
+        <form id="portal-login-form" class="login-form">
+          <label for="login-id">
+            <span class="field-label">Client ID / Employee ID</span>
+            <span class="input-wrap">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></svg>
+              <input id="login-id" name="login_id" type="text" required autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="Client ID / Employee ID" />
+            </span>
+          </label>
 
-                <form id="portal-login-form" class="mt-8 space-y-5">
-                  <label class="block" for="login-id">
-                    <span class="form-label">Username or email</span>
-                    <input
-                      id="login-id"
-                      name="login_id"
-                      type="text"
-                      required
-                      class="form-input form-control form-control--muted focus-visible:!border-emerald-500 focus-visible:!ring-emerald-500/20"
-                      autocomplete="username"
-                      inputmode="email"
-                      autocapitalize="none"
-                      spellcheck="false"
-                      placeholder="username or work email"
-                    />
-                  </label>
+          <label for="password">
+            <span class="field-label">Password</span>
+            <span class="input-wrap">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+              <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Password" />
+              <button id="password-toggle" type="button" aria-label="Show password" aria-controls="password" title="Show password">
+                <svg id="password-toggle-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+            </span>
+          </label>
 
-                  <div class="flex justify-end"><a href="/reset-password" class="text-sm font-bold text-emerald-700 hover:text-emerald-900">Forgot password?</a></div>
-
-                  <label class="block" for="password">
-                    <span class="form-label">Password</span>
-                    <span class="relative block">
-                      <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        required
-                        class="form-input form-control form-control--muted pr-16 focus-visible:!border-emerald-500 focus-visible:!ring-emerald-500/20"
-                        autocomplete="current-password"
-                        placeholder="Enter your password"
-                      />
-                      <button
-                        id="password-toggle"
-                        type="button"
-                        class="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-[8px] text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 focus-visible:ring-emerald-500"
-                        aria-label="Show password"
-                        aria-controls="password"
-                      >
-                        <svg id="password-toggle-icon" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                      </button>
-                    </span>
-                  </label>
-
-                  <button
-                    id="login-button"
-                    type="submit"
-                    class="inline-flex min-h-[52px] w-full items-center justify-center gap-3 rounded-[8px] bg-emerald-400 px-6 py-3 text-base font-black text-slate-950 shadow-[0_14px_30px_rgba(52,211,153,0.28)] transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:bg-emerald-300 focus-visible:ring-emerald-500 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-                    aria-describedby="login-status"
-                  >
-                    <span id="login-button-text">Sign in</span>
-                    <span id="login-spinner" class="hidden h-4 w-4 rounded-full border-2 border-slate-950/30 border-t-slate-950 animate-spin" aria-hidden="true"></span>
-                  </button>
-
-                  <p id="login-status" class="min-h-[1.25rem] text-sm text-slate-500" role="status" aria-live="polite"></p>
-                </form>
-
-                <p class="mt-6 border-t border-slate-200 pt-5 text-xs leading-5 text-slate-500">This is a private TechMigos workspace. Public sign-up is not available.</p>
-              </div>
-            </div>
+          <div class="form-options">
+            <label class="remember-option" for="remember-me"><input id="remember-me" name="remember_me" type="checkbox" /><span>Remember me</span></label>
+            <a href="/reset-password">Forgot password?</a>
           </div>
+
+          <button id="login-button" class="sign-in-button" type="submit" aria-describedby="login-status">
+            <span id="login-button-text">Sign In</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+            <span id="login-spinner" class="spinner" aria-hidden="true"></span>
+          </button>
+          <p id="login-status" class="login-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="secure-note">
+          <span class="secure-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg></span>
+          <span><strong>Secure workspace</strong><small>Your data is protected with enterprise-grade security and encryption.</small></span>
+        </div>
+
+        <div class="login-footer">
+          <p>Need help? <a href="/contact">Contact Support</a></p>
+          <div><a href="/privacy">Privacy</a><span>|</span><a href="/terms">Terms</a><span>|</span><span>Security</span></div>
+          <small>© {new Date().getFullYear()} TechMigos. All rights reserved.</small>
         </div>
       </div>
+
+      <div class="showcase" aria-label="TechMigos workspace highlights">
+        {slides.map((slide, index) => (
+          <article class:list={['portal-slide', { 'is-active': index === 0 }]} data-slide={index} aria-hidden={index === 0 ? 'false' : 'true'}>
+          <img src={slide.image} alt="" loading="eager" />
+            <div class="showcase-shade"></div>
+            <div class="slide-copy">
+              <p class="slide-eyebrow">{slide.eyebrow}</p>
+              <h2>{slide.title.split(slide.accent)[0]}<span>{slide.accent}</span></h2>
+              <p class="slide-meta">{slide.meta}</p>
+              <p class="slide-description">{slide.description}</p>
+              <div class="slide-metric"><strong>{slide.metric}</strong><span>{slide.metricLabel}</span></div>
+            </div>
+          </article>
+        ))}
+
+        <div class="showcase-controls">
+          <button type="button" data-slide-control="previous" aria-label="Previous highlight">←</button>
+          <span><strong id="slide-number">01</strong> <i>/</i> 04</span>
+          <button type="button" data-slide-control="next" aria-label="Next highlight">→</button>
+          <button type="button" class="pause-button" data-slide-control="pause" aria-label="Pause slideshow"><span id="pause-icon">Ⅱ</span></button>
+        </div>
+        <div class="slide-dots" role="tablist" aria-label="Choose workspace highlight">
+          {slides.map((slide, index) => <button type="button" role="tab" data-slide-dot={index} aria-label={`Show highlight ${index + 1}`} aria-selected={index === 0 ? 'true' : 'false'}></button>)}
+        </div>
+      </div>
+    </div>
   </section>
 
   <script is:inline>
@@ -106,11 +115,62 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const passwordInput = document.getElementById('password');
     const passwordToggle = document.getElementById('password-toggle');
     const passwordToggleIcon = document.getElementById('password-toggle-icon');
+    const slides = Array.from(document.querySelectorAll('[data-slide]'));
+    const dots = Array.from(document.querySelectorAll('[data-slide-dot]'));
+    const slideNumber = document.getElementById('slide-number');
+    const pauseIcon = document.getElementById('pause-icon');
+    let activeSlide = 0;
+    let slideshowPaused = false;
+    let slideshowTimer;
+
+    function showSlide(index) {
+      activeSlide = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        const active = slideIndex === activeSlide;
+        slide.classList.toggle('is-active', active);
+        slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      dots.forEach((dot, dotIndex) => dot.setAttribute('aria-selected', dotIndex === activeSlide ? 'true' : 'false'));
+      if (slideNumber) slideNumber.textContent = String(activeSlide + 1).padStart(2, '0');
+    }
+
+    function restartSlideshow() {
+      window.clearInterval(slideshowTimer);
+      if (!slideshowPaused) slideshowTimer = window.setInterval(() => showSlide(activeSlide + 1), 6800);
+    }
+
+    document.querySelector('[data-slide-control="previous"]')?.addEventListener('click', () => { showSlide(activeSlide - 1); restartSlideshow(); });
+    document.querySelector('[data-slide-control="next"]')?.addEventListener('click', () => { showSlide(activeSlide + 1); restartSlideshow(); });
+    dots.forEach((dot, index) => dot.addEventListener('click', () => { showSlide(index); restartSlideshow(); }));
+    document.querySelector('[data-slide-control="pause"]')?.addEventListener('click', (event) => {
+      slideshowPaused = !slideshowPaused;
+      if (pauseIcon) pauseIcon.textContent = slideshowPaused ? '▶' : 'Ⅱ';
+      event.currentTarget.setAttribute('aria-label', slideshowPaused ? 'Play slideshow' : 'Pause slideshow');
+      restartSlideshow();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { showSlide(activeSlide - 1); restartSlideshow(); }
+      if (event.key === 'ArrowRight') { showSlide(activeSlide + 1); restartSlideshow(); }
+    });
+    showSlide(0);
+    restartSlideshow();
+
+    passwordToggle?.addEventListener('click', () => {
+      if (!passwordInput || !passwordToggleIcon) return;
+      const visible = passwordInput.type === 'text';
+      passwordInput.type = visible ? 'password' : 'text';
+      passwordToggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+      passwordToggle.setAttribute('title', visible ? 'Show password' : 'Hide password');
+      passwordToggleIcon.innerHTML = visible
+        ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />'
+        : '<path d="M3 3l18 18" /><path d="M10.6 5.2A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-3.1 4.2M6.2 6.2C3.5 8.1 2 12 2 12s3.5 7 10 7a10.9 10.9 0 0 0 4.2-.8" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />';
+      passwordInput.focus();
+    });
 
     function setStatus(message, isError) {
       if (!statusEl) return;
       statusEl.textContent = message || '';
-      statusEl.className = `min-h-[1.25rem] text-sm ${isError ? 'text-rose-600' : 'text-slate-500'}`;
+      statusEl.className = `login-status ${isError ? 'is-error' : ''}`;
       statusEl.setAttribute('role', isError ? 'alert' : 'status');
     }
 
@@ -118,66 +178,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (!button) return;
       button.disabled = isLoading;
       button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-      if (buttonText) buttonText.textContent = label || 'Sign in';
-      spinner?.classList.toggle('hidden', !isLoading);
+      if (buttonText) buttonText.textContent = label || 'Sign In';
+      spinner?.classList.toggle('is-visible', isLoading);
     }
-
-    passwordToggle?.addEventListener('click', () => {
-      if (!passwordInput || !passwordToggleIcon) return;
-      const isVisible = passwordInput.getAttribute('type') === 'text';
-      passwordInput.setAttribute('type', isVisible ? 'password' : 'text');
-      passwordToggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
-      passwordToggleIcon.innerHTML = isVisible
-        ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle>'
-        : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C5.5 19 2 12 2 12a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A10.77 10.77 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 0 1-4.24-4.24"></path><path d="M1 1l22 22"></path>';
-      passwordInput.focus();
-    });
 
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
       setLoading(true, 'Checking access...');
       setStatus('Checking your portal access...', false);
-
       try {
         if (!window.tmSupabase) throw new Error('Auth client not ready. Please refresh the page.');
         const data = Object.fromEntries(new FormData(form).entries());
         const loginId = String(data.login_id || '').trim();
         const password = String(data.password || '');
         let email = loginId;
-
         if (!loginId.includes('@')) {
-          const { data: resolvedEmail, error: rpcError } = await window.tmSupabase
-            .rpc('get_email_by_username', { p_username: loginId });
-          if (rpcError || !resolvedEmail) {
-            throw new Error('Username not found. Please use your email address.');
-          }
+          const { data: resolvedEmail, error: rpcError } = await window.tmSupabase.rpc('get_email_by_username', { p_username: loginId });
+          if (rpcError || !resolvedEmail) throw new Error('Username not found. Please use your email address.');
           email = resolvedEmail;
         }
-
-        const { data: authData, error: authError } = await window.tmSupabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (authError) {
-          throw new Error(authError.message === 'Invalid login credentials'
-            ? 'Email or password is incorrect.'
-            : authError.message);
-        }
-
-        const { data: profile, error: profileError } = await window.tmSupabase
-          .from('crm_profiles')
-          .select('role, name, status, must_change_password')
-          .eq('auth_user_id', authData.user.id)
-          .limit(1)
-          .single();
-
+        const { data: authData, error: authError } = await window.tmSupabase.auth.signInWithPassword({ email, password });
+        if (authError) throw new Error(authError.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : authError.message);
+        const { data: profile, error: profileError } = await window.tmSupabase.from('crm_profiles').select('role, name, status, must_change_password').eq('auth_user_id', authData.user.id).limit(1).single();
         if (profileError || !profile) throw new Error('Portal access is not provisioned for this account.');
         if (profile.status !== 'active') throw new Error('This account is not active yet. Please contact your TechMigos administrator.');
-
         const { error: lastLoginError } = await window.tmSupabase.rpc('record_crm_last_login');
         if (lastLoginError) console.warn('Could not record last login:', lastLoginError.message);
-
         setStatus('Opening your workspace...', false);
         if (buttonText) buttonText.textContent = 'Opening workspace...';
         location.href = profile.must_change_password ? '/change-password' : (profile.role === 'client' ? '/client' : '/company');
@@ -188,3 +214,109 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     });
   </script>
 </BaseLayout>
+
+<style>
+  :global(body) { margin: 0; background: #dbe5ef; }
+  .portal-shell { min-height: 100vh; box-sizing: border-box; padding: 24px; display: grid; place-items: center; background: radial-gradient(circle at 72% 18%, rgba(255,255,255,.9), transparent 34%), linear-gradient(135deg, #dbe5ef 0%, #eef3f8 47%, #c8d6e5 100%); }
+  .portal-card { width: min(1500px, 100%); min-height: min(760px, calc(100vh - 48px)); display: grid; grid-template-columns: minmax(330px, .72fr) minmax(0, 1.28fr); overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 22px; background: rgba(255,255,255,.58); box-shadow: 0 32px 90px rgba(15, 36, 67, .2); backdrop-filter: blur(24px); }
+  .login-panel { position: relative; z-index: 2; display: flex; flex-direction: column; padding: clamp(28px, 4vw, 58px); border-right: 1px solid rgba(255,255,255,.62); color: #0b1d50; background: linear-gradient(145deg, rgba(255,255,255,.66), rgba(242,247,252,.42)); backdrop-filter: blur(22px) saturate(125%); }
+  .brand-lockup { display: inline-flex; align-items: center; gap: 12px; width: max-content; color: #09184d; text-decoration: none; }
+  .brand-mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; background: rgba(255,255,255,.72); box-shadow: 0 8px 22px rgba(35, 78, 133, .12); }
+  .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
+  .brand-lockup strong { display: block; font-size: 25px; line-height: 1; letter-spacing: -.05em; }
+  .brand-lockup small { display: block; margin-top: 5px; color: #3d5d9a; font-size: 10px; }
+  .back-home { display: inline-flex; width: max-content; margin-top: 24px; color: #285da5; font-size: 11px; font-weight: 800; text-decoration: none; }
+  .back-home:hover { color: #075cf2; text-decoration: underline; }
+  .login-heading { margin-top: clamp(45px, 8vh, 92px); }
+  .overline, .field-label { text-transform: uppercase; font-weight: 800; letter-spacing: .12em; }
+  .overline { margin: 0 0 13px; color: #1761d2; font-size: 11px; }
+  .login-heading h1 { margin: 0; color: #07164e; font-size: clamp(32px, 3.5vw, 50px); line-height: .98; letter-spacing: -.06em; }
+  .login-heading > p:last-child { margin: 15px 0 0; color: #526b99; font-size: 14px; }
+  .login-form { margin-top: 31px; }
+  .login-form label { display: block; margin-top: 16px; }
+  .field-label { display: block; margin-bottom: 7px; color: #26477f; font-size: 10px; }
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .input-wrap > svg { position: absolute; left: 16px; width: 19px; height: 19px; color: #3764a4; pointer-events: none; }
+  .input-wrap input { width: 100%; height: 52px; box-sizing: border-box; border: 1px solid rgba(126, 159, 202, .42); border-radius: 10px; padding: 0 48px; color: #08184d; background: rgba(255,255,255,.8); outline: none; box-shadow: inset 0 1px 2px rgba(43, 76, 123, .04); font: inherit; font-size: 13px; }
+  .input-wrap input::placeholder { color: #6b82aa; }
+  .input-wrap input:focus { border-color: #1769f5; box-shadow: 0 0 0 4px rgba(23,105,245,.13); }
+  #password-toggle { position: absolute; right: 6px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 8px; color: #1d4485; background: transparent; cursor: pointer; }
+  #password-toggle:hover { background: #e6eef9; }
+  #password-toggle svg { width: 19px; height: 19px; }
+  .form-options { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; color: #17386e; font-size: 11px; }
+  .remember-option { display: flex !important; align-items: center; gap: 7px; margin: 0 !important; text-transform: none; font-weight: 600; letter-spacing: 0; }
+  .remember-option input { width: 15px; height: 15px; margin: 0; accent-color: #1769f5; }
+  .form-options a, .login-footer a { color: #075cf2; font-weight: 800; text-decoration: none; }
+  .form-options a:hover, .login-footer a:hover { text-decoration: underline; }
+  .sign-in-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin-top: 23px; border: 0; border-radius: 10px; color: white; background: linear-gradient(105deg, #075cf2, #1675f7); box-shadow: 0 12px 25px rgba(7,92,242,.26); cursor: pointer; font: inherit; font-size: 14px; font-weight: 800; }
+  .sign-in-button:hover { background: linear-gradient(105deg, #064fd4, #0d65e4); transform: translateY(-1px); }
+  .sign-in-button:focus-visible, #password-toggle:focus-visible, .showcase-controls button:focus-visible, .slide-dots button:focus-visible { outline: 3px solid rgba(15, 103, 246, .35); outline-offset: 3px; }
+  .sign-in-button svg { width: 18px; height: 18px; }
+  .sign-in-button:disabled { cursor: wait; opacity: .72; transform: none; }
+  .spinner { display: none; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+  .spinner.is-visible { display: block; }
+  .login-status { min-height: 20px; margin: 9px 0 0; color: #58709b; font-size: 11px; }
+  .login-status.is-error { color: #c33147; }
+  .secure-note { display: flex; gap: 12px; margin-top: auto; padding-top: 30px; color: #17386e; }
+  .secure-icon { display: grid; flex: 0 0 auto; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #1a4b9c; background: #d9e6f8; }
+  .secure-icon svg { width: 17px; height: 17px; }
+  .secure-note strong, .secure-note small { display: block; }
+  .secure-note strong { font-size: 11px; }
+  .secure-note small { max-width: 235px; margin-top: 4px; color: #61789e; font-size: 10px; line-height: 1.5; }
+  .login-footer { margin-top: 28px; padding-top: 18px; border-top: 1px solid rgba(95, 126, 170, .24); color: #61789e; font-size: 10px; }
+  .login-footer p { margin: 0 0 11px; font-size: 11px; }
+  .login-footer div { display: flex; gap: 9px; }
+  .login-footer small { display: block; margin-top: 11px; }
+  .showcase { position: relative; min-height: 640px; overflow: hidden; color: white; background: #172b50; }
+  .portal-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility .7s ease; }
+  .portal-slide.is-active { opacity: 1; visibility: visible; }
+  .portal-slide > img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+  .showcase-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5, 22, 57, .62), rgba(5, 22, 57, .05) 68%), linear-gradient(0deg, rgba(3, 13, 36, .58), transparent 45%); }
+  .slide-copy { position: absolute; inset: clamp(38px, 7vw, 100px) clamp(30px, 6vw, 100px) 120px; max-width: 520px; }
+  .slide-eyebrow { margin: 0 0 26px; color: #c9dcff; font-family: Georgia, serif; font-size: clamp(17px, 2vw, 25px); font-style: italic; }
+  .slide-copy h2 { margin: 0; max-width: 590px; color: white; font-size: clamp(42px, 5vw, 78px); line-height: .94; letter-spacing: -.065em; text-wrap: balance; }
+  .slide-copy h2 span { display: inline; color: #5d9cff; }
+  .portal-slide:nth-child(2) .slide-copy h2 span { color: #9766ff; }
+  .portal-slide:nth-child(3) .slide-copy h2 span { color: #50caff; }
+  .portal-slide:nth-child(4) .slide-copy h2 span { color: #54e5c3; }
+  .slide-meta { margin: 19px 0 0; color: white; font-size: 15px; font-weight: 800; }
+  .slide-description { max-width: 355px; margin: 11px 0 0; color: #d9e5fa; font-size: 14px; line-height: 1.55; }
+  .slide-metric { display: inline-flex; align-items: baseline; gap: 10px; margin-top: 35px; padding: 12px 17px; border: 1px solid rgba(255,255,255,.2); border-radius: 12px; background: rgba(11, 36, 76, .5); backdrop-filter: blur(12px); }
+  .slide-metric strong { color: #62d7ff; font-size: 21px; }
+  .slide-metric span { color: #e3edff; font-size: 11px; }
+  .showcase-controls { position: absolute; right: clamp(28px, 5vw, 76px); bottom: 35px; z-index: 3; display: flex; align-items: center; gap: 18px; color: #e8f0ff; font-size: 12px; }
+  .showcase-controls i { margin: 0 5px; color: #9fb5d7; font-style: normal; }
+  .showcase-controls button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: white; background: rgba(16, 48, 92, .4); cursor: pointer; font-size: 18px; line-height: 1; }
+  .showcase-controls button:hover { background: rgba(44, 102, 178, .7); }
+  .showcase-controls .pause-button { margin-left: 4px; width: 31px; height: 31px; font-size: 12px; }
+  .slide-dots { position: absolute; left: clamp(30px, 6vw, 100px); bottom: 48px; z-index: 3; display: flex; gap: 7px; }
+  .slide-dots button { width: 25px; height: 3px; padding: 0; border: 0; border-radius: 4px; background: rgba(255,255,255,.42); cursor: pointer; }
+  .slide-dots button[aria-selected="true"] { background: #6db3ff; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 900px) {
+    .portal-shell { padding: 0; display: block; }
+    .portal-card { min-height: 100vh; grid-template-columns: 1fr; border: 0; border-radius: 0; }
+    .login-panel { min-height: 650px; padding: 30px clamp(22px, 7vw, 54px); }
+    .login-heading { margin-top: 48px; }
+    .showcase { min-height: 470px; }
+    .slide-copy { inset: 45px 28px 100px; }
+    .slide-copy h2 { font-size: clamp(38px, 10vw, 62px); }
+  }
+  @media (max-width: 480px) {
+    .login-panel { min-height: 625px; }
+    .brand-lockup strong { font-size: 22px; }
+    .secure-note { padding-top: 20px; }
+    .login-footer { margin-top: 21px; }
+    .showcase { min-height: 410px; }
+    .slide-eyebrow { margin-bottom: 17px; font-size: 16px; }
+    .slide-meta { font-size: 13px; }
+    .slide-description { font-size: 12px; }
+    .showcase-controls { right: 22px; bottom: 25px; gap: 10px; }
+    .slide-dots { left: 24px; bottom: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .portal-slide { transition: none; }
+    .sign-in-button:hover { transform: none; }
+    .spinner { animation: none; }
+  }
+</style>

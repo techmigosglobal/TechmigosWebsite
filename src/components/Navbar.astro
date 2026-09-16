@@ -53,8 +53,16 @@ const currentPath = Astro.url.pathname;
 
       <!-- CTA Button -->
       <div class="hidden lg:flex items-center gap-3">
-        <a href="/login" class="btn-secondary text-sm px-5 py-2.5">
-          Portal Login
+        <a
+          href="/login"
+          class="btn-secondary grid h-10 w-10 place-items-center p-0"
+          aria-label="Portal Login"
+        >
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 17l5-5-5-5" />
+            <path d="M15 12H3" />
+            <path d="M21 19V5a2 2 0 0 0-2-2h-5" />
+          </svg>
         </a>
         <a href="/contact" class="btn-primary text-sm px-5 py-2.5 shine-hover">
           Get a Free Quote
@@ -101,8 +109,16 @@ const currentPath = Astro.url.pathname;
         </a>
       ))}
       <div class="pt-3 px-4">
-        <a href="/login" class="btn-secondary w-full text-center mb-3">
-          Portal Login
+        <a
+          href="/login"
+          class="btn-secondary mb-3 grid h-11 w-11 place-items-center p-0"
+          aria-label="Portal Login"
+        >
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 17l5-5-5-5" />
+            <path d="M15 12H3" />
+            <path d="M21 19V5a2 2 0 0 0-2-2h-5" />
+          </svg>
         </a>
         <a href="/contact" class="btn-primary w-full text-center shine-hover">
           Get a Free Quote

@@ -1,0 +1,5 @@
+---
+const { name = 'Admin', size = 'md', tone = 0 } = Astro.props;
+const initials = name.split(' ').map((p) => p[0]).slice(0,2).join('').toUpperCase();
+---
+<span class={`avatar avatar-${size} avatar-tone-${tone % 6}`} title={name}>{initials}</span>

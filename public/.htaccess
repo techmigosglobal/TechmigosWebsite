@@ -6,11 +6,6 @@
     RewriteCond %{HTTPS} off
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-    # Handle /showcase directory specifically for Next.js static export
-    # If the request is for /showcase or /showcase/, serve /showcase/index.html
-    RewriteCond %{REQUEST_URI} ^/showcase/?$
-    RewriteRule ^(.*)$ showcase/index.html [L]
-
     # Clean URLs - Remove .html extension
     # If a request for /page exists as /page.html, serve it
     RewriteCond %{REQUEST_FILENAME} !-d

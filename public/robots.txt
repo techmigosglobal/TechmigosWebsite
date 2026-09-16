@@ -1,7 +1,2 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Allow: /
-
-Disallow: /api/
-
-Sitemap: https://www.techmigos.com/sitemap-index.xml
+Disallow: /

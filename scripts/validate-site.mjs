@@ -12,7 +12,7 @@ const bannedPatterns = [
   'school-desk',
 ];
 
-const ignoredDirs = new Set(['.git', 'node_modules', 'dist', '.astro', '.tmp-npm-cache', 'exports', 'reports']);
+const ignoredDirs = new Set(['.git', 'node_modules', 'dist', '.astro', '.kilo', '.tmp-npm-cache', 'exports', 'reports']);
 const textExts = new Set([
   '.astro',
   '.css',
@@ -49,15 +49,13 @@ function relative(file) {
 }
 
 const requiredFiles = [
-  'dist/index.html',
   'dist/robots.txt',
-  'dist/sitemap.xml',
-  'dist/sitemap-index.xml',
   'src/db/supabase.js',
   'scripts/provision-portal-user.mjs',
+  'dist/change-password/index.html',
   'dist/login/index.html',
-  'dist/company/index.html',
-  'dist/client/index.html',
+  'dist/company/finance/index.html',
+  'dist/reset-password/index.html',
 ];
 
 const failures = [];

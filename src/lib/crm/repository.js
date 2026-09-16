@@ -611,6 +611,32 @@ export function createCrmRepository(getSupabase) {
     return { item: data };
   }
 
+  async function companyTicketMessage(ticketId, body, method = 'POST') {
+    const current = await getContext();
+    if (!isAdmin(current.role)) throw new Error('Only company admins can manage support conversations.');
+    const numericTicketId = Number(ticketId);
+    if (!Number.isInteger(numericTicketId)) throw new Error('Invalid ticket id.');
+    if (method === 'GET') {
+      const { data, error } = await sb().from('crm_ticket_messages')
+        .select(RESOURCE_FIELDS.ticket_messages.join(','))
+        .eq('ticket_id', numericTicketId)
+        .order('created_at');
+      if (error) throw errorFrom(error, 'Could not load ticket messages.');
+      return { messages: data || [] };
+    }
+    const message = String(body?.message ?? body?.body ?? '').trim();
+    if (!message) throw new Error('Reply cannot be empty.');
+    const { data, error } = await sb().from('crm_ticket_messages').insert({
+      ticket_id: numericTicketId,
+      body: message,
+      author_name: current.profile.name || current.profile.email,
+      author_role: 'company_admin',
+      visibility: body?.internal ? 'internal' : 'external',
+    }).select(RESOURCE_FIELDS.ticket_messages.join(',')).single();
+    if (error) throw errorFrom(error, 'Could not save ticket message.');
+    return { item: data };
+  }
+
   async function adminUserOperation(operation, body) {
     if (!isAdmin(context?.role)) throw new Error('Only company admins can manage users.');
     const { data, error } = await sb().functions.invoke('admin-users', { body: { operation, ...body } });
@@ -645,6 +671,9 @@ export function createCrmRepository(getSupabase) {
       if (id === 'tickets' && method === 'POST') return clientCreateTicket(body);
       if (id === 'invoices' && method === 'GET' && sub) return getInvoiceDetail(sub);
       throw new Error('Unsupported Client portal request.');
+    }
+    if (resource === 'tickets' && id && sub === 'messages') {
+      return companyTicketMessage(id, body, method);
     }
     if (resource === 'settings') {
       if (method === 'GET') return getSettings(id || 'company');

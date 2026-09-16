@@ -1,0 +1,27 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import Icon from './Icon.astro';
+import StatCard from './StatCard.astro';
+
+const { title, subtitle, kind = 'analytics' } = Astro.props;
+const configs = {
+  finance: { stats: [['finance', 'Revenue', '—', '', 'green'], ['report', 'Outstanding', '—', '', 'orange'], ['check', 'Paid Invoices', '—', '', 'blue'], ['users', 'Active Clients', '—', '', 'purple']], heading: 'Revenue & billing overview' },
+  analytics: { stats: [['chart', 'Project Velocity', '—', '', 'blue'], ['users', 'Utilization', '—', '', 'green'], ['support', 'Ticket SLA', '—', '', 'purple'], ['check', 'Delivery Health', '—', '', 'green']], heading: 'Operational performance' },
+  reports: { stats: [['report', 'Saved Reports', '—', '', 'blue'], ['clock', 'Scheduled', '—', '', 'purple'], ['download', 'Exports', '—', '', 'green'], ['users', 'Shared', '—', '', 'orange']], heading: 'Reporting workspace' },
+};
+const config = configs[kind];
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+const breakdown = ['Project delivery', 'Client satisfaction', 'Team utilization', 'Support SLA'];
+---
+
+<AppShell title={`${title} · TechMigos`}>
+  <div class="page">
+    <section class="page-header"><div class="page-title"><h1>{title}</h1><p>{subtitle}</p></div><img class="header-illustration" src="/techmigos-ops/assets/projects-hero.png" alt="Operations illustration" /></section>
+    <section class="stats-grid four">{config.stats.map((stat) => <StatCard icon={stat[0]} label={stat[1]} value={stat[2]} delta={stat[3]} tone={stat[4]} progress={0} />)}</section>
+    <div class="dashboard-grid">
+      <section class="card metric-panel"><div class="section-heading"><h2>{config.heading}</h2><select class="secondary-button" style="appearance:auto"><option>Last 6 months</option><option>This year</option><option>Last 30 days</option></select></div><div class="bar-chart">{months.map((month) => <div class="bar-col" style="--h:0%"><span>{month}</span></div>)}</div></section>
+      <aside class="card metric-panel"><h2>Highlights</h2><div class="activity-list"><div class="activity"><div class="stat-icon tone-blue"><Icon name="chart" size={17} /></div><div><p><strong>Live workspace metrics</strong><br />Authorized CRM data will appear here after loading.</p><small>Waiting for live data</small></div></div><div class="activity"><div class="stat-icon tone-green"><Icon name="check" size={17} /></div><div><p><strong>Connected to TechMigos CRM</strong><br />Values are scoped to the signed-in company role.</p><small>Access controlled</small></div></div></div></aside>
+    </div>
+    <section class="card" style="margin-top:14px;padding:18px"><div class="section-heading"><h2>Detailed breakdown</h2><button class="secondary-button" data-action="export-report"><Icon name="download" size={15} /> Export CSV</button></div><table class="table"><thead><tr><th>Metric</th><th>Current</th><th>Previous</th><th>Change</th><th>Status</th></tr></thead><tbody>{breakdown.map((metric) => <tr><td><strong>{metric}</strong></td><td>—</td><td>—</td><td>—</td><td><span class="status-pill slate">Awaiting live data</span></td></tr>)}</tbody></table></section>
+  </div>
+</AppShell>

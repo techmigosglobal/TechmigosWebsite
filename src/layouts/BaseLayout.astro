@@ -11,6 +11,7 @@ interface Props {
   ogType?: string;
   noIndex?: boolean;
   hideNavbar?: boolean;
+  hideFooter?: boolean;
   isCrm?: boolean;
 }
 
@@ -21,6 +22,7 @@ const {
   ogType = 'website',
   noIndex = false,
   hideNavbar = false,
+  hideFooter = false,
   isCrm = false,
 } = Astro.props;
 
@@ -185,7 +187,7 @@ const structuredData = {
       <slot />
     </main>
 
-    {!isCrm && <Footer />}
+    {!isCrm && !hideFooter && <Footer />}
 
     <SpeedInsights />
 
