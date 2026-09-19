@@ -1,13 +1,13 @@
 # TechMigos Website — Codebase Reference
 
-> **Audit date:** 2026-09-16
+> **Audit date:** 2026-09-18
 > **Repository:** `TechmigosWebsite`
 > **Branch audited:** `main`
 > **Purpose:** durable, source-grounded reference for future development in this repository.
 
 This file is the application-specific reference to read before making changes. It describes the code that exists in the repository today, the runtime data flows, the final Supabase security model, and the known gaps that affect future work.
 
-It is intentionally separate from [`knowledge_Astro.md`](knowledge_Astro.md). That file is a generic Astro v4 knowledge base and is not an accurate application map for this project, which currently declares Astro 6 in [`package.json`](package.json).
+It is intentionally separate from [`knowledge_Astro.md`](knowledge_Astro.md). That file is a generic Astro v4 knowledge base and is not an accurate application map for this project, which currently declares Astro 7 in [`package.json`](package.json).
 
 ## How to use this document
 
@@ -28,17 +28,17 @@ TechMigos is an Astro website deployed as a static Vercel site. It combines:
 - Public browser-side forms that write directly to Supabase tables under RLS.
 - Supabase Auth for company and client login.
 - A client portal at `/client`.
-- A retained legacy operations portal shell under `src/features/operations/`.
-- A newer, very large CRM/Finance shell in [`src/layouts/CrmLayout.astro`](src/layouts/CrmLayout.astro), now used by every `/company` feature route.
+- Compatibility exports under `src/features/operations/`; the former operations shell and mock runtime are retired.
+- A shared CRM layout/controller pair in [`src/layouts/CrmLayout.astro`](src/layouts/CrmLayout.astro) and [`src/scripts/crm-workspace.js`](src/scripts/crm-workspace.js), now used by every `/company` feature route.
 - Supabase Storage for resumes, finance proofs, invoice assets, signatures, and project files.
 - One Supabase Edge Function, `admin-users`, for privileged Auth/profile administration.
 
-The application is mostly a static document shell with substantial inline browser JavaScript. Astro produces the HTML; the browser then initializes Supabase, authenticates the user, loads CRM records, and hydrates or replaces parts of the page.
+The application is mostly a static document shell with bundled browser JavaScript. Astro produces the HTML; the browser then initializes Supabase, authenticates the user, loads CRM records, and hydrates or replaces parts of the page.
 
-The current tree has two important inconsistencies that future work must resolve deliberately:
+The active tree has two deliberately tracked follow-ups:
 
-- **The source still contains many public and legacy company routes, while the current Playwright test expects them to return 404 and expects Finance to be the only retained CRM frontend.** See [Route status and source/test mismatch](#route-status-and-sourcetest-mismatch).
-- **The repository has no `src/content/` directory, but blog, careers, and sitemap code imports `astro:content`.** This is a likely build blocker once dependencies are installed. See [Content collections](#content-collections).
+- **Live role/browser verification requires disposable `CRM_*` credentials**, which are not stored in the repository.
+- **The `blog` and `careers` collections currently have no source entries**, so Astro emits empty-collection warnings; the schema is defined in `src/content.config.ts` and the pages still build.
 
 ## System architecture
 
@@ -48,7 +48,7 @@ flowchart TD
     Astro[Astro static HTML build]
     Base[BaseLayout.astro]
     Marketing[Marketing pages]
-    Legacy[AppShell legacy operations shell]
+    Operations[Unified operations workspace]
     CompanyCRM[CrmLayout company workspace]
     Client[Client portal]
     SupabaseJS[Supabase browser client]
@@ -60,13 +60,13 @@ flowchart TD
 
     Astro --> Base
     Base --> Marketing
-    Base --> Legacy
+    Base --> Operations
     Base --> CompanyCRM
     Base --> Client
     Base --> SupabaseJS
     Browser --> Astro
     Browser --> SupabaseJS
-    Legacy --> Repository
+    Operations --> Repository
     Finance --> Repository
     Client --> Repository
     SupabaseJS --> Auth
@@ -85,7 +85,7 @@ flowchart TD
 | Astro build | Generates static pages, metadata, content-driven pages, and sitemap files | `output: 'static'` in [`astro.config.mjs`](astro.config.mjs) |
 | Shared layout | SEO, fonts/preconnects, Supabase initialization, CRM repository bootstrap, site-wide motion | [`src/layouts/BaseLayout.astro`](src/layouts/BaseLayout.astro) |
 | Public browser code | Marketing interactions and direct public form submissions | Inline scripts in page/component files |
-| CRM browser code | Authenticated reads/writes, rendering, modals, filters, project-drive files/previews, invoices, reports | [`src/layouts/CrmLayout.astro`](src/layouts/CrmLayout.astro), [`public/techmigos-ops/scripts/operations-app.js`](public/techmigos-ops/scripts/operations-app.js) |
+| CRM browser code | Authenticated reads/writes, role-scoped rendering, project delivery, support, files, invoices, finance, reports, and client portal flows | [`src/scripts/crm-workspace.js`](src/scripts/crm-workspace.js), [`src/scripts/client-portal.js`](src/scripts/client-portal.js), [`src/lib/crm/routePolicy.js`](src/lib/crm/routePolicy.js), [`src/lib/crm/workspaceStore.js`](src/lib/crm/workspaceStore.js) |
 | Shared repository | Normalizes the browser-side `/api/portal/...` contract into Supabase operations | [`src/lib/crm/repository.js`](src/lib/crm/repository.js) |
 | Database | Durable authorization, relationships, constraints, ledger triggers, and RLS | [`supabase/migrations/`](supabase/migrations/) |
 | Edge Function | Privileged Auth user creation/invitation/profile changes | [`supabase/functions/admin-users/index.ts`](supabase/functions/admin-users/index.ts) |
@@ -98,27 +98,40 @@ There are no Astro API route files under `src/pages/api/`. The `/api/portal/...`
 |---|---|
 | `src/pages/` | Public, auth, client, company, and sitemap routes |
 | `src/layouts/BaseLayout.astro` | Shared public/CRM document layout and global browser bootstrap |
-| `src/layouts/CrmLayout.astro` | Large CRM application shell, CSS, state, renderers, and event handlers |
-| `src/features/operations/` | Legacy operations portal shell, mock data, icons, and portal-specific CSS |
+| `src/layouts/CrmLayout.astro` | Thin CRM layout/navigation/modal shell and page slot |
+| `src/scripts/crm-workspace.js` | Bundled CRM browser controller, live state hydration, delegated actions, and compatibility adapters |
+| `src/scripts/client-portal.js` | Bundled client portal controller using the shared repository and workspace store |
+| `src/features/operations/` | Compatibility components and navigation exports; active workspace behavior is owned by the CRM runtime |
+| `src/lib/crm/features/people.js` | Client and employee management renderers, assignment selectors, and relationship-aware detail views |
+| `src/lib/crm/features/filesRuntime.js` | Private project-drive navigation, selection, signed file access/deletion, uploads, folder actions, and project-team assignment runtime |
+| `src/lib/crm/features/invoiceBuilderRuntime.js` | Invoice builder state, persistence, asset/signature workflows, and scoped click actions |
+| `src/lib/crm/features/supportRuntime.js` | Ticket detail selection and support view switching actions |
+| `src/lib/crm/features/settingsRuntime.js` | Administrator company/invoice settings persistence runtime |
+| `src/lib/crm/features/financeProofRuntime.js` | Private finance-proof uploads, signed previews, and proof actions |
+| `src/lib/crm/features/reportExportRuntime.js` | Role-scoped report refresh/export/print actions and CSV, PDF, and finance export delivery |
+| `src/lib/crm/features/workspaceUtils.js` | Pure workspace payload validation/coercion, profile identity helpers, filtering, and relationship lookups shared by the browser controller |
 | `src/components/` | Shared navigation, footer, service, portfolio-focus, and CRM chrome components |
 | `src/lib/crm/repository.js` | Supabase repository and internal portal request router |
 | `src/lib/crm/permissions.js` | Client-side role/resource guard |
+| `src/lib/crm/routePolicy.js` | Canonical company route and role policy |
+| `src/lib/crm/workspaceStore.js` | Shared authenticated workspace state and selectors |
 | `src/lib/crm/finance.js` | Finance/invoice calculation and classification helpers |
+| `src/lib/crm/invoice.js` | Shared invoice branding and payment-link helpers |
+| `src/lib/crm/invoiceHtml.js` | Canonical escaped printable invoice renderer shared by company and client portals |
+| `src/lib/crm/popup.js` | Shared safe print-preview document replacement for CRM and client exports |
 | `src/lib/siteContent.ts` | File-backed portfolio/client/testimonial content loader and sanitizer |
 | `src/db/supabase.js` | Separate module-level Supabase client export |
 | `src/scripts/crm-pdf.js` | jsPDF report generation/download helper |
 | `src/styles/global.css` | Global marketing/base styles and design tokens |
 | `src/styles/operations.css` | Shared CRM/Finance shell styles, navigation parity, responsive layout, and project-drive UI |
-| `src/features/operations/styles/operations-portal.css` | Legacy operations shell styles; approximately 404 lines |
-| `public/techmigos-ops/scripts/operations-app.js` | Legacy operations behavior and live hydration |
-| `public/techmigos-ops/scripts/api-client.js` | Legacy wrapper around the CRM repository |
 | `supabase/migrations/` | Schema, RLS, storage, triggers, and RPC history |
 | `supabase/functions/admin-users/` | Server-side privileged user administration |
 | `data/site-content.json` | Mutable file-backed site content used at build/runtime |
 | `data/leads.json` | Present data artifact; current public contact flow writes to Supabase instead |
 | `test/crm-rbac-finance.test.js` | Node tests for permissions, repository behavior, finance, and PDF export |
-| `test/e2e/portal.spec.js` | Playwright login/route/access/Finance assertions; currently out of sync with source routes |
-| `scripts/validate-site.mjs` | Post-build required-file, forbidden-reference, and SEO validation |
+| `test/e2e/portal.spec.js` | Playwright login, recovery, keyboard, responsive, route, access, and live-role assertions |
+| `scripts/playwright-static-server.mjs` | Serves the built static site in the foreground for the Playwright web-server contract |
+| `scripts/validate-site.mjs` | Post-build required-file, forbidden-reference, SEO, and single-main-landmark validation |
 
 ## Technology and configuration
 
@@ -126,13 +139,13 @@ There are no Astro API route files under `src/pages/api/`. The `/api/portal/...`
 
 Declared in [`package.json`](package.json):
 
-- Astro `^6.3.3`, static output.
-- `@supabase/supabase-js` `^2.108.2`.
-- Tailwind CSS 3, PostCSS, Autoprefixer.
-- `lucide-react`, although most application icons are inline SVG or custom Astro components.
-- Sharp for Astro image service.
+- Astro `^7.3.2`, static output.
+- `@supabase/supabase-js` `2.116.0`.
+- Tailwind CSS `3.4.19`, PostCSS, Autoprefixer.
+- Canonical local CRM icon components under `src/components/crm/`; unused `astro-icon` and `lucide-react` packages were removed.
+- Sharp `^0.35.4` for Astro image service.
 - jsPDF and jsPDF AutoTable for CRM report PDFs.
-- Playwright for E2E tests.
+- Playwright `^1.63.0` for E2E tests.
 - TypeScript with Astro strict configuration.
 - `@vercel/speed-insights` in the shared layout.
 
@@ -144,15 +157,18 @@ Declared in [`package.json`](package.json):
 | `npm run build` | Static production build |
 | `npm run preview` / `npm start` | Serve the built `dist/` directory |
 | `npm test` | Runs `node --test test/*.test.js` |
-| `npm run test:e2e` | Runs Playwright tests in `test/e2e/` |
+| `npm run test:e2e` | Runs Playwright tests in `test/e2e/`, skipping credential-gated live identities when credentials are absent |
+| `npm run test:e2e:live` | Runs the same suite as a required live gate and fails clearly if any `CRM_*` identity is missing |
+| `npm run crm:prepare-live` | Explicitly provisions disposable employee/client identities through the active CRM administrator and prints shell exports for the live gate; use `eval "$(npm run crm:prepare-live --silent)"` only in a disposable verification session |
 | `npm run validate` | Runs `npm run build` then `scripts/validate-site.mjs` |
+| `npm run security:audit` | Runs the npm registry audit at low severity |
 | `npm run leads:list` | Lists leads using `scripts/lead-management.mjs` |
 | `npm run leads:export` | Exports leads using `scripts/lead-management.mjs` |
-| `npm run portal:user` | Runs `scripts/provision-portal-user.mjs` |
+| `npm run portal:user` | Provisions or updates a disposable CRM role identity through Supabase Auth/PostgREST; requires `SUPABASE_SERVICE_ROLE_KEY` and never stores credentials in the repository |
 | `npm run release:github` | Executes the release shell script |
 | `npm run vercel:link` / `vercel:pull` / `vercel:env:pull` | Vercel project/env helpers |
 
-Dependencies are installed in the current workspace. On 2026-09-16, `npm test`, `npm run build`, and `npm run validate` completed successfully; the remaining build warnings are the pre-existing empty content collections and the `/portfolio/hastkala` route conflict documented below.
+Dependencies are reproducible from the lockfile and all direct package specifications are exact-pinned. On 2026-09-18, `npm ci`, `npm test`, `npm run build`, `npm run validate`, TypeScript, npm audit, and the available Playwright browser gates completed successfully; the remaining build warnings are the empty `blog` and `careers` collections.
 
 ### Astro and Vite configuration
 
@@ -162,7 +178,7 @@ Dependencies are installed in the current workspace. On 2026-09-16, `npm test`, 
 - Site URL from `PUBLIC_SITE_URL`, defaulting to `https://www.techmigos.com`.
 - Sharp image service.
 - Remote image domains `images.unsplash.com` and `picsum.photos`.
-- `lucide-react` as a Vite SSR `noExternal` dependency.
+- No third-party icon package is required by the active shell; CRM icons are rendered by the canonical local component registry.
 
 [`tsconfig.json`](tsconfig.json) extends Astro strict config and defines `@/*` as an alias for `./src/*`. Most existing imports use relative paths instead of the alias.
 
@@ -178,6 +194,7 @@ Names are listed in [`env.example.json`](env.example.json). Use `.env.local` for
 | `PUBLIC_API_BASE_URL` | Public/config | Optional legacy API base; currently the shared browser API fallback is empty |
 | `PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
 | `PUBLIC_SUPABASE_KEY` | Public/publishable | Browser Supabase key; still keep it in environment configuration |
+| `SITE_URL` | Edge Function config | Optional public origin used for invitation links; defaults to `https://www.techmigos.com` |
 | `CSRF_SECRET` | Secret | Intended server-side CSRF HMAC secret; no current Astro API route consumes it |
 | `ALLOWED_ORIGINS` | Server/config | Intended origin allowlist |
 | `LEAD_NOTIFICATION_EMAIL` | Server/config | Intended lead notification target |
@@ -200,7 +217,7 @@ Names are listed in [`env.example.json`](env.example.json). Use `.env.local` for
 - Adds `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, strict-origin referrer policy, and a Permissions Policy disabling camera, microphone, and geolocation.
 - Gives `/_astro/*` and `/images/*` immutable one-year caching.
 
-The current `.gitignore` has a secrets comment but does not contain an explicit `.env.local` rule. Verify local secret files are ignored before adding them.
+`.env*` files are ignored by the repository, with `.env.example` explicitly allowed for source control. Local credentials remain outside tracked source.
 
 ## Route inventory
 
@@ -236,7 +253,7 @@ All routes below are represented by current files unless marked otherwise. Astro
 |---|---|---|
 | `/login` | `src/pages/login.astro` | Public login UI; browser Supabase Auth; compact glass login panel; routes clients to `/client` and company users to `/company` |
 | `/reset-password` | `src/pages/reset-password.astro` | Public email recovery request using `auth.resetPasswordForEmail()` |
-| `/change-password` | `src/pages/change-password.astro` | Authenticated first-login/password-change flow using `admin-users` Edge Function |
+| `/change-password` | `src/pages/change-password.astro` | Authenticated first-login flow through `admin-users`, or standard Supabase Auth recovery/password update |
 | `/client` | `src/pages/client.astro` | Client-only portal; repository-scoped projects, invoices, tickets, and external messages |
 
 ### Company/operations routes in the current source
@@ -262,20 +279,13 @@ All routes below are represented by current files unless marked otherwise. Astro
 
 ### Route status and source/test mismatch
 
-The current E2E file [`test/e2e/portal.spec.js`](test/e2e/portal.spec.js) contains a test named “only the Finance portal route remains in the frontend” and expects paths such as `/`, `/about`, `/company`, `/company/projects`, `/client`, and `/contact` to return 404. The current source still contains those route files and their markup.
-
-The same test expects:
-
-- Admin login to land on `/company/finance` and see one Finance nav item.
-- Employee and Client login to be sent back to `/login` with a Finance-only message.
-
-The source still has the separate client portal and retains `AppShell` as a legacy implementation, but the active company pages now consistently use `CrmLayout`. The stale E2E expectation that only Finance remains is therefore still a test/product-policy mismatch. Do not remove routes casually; first decide whether the Finance-only change is intended to replace the legacy/public route tree.
+The active E2E policy now treats all nine company routes as supported static documents and verifies that unauthenticated access redirects to login. Live role tests land administrators and assigned employees in `/company`, while clients land in `/client`. The company route and role matrix is centralized in [`src/lib/crm/routePolicy.js`](src/lib/crm/routePolicy.js).
 
 ## Shared layout and browser bootstrap
 
 ### `BaseLayout.astro`
 
-[`BaseLayout.astro`](src/layouts/BaseLayout.astro) is used by marketing pages, auth pages, the client portal, and the legacy operations shell.
+[`BaseLayout.astro`](src/layouts/BaseLayout.astro) is used by marketing pages, auth pages, the client portal, and the authenticated CRM workspace.
 
 Props:
 
@@ -284,6 +294,7 @@ Props:
 - `noIndex` for auth/portal pages.
 - `hideNavbar`, `hideFooter`.
 - `isCrm`, which suppresses the public custom cursor/progress bar and footer behavior.
+- `requiresCrmRuntime`, which loads the repository/Chart runtime only for the company workspace and client portal; public/auth pages receive the lightweight auth runtime.
 
 Head behavior:
 
@@ -291,57 +302,52 @@ Head behavior:
 - Uses `PUBLIC_SITE_URL`/Astro site with `https://www.techmigos.com` fallback.
 - Emits Organization, WebSite, WebPage, and optional BreadcrumbList JSON-LD.
 - Preconnects Google Fonts and the Supabase project.
-- Loads Supabase UMD from jsDelivr and Chart.js UMD from jsDelivr.
+- Loads the lockfile-managed Supabase/Chart browser modules through Astro/Vite; no CRM runtime is emitted for public/auth pages.
 
 Browser globals initialized by the inline bootstrap:
 
 | Global | Meaning |
 |---|---|
-| `window.TechMigosConfig` | `{ apiBaseUrl: '' }`; a legacy compatibility value |
-| `window.techmigosApiUrl()` | Returns a path unchanged |
-| `window.techmigosApiFetch()` | Always returns a 501 response; placeholder, not a real API client |
-| `window.techmigosGetCsrfToken()` | Currently returns the literal `'no-csrf'`; placeholder |
 | `window.tmSupabase` | Browser Supabase client, or `null` if public variables are absent/initialization fails |
-| `window.tmCrmReady` | Promise resolved once `createCrmRepository(() => window.tmSupabase)` is exposed |
-| `window.tmCrm` | `{ repository }` object |
-| `window.__resolveTmCrm` | Internal promise resolver |
+| `window.tmCrmReady` | Promise resolved once `createCrmRepository(() => window.tmSupabase)` is exposed on CRM pages |
+| `window.tmCrm` | `{ repository }` object on CRM pages |
+| `window.__resolveTmCrm` | Internal CRM promise resolver |
 
 The shared browser script also implements custom cursor behavior, scroll progress, IntersectionObserver reveal classes, magnetic buttons, number counters, and tilt cards. Enhanced effects are disabled for reduced motion and generally for non-fine pointers.
 
-### `CrmLayout.astro`
+### `CrmLayout.astro` and `crm-workspace.js`
 
-[`CrmLayout.astro`](src/layouts/CrmLayout.astro) is a monolithic CRM implementation, approximately 18,428 lines at audit time. It contains:
+[`CrmLayout.astro`](src/layouts/CrmLayout.astro) is now a 73-line compatibility shell. Its browser controller is [`crm-workspace.js`](src/scripts/crm-workspace.js), which contains the remaining orchestration and compatibility adapters:
 
-- More than 4,000 lines of CRM-specific styles and responsive behavior.
+- More than 4,000 lines of CRM-specific styles and responsive behavior remain centralized in `src/styles/operations.css` and `src/styles/crm-shell.css`.
 - CRM shell markup and page slot.
-- Inline state, data loading, renderers, forms, modals, event delegation, uploads, PDF/report actions, and autosave logic.
+- Bundled controller state, data loading, compatibility adapters, event delegation, uploads, and remaining orchestration; the single-root event contract (action selector, CRM-surface scoping, listener registration, and disposal) lives in `src/lib/crm/features/delegatedEvents.js`, while delegated form mutations live in `src/lib/crm/features/formEvents.js`; shared session, permission, and finance selectors live in `src/lib/crm/features/workspaceContext.js`; invoice preview/print/detail behavior lives in `src/lib/crm/features/invoicePreviewRuntime.js`; Finance ledger validation, row persistence, and inline autosave live in `src/lib/crm/features/financeLedgerRuntime.js`; relationship-aware form construction, authenticated modal workflow, administrative overlays, and generic record actions live in `src/lib/crm/features/operationsForms.js`, `src/lib/crm/features/operationsWorkflow.js`, `src/lib/crm/features/operationsOverlays.js`, and `src/lib/crm/features/recordActions.js`, pure workspace validation/coercion and relationship helpers live in `src/lib/crm/features/workspaceUtils.js`, while route renderers and report delivery live under `src/lib/crm/features/`.
 - A `window.tmCrmPdf` bridge to [`src/scripts/crm-pdf.js`](src/scripts/crm-pdf.js).
 
-All active company feature pages render this layout with a route-specific `activeTab`: dashboard, projects, files, tickets/support, finance, analytics, reports, users, and settings. The page wrappers are intentionally thin; the layout owns the shared sidebar/topbar, auth/session guard, data loading, renderer selection, interaction binding, modals, and repository writes.
+All active company feature pages render this layout with a route-specific `activeTab`: dashboard, projects, files, tickets/support, finance, analytics, reports, users, and settings. The page wrappers are intentionally thin; the shell and bundled controller own the shared sidebar/topbar, auth/session guard, data loading, renderer selection, interaction binding, modals, and repository writes.
 
 The shared header includes search, notifications, help, profile management, and a visible sign-out control. Sign-out clears CRM/session caches, calls Supabase Auth sign-out, and redirects to `/login`. The shared sidebar uses the canonical grouped navigation adapter and persists collapse state in `localStorage` under `tm_crm_sidebar_collapsed`.
 
-Header and rail dimensions are intentionally locked in the final shell section of [`src/styles/operations.css`](src/styles/operations.css), because `CrmLayout.astro` still contains older page-specific presentation rules. The authoritative desktop contract is a 264px sidebar, 66px topbar, 470px search field, 36px action/logout controls, 36px avatar, 40px brand mark, and 36px navigation rows for both `operations-page` and `finance-page`. At mobile widths the same two shells use a 56px rail and the same responsive topbar grid; this prevents dashboard-specific sizing from shifting the header between routes.
+Header and rail dimensions are intentionally locked in the final shell section of [`src/styles/operations.css`](src/styles/operations.css). The authoritative desktop contract is a 264px sidebar, 66px topbar, 470px search field, 36px action/logout controls, 36px avatar, 40px brand mark, and 36px navigation rows for both `operations-page` and `finance-page`. At mobile widths the same two shells use a 56px rail and the same responsive topbar grid; this prevents dashboard-specific sizing from shifting the header between routes.
 
 The `/company/files` renderer is the active project-drive implementation. It starts at a project picker, enters one selected project, exposes its folders in the left drive rail, enters one folder, and then renders that folder’s live files in grid or list mode. Selecting a file keeps the file list visible and fills the right detail panel. Image and PDF previews use a short-lived Supabase Storage signed URL; unsupported MIME types retain open/download actions. Uploads are sent to the private `project-files` bucket and persist metadata in `crm_project_files`.
 
-The Files visual language intentionally borrows the supplied reference without replacing the TechMigos theme: folder categories receive deterministic blue/orange/green/purple/red/brown tones from their names, and file cards receive MIME/extension tones for images, PDFs, design files, archives, spreadsheets, presentations, documents, video, and generic files. Grid mode uses a compact thumbnail-like icon block with a selected check marker; list mode remains a dense horizontal browser. These are presentation classes derived in `renderFilesReferenceV2()` and should stay data-independent so live uploads immediately inherit the same treatment.
+The Files visual language intentionally borrows the supplied reference without replacing the TechMigos theme: folder categories receive deterministic blue/orange/green/purple/red/brown tones from their names, and file cards receive MIME/extension tones for images, PDFs, design files, archives, spreadsheets, presentations, documents, video, and generic files. Grid mode uses a compact thumbnail-like icon block with a selected check marker; list mode remains a dense horizontal browser. These are presentation classes derived in `renderFilesReference()` and should stay data-independent so live uploads immediately inherit the same treatment.
 
-### `AppShell.astro`
+### Retired legacy operations shell
 
-[`src/features/operations/layouts/AppShell.astro`](src/features/operations/layouts/AppShell.astro) is the retained legacy company shell. It is still useful reference code for the original operations portal, but it is no longer the active wrapper for the current `/company` feature pages. It:
+The former `AppShell.astro`, `operations-app.js`, mock adapters, and legacy operations stylesheet were unreachable from active routes and have been removed. Their visual preview assets remain under `public/techmigos-ops/assets/` for reference; authenticated data must flow through the CRM shell/controller, repository, and shared workspace store.
+
+The active CRM shell:
 
 - Wraps the page in `BaseLayout` with `noIndex`, hidden public navbar, and `isCrm`.
-- Renders the older sidebar from [`data/nav.ts`](src/features/operations/data/nav.ts).
-- Sets `window.__TECHMIGOS_API_BASE__`.
-- Loads `/techmigos-ops/scripts/api-client.js` and `/techmigos-ops/scripts/operations-app.js`.
-- Uses `window.tmCrmReady` to load the active profile and perform client-side route/link filtering.
-- Redirects client role users to `/client`.
-- Allows company members to open the dashboard plus assigned `projects` and `project_files`; admin-only links/actions are removed after the active profile is loaded.
-- Persists the desktop sidebar state in `localStorage`, supports the mobile drawer/backdrop, and keeps navigation button ARIA state synchronized.
-- Provides working top-bar notifications, help, profile/account-menu, sign-out, and keyboard-focused navigation controls. The notification badge is populated from live open/pending tickets on dashboard/support pages.
+- Uses the canonical grouped sidebar and shared CRM chrome components.
+- Uses `window.tmCrmReady` and `createCrmRepository()` for live authentication and data hydration.
+- Applies the canonical route policy for admin and assigned employee navigation.
+- Persists only non-sensitive shell preferences in `localStorage`; Supabase remains authoritative for business data.
+- Provides top-bar notifications, profile/account management, password reset, sign-out, and responsive keyboard-accessible controls.
 
-The database RLS policies remain the authority. The AppShell route guard is only a UX/access pre-check and must not be treated as a security boundary.
+The database RLS policies remain the authority. Browser route and resource guards are UX/access pre-checks and must not be treated as a security boundary.
 
 ## Public data and content systems
 
@@ -381,7 +387,7 @@ Blog, careers, and sitemap code imports `astro:content`:
 - `src/pages/careers/[slug].astro` calls `getCollection('careers')` and reads `src/content/careers/${job.id}.md` directly.
 - `src/pages/sitemap.xml.ts` calls both collections.
 
-No `src/content/` directory or content config/files were present in the audited tree. This must be restored/created, or these pages must be rewritten before a reliable production build is possible. The careers detail page’s direct raw-file read is an additional dependency beyond the Astro collection metadata.
+The collection schemas are defined in `src/content.config.ts`. The current repository has no blog or career source entries, so Astro emits empty-collection warnings while still producing the public pages. The careers detail page also performs a defensive direct raw-file read for the source Markdown body.
 
 ### Public forms
 
@@ -405,8 +411,8 @@ All public forms include a honeypot field named `company_website`; a filled hone
 Flow:
 
 1. User enters a username or email and password.
-2. If the identifier does not contain `@`, the browser calls the `get_email_by_username` RPC.
-3. The browser calls `supabase.auth.signInWithPassword()`.
+2. For email sign-in, the browser calls `supabase.auth.signInWithPassword()` directly. For usernames, it calls the `username-login` Edge Function; that server-side function resolves the email using its service-role client, verifies the password through Supabase Auth, and returns only the resulting session tokens.
+3. The browser installs the returned username-login session with `supabase.auth.setSession()`; it never receives the resolved email from the username lookup.
 4. It reads the authenticated user’s active `crm_profiles` row.
 5. It records last login through `record_crm_last_login`.
 6. If `must_change_password` is true, redirect to `/change-password`.
@@ -414,10 +420,12 @@ Flow:
 
 The current database role values are `company_admin`, `company_member`, and `client`. The E2E test labels the middle role “Employee” and uses `CRM_EMPLOYEE_*` environment variables, but the stored role is `company_member`.
 
+The new `username-login` function is deployed with JWT verification disabled because it is a pre-authentication endpoint; it performs password verification itself and has an explicit CORS origin allowlist. The hosted anonymous username resolver grant remains until the updated website is deployed, to avoid breaking username sign-in on the currently served frontend.
+
 ### Password reset/change
 
 - `/reset-password` sends a Supabase Auth recovery email with a redirect to `/change-password`.
-- `/change-password` invokes the `admin-users` Edge Function with `operation: 'change_initial_password'`, which checks the caller’s own `must_change_password` flag and updates Auth/profile state.
+- `/change-password` loads the authenticated profile first. Provisioned users with `must_change_password` use the `admin-users` Edge Function; normal recovery sessions use `auth.updateUser({ password })`, so the reset-email workflow reaches a working password update.
 
 ### Client portal
 
@@ -429,35 +437,11 @@ The current database role values are `company_admin`, `company_member`, and `cli
 - `/api/portal/client/tickets` to create a ticket linked to one of the client’s projects or general support.
 - `/api/portal/client/tickets/:id/messages` to reply externally.
 
-The UI renders project progress/health, invoice balances, tickets, invoice print preview, and an A4 landscape print/PDF flow. It does not grant client access; RLS and repository permissions do that.
+The UI renders project progress/health, invoice balances, tickets, invoice print preview, and an A4 landscape print/PDF flow. The repository selects and trims client-safe project, ticket, invoice, and client fields before returning them, and employee project responses exclude budget, expense, revenue, and internal identifier fields; the employee mutation RPCs also return an operational JSON shape instead of a full table row. It does not grant client access; RLS and repository permissions do that.
 
-## CRM user interface generations
+## CRM user interface
 
-### Legacy operations implementation
-
-The legacy UI consists of:
-
-- [`src/features/operations/layouts/AppShell.astro`](src/features/operations/layouts/AppShell.astro)
-- [`src/features/operations/data/nav.ts`](src/features/operations/data/nav.ts)
-- [`src/features/operations/data/live.ts`](src/features/operations/data/live.ts)
-- [`src/features/operations/data/mock.ts`](src/features/operations/data/mock.ts)
-- [`src/features/operations/data/backend.ts`](src/features/operations/data/backend.ts)
-- Components `Icon`, `Avatar`, `Logo`, `StatCard`, and `InsightPage`
-- [`public/techmigos-ops/scripts/api-client.js`](public/techmigos-ops/scripts/api-client.js)
-- [`public/techmigos-ops/scripts/operations-app.js`](public/techmigos-ops/scripts/operations-app.js)
-- [`src/features/operations/styles/operations-portal.css`](src/features/operations/styles/operations-portal.css)
-
-`live.ts` deliberately exports empty arrays to prevent demo records from appearing before authorization. The dashboard at `/company` also starts with loading/empty states and `operations-app.js` hydrates its projects, role-appropriate KPIs, admin activity feed, and ticket summary after authentication. `mock.ts` and `backend.ts` retain sample data/mock UUID-based methods and should not be treated as production data sources.
-
-`operations-app.js` handles the legacy AppShell routes and remains reference code for older operations behavior. The current company feature wrappers use `CrmLayout` directly, so new company work should be added to the active renderer there unless a legacy route is intentionally being restored. The legacy script handles:
-
-- Sidebar collapse/mobile menu.
-- Drawers and overlays.
-- Tabs, filters, search, sorting, and local pagination.
-- Permission switches and row menus.
-- Project/user creation through `TechMigosAPI`.
-- Ticket conversations and replies.
-- File upload/download previews.
+The former operations shell, mock adapters, and public operations script have been retired. Their preview assets remain for visual reference only. Active company pages use the shared CRM shell, canonical route policy, repository, workspace store, and reusable CRM components.
 - `/company` dashboard hydration from repository-scoped projects plus admin tickets, profiles, finances, and activities; dashboard project rows open the selected project workspace.
 - Dashboard shell interactions: desktop sidebar persistence/collapse, mobile menu/backdrop, top-bar popovers, live notification badge, profile menu, and Supabase sign-out.
 - Settings toggles and CSV export.
@@ -467,9 +451,9 @@ Some filtering/pagination/action behavior remains local UI behavior rather than 
 
 ### New CRM/Finance implementation
 
-`CrmLayout.astro` contains the fuller live implementation. Its state includes active view, profile, settings, data arrays, selected rows, Finance filters/sheets/invoice builder, project/file folder state, ticket state, report dates, and row save status.
+`crm-workspace.js` contains the fuller live implementation. Its state includes active view, profile, settings, data arrays, selected rows, Finance filters/sheets/invoice builder, project/file folder state, ticket state, report dates, and row save status.
 
-The CRM navigation adapter [`src/lib/crmNav.ts`](src/lib/crmNav.ts) now reuses the canonical grouped list from [`src/features/operations/data/nav.ts`](src/features/operations/data/nav.ts), so both company shells expose the same route order, labels, icons, and resource metadata:
+The CRM navigation adapter [`src/lib/crmNav.ts`](src/lib/crmNav.ts) derives the canonical grouped list from [`src/lib/crm/routePolicy.js`](src/lib/crm/routePolicy.js); [`src/features/operations/data/nav.ts`](src/features/operations/data/nav.ts) remains a compatibility re-export. Both company shells therefore expose the same route order, labels, icons, and resource metadata:
 
 ```ts
 [
@@ -490,8 +474,9 @@ The CRM chrome components are:
 - [`src/components/crm/Sidebar.astro`](src/components/crm/Sidebar.astro): grouped Work/Insights/Admin navigation rendered from the shared adapter, with active state, role/resource metadata, icons, and collapse control.
 - [`src/components/crm/Topbar.astro`](src/components/crm/Topbar.astro): search, workspace/clock/status, notifications, help, identity, logout affordance.
 - [`src/components/crm/OverlayLayer.astro`](src/components/crm/OverlayLayer.astro): modal, invoice print/export, toast, invoice hover preview, proof preview.
+- [`src/components/crm/Icon.astro`](src/components/crm/Icon.astro), [`CrmButton.astro`](src/components/crm/CrmButton.astro), [`CrmIconButton.astro`](src/components/crm/CrmIconButton.astro), and [`CrmModal.astro`](src/components/crm/CrmModal.astro): canonical CRM UI primitives used by the active shell and legacy compatibility wrappers.
 
-Important renderer families in `CrmLayout.astro` include dashboard, assigned-employee project view, project management, files/project drive, tickets, Finance, analytics, reports, clients, employees/users, settings, and generic CRUD. The file still contains legacy renderers and at least one unreachable legacy block after an employee renderer returns; avoid extending it blindly without first locating the active renderer path.
+Important renderer families exposed by the shell and feature modules include dashboard, assigned-employee project view, project management, files/project drive, tickets, Finance, analytics, reports, clients, employees/users, settings, and generic CRUD. Remaining shell helpers are compatibility adapters and should be extracted only as cohesive units.
 
 ## CRM repository contract
 
@@ -508,7 +493,7 @@ Important renderer families in `CrmLayout.astro` include dashboard, assigned-emp
 
 `requireResource(resource, method)` checks the client-side permission map before table operations. Supabase RLS is the actual security boundary and must be updated in migrations whenever a permission changes.
 
-`requireProjectAccess()` has a weaker repository-side non-admin check than the final database policy: for non-admin users it verifies the project record exists, while assignment scoping is ultimately supplied by RLS. Keep this distinction in mind when adding browser-side checks.
+`requireProjectAccess()` enforces the same assigned-project boundary in the repository as the final database policy: non-admin company users must be assigned through an active project membership, while administrators bypass that check. RLS remains authoritative.
 
 ### Resource/table map
 
@@ -577,7 +562,9 @@ The repository uses resource field allowlists and converts numeric/boolean field
 - Folder names are trimmed and limited to 120 characters.
 - Generic asset/proof files use a 10 MiB limit.
 - Generic images are PNG/JPEG/WebP; finance proofs add PDF.
-- Project files use a 50 MiB limit. The final storage migration permits all MIME types; the client checks size but does not impose a MIME allowlist for project files.
+- Project files use a 50 MiB limit and an explicit PDF, office-document, spreadsheet, presentation, text, ZIP, PNG, JPEG, and WebP MIME allowlist in both the repository and private Storage/table policies.
+- Support tickets require a client when created; a linked project must belong to that same client. General support tickets may remain unlinked to a project.
+- Invoices use the same graph rule: an optional linked project must belong to the invoice client before the invoice RPC is called and at the database trigger boundary.
 - Invoice line items require descriptions and nonnegative quantity/rate values.
 
 ## Final role and resource model
@@ -598,10 +585,10 @@ The code calls `company_member` “Employee” in user-facing labels and tests.
 | Read assigned projects | Yes | Yes, assigned projects only | Own linked projects | No |
 | Read assigned project folders/files | Yes | Yes, assigned projects only | No | No |
 | Create project folders/files | Yes | Yes, assigned projects only | No | No |
-| Update/delete projects | Yes | No in current final policy/app | No | No |
+| Update/delete projects | Yes | Update assigned projects only; no delete | No | No |
 | Read clients | Yes | No | Own linked client only | No |
-| Read tickets/messages | Yes | No | Own linked tickets; external messages | No |
-| Create tickets/external messages | Yes | No | Yes | No |
+| Read tickets/messages | Yes | Assigned tickets/messages only | Own linked tickets; external messages | No |
+| Create tickets/external messages | Yes | Internal messages on assigned tickets only | Yes | No |
 | Read invoices/items | Yes | No | Own linked invoices/items | No |
 | Create/update/delete invoices | Yes | No | No | No |
 | Read/write finances | Yes | No | No | No |
@@ -611,7 +598,7 @@ The code calls `company_member` “Employee” in user-facing labels and tests.
 | Use leads/deals/followups/campaigns | No; disabled | No; disabled | No | No |
 | Public contact/newsletter/career submission | N/A | N/A | N/A | RLS-scoped inserts |
 
-The client-side permission helpers implement the same high-level model: admin can operate on enabled resources, employees can read/create project folders/files only, and clients can read linked portal resources and create tickets/messages. Employees cannot update or delete through those helpers.
+The client-side permission helpers implement the same high-level model: admin can operate on enabled resources, employees can read assigned project/support resources, update only assigned project/ticket delivery fields, create project folders/files and internal messages, and clients can read linked portal resources and create tickets/external messages. Employees cannot delete or reassign records.
 
 An older [`CRM_RBAC_FEATURE_MATRIX.md`](CRM_RBAC_FEATURE_MATRIX.md) describes an earlier broader company-member model and should be treated as historical/supplementary, not as the final permission authority.
 
@@ -676,7 +663,7 @@ erDiagram
 - Finance client/project links are checked for consistency and display fields are synchronized.
 - Invoice client/project combinations are checked for consistency.
 - Project files cannot reference a folder from another project.
-- Folder names are constrained and employee-created folders can be renamed only by their creator under the final policy.
+- Folder names are constrained; employees can create folders on assigned projects, while folder rename and deletion remain administrator-only under the final policy.
 - Active-profile helper functions ignore pending/inactive users.
 
 ## Migration and RLS timeline
@@ -706,6 +693,7 @@ Apply migrations in filename order. The later migrations supersede earlier broad
 | `20260915110000_allow_all_project_file_types.sql` | Makes project-files bucket accept all MIME types up to 50 MiB |
 | `20260915120000_client_project_portal_link.sql` | Adds/validates client profile-to-client link |
 | `20260915130000_employee_assigned_project_files.sql` | Restores employee read/create only for assigned project objects; finalizes storage read/manage split |
+| `20260919100000_minimize_employee_rpc_responses.sql` | Prevents employee project/ticket mutation RPCs from returning full rows containing restricted fields |
 
 ### Final RLS interpretation
 
@@ -723,10 +711,10 @@ RLS policy changes must be made in a new migration, not by editing an old migrat
 | Bucket | Visibility | Intended objects | Limits/policies |
 |---|---|---|---|
 | `resumes` | Private | Career application resumes | Anonymous insert only under `applications/...`; PDF/DOC/DOCX; 5 MiB; staff read |
-| `invoice-signatures` | Public | Invoice signature image | Admin upload/update; public URL access |
+| `invoice-signatures` | Private | Invoice signatures and invoice branding assets | Admin upload/update; linked clients receive short-lived signed URLs |
 | `finance-proofs` | Private | Finance receipt/proof image or PDF | Admin write; staff read/signed URLs; repository limit 10 MiB |
-| `invoice-signatures` (`invoice-assets/*` path namespace) | Public | Invoice signatures and company/invoice branding assets | Admin-only workflow; repository stores branding assets under an `invoice-assets/...` path in this same bucket |
-| `project-files` | Private | Project files/folders | 50 MiB; final MIME allowlist is null/all types; admin manages; assigned employees read/create metadata/upload on assigned projects |
+| `invoice-signatures` (`invoice-assets/*` path namespace) | Private | Invoice signatures and company/invoice branding assets | Admin-only writes; repository stores object paths and resolves linked client reads through short-lived signed URLs |
+| `project-files` | Private | Project files/folders | 50 MiB; PDF, office, text/CSV/JSON, ZIP, PNG, JPEG, and WebP MIME allowlist; admin manages; assigned employees read/create metadata/upload on assigned projects |
 
 Repository storage conventions:
 
@@ -766,13 +754,13 @@ An `invoice` Finance row is a receivables/ledger entry, not cash income by itsel
 
 ### Finance UI
 
-The active Finance renderer in `CrmLayout.astro` provides:
+The active Finance renderer, orchestrated by `crm-workspace.js` and backed by the shared finance selectors, provides:
 
 - All/transactions/invoices/reports tabs.
 - Finance record inline editing/autosave.
 - Invoice creation/editing with line items, discount, tax, received amount, status, and notes.
 - Invoice branding/settings.
-- UPI payment information and QR generation using `v5219@slc` and the TechMigos merchant label.
+- UPI payment information and QR generation using configured invoice/company settings and the TechMigos merchant label.
 - Invoice previews and PDF/print behavior.
 - Finance proof uploads and previews.
 - Report filtering and export using `crm-pdf.js`.
@@ -785,7 +773,7 @@ The active Finance renderer in `CrmLayout.astro` provides:
 
 ### Operations
 
-- `invite`: Auth invite by email, pending profile.
+- `invite`: Auth invite by email to `${SITE_URL}/change-password` (default `https://www.techmigos.com`), pending profile with a required first password change; the authenticated invitation session activates the profile after the password is set.
 - `provision`: Creates confirmed user with initial password and `must_change_password: true`.
 - `update_profile`: Updates Auth email/metadata and `crm_profiles`.
 - `set_status`: Updates profile/Auth status behavior.
@@ -801,7 +789,7 @@ The active Finance renderer in `CrmLayout.astro` provides:
 - Uses the service role only inside the Edge Function.
 - Cleans up a newly-created Auth user when profile insertion fails.
 
-Current CORS allows `*`; review this if the function becomes externally exposed beyond the site’s controlled browser usage.
+The function uses an explicit `ALLOWED_ORIGINS` allowlist with the production site and local development origins as defaults; it never emits wildcard CORS.
 
 ## Components and reusable UI
 
@@ -826,15 +814,9 @@ Under [`src/components/portfolio/focus/`](src/components/portfolio/focus/):
 
 These compose the curated product showcase pages. They are separate from the generic `siteContent` case-study route.
 
-### Legacy operations components
+### Operations compatibility components
 
-Under [`src/features/operations/components/`](src/features/operations/components/):
-
-- `Icon`: inline SVG icon path map.
-- `Avatar`: initials/avatar treatment.
-- `Logo`: operations logo.
-- `StatCard`: legacy dashboard metric card.
-- `InsightPage`: analytics/reports placeholder surface.
+The remaining components under [`src/features/operations/components/`](src/features/operations/components/) are compatibility wrappers only. New authenticated workspace UI must use the canonical CRM components and the shared route/store contracts.
 
 ### CRM chrome
 
@@ -842,17 +824,16 @@ The CRM-only components are described in [New CRM/Finance implementation](#new-c
 
 ## Styling and visual system
 
-There are three overlapping style layers:
+There are two active style layers:
 
 1. [`src/styles/global.css`](src/styles/global.css): global reset, public layout, typography, buttons, forms, reveal/motion utilities, accessibility styles, and shared design variables.
 2. Tailwind utility classes in page/component markup, configured by [`tailwind.config.cjs`](tailwind.config.cjs).
 3. CRM/operations CSS:
-   - [`src/styles/operations.css`](src/styles/operations.css) for the newer CRM shell.
-   - [`src/features/operations/styles/operations-portal.css`](src/features/operations/styles/operations-portal.css) for the legacy shell.
+   - [`src/styles/operations.css`](src/styles/operations.css) for the CRM shell and feature presentation.
 
 The public design uses Inter for body text and Syne for display headings, with indigo/blue primary, cyan accent, gold highlights, gradients, glow shadows, reveal animations, and responsive card/table layouts.
 
-The CRM styles use a separate compact operations vocabulary (`crm-*`, `finance-*`, `acc-*`, tables, drawers, sheets, density modes) and should be changed with care: `CrmLayout.astro` owns a large amount of CSS inline to its page, while `operations.css` is imported by the newer shell.
+The CRM styles use a separate compact operations vocabulary (`crm-*`, `finance-*`, `acc-*`, tables, drawers, sheets, density modes) and should be changed with care: shared CRM presentation lives in `src/styles/crm-shell.css`, while `operations.css` retains the broader compatibility and feature styles.
 
 Public static assets include the favicon/icon, Open Graph image, login slide images, and legacy operations hero/preview assets under `public/techmigos-ops/assets/`.
 
@@ -865,8 +846,9 @@ These are source-grounded observations to keep visible during future development
 [`src/lib/csrf.ts`](src/lib/csrf.ts) and [`src/lib/csrfMiddleware.ts`](src/lib/csrfMiddleware.ts) implement HMAC token generation/verification and cookie/header checks. However:
 
 - There are no current Astro API endpoints using the middleware.
-- `BaseLayout` exposes `window.techmigosGetCsrfToken()` as a placeholder returning `'no-csrf'`.
 - Contact, support, newsletter, and careers forms call the helper but do not include an `x-csrf-token` header in their Supabase writes.
+
+The `20260918100000_tighten_ticket_message_insert_rls.sql` migration keeps direct PostgREST ticket-message writes role-matched: employees can only create internal notes, clients can only create external replies, and administrators can create administrator-authored responses. The companion `20260918101000_tighten_client_ticket_insert_rls.sql` migration keeps direct client ticket writes linked to the caller's client/project and open/unassigned, while `20260918110000_audit_cleanup_selected_records.sql` records cleanup reason and selected record identities in the audit summary. These three semantics are live under Supabase-generated migration versions `20260918163410`, `20260918163422`, and `20260918163441`; the browser repository rejects generic client CRM list access and routes clients through the explicit portal workflows. The local filenames still differ from the dashboard-generated history, so future migration operations require the reviewed mapping.
 
 If public writes move behind server endpoints, wire the middleware into those endpoints and remove the placeholder. If direct Supabase writes remain, validate the RLS/honeypot/rate-limiting strategy independently.
 
@@ -880,7 +862,7 @@ Public forms insert directly into `contact_leads`, `newsletter_subscribers`, and
 
 ### Client-side guards are not authorization
 
-AppShell link removal, `CrmLayout` permission checks, and repository checks improve UX but cannot replace Supabase RLS. Every new CRM resource/action needs a migration-level policy test or explicit RLS review.
+Route link removal, `CrmLayout` permission checks, and repository checks improve UX but cannot replace Supabase RLS. Every CRM resource/action needs a migration-level policy test or explicit RLS review.
 
 ### Career upload helper is not the current career upload path
 
@@ -890,32 +872,24 @@ AppShell link removal, `CrmLayout` permission checks, and repository checks impr
 
 Finance, permission, and form behavior exists in several places:
 
-- `src/lib/crm/finance.js` and inline Finance helpers in `CrmLayout.astro`.
+- `src/lib/crm/finance.js`, shared UI primitives, and the Finance feature/context adapters used by `crm-workspace.js`.
 - `src/lib/crm/permissions.js` and inline CRM role checks.
 - `src/lib/csrf.ts`, `src/lib/csrfMiddleware.ts`, and placeholder layout helpers.
-- Legacy `operations-app.js` and newer `CrmLayout.astro` both implement parts of CRM behavior.
+- The CRM shell now owns the active company workspace; compatibility components must not introduce a second data or action boundary.
 
 Prefer central helpers for new rules and update all active renderers only when compatibility requires it.
 
 ### Legacy UI and mock values
 
-Most legacy pages still contain hard-coded/demo-looking initial markup and should be treated as shells until hydration completes. The `/company` dashboard was corrected to use explicit loading/empty states and live repository data for its operational metrics; do not use any remaining legacy page values as business data or acceptance criteria.
+The former operations shell, mock adapters, and backend stubs are retired. Authenticated company and client views load live Supabase data through the repository; loading/empty/error states are explicit and must remain that way.
 
-### Potential legacy action failures
+### Remaining CRM shell boundary
 
-The legacy UI can expose row/archive affordances through generic event handling. The repository intentionally does not allow profile deletion and final RLS is restrictive; an old UI action may therefore fail even if the control renders. Test role/action combinations after changes.
-
-### Project-file request path inconsistency
-
-The repository’s special `request()` branches compare the resource name to `project-files` (hyphenated), while the table/resource map and legacy list calls use `project_files` (underscored). Active file download/delete code usually calls the repository’s direct `getProjectFileUrl()`/`deleteProjectFile()` methods, which avoids the inconsistency, but do not introduce a new `/api/portal/project_files/:id/download` caller without normalizing this path handling.
-
-### Monolithic CRM layout
-
-`CrmLayout.astro` is the largest maintenance hotspot. It contains multiple generations of renderer and event code in one file, including legacy/unreachable code. Before editing, locate the active function and its event binding; avoid adding another parallel implementation.
+`src/scripts/crm-workspace.js` remains the largest maintenance hotspot, but the Astro layout is now thin, route renderers and shared workspace context are extracted into `src/lib/crm/features/`, and interactions use the tested `delegatedEvents.js` CRM-root boundary. Remaining helpers are compatibility adapters and should be extracted only as cohesive units.
 
 ### Content collection dependency
 
-The missing `src/content/` directory is a probable build failure and affects the website, careers, and sitemap—not just blog pages. Fix the collection schema/content strategy before using `npm run validate` as a deployment gate.
+The collection schema is defined in `src/content.config.ts`, but the repository currently has no blog/career source entries. Astro builds the pages and emits empty-collection warnings; add content entries when those public sections are ready.
 
 ### Public key handling
 
@@ -983,11 +957,9 @@ The change normally spans every layer below:
 ```text
 database migration/RLS
         ↓
-permissions.js + repository table/field allowlists
+route policy + permissions + repository allowlists
         ↓
-CrmLayout renderer/form/event handling
-        ↓
-legacy AppShell/API wrapper only if the old route remains active
+workspace store + feature renderer/components
         ↓
 unit/RLS/browser tests
 ```
@@ -997,7 +969,7 @@ At minimum inspect:
 - `CRM_RESOURCES`, role guards in `src/lib/crm/permissions.js`.
 - `TABLE_MAP`, `RESOURCE_FIELDS`, `WRITE_FIELDS`, numeric/boolean fields in `repository.js`.
 - `request()` path dispatch and any specialized upload/detail methods.
-- Active renderer and event binder in `CrmLayout.astro`.
+- Active feature renderers and the delegated event boundary in `src/scripts/crm-workspace.js`.
 - Final RLS/storage policies in a new migration.
 - Tests for each role and resource.
 
@@ -1029,7 +1001,7 @@ Define all of these together:
 Do not update only the visible Finance renderer. Check:
 
 - `src/lib/crm/finance.js` calculations/classification.
-- Inline Finance helpers in `CrmLayout.astro`.
+- Finance selectors and feature/context adapters used by `src/scripts/crm-workspace.js`.
 - `save_invoice_with_items` RPC and invoice constraints.
 - Invoice ledger trigger migrations/status semantics.
 - Finance proof/signature storage paths and policies.
@@ -1040,27 +1012,24 @@ Do not update only the visible Finance renderer. Check:
 
 - [`knowledge_Astro.md`](knowledge_Astro.md): generic Astro v4 reference; not an application source map.
 - [`CRM_RBAC_FEATURE_MATRIX.md`](CRM_RBAC_FEATURE_MATRIX.md): useful historical RBAC audit, but its broader member capabilities predate the final project-only migrations.
-- `src/features/operations/data/mock.ts`: sample UI records, not production data.
-- `src/features/operations/data/backend.ts`: mock adapter returning generated IDs, not a live backend.
 - `data/leads.json`: present data artifact; current public forms use Supabase `contact_leads`.
 - `src/lib/apiResponse.ts`: JSON response envelope helper (`{ ok, data, error, fieldErrors }`) with no current `src/pages/api` consumer found.
 - `src/lib/careerUploads.ts`: filesystem upload helper not used by the active careers page.
-- `src/db/supabase.js` and the `BaseLayout` browser bootstrap each expose a Supabase client pattern; use the repository/bootstrap path for browser CRM work and avoid creating competing clients without a reason.
-- Old flat company route files shown as deleted in the latest commit are still referenced by the E2E route list; verify deployment output instead of relying on old path names.
+- `src/db/supabase.js` and the BaseLayout browser bootstrap each expose a Supabase client pattern; use the repository/bootstrap path for browser CRM work and avoid creating competing clients without a reason.
 
 ## Audit results and verification status
 
-The baseline audit established the source/test route mismatch and missing `src/content/` dependency described above. The latest enhancement pass also verified:
+The latest implementation pass verified:
 
-- `npm test` passes all 16 Node CRM/RBAC/finance/PDF tests.
+- `npm ci` succeeds from the lockfile and reports zero audit findings; the Astro transitive `devalue` advisory is resolved at `5.9.2`.
+- `npm test` passes all 79 Node CRM/RBAC/finance/PDF/workspace tests, including the extracted operations-form, workflow, overlay ownership, private-storage-path, live-provisioning, employee field-boundary, safe-markup renderer-boundary, unused-demo-table, private-resume-storage, and career-validator protection contract tests.
 - `npm run build` completes 29 static pages.
 - `npm run validate` passes validation for 28 generated HTML pages.
-- Targeted Playwright checks for the login screen and unauthenticated Finance redirect pass.
-- Browser smoke checks with the supplied company account verify authenticated `/company` hydration, real project rows, desktop sidebar persistence/collapse, top notifications/help/profile menus, sidebar routing, mobile drawer open/close, and Supabase sign-out; no page errors were observed.
-- The current live company shell sweep verifies all nine `/company` feature routes use one active nav item, nine shared navigation entries, and the same notifications/profile/logout header controls. The Files flow was verified against live data: five projects initially, project selection, folder selection, eight files in the selected folder, grid/list switching, right-side file detail/preview, detail close, and signed Storage access.
-- Header sign-out was verified from the shared CRM shell after the logout affordance was restored to the Finance-style header; it clears the CRM session and redirects to `/login` without a browser page error.
-- The official role matrix checks remain skipped when dedicated `CRM_*` environment variables are absent. The full Playwright suite still contains a stale route-policy assertion that expects current public/company source routes to return 404; this is a product-policy mismatch, not a dashboard implementation failure.
-- `npx astro check` and the root TypeScript/lint runner still report pre-existing errors in legacy operation components, empty content collections, and Deno Edge Function files. Treat build/validation plus focused tests as the current reliable gate until those projects are typed/configured separately.
+- `npx tsc --noEmit`, `npm audit --audit-level=low`, and `git diff --check` pass.
+- Vercel response headers include `Content-Security-Policy` with same-origin defaults, disabled object embedding, same-origin framing, and an explicit Supabase API connection allowlist alongside the baseline transport and browser-policy headers.
+- Available Playwright checks pass 5/5: login, bundled auth runtime, recovery page, nine company route documents, and unauthenticated redirects. Six live-role tests remain skipped without disposable `CRM_*` credentials.
+- The hosted `admin-users` Edge Function is active at version 11 with JWT verification and explicit CORS allowlisting; the deployed workflow includes forced-pending invitations and pending-to-active password completion. Live checks return 200 for the production-origin preflight and 401 for an unauthenticated POST. The hosted migration API confirms the final ticket-write and cleanup hardening versions; timestamp drift between local filenames and dashboard-generated history remains a migration-maintenance follow-up.
+- `npx astro check` completes with 0 errors, 0 warnings, and 0 hints.
 
 After any future dependency or content-collection changes, run:
 
@@ -1071,7 +1040,7 @@ npm run validate
 npm run test:e2e
 ```
 
-Run hosted identity E2E cases only with dedicated test credentials supplied through environment variables. Never put those credentials in this document or in the repository.
+Run hosted identity E2E cases with dedicated test credentials supplied through environment variables. Use `npm run test:e2e:live` for the release gate; it fails clearly instead of silently skipping when any identity is missing. Never put those credentials in this document or in the repository.
 
 ## Maintenance rule for this reference
 

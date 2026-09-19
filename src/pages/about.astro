@@ -312,12 +312,14 @@ const technologies = [
 
   if (!aboutReducedMotion) {
     document.querySelectorAll('.section-spotlight').forEach((section) => {
+      if (!(section instanceof HTMLElement)) return;
       if (!aboutFinePointer) return;
       section.classList.add('is-interactive');
       section.addEventListener('pointermove', (event) => {
+        const pointerEvent = event as PointerEvent;
         const rect = section.getBoundingClientRect();
-        section.style.setProperty('--spotlight-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-        section.style.setProperty('--spotlight-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+        section.style.setProperty('--spotlight-x', `${((pointerEvent.clientX - rect.left) / rect.width) * 100}%`);
+        section.style.setProperty('--spotlight-y', `${((pointerEvent.clientY - rect.top) / rect.height) * 100}%`);
       }, { passive: true });
     });
 
@@ -325,7 +327,10 @@ const technologies = [
       if (!(canvasEl instanceof HTMLCanvasElement)) return;
       const section = canvasEl.closest('section');
       const context = canvasEl.getContext('2d');
-      if (!section || !context) return;
+      if (!(section instanceof HTMLElement) || !context) return;
+      const networkCanvas = canvasEl as HTMLCanvasElement;
+      const canvasSection = section;
+      const canvasContext = context;
 
       const particleCount = Number(canvasEl.dataset.particleCount || 30);
       const particles = Array.from({ length: particleCount }, () => ({
@@ -340,8 +345,8 @@ const technologies = [
       let height = 0;
 
       function resizeCanvas() {
-        width = canvasEl.width = section.clientWidth;
-        height = canvasEl.height = section.clientHeight;
+        width = networkCanvas.width = canvasSection.clientWidth;
+        height = networkCanvas.height = canvasSection.clientHeight;
         particles.forEach((particle) => {
           if (!particle.x || particle.x > width) particle.x = Math.random() * width;
           if (!particle.y || particle.y > height) particle.y = Math.random() * height;
@@ -349,9 +354,9 @@ const technologies = [
       }
 
       function drawCanvas() {
-        context.clearRect(0, 0, width, height);
-        context.fillStyle = section.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
-        context.strokeStyle = section.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
+        canvasContext.clearRect(0, 0, width, height);
+        canvasContext.fillStyle = canvasSection.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
+        canvasContext.strokeStyle = canvasSection.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
 
         for (let i = 0; i < particles.length; i++) {
           const particle = particles[i];
@@ -364,9 +369,9 @@ const technologies = [
           particle.x = Math.max(0, Math.min(width, particle.x));
           particle.y = Math.max(0, Math.min(height, particle.y));
 
-          context.beginPath();
-          context.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
-          context.fill();
+          canvasContext.beginPath();
+          canvasContext.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+          canvasContext.fill();
 
           for (let j = i + 1; j < particles.length; j++) {
             const particleB = particles[j];
@@ -375,11 +380,11 @@ const technologies = [
             const dy = particle.y - particleB.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 118) {
-              context.beginPath();
-              context.lineWidth = (1 - dist / 118) * 0.75;
-              context.moveTo(particle.x, particle.y);
-              context.lineTo(particleB.x, particleB.y);
-              context.stroke();
+              canvasContext.beginPath();
+              canvasContext.lineWidth = (1 - dist / 118) * 0.75;
+              canvasContext.moveTo(particle.x, particle.y);
+              canvasContext.lineTo(particleB.x, particleB.y);
+              canvasContext.stroke();
             }
           }
         }

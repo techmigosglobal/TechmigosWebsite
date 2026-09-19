@@ -1,0 +1,18 @@
+---
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  type?: 'text' | 'email' | 'password' | 'url';
+  placeholder?: string;
+  autocomplete?: string;
+  required?: boolean;
+  minLength?: number;
+}
+
+const { id, name, label, type = 'text', placeholder, autocomplete, required = false, minLength } = Astro.props;
+---
+<label class="block" for={id}>
+  <span class="form-label">{label}</span>
+  <input id={id} name={name} type={type} class="form-input form-control" placeholder={placeholder} autocomplete={autocomplete} required={required} minlength={minLength} />
+</label>

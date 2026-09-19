@@ -100,7 +100,7 @@ const slides = [
           <button type="button" class="pause-button" data-slide-control="pause" aria-label="Pause slideshow"><span id="pause-icon">Ⅱ</span></button>
         </div>
         <div class="slide-dots" role="tablist" aria-label="Choose workspace highlight">
-          {slides.map((slide, index) => <button type="button" role="tab" data-slide-dot={index} aria-label={`Show highlight ${index + 1}`} aria-selected={index === 0 ? 'true' : 'false'}></button>)}
+          {slides.map((_slide, index) => <button type="button" role="tab" data-slide-dot={index} aria-label={`Show highlight ${index + 1}`} aria-selected={index === 0 ? 'true' : 'false'}></button>)}
         </div>
       </div>
     </div>
@@ -191,14 +191,22 @@ const slides = [
         const data = Object.fromEntries(new FormData(form).entries());
         const loginId = String(data.login_id || '').trim();
         const password = String(data.password || '');
-        let email = loginId;
-        if (!loginId.includes('@')) {
-          const { data: resolvedEmail, error: rpcError } = await window.tmSupabase.rpc('get_email_by_username', { p_username: loginId });
-          if (rpcError || !resolvedEmail) throw new Error('Username not found. Please use your email address.');
-          email = resolvedEmail;
+        let authData;
+        if (loginId.includes('@')) {
+          const { data, error: authError } = await window.tmSupabase.auth.signInWithPassword({ email: loginId, password });
+          if (authError) throw new Error(authError.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : authError.message);
+          authData = data;
+        } else {
+          const { data: loginResult, error: loginError } = await window.tmSupabase.functions.invoke('username-login', {
+            body: { username: loginId, password },
+          });
+          if (loginError || !loginResult?.session?.access_token || !loginResult?.session?.refresh_token) {
+            throw new Error('Username or password is incorrect.');
+          }
+          const { data, error: sessionError } = await window.tmSupabase.auth.setSession(loginResult.session);
+          if (sessionError || !data.user) throw new Error('Username or password is incorrect.');
+          authData = data;
         }
-        const { data: authData, error: authError } = await window.tmSupabase.auth.signInWithPassword({ email, password });
-        if (authError) throw new Error(authError.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : authError.message);
         const { data: profile, error: profileError } = await window.tmSupabase.from('crm_profiles').select('role, name, status, must_change_password').eq('auth_user_id', authData.user.id).limit(1).single();
         if (profileError || !profile) throw new Error('Portal access is not provisioned for this account.');
         if (profile.status !== 'active') throw new Error('This account is not active yet. Please contact your TechMigos administrator.');

@@ -1,5 +1,5 @@
 ---
-import Icon from '../../features/operations/components/Icon.astro';
+import Icon from './Icon.astro';
 import { crmNavItems } from '../../lib/crmNav';
 
 interface Props {
@@ -8,17 +8,6 @@ interface Props {
 
 const { activeTab } = Astro.props;
 const groups = [...new Set(crmNavItems.map((item) => item.group))];
-const navKeyByPath: Record<string, string> = {
-  '/company': 'dashboard',
-  '/company/projects': 'projects',
-  '/company/files': 'files',
-  '/company/support': 'tickets',
-  '/company/finance': 'finance',
-  '/company/analytics': 'analytics',
-  '/company/reports': 'reports',
-  '/company/users': 'users',
-  '/company/settings': 'settings',
-};
 ---
 
 <aside class="crm-sidebar">
@@ -28,16 +17,17 @@ const navKeyByPath: Record<string, string> = {
       <div class="crm-nav-group">
         <span class="crm-nav-section">{group}</span>
         {crmNavItems.filter((item) => item.group === group).map((item) => {
-          const key = navKeyByPath[item.href] || item.href;
           return (
             <a
               href={item.href}
-              class={`crm-nav-item ${activeTab === key ? 'active' : ''}`}
+              class={`crm-nav-item ${activeTab === item.key || (activeTab === 'tickets' && item.key === 'support') ? 'active' : ''}`}
               style="text-decoration:none;"
               title={item.label}
-              data-nav-key={key}
-              data-required-role={item.requiredRole || ''}
-              data-required-resource={item.resource || ''}
+              data-nav-key={item.key}
+              data-required-roles={item.roles.join(',')}
+              data-required-resource={item.resource}
+              data-readable-resources={item.readableResources.join(',')}
+              data-supported-actions={item.supportedActions.join(',')}
             >
               <span class="crm-nav-icon"><Icon name={item.icon} size={18} /></span>
               <span class="crm-nav-label">{item.label}</span>

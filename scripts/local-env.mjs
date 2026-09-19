@@ -29,6 +29,7 @@ function readDotEnv(file) {
 export function loadLocalEnv() {
   return {
     ...readDotEnv('.env'),
+    ...readDotEnv('.env.local'),
     ...readJsonEnv('env.json'),
     ...process.env,
   };

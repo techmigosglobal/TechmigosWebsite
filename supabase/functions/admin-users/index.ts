@@ -1,15 +1,34 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
-};
+const defaultAllowedOrigins = [
+  'https://www.techmigos.com',
+  'https://techmigos.com',
+  'http://127.0.0.1:4321',
+  'http://localhost:4321',
+];
+const allowedOrigins = new Set(
+  (Deno.env.get('ALLOWED_ORIGINS') || defaultAllowedOrigins.join(','))
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
+function corsHeaders(request: Request) {
+  const requestOrigin = request.headers.get('Origin') || '';
+  const origin = allowedOrigins.has(requestOrigin) ? requestOrigin : defaultAllowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+    Vary: 'Origin',
+  };
+}
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? serviceRoleKey;
+const siteUrl = (Deno.env.get('SITE_URL') || 'https://www.techmigos.com').replace(/\/$/, '');
 
 const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -18,8 +37,8 @@ const authClient = createClient(supabaseUrl, anonKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function json(request: Request, body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: corsHeaders(request) });
 }
 
 function errorMessage(error: unknown) {
@@ -95,11 +114,11 @@ function parsedClientId(value: unknown) {
 async function requireAdmin(request: Request) {
   const authorization = request.headers.get('Authorization') ?? '';
   const token = authorization.replace(/^Bearer\s+/i, '').trim();
-  if (!token) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+  if (!token) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders(request) });
 
   const { data: authData, error: authError } = await authClient.auth.getUser(token);
   if (authError || !authData.user) {
-    throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+    throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders(request) });
   }
 
   const { data: profile, error: profileError } = await serviceClient
@@ -109,7 +128,7 @@ async function requireAdmin(request: Request) {
     .maybeSingle();
 
   if (profileError || !profile || profile.role !== 'company_admin' || profile.status !== 'active') {
-    throw new Response(JSON.stringify({ error: 'Only active company admins can manage users.' }), { status: 403, headers: corsHeaders });
+    throw new Response(JSON.stringify({ error: 'Only active company admins can manage users.' }), { status: 403, headers: corsHeaders(request) });
   }
 
   return { user: authData.user, profile };
@@ -118,9 +137,9 @@ async function requireAdmin(request: Request) {
 async function requireAuthenticatedUser(request: Request) {
   const authorization = request.headers.get('Authorization') ?? '';
   const token = authorization.replace(/^Bearer\s+/i, '').trim();
-  if (!token) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+  if (!token) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders(request) });
   const { data, error } = await authClient.auth.getUser(token);
-  if (error || !data.user) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders });
+  if (error || !data.user) throw new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: corsHeaders(request) });
   return data.user;
 }
 
@@ -129,7 +148,9 @@ async function inviteUser(body: Record<string, unknown>) {
   const name = String(body.name ?? '').trim();
   const username = await uniqueUsername(body.username, email.split('@')[0] || name);
   const role = body.role;
-  const status = validStatus(body.status) ? body.status : 'pending';
+  // An invited user must complete the first-login password flow before the
+  // CRM account becomes active. The caller cannot bypass that transition.
+  const status = 'pending';
   const requestedClientId = parsedClientId(body.client_id);
   const clientId = role === 'client' ? requestedClientId : null;
 
@@ -141,6 +162,7 @@ async function inviteUser(body: Record<string, unknown>) {
 
   const { data: invited, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
     data: { name, crm_role: role },
+    redirectTo: `${siteUrl}/change-password`,
   });
   if (inviteError || !invited.user) throw new Error(inviteError?.message || 'Could not invite Auth user.');
 
@@ -153,6 +175,7 @@ async function inviteUser(body: Record<string, unknown>) {
       name,
       role,
       status,
+      must_change_password: true,
       client_id: clientId,
       department: String(body.department ?? '').trim(),
     })
@@ -275,10 +298,12 @@ async function changeInitialPassword(request: Request, body: Record<string, unkn
   if (!validInitialPassword(password)) throw new Error('Password must have at least 8 characters with uppercase, lowercase, number, and symbol.');
   const { data: profile, error: profileError } = await serviceClient
     .from('crm_profiles')
-    .select('id, must_change_password')
+    .select('id, status, must_change_password')
     .eq('auth_user_id', user.id)
     .maybeSingle();
-  if (profileError || !profile || !profile.must_change_password) throw new Error('This account is not awaiting an initial password change.');
+  if (profileError || !profile || !['active', 'pending'].includes(profile.status) || !profile.must_change_password) {
+    throw new Error('This account is not awaiting an initial password change.');
+  }
   const { error: updateError } = await serviceClient.auth.admin.updateUserById(user.id, {
     password,
     user_metadata: { ...(user.user_metadata || {}), force_password_change: false },
@@ -286,27 +311,30 @@ async function changeInitialPassword(request: Request, body: Record<string, unkn
   if (updateError) throw new Error(updateError.message);
   const { error: profileUpdateError } = await serviceClient
     .from('crm_profiles')
-    .update({ must_change_password: false })
+    .update({
+      must_change_password: false,
+      status: profile.status === 'pending' ? 'active' : profile.status,
+    })
     .eq('id', profile.id);
   if (profileUpdateError) throw new Error(profileUpdateError.message);
   return { ok: true };
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(request) });
+  if (request.method !== 'POST') return json(request, { error: 'Method not allowed.' }, 405);
 
   try {
     const body = await request.json() as Record<string, unknown>;
     const operation = String(body.operation ?? '').trim();
-    if (operation === 'change_initial_password') return json(await changeInitialPassword(request, body));
+    if (operation === 'change_initial_password') return json(request, await changeInitialPassword(request, body));
     await requireAdmin(request);
-    if (operation === 'invite') return json(await inviteUser(body), 201);
-    if (operation === 'provision') return json(await provisionUser(body), 201);
-    if (operation === 'update_profile' || operation === 'set_status') return json(await updateProfile(body));
-    return json({ error: 'Unsupported admin user operation.' }, 400);
+    if (operation === 'invite') return json(request, await inviteUser(body), 201);
+    if (operation === 'provision') return json(request, await provisionUser(body), 201);
+    if (operation === 'update_profile' || operation === 'set_status') return json(request, await updateProfile(body));
+    return json(request, { error: 'Unsupported admin user operation.' }, 400);
   } catch (error) {
     if (error instanceof Response) return error;
-    return json({ error: errorMessage(error) }, 400);
+    return json(request, { error: errorMessage(error) }, 400);
   }
 });

@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  id?: string;
+  icon: string;
+  label: string;
+  title?: string;
+  class?: string;
+  ariaExpanded?: boolean;
+}
+
+const { id, icon, label, title = label, class: className = '', ariaExpanded } = Astro.props;
+---
+<button id={id} class:list={['crm-icon-button', className]} type="button" aria-label={label} title={title} aria-expanded={ariaExpanded}>
+  <Icon name={icon} size={18} />
+  <slot />
+</button>

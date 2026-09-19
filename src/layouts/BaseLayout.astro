@@ -13,6 +13,7 @@ interface Props {
   hideNavbar?: boolean;
   hideFooter?: boolean;
   isCrm?: boolean;
+  requiresCrmRuntime?: boolean;
 }
 
 const {
@@ -24,6 +25,7 @@ const {
   hideNavbar = false,
   hideFooter = false,
   isCrm = false,
+  requiresCrmRuntime = isCrm,
 } = Astro.props;
 
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
@@ -143,31 +145,15 @@ const structuredData = {
 
     <!-- JSON-LD makes the page, organization, and navigation legible to search engines. -->
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
-    <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-    <script is:inline define:vars={{ sbUrl: import.meta.env.PUBLIC_SUPABASE_URL || '', sbKey: import.meta.env.PUBLIC_SUPABASE_KEY || '' }}>
-      window.TechMigosConfig = { apiBaseUrl: '' };
-      window.techmigosApiUrl = function(p) { return String(p || ''); };
-      window.techmigosApiFetch = async function() { return new Response('{}', { status: 501 }); };
-      window.techmigosGetCsrfToken = async function() { return 'no-csrf'; };
-      window.tmSupabase = null;
-      window.tmCrmReady = new Promise((resolve) => { window.__resolveTmCrm = resolve; });
-
-      try {
-        if (sbUrl && sbKey) {
-          window.tmSupabase = supabase.createClient(sbUrl, sbKey);
-        }
-      } catch (e) {
-        console.error('Supabase init failed:', e);
-      }
-    </script>
-    <script>
-      import { createCrmRepository } from '../lib/crm/repository.js';
-
-      const crmRepository = createCrmRepository(() => window.tmSupabase);
-      window.tmCrm = { repository: crmRepository };
-      window.__resolveTmCrm?.(window.tmCrm);
-    </script>
+    {requiresCrmRuntime ? (
+      <script>
+        import '../scripts/crm-runtime.js';
+      </script>
+    ) : (
+      <script>
+        import '../scripts/auth-runtime.js';
+      </script>
+    )}
   </head>
   <body class="bg-white text-gray-900">
     <!-- Skip to main content link for accessibility -->

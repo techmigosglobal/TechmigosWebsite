@@ -5,5 +5,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["dist", ".astro"]
+  "exclude": ["dist", "agent", ".agents", ".kilo", "supabase/functions"]
 }

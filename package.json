@@ -2,6 +2,9 @@
   "name": "techmigos-website",
   "type": "module",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "start": "astro preview",
@@ -9,41 +12,47 @@
     "build:vercel": "npm run build",
     "build:full": "npm run build",
     "test": "node --test test/*.test.js",
+    "test:db:invoice-ledger": "node scripts/test-invoice-ledger-migration.mjs",
+    "security:osv": "node scripts/audit-osv-lockfile.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:live": "CRM_LIVE_REQUIRED=1 playwright test",
+    "crm:prepare-live": "node scripts/prepare-live-identities.mjs",
+    "crm:cleanup-live": "node scripts/cleanup-live-identities.mjs",
+    "security:audit": "npm audit --audit-level=low",
+    "security:scan": "python3 .agents/skills/vulnerability-scanner/scripts/security_scan.py . --output summary",
+    "qa:checklist": "python3 .agents/scripts/checklist.py .",
     "preview": "astro preview",
     "astro": "astro",
     "validate": "npm run build && node scripts/validate-site.mjs",
     "leads:export": "node scripts/lead-management.mjs export",
     "leads:list": "node scripts/lead-management.mjs list",
     "portal:user": "node scripts/provision-portal-user.mjs",
-    "vercel:whoami": "npx --yes vercel@54.1.0 whoami",
-    "vercel:login:techmigos": "npx --yes vercel@54.1.0 login techmigos.global@gmail.com",
-    "vercel:link": "npx --yes vercel@54.1.0 link --yes --project techmigos-website",
-    "vercel:pull": "npx --yes vercel@54.1.0 pull --yes --environment=production",
-    "vercel:env:pull": "npx --yes vercel@54.1.0 env pull .env.vercel.local --environment=production",
-    "vercel:build": "npx --yes vercel@54.1.0 build",
+    "vercel:whoami": "npx --yes vercel@59.16.0 whoami",
+    "vercel:login:techmigos": "npx --yes vercel@59.16.0 login techmigos.global@gmail.com",
+    "vercel:link": "npx --yes vercel@59.16.0 link --yes --project techmigos-website",
+    "vercel:pull": "npx --yes vercel@59.16.0 pull --yes --environment=production",
+    "vercel:env:pull": "npx --yes vercel@59.16.0 env pull .env.vercel.local --environment=production",
+    "vercel:build": "npx --yes vercel@59.16.0 build",
     "release:github": "./scripts/release-github.sh"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.108.2",
-    "@vercel/speed-insights": "^2.0.0",
-    "astro": "^6.3.3",
-    "astro-icon": "^1.1.0",
-    "autoprefixer": "^10.5.0",
-    "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.8",
-    "lucide-react": "^0.372.0",
-    "postcss": "^8.5.14",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^3.4.3"
+    "@supabase/supabase-js": "2.116.0",
+    "@vercel/speed-insights": "2.0.0",
+    "astro": "7.3.3",
+    "chart.js": "4.5.1",
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.8",
+    "sharp": "0.35.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
-    "@playwright/test": "^1.55.0",
-    "@types/node": "^20.12.7",
-    "typescript": "^5.9.3"
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "22.20.4",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
   },
   "overrides": {
-    "yaml": "^2.9.0"
+    "yaml": "2.9.0"
   }
 }

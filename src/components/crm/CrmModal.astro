@@ -1,0 +1,24 @@
+---
+import CrmIconButton from './CrmIconButton.astro';
+
+interface Props {
+  id: string;
+  title: string;
+  bodyId: string;
+  closeId: string;
+  closeLabel?: string;
+  modalClass?: string;
+  panelClass?: string;
+}
+
+const { id, title, bodyId, closeId, closeLabel = 'Close dialog', modalClass = 'crm-modal', panelClass = 'crm-modal-panel' } = Astro.props;
+---
+<div id={id} class={modalClass} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+  <div class={panelClass}>
+    <div class="crm-card-head">
+      <h2 id={`${id}-title`} class="crm-card-title">{title}</h2>
+      <CrmIconButton id={closeId} icon="close" label={closeLabel} />
+    </div>
+    <div id={bodyId} class="p-5"><slot /></div>
+  </div>
+</div>

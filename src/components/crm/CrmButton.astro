@@ -1,0 +1,14 @@
+---
+interface Props {
+  id?: string;
+  type?: 'button' | 'submit' | 'reset';
+  variant?: 'default' | 'primary' | 'danger';
+  class?: string;
+  ariaLabel?: string;
+}
+
+const { id, type = 'button', variant = 'default', class: className = '', ariaLabel } = Astro.props;
+---
+<button id={id} type={type} class:list={['crm-button', variant === 'primary' && 'primary', variant === 'danger' && 'danger', className]} aria-label={ariaLabel}>
+  <slot />
+</button>

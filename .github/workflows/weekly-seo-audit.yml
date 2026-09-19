@@ -1,4 +1,4 @@
-name: Weekly SEO Audit
+name: Weekly Site and Security Audit
 
 on:
   schedule:
@@ -8,16 +8,23 @@ on:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npm run seo:audit
-      - uses: actions/upload-artifact@v4
-        with:
-          name: seo-audit
-          path: reports/seo-audit.json
+      - name: Validate built site and SEO metadata
+        run: node scripts/validate-site.mjs
+      - name: npm dependency audit
+        run: npm run security:audit
+      - name: OSV lockfile audit
+        if: always()
+        run: npm run security:osv
+      - name: Source security scan
+        if: always()
+        run: npm run security:scan

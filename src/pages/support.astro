@@ -291,10 +291,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     btnSpinner.classList.toggle('hidden', !loading);
   }
 
-  async function getCsrfToken() {
-    return (window as any).techmigosGetCsrfToken('Could not initialize secure form submission. Please refresh and try again.');
-  }
-
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     setLoading(true);

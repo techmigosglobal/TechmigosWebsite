@@ -12,6 +12,10 @@ reports/
 test-results/
 
 # Environment & secrets
+.env*
+!.env.example
+.env.local
+.env.*.local
 
 
 # OS files

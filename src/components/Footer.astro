@@ -231,10 +231,6 @@ const socialLinks = [
   const newsletterStatus = document.getElementById('newsletter-status');
   const newsletterSubmit = document.getElementById('newsletter-submit') as HTMLButtonElement;
 
-  async function getCsrfToken() {
-    return (window as any).techmigosGetCsrfToken('Could not initialize secure newsletter submission. Please refresh and try again.');
-  }
-
   newsletterForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const formData = new FormData(newsletterForm);

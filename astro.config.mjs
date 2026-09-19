@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import tailwindcss from '@tailwindcss/vite';
 
 const siteUrl = process.env.PUBLIC_SITE_URL?.trim() || 'https://www.techmigos.com';
 
@@ -12,8 +13,6 @@ export default defineConfig({
     domains: ['images.unsplash.com', 'picsum.photos'],
   },
   vite: {
-    ssr: {
-      noExternal: ['lucide-react'],
-    },
+    plugins: [tailwindcss()],
   },
 });

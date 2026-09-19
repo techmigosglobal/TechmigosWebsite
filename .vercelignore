@@ -18,4 +18,5 @@ scripts/
 php-backend/
 public/.htaccess
 data/*
+!data/site-content.json
 .DS_Store

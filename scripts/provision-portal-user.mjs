@@ -1,11 +1,14 @@
 import { loadLocalEnv } from './local-env.mjs';
 
-const args = process.argv.slice(2);
+// This script is intentionally a service-role-only maintenance tool. It uses
+// Supabase Auth and PostgREST directly so disposable live-role identities do
+// not depend on the retired application API or on a second data contract.
 const env = loadLocalEnv();
+const args = process.argv.slice(2);
 
 function option(name, fallback = '') {
-  const eq = args.find((arg) => arg.startsWith(`--${name}=`));
-  if (eq) return eq.split('=').slice(1).join('=');
+  const equalsArg = args.find((arg) => arg.startsWith(`--${name}=`));
+  if (equalsArg) return equalsArg.split('=').slice(1).join('=');
   const index = args.indexOf(`--${name}`);
   return index >= 0 ? args[index + 1] || fallback : fallback;
 }
@@ -15,7 +18,7 @@ function flag(name) {
 }
 
 const baseUrl = (env.SUPABASE_URL || env.PUBLIC_SUPABASE_URL || 'https://lzlflnjrtxovzrniwmyq.supabase.co').replace(/\/$/, '');
-const apiKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY;
+const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
 const email = option('email').trim().toLowerCase();
 const password = option('password');
 const name = option('name', email);
@@ -25,134 +28,124 @@ let clientId = option('client-id');
 let authUserId = option('auth-user-id');
 const recreateAuth = flag('recreate-auth');
 
-if (!apiKey) {
+if (!serviceRoleKey) {
   console.error('SUPABASE_SERVICE_ROLE_KEY is required.');
   process.exit(1);
 }
 
-if (!email || !name || !['company_admin', 'company_member', 'client'].includes(role)) {
+if (!email || !name || !['company_admin', 'company_member', 'client'].includes(role) || !['active', 'inactive', 'pending'].includes(status)) {
   console.error('Usage: SUPABASE_SERVICE_ROLE_KEY=... npm run portal:user -- --email user@example.com --password TempPass123! --name "User Name" --role client');
   process.exit(1);
 }
 
-async function auth(path, init = {}) {
+function validInitialPassword(value) {
+  const candidate = String(value || '');
+  return candidate.length >= 8
+    && /[a-z]/.test(candidate)
+    && /[A-Z]/.test(candidate)
+    && /\d/.test(candidate)
+    && /[^A-Za-z0-9]/.test(candidate);
+}
+
+async function supabaseRequest(path, init = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
       'content-type': 'application/json',
       ...(init.headers || {}),
     },
   });
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
-  return { response, data, text };
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!response.ok) {
+    const message = data?.msg || data?.message || data?.error_description || data?.error || text;
+    throw new Error(`${response.status}: ${message || 'Supabase request failed.'}`);
+  }
+  return data;
+}
+
+async function authAdmin(path, init = {}) {
+  return supabaseRequest(`/auth/v1/admin${path}`, init);
 }
 
 async function records(table, query = '', init = {}) {
   const suffix = query ? `?${query}` : '';
-  const response = await fetch(`${baseUrl}/api/database/records/${table}${suffix}`, {
+  return supabaseRequest(`/rest/v1/${table}${suffix}`, {
     ...init,
     headers: {
-      'x-api-key': apiKey,
-      'content-type': 'application/json',
+      Prefer: 'return=representation',
       ...(init.headers || {}),
     },
   });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!response.ok) throw new Error(`${table}: ${response.status} ${text}`);
-  return data;
+}
+
+async function listAuthUsers() {
+  const users = [];
+  const perPage = 1000;
+  for (let page = 1; page <= 10; page += 1) {
+    const result = await authAdmin(`/users?page=${page}&per_page=${perPage}`);
+    const pageUsers = Array.isArray(result?.users) ? result.users : [];
+    users.push(...pageUsers);
+    if (pageUsers.length < perPage) break;
+  }
+  return users;
+}
+
+async function findAuthUser() {
+  const users = await listAuthUsers();
+  return users.find((user) => String(user.email || '').toLowerCase() === email) || null;
 }
 
 async function deleteAuthUser(userId) {
   if (!userId) return;
-  const response = await fetch(`${baseUrl}/api/auth/users`, {
-    method: 'DELETE',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ userIds: [userId] }),
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Could not delete auth user ${userId}: ${response.status} ${text}`);
-}
-
-async function findAuthUserId() {
-  const response = await fetch(`${baseUrl}/api/auth/users?search=${encodeURIComponent(email)}&limit=10`, {
-    headers: { authorization: `Bearer ${apiKey}` },
-  });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!response.ok) throw new Error(`Could not list auth users: ${response.status} ${text}`);
-  const user = Array.isArray(data?.data) ? data.data.find((item) => item.email === email) : null;
-  return user?.id || '';
-}
-
-async function signUpAuthUser() {
-  const signup = await auth('/api/auth/users?client_type=server', {
-    method: 'POST',
-    body: JSON.stringify({ email, password, name }),
-  });
-  if (signup.response.ok && signup.data?.user?.id) return signup.data.user.id;
-  return null;
+  await authAdmin(`/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
 }
 
 async function ensureAuthUser() {
   if (authUserId) return authUserId;
-  if (!password) {
-    throw new Error('--password or --auth-user-id is required.');
+  let existing = await findAuthUser();
+  if (existing && recreateAuth) {
+    await deleteAuthUser(existing.id);
+    existing = null;
   }
-
-  if (recreateAuth) {
-    const existingProfile = await records('crm_profiles', `email=eq.${encodeURIComponent(email)}&limit=1`);
-    const existingAuthUserId = (Array.isArray(existingProfile) ? existingProfile[0]?.auth_user_id : '') || await findAuthUserId();
-    if (existingAuthUserId) await deleteAuthUser(existingAuthUserId);
-    const recreated = await signUpAuthUser();
-    if (recreated) return recreated;
-    throw new Error('Could not recreate auth user.');
+  if (existing) return existing.id;
+  if (!validInitialPassword(password)) {
+    throw new Error('A new auth user requires a password with at least 8 characters, uppercase, lowercase, number, and symbol.');
   }
-
-  const created = await signUpAuthUser();
-  if (created) return created;
-
-  const signup = await auth('/api/auth/users?client_type=server', {
+  const created = await authAdmin('/users', {
     method: 'POST',
-    body: JSON.stringify({ email, password, name }),
+    body: JSON.stringify({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { name },
+    }),
   });
-
-  if (signup.response.status !== 409) {
-    throw new Error(`Could not create auth user: ${signup.response.status} ${signup.text}`);
-  }
-
-  const login = await auth('/api/auth/sessions?client_type=server', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-  if (login.response.ok && login.data?.user?.id) return login.data.user.id;
-
-  throw new Error('User already exists and the supplied password did not match. Run again with --recreate-auth to reset this invite account.');
+  if (!created?.user?.id) throw new Error('Supabase did not return the created auth user.');
+  return created.user.id;
 }
 
 async function ensureClient() {
   if (role !== 'client') return clientId || null;
-  if (clientId) return clientId;
+  if (clientId) {
+    const selected = await records('crm_clients', `id=eq.${encodeURIComponent(clientId)}&select=id&limit=1`);
+    if (!Array.isArray(selected) || !selected[0]?.id) throw new Error(`CRM client ${clientId} was not found.`);
+    return String(selected[0].id);
+  }
 
-  const existing = await records('crm_clients', `email=eq.${encodeURIComponent(email)}&limit=1`);
+  const existing = await records('crm_clients', `email=eq.${encodeURIComponent(email)}&select=id&limit=1`);
   if (Array.isArray(existing) && existing[0]?.id) return String(existing[0].id);
 
   const created = await records('crm_clients', '', {
     method: 'POST',
-    body: JSON.stringify([
-      {
-        name,
-        email,
-        status: 'active',
-        marketing_opt_in: false,
-      },
-    ]),
+    body: JSON.stringify({ name, email, status: 'active', marketing_opt_in: false }),
   });
-  return String((Array.isArray(created) ? created[0]?.id : created?.id) || '');
+  const createdClient = Array.isArray(created) ? created[0] : created;
+  if (!createdClient?.id) throw new Error('Supabase did not return the created CRM client.');
+  return String(createdClient.id);
 }
 
 authUserId = await ensureAuthUser();
@@ -164,13 +157,13 @@ const profile = {
   name,
   role,
   status,
-  client_id: clientId ? Number(clientId) : null,
+  client_id: role === 'client' && clientId ? Number(clientId) : null,
   updated_at: new Date().toISOString(),
 };
 
-const existing = await records('crm_profiles', `email=eq.${encodeURIComponent(email)}&limit=1`);
-if (Array.isArray(existing) && existing[0]?.id) {
-  await records('crm_profiles', `id=eq.${existing[0].id}`, {
+const existingProfiles = await records('crm_profiles', `email=eq.${encodeURIComponent(email)}&select=id&limit=1`);
+if (Array.isArray(existingProfiles) && existingProfiles[0]?.id) {
+  await records('crm_profiles', `id=eq.${existingProfiles[0].id}`, {
     method: 'PATCH',
     body: JSON.stringify(profile),
   });
@@ -178,11 +171,9 @@ if (Array.isArray(existing) && existing[0]?.id) {
 } else {
   await records('crm_profiles', '', {
     method: 'POST',
-    body: JSON.stringify([{ ...profile, created_at: new Date().toISOString() }]),
+    body: JSON.stringify({ ...profile, created_at: new Date().toISOString() }),
   });
   console.log(`Created ${role} portal user ${email} (${authUserId}).`);
 }
 
-if (role === 'client') {
-  console.log(`Linked client_id=${clientId}.`);
-}
+if (role === 'client') console.log(`Linked client_id=${clientId}.`);

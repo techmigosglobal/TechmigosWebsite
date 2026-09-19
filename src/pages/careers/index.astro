@@ -171,6 +171,8 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
 </BaseLayout>
 
 <style>
+  @reference "../../styles/global.css";
+
   .dept-filter { @apply text-gray-600 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-600; }
   .dept-filter.active {
     background: linear-gradient(135deg, #4F46E5, #06B6D4);

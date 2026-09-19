@@ -1,0 +1,9 @@
+---
+interface Props {
+  id: string;
+  class?: string;
+}
+
+const { id, class: className = '' } = Astro.props;
+---
+<p id={id} class:list={['auth-status', 'min-h-[1.25rem]', 'text-sm', 'text-slate-600', className]} role="status" aria-live="polite"><slot /></p>

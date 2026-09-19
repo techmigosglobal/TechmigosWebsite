@@ -1,0 +1,35 @@
+-- Keep support tickets linked to the same client as their optional project.
+-- General client tickets may remain unlinked to a project.
+
+create or replace function public.validate_ticket_project_client()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  project_client_id bigint;
+begin
+  if new.project_id is null then
+    return new;
+  end if;
+
+  select client_id
+    into project_client_id
+  from public.crm_projects
+  where id = new.project_id;
+
+  if project_client_id is null then
+    raise exception using errcode = '23514', message = 'Support tickets can only link to client projects.';
+  end if;
+  if new.client_id is null or project_client_id <> new.client_id then
+    raise exception using errcode = '23514', message = 'The ticket project must belong to the selected client.';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists crm_tickets_project_client_integrity on public.crm_tickets;
+create trigger crm_tickets_project_client_integrity
+before insert or update of client_id, project_id on public.crm_tickets
+for each row execute function public.validate_ticket_project_client();

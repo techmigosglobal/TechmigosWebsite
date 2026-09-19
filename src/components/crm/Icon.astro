@@ -1,0 +1,14 @@
+---
+interface Props {
+  name?: string;
+  size?: number;
+  stroke?: number;
+  class?: string;
+}
+
+import { crmIconPath } from '../../lib/crm/icons.js';
+
+const { name = 'dashboard', size = 18, stroke = 1.8, class: className = '' } = Astro.props;
+const content = crmIconPath(name);
+---
+<svg class={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={content}></svg>

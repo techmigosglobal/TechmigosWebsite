@@ -1,9 +1,8 @@
 /* Operations & Management presentation layer. Non-finance content is scoped;
    Finance keeps its ledger/invoice rendering and receives the shared rail only. */
 
-/* Finance and the legacy operations dashboard share one navigation contract.
-   Keep the Finance shell's ledger styling separate, but make its rail stable
-   when users move between company routes. */
+/* Finance keeps its ledger styling separate, but uses the same canonical
+   company-workspace rail as every other authenticated route. */
 .crm-app:has(.finance-page) {
   --crm-blue: #1464f4;
   --crm-blue-dark: #0b4bc1;
@@ -791,6 +790,43 @@ body:has(.operations-page) .ticket-reference-message > small {
 
 body:has(.operations-page) .ticket-reference-conversation-note {
   margin: 10px 0 0;
+}
+
+body:has(.operations-page) .ticket-reference-reply-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  border-top: 1px solid #e3ebf7;
+  padding-top: 12px;
+}
+
+body:has(.operations-page) .ticket-reference-reply-label,
+body:has(.operations-page) .ticket-reference-visibility {
+  color: #526783;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+body:has(.operations-page) .ticket-reference-reply-form textarea,
+body:has(.operations-page) .ticket-reference-reply-form select {
+  width: 100%;
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
+  background: #fff;
+  color: #243a68;
+  font: inherit;
+  font-size: 11px;
+  padding: 9px 10px;
+}
+
+body:has(.operations-page) .ticket-reference-reply-form textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+body:has(.operations-page) .ticket-reference-visibility {
+  display: grid;
+  gap: 5px;
 }
 
 body:has(.operations-page) .ticket-reference-conversation-empty {
@@ -1611,7 +1647,7 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
 
 .crm-app:has(.operations-page.crm-files-page) .files-reference-selected-project {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -1655,18 +1691,6 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
   font-size: 10px;
 }
 
-.crm-app:has(.operations-page.crm-files-page) .files-reference-selected-project > button:last-child {
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #7182a4;
-  font: inherit;
-  cursor: pointer;
-}
-
-.crm-app:has(.operations-page.crm-files-page) .files-reference-selected-project > button:last-child:hover,
 .crm-app:has(.operations-page.crm-files-page) .files-reference-new-folder:hover {
   background: #edf3fd;
   color: #1464f4;
@@ -4022,6 +4046,10 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
   overflow: hidden;
 }
 
+.finance-page .acc-proof-upload-zone:hover {
+  background: #f0f0f0 !important;
+}
+
 .finance-page .acc-proof-panel > div:first-child {
   border-bottom-color: #edf2f8 !important;
   background: #f8fbff !important;
@@ -4677,6 +4705,21 @@ body:has(.operations-page) .operations-drawer-footer .crm-button {
   .crm-app:has(.finance-page) .crm-topbar {
     min-height: 60px !important;
     height: 60px !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    padding-inline: 10px !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-search,
+  .crm-app:has(.finance-page) .crm-search {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .crm-app:has(.operations-page) .crm-search input,
+  .crm-app:has(.finance-page) .crm-search input {
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .crm-app:has(.operations-page) .crm-main,

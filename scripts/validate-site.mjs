@@ -80,6 +80,10 @@ for (const file of await walk(root)) {
 const htmlFiles = (await walk(path.join(root, 'dist'))).filter((file) => file.endsWith('.html'));
 for (const file of htmlFiles) {
   const html = await fs.readFile(file, 'utf8');
+  const mainLandmarkCount = (html.match(/<main\b/g) || []).length;
+  if (mainLandmarkCount !== 1) {
+    failures.push(`Expected exactly one main landmark but found ${mainLandmarkCount} in ${relative(file)}`);
+  }
   if (!/<title>[^<]{10,70}<\/title>/.test(html)) {
     failures.push(`Missing or weak title in ${relative(file)}`);
   }

@@ -16,11 +16,15 @@ export const EMPLOYEE_READ_RESOURCES = new Set([
   'projects',
   'project_folders',
   'project_files',
+  'tickets',
+  'ticket_messages',
 ]);
 export const EMPLOYEE_CREATE_RESOURCES = new Set([
   'project_folders',
   'project_files',
+  'ticket_messages',
 ]);
+export const EMPLOYEE_UPDATE_RESOURCES = new Set(['projects', 'tickets']);
 export const CLIENT_READ_RESOURCES = new Set(['clients', 'projects', 'tickets', 'invoices', 'invoice_items', 'ticket_messages']);
 
 export function isAdmin(role) {
@@ -49,7 +53,8 @@ export function canWrite(role, resource) {
 }
 
 export function canUpdate(role, resource) {
-  if (isEmployee(role)) return false;
+  if (isEmployee(role)) return EMPLOYEE_UPDATE_RESOURCES.has(resource);
+  if (isClient(role)) return false;
   if (canWrite(role, resource)) return true;
   return false;
 }
@@ -60,7 +65,8 @@ export function canCreate(role, resource) {
 }
 
 export function canDelete(role, resource) {
-  if (isEmployee(role)) return false;
+  if (resource === 'profiles' || resource === 'settings') return false;
+  if (isEmployee(role) || isClient(role)) return false;
   if (canWrite(role, resource)) return true;
   return false;
 }

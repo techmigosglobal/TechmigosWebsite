@@ -1273,10 +1273,10 @@ const essentials = [
   function validateFile(file) {
     if (!file) return 'Please upload your resume file.';
     const fileExtension = getFileExtension(file);
-    if (file.type && !ALLOWED_FILE_TYPES.includes(file.type) && !ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
       return 'Upload a PDF, DOC, or DOCX file.';
     }
-    if (!file.type && !ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+    if (file.type && !ALLOWED_FILE_TYPES.includes(file.type)) {
       return 'Upload a PDF, DOC, or DOCX file.';
     }
     if (file.size > MAX_FILE_SIZE) {
@@ -1328,10 +1328,6 @@ const essentials = [
     submitBtn.disabled = loading;
     submitText.textContent = loading ? 'Submitting...' : 'Submit Application';
     submitSpinner.classList.toggle('hidden', !loading);
-  }
-
-  async function getCsrfToken() {
-    return window.techmigosGetCsrfToken('Failed to initialize secure form session. Please refresh and try again.');
   }
 
   function setStatus(message, type) {

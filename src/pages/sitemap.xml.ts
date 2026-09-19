@@ -10,7 +10,9 @@ function abs(path: string) {
   return `${SITE}${path}`;
 }
 
-function entrySlug(entry: { id: string }) {
+type ContentEntry = { id: string; data: { draft?: boolean; pubDate: Date } };
+
+function entrySlug(entry: ContentEntry) {
   return entry.id;
 }
 
@@ -27,8 +29,8 @@ function urlTag(
 
 export const GET: APIRoute = async () => {
   const [blogPosts, careerPosts, siteContent] = await Promise.all([
-    getCollection('blog', ({ data }) => !data.draft),
-    getCollection('careers', ({ data }) => !data.draft),
+    getCollection('blog', (entry: ContentEntry) => !entry.data.draft),
+    getCollection('careers', (entry: ContentEntry) => !entry.data.draft),
     loadSiteContent(),
   ]);
 
@@ -51,14 +53,14 @@ export const GET: APIRoute = async () => {
         priority: item.priority,
       }),
     ),
-    ...blogPosts.map((post) =>
+    ...blogPosts.map((post: ContentEntry) =>
       urlTag(abs(`/blog/${entrySlug(post)}`), {
         lastmod: post.data.pubDate.toISOString(),
         changefreq: 'monthly',
         priority: '0.8',
       }),
     ),
-    ...careerPosts.map((job) =>
+    ...careerPosts.map((job: ContentEntry) =>
       urlTag(abs(`/careers/${entrySlug(job)}`), {
         lastmod: job.data.pubDate.toISOString(),
         changefreq: 'weekly',

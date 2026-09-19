@@ -531,6 +531,7 @@ const showTestimonials = false;
   if (canvas && !prefersReduced) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
+      const context = ctx;
       let width = 0;
       let height = 0;
       
@@ -589,11 +590,11 @@ const showTestimonials = false;
       resize();
       
       function draw() {
-        ctx.clearRect(0, 0, width, height);
+        context.clearRect(0, 0, width, height);
         
         // Brand teal particles and subtle blue connecting lines
-        ctx.fillStyle = 'rgba(13, 148, 136, 0.45)'; // teal-600
-        ctx.strokeStyle = 'rgba(37, 99, 235, 0.08)'; // blue-600
+        context.fillStyle = 'rgba(13, 148, 136, 0.45)'; // teal-600
+        context.strokeStyle = 'rgba(37, 99, 235, 0.08)'; // blue-600
         
         for (let i = 0; i < particleCount; i++) {
           const p = particles[i];
@@ -620,9 +621,9 @@ const showTestimonials = false;
             }
           }
           
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
+          context.beginPath();
+          context.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          context.fill();
           
           for (let j = i + 1; j < particleCount; j++) {
             const p2 = particles[j];
@@ -631,11 +632,11 @@ const showTestimonials = false;
             const dy = p.y - p2.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < 110) {
-              ctx.beginPath();
-              ctx.lineWidth = (1 - dist / 110) * 0.8;
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.stroke();
+              context.beginPath();
+              context.lineWidth = (1 - dist / 110) * 0.8;
+              context.moveTo(p.x, p.y);
+              context.lineTo(p2.x, p2.y);
+              context.stroke();
             }
           }
         }
