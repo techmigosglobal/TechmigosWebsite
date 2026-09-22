@@ -33,7 +33,10 @@
     "vercel:pull": "npx --yes vercel@59.16.0 pull --yes --environment=production",
     "vercel:env:pull": "npx --yes vercel@59.16.0 env pull .env.vercel.local --environment=production",
     "vercel:build": "npx --yes vercel@59.16.0 build",
-    "release:github": "./scripts/release-github.sh"
+    "release:github": "./scripts/release-github.sh",
+    "backend:export": "node scripts/backend/export-backend.mjs",
+    "backend:storage": "node scripts/backend/export-storage.mjs",
+    "backend:update-ref": "node scripts/backend/update-frontend-ref.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

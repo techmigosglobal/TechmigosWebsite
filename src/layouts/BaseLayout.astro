@@ -31,7 +31,6 @@ const {
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
 const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
-const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/$/, '');
 const pageTitle = title === 'Home'
   ? 'TechMigos | Web, Mobile, AI & Backend Development'
   : `${title} | TechMigos`;
@@ -135,8 +134,6 @@ const structuredData = {
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#2563EB" />
-
-    <meta name="techmigos-api-base-url" content={publicApiBaseUrl} />
 
     <!-- Performance: preconnect to key origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

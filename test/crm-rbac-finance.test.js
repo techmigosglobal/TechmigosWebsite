@@ -27,9 +27,58 @@ import {
   outstandingInvoiceRows,
 } from '../src/lib/crm/finance.js';
 import { buildCrmReportPdf } from '../src/scripts/crm-pdf.js';
-import { createCrmRepository, validateFinanceProofPath, validateInvoiceAssetPath, validateProfileInput, validateProjectFileInput, validateProjectInput, validateSettingsInput, validateTicketInput } from '../src/lib/crm/repository.js';
+import { CRM_LIST_LIMIT, createCrmRepository, validateFinanceProofPath, validateInvoiceAssetPath, validateProfileInput, validateProjectFileInput, validateProjectInput, validateSettingsInput, validateTicketInput } from '../src/lib/crm/repository.js';
 
 const testProvisioningPassword = ['Temp', 'Pass', '123!'].join('');
+
+// The repository builds list reads as `select().order().limit()` and awaits the
+// builder, so list-query fakes stay chainable and thenable.
+function listQuery(resultFor) {
+  return {
+    select() { return this; },
+    eq() { return this; },
+    order() { return this; },
+    limit() { return this; },
+    then(resolve, reject) { return Promise.resolve(resultFor()).then(resolve, reject); },
+  };
+}
+
+test('list reads cap at the row limit and report truncation instead of dropping rows silently', async () => {
+  const profile = { id: 1, auth_user_id: 'admin-auth-id', role: CRM_ROLES.ADMIN, status: 'active' };
+  const profileQuery = {
+    select() { return this; },
+    eq() { return this; },
+    maybeSingle: async () => ({ data: profile, error: null }),
+  };
+  let requestedLimit = 0;
+  const overCapRows = Array.from({ length: CRM_LIST_LIMIT + 1 }, (_, index) => ({ id: index + 1, name: `record ${index + 1}`, created_at: '2026-09-01T00:00:00Z' }));
+  const client = {
+    auth: { getUser: async () => ({ data: { user: { id: 'admin-auth-id' } }, error: null }) },
+    from: (table) => {
+      if (table === 'crm_profiles') return profileQuery;
+      return {
+        select() { return this; },
+        order() { return this; },
+        limit(value) { requestedLimit = value; return this; },
+        then(resolve, reject) { return Promise.resolve({ data: overCapRows, error: null }).then(resolve, reject); },
+      };
+    },
+  };
+  const repository = createCrmRepository(() => client);
+  const result = await repository.request('/api/portal/projects');
+
+  assert.equal(requestedLimit, CRM_LIST_LIMIT + 1);
+  assert.equal(result.items.length, CRM_LIST_LIMIT);
+  assert.equal(result.truncated, true);
+
+  const underCapClient = {
+    auth: { getUser: async () => ({ data: { user: { id: 'admin-auth-id' } }, error: null }) },
+    from: (table) => (table === 'crm_profiles' ? profileQuery : listQuery(() => ({ data: [{ id: 1, name: 'single' }], error: null }))),
+  };
+  const underCapResult = await createCrmRepository(() => underCapClient).request('/api/portal/projects');
+  assert.equal(underCapResult.items.length, 1);
+  assert.equal(underCapResult.truncated, false);
+});
 
 test('RBAC keeps Admin, Employee, and Client capabilities separate', () => {
   assert.equal(canManageUsers(CRM_ROLES.ADMIN), true);
@@ -346,17 +395,15 @@ test('workspace snapshots are repository-scoped by role and exclude disabled mod
     eq() { return this; },
     maybeSingle: async () => ({ data: profile, error: null }),
   };
+  let profileLookups = 0;
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: 'admin-auth-id' } }, error: null }) },
     from: (table) => {
-      if (table === 'crm_profiles' && requestedTables.length === 0) return profileQuery;
-      return {
-        select() { return this; },
-        order: async () => {
-          requestedTables.push(table);
-          return { data: [], error: null };
-        },
-      };
+      if (table === 'crm_profiles' && profileLookups === 0) { profileLookups += 1; return profileQuery; }
+      return listQuery(() => {
+        requestedTables.push(table);
+        return { data: [], error: null };
+      });
     },
   };
   const repository = createCrmRepository(() => client);
@@ -462,17 +509,15 @@ test('employee workspace snapshots never request company-wide finance or user re
     eq() { return this; },
     maybeSingle: async () => ({ data: profile, error: null }),
   };
+  let profileLookups = 0;
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: 'employee-auth-id' } }, error: null }) },
     from: (table) => {
-      if (table === 'crm_profiles' && requestedTables.length === 0) return profileQuery;
-      return {
-        select() { return this; },
-        order: async () => {
-          requestedTables.push(table);
-          return { data: [], error: null };
-        },
-      };
+      if (table === 'crm_profiles' && profileLookups === 0) { profileLookups += 1; return profileQuery; }
+      return listQuery(() => {
+        requestedTables.push(table);
+        return { data: [], error: null };
+      });
     },
   };
   const repository = createCrmRepository(() => client);
@@ -608,12 +653,10 @@ test('client overview scopes projects to the logged-in client link', async () =>
     auth: { getUser: async () => ({ data: { user: { id: 'client-auth-id' } }, error: null }) },
     from: (table) => {
       if (table === 'crm_profiles') return profileQuery;
-      return {
-        select() { return this; },
-        eq(field, value) { if (table === 'crm_projects') projectFilters.push([field, value]); return this; },
-        maybeSingle: async () => responseFor(table),
-        order: async () => responseFor(table),
-      };
+      const query = listQuery(() => responseFor(table));
+      query.eq = function eq(field, value) { if (table === 'crm_projects') projectFilters.push([field, value]); return this; };
+      query.maybeSingle = async () => responseFor(table);
+      return query;
     },
   };
   const repository = createCrmRepository(() => client);
@@ -643,11 +686,11 @@ test('client invoice and ticket payloads exclude internal project, finance, and 
   });
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: 'client-auth-id' } }, error: null }) },
-    from: (table) => table === 'crm_profiles' ? profileQuery : {
-      select() { return this; },
-      eq() { return this; },
-      maybeSingle: async () => responseFor(table),
-      order: async () => responseFor(table),
+    from: (table) => {
+      if (table === 'crm_profiles') return profileQuery;
+      const query = listQuery(() => responseFor(table));
+      query.maybeSingle = async () => responseFor(table);
+      return query;
     },
   };
   const repository = createCrmRepository(() => client);
@@ -667,7 +710,9 @@ test('employee project responses request only operational fields', async () => {
   };
   const projectQuery = {
     select(fields) { selectedFields = fields; return this; },
-    order: async () => ({ data: [{ id: 12, name: 'Assigned delivery' }], error: null }),
+    order() { return this; },
+    limit() { return this; },
+    then(resolve, reject) { return Promise.resolve({ data: [{ id: 12, name: 'Assigned delivery' }], error: null }).then(resolve, reject); },
   };
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: 'employee-auth-id' } }, error: null }) },

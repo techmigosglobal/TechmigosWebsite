@@ -140,6 +140,25 @@ export function validateTicketInput(payload = {}, { creating = false } = {}) {
   }
 }
 
+// PostgREST caps every response at the project's `api.max_rows` setting (1000
+// by default in supabase/config.toml), so an unbounded select silently drops
+// rows once a table grows past that size. Every list read asks for one row more
+// than the cap so truncation can be reported instead of hidden.
+export const CRM_LIST_LIMIT = 1000;
+
+async function fetchBoundedList(client, table, fields, resource, filters = {}) {
+  let query = client.from(table).select(fields).order('created_at', { ascending: false }).limit(CRM_LIST_LIMIT + 1);
+  for (const [column, value] of Object.entries(filters)) query = query.eq(column, value);
+  const { data, error } = await query;
+  if (error) throw errorFrom(error, `Could not load ${resource}.`);
+  const rows = data || [];
+  const truncated = rows.length > CRM_LIST_LIMIT;
+  if (truncated) {
+    console.warn(`[crm] ${resource} returned more than the ${CRM_LIST_LIMIT} row list cap; showing the newest rows only. Add paging before this table grows.`);
+  }
+  return { items: truncated ? rows.slice(0, CRM_LIST_LIMIT) : rows, truncated };
+}
+
 function errorFrom(error, fallback = 'Supabase request failed.') {
   const message = error?.message || fallback;
   const wrapped = new Error(message);
@@ -255,9 +274,17 @@ export function createCrmRepository(getSupabase) {
     const resources = CRM_RESOURCES.filter((resource) => resource !== 'settings' && canRead(current.role, resource));
     const entries = await Promise.all(resources.map(async (resource) => {
       const response = await request(`/api/portal/${resource}`);
-      return [resource, response.items || []];
+      return [resource, response.items || [], Boolean(response.truncated)];
     }));
-    return { profile: current.profile, data: Object.fromEntries(entries) };
+    const truncatedResources = entries.filter((entry) => entry[2]).map((entry) => entry[0]);
+    if (truncatedResources.length) {
+      console.warn(`[crm] workspace lists were truncated at ${CRM_LIST_LIMIT} rows: ${truncatedResources.join(', ')}. Add paging before this data grows further.`);
+    }
+    return {
+      profile: current.profile,
+      data: Object.fromEntries(entries.map(([resource, items]) => [resource, items])),
+      truncatedResources,
+    };
   }
 
   async function requireProjectAccess(current, projectId) {
@@ -777,19 +804,29 @@ export function createCrmRepository(getSupabase) {
     const client = sb();
     const [clientResponse, projectsResponse, invoicesResponse, ticketsResponse] = await Promise.all([
       client.from('crm_clients').select(CLIENT_FIELDS.join(',')).eq('id', current.clientId).maybeSingle(),
-      client.from('crm_projects').select(CLIENT_PROJECT_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }),
-      client.from('crm_invoices').select(CLIENT_INVOICE_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }),
-      client.from('crm_tickets').select(CLIENT_TICKET_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }),
+      client.from('crm_projects').select(CLIENT_PROJECT_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }).limit(CRM_LIST_LIMIT + 1),
+      client.from('crm_invoices').select(CLIENT_INVOICE_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }).limit(CRM_LIST_LIMIT + 1),
+      client.from('crm_tickets').select(CLIENT_TICKET_FIELDS.join(',')).eq('client_id', current.clientId).order('created_at', { ascending: false }).limit(CRM_LIST_LIMIT + 1),
     ]);
     for (const response of [clientResponse, projectsResponse, invoicesResponse, ticketsResponse]) {
       if (response.error) throw errorFrom(response.error, 'Could not load client workspace.');
     }
     if (!clientResponse.data) throw new Error('Linked client record is unavailable.');
+    const capResponse = (rows) => {
+      const list = rows || [];
+      const truncated = list.length > CRM_LIST_LIMIT;
+      if (truncated) console.warn(`[crm] client portal list returned more than the ${CRM_LIST_LIMIT} row cap; showing the newest rows only.`);
+      return { rows: truncated ? list.slice(0, CRM_LIST_LIMIT) : list, truncated };
+    };
+    const projects = capResponse(projectsResponse.data);
+    const invoices = capResponse(invoicesResponse.data);
+    const tickets = capResponse(ticketsResponse.data);
     return {
       client: pickFields(clientResponse.data, CLIENT_FIELDS),
-      projects: (projectsResponse.data || []).map((project) => pickFields(project, CLIENT_PROJECT_FIELDS)),
-      invoices: (invoicesResponse.data || []).map((invoice) => pickFields(invoice, CLIENT_INVOICE_FIELDS)),
-      tickets: (ticketsResponse.data || []).map((ticket) => pickFields(ticket, CLIENT_TICKET_FIELDS)),
+      projects: projects.rows.map((project) => pickFields(project, CLIENT_PROJECT_FIELDS)),
+      invoices: invoices.rows.map((invoice) => pickFields(invoice, CLIENT_INVOICE_FIELDS)),
+      tickets: tickets.rows.map((ticket) => pickFields(ticket, CLIENT_TICKET_FIELDS)),
+      truncated: projects.truncated || invoices.truncated || tickets.truncated,
     };
   }
 
@@ -955,9 +992,7 @@ export function createCrmRepository(getSupabase) {
     const client = sb();
 
     if (method === 'GET' && !id) {
-      const { data, error } = await client.from(table).select(fields).order('created_at', { ascending: false });
-      if (error) throw errorFrom(error, `Could not load ${resource}.`);
-      return { items: data || [] };
+      return fetchBoundedList(client, table, fields, resource);
     }
     if (resource === 'profiles' && method === 'POST' && !id) {
       const profileBody = { ...(body || {}) };

@@ -1042,6 +1042,17 @@ npm run test:e2e
 
 Run hosted identity E2E cases with dedicated test credentials supplied through environment variables. Use `npm run test:e2e:live` for the release gate; it fails clearly instead of silently skipping when any identity is missing. Never put those credentials in this document or in the repository.
 
+## 2026-09-22 review follow-ups
+
+The full review lives in [`docs/WEB-APP-ANALYSIS.md`](docs/WEB-APP-ANALYSIS.md). Changes applied with it:
+
+- `supabase/config.toml` now parses: the auth keys that were wrongly nested under `[functions.username-login]` moved to `[auth.email]`, `[inbucket]` became `[local_smtp]`, and both edge functions declare `verify_jwt` explicitly.
+- Removed unreferenced modules: `src/lib/csrf.ts`, `src/lib/csrfMiddleware.ts`, `src/lib/rateLimit.ts`, `src/lib/apiResponse.ts`, `src/lib/careerUploads.ts`, and the duplicate client in `src/db/supabase.js`. Public forms write to PostgREST from the browser, so a cookie-based CSRF token and an in-memory limiter were protection in name only; the `PUBLIC_API_BASE_URL` meta tag was removed with them.
+- Unused environment variables (`CSRF_SECRET`, `MSG91_*`, `LEAD_NOTIFICATION_EMAIL`, `CAREER_UPLOAD_DIR`) were dropped from `.env.example` and `env.example.json`. Edge Function runtime values are set with `supabase secrets set` and are only listed as comments.
+- List reads are now bounded. `CRM_LIST_LIMIT` (1000) caps every repository list read, the query asks for one row beyond the cap, and `request()` returns `truncated` plus a console warning instead of losing rows to PostgREST `api.max_rows`. `loadWorkspaceSnapshot()` returns `truncatedResources`, and the client overview applies the same cap.
+- `scripts/validate-site.mjs` requires `src/lib/crm/repository.js` instead of the deleted `src/db/supabase.js`.
+- Backend clone tooling lives in `scripts/backend/` with `npm run backend:export`; it bundles migrations, functions, storage objects, table data, types and restore scripts into `exports/`.
+
 ## Maintenance rule for this reference
 
 When changing architecture, routes, roles, migrations, storage, or major data flow, update this file in the same change. At minimum update:

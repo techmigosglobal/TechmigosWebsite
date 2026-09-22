@@ -50,7 +50,7 @@ function relative(file) {
 
 const requiredFiles = [
   'dist/robots.txt',
-  'src/db/supabase.js',
+  'src/lib/crm/repository.js',
   'scripts/provision-portal-user.mjs',
   'dist/change-password/index.html',
   'dist/login/index.html',
