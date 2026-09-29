@@ -1141,7 +1141,7 @@ test('production routing declares baseline security headers', () => {
     assert.ok(headerNames.has(required), `${required} is missing from Vercel headers`);
   }
   const csp = headers.find((header) => header.key === 'Content-Security-Policy')?.value || '';
-  for (const directive of ["default-src 'self'", "object-src 'none'", "frame-ancestors 'self'", 'connect-src']) {
+  for (const directive of ["default-src 'self'", "object-src 'none'", "frame-ancestors 'self'", "frame-src 'self' https://storage.googleapis.com", 'connect-src']) {
     assert.ok(csp.includes(directive), `CSP is missing ${directive}`);
   }
   assert.match(csp, /https:\/\/static\.cloudflareinsights\.com/);
