@@ -24,6 +24,15 @@ service cloud.firestore {
       return signedIn() && profile().role == 'client' && profile().status == 'active';
     }
 
+    function isOwnLastLoginUpdate() {
+      return signedIn()
+        && resource.data.auth_user_id == request.auth.uid
+        && request.resource.data.auth_user_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['last_login', 'updated_at'])
+        && request.resource.data.last_login is timestamp
+        && request.resource.data.updated_at is timestamp;
+    }
+
     function clientId() {
       return profile().client_id;
     }
@@ -49,6 +58,7 @@ service cloud.firestore {
     match /crm_profiles/{profileId} {
       allow get, list: if isAdmin()
         || (signedIn() && resource.data.auth_user_id == request.auth.uid);
+      allow update: if isOwnLastLoginUpdate();
       allow write: if false;
     }
 
