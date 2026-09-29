@@ -21,7 +21,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { deleteObject, ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { firebaseAuth, firebaseDb, firebaseFunctions, firebaseStorage } from './client.js';
 
@@ -209,10 +209,18 @@ function storageClient() {
             return { data: { path }, error: null };
           } catch (error) { return { data: null, error: firebaseError(error, 'Could not upload the file.') }; }
         },
-        async createSignedUrl(path) {
+        async createSignedUrl(path, expiresIn = 600) {
           try {
             requireConfigured();
-            const url = await getDownloadURL(ref(firebaseStorage, `${bucket}/${normalizeObjectPath(bucket, path)}`));
+            if (!firebaseFunctions) throw new Error('Firebase Functions is not configured.');
+            const objectPath = normalizeObjectPath(bucket, path);
+            const result = await httpsCallable(firebaseFunctions, 'storageDownload')({
+              bucket,
+              path: objectPath,
+              expiresIn: Math.min(Math.max(Number(expiresIn) || 600, 60), 600),
+            });
+            const url = result.data?.url;
+            if (!url) throw new Error('Firebase did not return a secure file URL.');
             return { data: { signedUrl: url }, error: null };
           } catch (error) { return { data: null, error: firebaseError(error, 'Could not resolve the file URL.') }; }
         },

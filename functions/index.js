@@ -1,6 +1,7 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 if (!getApps().length) initializeApp();
@@ -8,6 +9,7 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const REGION = 'asia-south1';
+const DEFAULT_STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || `${process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'techmigos-279f6'}.firebasestorage.app`;
 const ROLES = new Set(['company_admin', 'company_member', 'client']);
 const STATUSES = new Set(['active', 'inactive', 'pending']);
 
@@ -32,6 +34,24 @@ async function requireAdmin(request) {
     throw new HttpsError('permission-denied', 'Only active company administrators can manage users.');
   }
   return profile;
+}
+
+const PRIVATE_STORAGE_BUCKETS = new Set(['finance-proofs', 'invoice-signatures', 'project-files']);
+
+function normalizePrivateStoragePath(bucket, value) {
+  let objectPath = String(value || '').trim().replace(/^\/+/, '');
+  if (objectPath.startsWith(`${bucket}/`)) objectPath = objectPath.slice(bucket.length + 1);
+  const segments = objectPath.split('/');
+  if (!objectPath || objectPath.includes('\\') || segments.some((segment) => !segment || segment === '.' || segment === '..')) {
+    throw new HttpsError('invalid-argument', 'Invalid private storage path.');
+  }
+  return objectPath;
+}
+
+function canReadPrivateStorage(profile, bucket) {
+  if (!profile || profile.status !== 'active') return false;
+  if (bucket === 'project-files') return profile.role === 'company_admin' || profile.role === 'company_member';
+  return profile.role === 'company_admin';
 }
 
 function validatePassword(password) {
@@ -131,6 +151,25 @@ export const adminUsers = onCall({ region: REGION }, async (request) => {
   }
 
   throw new Error(`Unsupported user operation: ${operation}`);
+});
+
+// Storage objects restored through the GCS API do not have Firebase download
+// tokens. Issue short-lived, authenticated URLs through Admin SDK so private
+// finance proofs remain private and restored objects work the same as new ones.
+export const storageDownload = onCall({ region: REGION }, async (request) => {
+  const uid = requireAuth(request);
+  const profile = await callerProfile(uid);
+  const bucket = clean(request.data?.bucket)?.toLowerCase();
+  if (!PRIVATE_STORAGE_BUCKETS.has(bucket) || !canReadPrivateStorage(profile, bucket)) {
+    throw new HttpsError('permission-denied', 'You do not have permission to access this private file.');
+  }
+  const objectPath = normalizePrivateStoragePath(bucket, request.data?.path);
+  const file = getStorage().bucket(DEFAULT_STORAGE_BUCKET).file(`${bucket}/${objectPath}`);
+  const [exists] = await file.exists();
+  if (!exists) throw new HttpsError('not-found', 'The requested private file was not found.');
+  const expiresAt = Date.now() + 10 * 60 * 1000;
+  const [url] = await file.getSignedUrl({ version: 'v4', action: 'read', expires: expiresAt });
+  return { url, expiresAt };
 });
 
 function cryptoRandom() {
