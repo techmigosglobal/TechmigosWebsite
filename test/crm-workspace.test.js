@@ -1144,6 +1144,8 @@ test('production routing declares baseline security headers', () => {
   for (const directive of ["default-src 'self'", "object-src 'none'", "frame-ancestors 'self'", 'connect-src']) {
     assert.ok(csp.includes(directive), `CSP is missing ${directive}`);
   }
+  assert.match(csp, /https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js/);
+  assert.match(csp, /https:\/\/cloudflareinsights\.com/);
 });
 
 test('project file employee policy is authenticated-only and init-plan friendly', () => {

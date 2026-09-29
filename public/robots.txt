@@ -1,2 +1,9 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /company/
+Disallow: /client/
+Disallow: /login
+Disallow: /change-password
+Disallow: /reset-password
+
+Sitemap: https://www.techmigos.com/sitemap-index.xml
