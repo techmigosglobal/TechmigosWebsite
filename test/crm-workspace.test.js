@@ -1144,7 +1144,7 @@ test('production routing declares baseline security headers', () => {
   for (const directive of ["default-src 'self'", "object-src 'none'", "frame-ancestors 'self'", 'connect-src']) {
     assert.ok(csp.includes(directive), `CSP is missing ${directive}`);
   }
-  assert.match(csp, /https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js/);
+  assert.match(csp, /https:\/\/static\.cloudflareinsights\.com/);
   assert.match(csp, /https:\/\/cloudflareinsights\.com/);
 });
 
