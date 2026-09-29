@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return signedIn()
+        ? firestore.get(/databases/(default)/documents/user_profiles/$(request.auth.uid)).data
+        : {};
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().role == 'company_admin' && profile().status == 'active';
+    }
+
+    function isEmployee() {
+      return signedIn() && profile().role == 'company_member' && profile().status == 'active';
+    }
+
+    match /finance-proofs/{path=**} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf');
+      allow delete: if isAdmin();
+    }
+
+    match /invoice-signatures/{path=**} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
+    match /invoice-assets/{path=**} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isAdmin();
+    }
+
+    match /project-files/{path=**} {
+      allow read: if isAdmin() || isEmployee();
+      allow create, update: if isAdmin() || (isEmployee() && request.resource.size < 50 * 1024 * 1024);
+      allow delete: if isAdmin() || isEmployee();
+    }
+
+    match /resumes/applications/{path=**} {
+      allow create, update: if request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      allow delete: if isAdmin();
+      allow read: if isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

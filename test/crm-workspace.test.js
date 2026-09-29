@@ -237,7 +237,8 @@ test('dependency manifest and lockfile keep production packages pinned', () => {
   assert.equal(packageJson.dependencies.postcss, undefined);
   assert.match(packageJson.scripts['vercel:build'], /vercel@59\.16\.0/);
   assert.doesNotMatch(JSON.stringify(packageJson.scripts), /vercel@54\.1\.0/);
-  assert.equal(packageLock.packages[''].dependencies['@supabase/supabase-js'], '2.116.0');
+  assert.equal(packageLock.packages[''].dependencies.firebase, '12.19.0');
+  assert.equal(packageLock.packages[''].dependencies['@supabase/supabase-js'], undefined);
 });
 
 test('Vercel input includes public Astro source content but still excludes local leads data', () => {
@@ -554,7 +555,7 @@ test('invoice settings store shared configuration, never restore another invoice
   const loaderStart = builder.indexOf('async function loadBuilderSettings()');
   const loaderEnd = builder.indexOf('async function loadInvoiceData', loaderStart);
   const saveStart = builder.indexOf('async function saveBuilderSettings()');
-  const saveEnd = builder.indexOf('// Save invoice to Supabase', saveStart);
+  const saveEnd = builder.indexOf('// Save invoice to Firebase', saveStart);
   assert.ok(loaderStart >= 0 && loaderEnd > loaderStart);
   assert.ok(saveStart >= 0 && saveEnd > saveStart);
   const loader = builder.slice(loaderStart, loaderEnd);
@@ -798,7 +799,7 @@ test('active runtime does not expose retired backend or CSRF stubs', () => {
     assert.doesNotMatch(runtime, new RegExp(`window\\.${retiredGlobal}`));
   }
   assert.match(runtime, /createCrmRepository/);
-  assert.match(runtime, /window\.tmSupabase/);
+  assert.match(runtime, /window\.tmFirebase/);
 });
 
 test('live role provisioning uses Supabase Auth and PostgREST directly', () => {

@@ -155,7 +155,7 @@ export function createWorkspaceContext({
       globalThis.sessionStorage?.removeItem(`tm_crm_profile_${userId}`);
     }
     ['tm_crm_profile', 'tm_crm_data'].forEach((key) => globalThis.sessionStorage?.removeItem(key));
-    globalThis.window?.tmSupabase?.auth?.signOut?.();
+    globalThis.window?.tmFirebase?.auth?.signOut?.();
     globalThis.location.href = '/login';
   }
 

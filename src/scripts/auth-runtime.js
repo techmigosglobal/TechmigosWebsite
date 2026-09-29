@@ -1,13 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createFirebaseBridge } from '../lib/firebase/supabaseBridge.js';
 
-window.tmSupabase = null;
+window.tmFirebase = null;
 
 try {
-  const sbUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
-  const sbKey = import.meta.env.PUBLIC_SUPABASE_KEY || '';
-  if (sbUrl && sbKey) {
-    window.tmSupabase = createClient(sbUrl, sbKey);
-  }
+  window.tmFirebase = createFirebaseBridge();
 } catch (error) {
-  console.error('Supabase init failed:', error);
+  console.error('Firebase init failed:', error);
 }

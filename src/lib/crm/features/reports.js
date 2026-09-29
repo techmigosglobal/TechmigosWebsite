@@ -4,7 +4,7 @@ export function renderReports(context) {
   const { state, els, pageHead, crmProjectIcon, escapeHtml, table, reportTableRows, metric, report, typeOptions } = context;
   replaceSafeMarkup(els.view, `
     <div class="crm-reports-page">
-      ${pageHead('Report Generation', 'Generate operational reports from live Supabase Operations & Management data.', `<button class="crm-button primary report-head-button" data-report-download-pdf type="button">${crmProjectIcon('download')} Download PDF</button><button class="crm-button report-head-button" data-report-print type="button">${crmProjectIcon('print')} Print</button><button class="crm-button report-head-button" data-report-export type="button">${crmProjectIcon('download')} Export CSV</button>`)}
+      ${pageHead('Report Generation', 'Generate operational reports from live Firebase Operations & Management data.', `<button class="crm-button primary report-head-button" data-report-download-pdf type="button">${crmProjectIcon('download')} Download PDF</button><button class="crm-button report-head-button" data-report-print type="button">${crmProjectIcon('print')} Print</button><button class="crm-button report-head-button" data-report-export type="button">${crmProjectIcon('download')} Export CSV</button>`)}
       <section class="crm-card reports-controls-card">
         <div class="crm-card-head reports-controls-head"><h2 class="crm-card-title">Report Controls</h2></div>
         <div class="reports-controls-grid">

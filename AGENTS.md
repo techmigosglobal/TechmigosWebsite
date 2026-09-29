@@ -24,16 +24,17 @@ Use it as the primary process guide for planning, implementation, testing, and r
 - Preserve existing UI/UX and architecture patterns unless task requires redesign.
 - Never use destructive git commands unless explicitly asked.
 
-## Supabase Backend
+## Firebase Backend
 
-This project uses [Supabase](https://supabase.com) as the backend (BaaS) providing database, authentication, file storage, edge functions, and realtime.
+This project uses Firebase project `techmigos-279f6` for Firestore, Authentication, Cloud Storage, and callable Cloud Functions.
 
-- **Project:** **Techmigos** (API base `https://lzlflnjrtxovzrniwmyq.supabase.co`)
-- **Client:** `src/db/supabase.js` exports the Supabase client using `@supabase/supabase-js`
-- **Credentials:** app code reads keys from `.env.local` (`PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_KEY`). Never hardcode or commit keys.
+- **Browser bridge:** `src/lib/firebase/supabaseBridge.js` preserves the existing CRM repository contract while using the Firebase modular SDK.
+- **Configuration:** app code reads the public Firebase web configuration from `.env.local` (`PUBLIC_FIREBASE_*`). Never commit private service-account credentials.
+- **Server function:** `functions/index.js` contains the privileged `adminUsers` callable function for user provisioning and profile administration.
+- **Migration source:** `supabase/` and `scripts/backend/` remain historical export evidence only; active browser traffic uses Firebase.
 
 Key patterns:
 
-- Database queries use `supabase.from("table").select('*')`.
-- Reference users with `auth.users(id)`; use `auth.uid()` in RLS policies.
-- For storage uploads, persist both the returned `url` and `key`.
+- CRM records are Firestore documents in collections named after the existing `crm_*` tables.
+- Firebase Auth `uid` values are preserved from the verified source export and mirrored in `user_profiles`.
+- Storage uploads persist the bucket-relative object path in the matching Firestore record; finance proof paths are under `finance-proofs/`.

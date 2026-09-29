@@ -324,7 +324,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         source_path: '/support',
       };
 
-      const { error } = await (window as any).tmSupabase
+      const { error } = await (window as any).tmFirebase
         .from('contact_leads')
         .insert([payload]);
 

@@ -1099,8 +1099,8 @@
 
     async function boot() {
       try {
-        if (!window.tmSupabase) throw new Error('Supabase is not configured for this deployment.');
-        const { data: { session } } = await window.tmSupabase.auth.getSession();
+        if (!window.tmFirebase) throw new Error('Firebase is not configured for this deployment.');
+        const { data: { session } } = await window.tmFirebase.auth.getSession();
         if (!session) return logout();
         state.cacheUserId = session.user.id;
         if (state.active === 'files') {
@@ -1143,7 +1143,7 @@
         const me = await portal('/api/portal/me');
         const companyRoles = new Set(['company_admin', 'company_member']);
         if (me.destination !== '/company' || !companyRoles.has(me.profile?.role)) {
-          await window.tmSupabase.auth.signOut();
+          await window.tmFirebase.auth.signOut();
           window.location.replace('/login');
           return;
         }

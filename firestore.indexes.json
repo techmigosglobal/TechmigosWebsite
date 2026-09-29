@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    { "collectionGroup": "crm_invoice_items", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "invoice_id", "order": "ASCENDING" }, { "fieldPath": "sort_order", "order": "ASCENDING" }, { "fieldPath": "id", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_projects", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "client_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "crm_invoices", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "client_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "crm_tickets", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "client_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "crm_ticket_messages", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "ticket_id", "order": "ASCENDING" }, { "fieldPath": "visibility", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_project_members", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "profile_id", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_project_files", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "crm_project_folders", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "ASCENDING" }] }
+  ],
+  "fieldOverrides": []
+}

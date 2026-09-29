@@ -617,7 +617,7 @@ export function initInvoiceBuilder(context) {
         } catch (e) { showToast('Failed to save: ' + e.message, 'error'); }
       }
 
-      // Save invoice to Supabase crm_invoices / crm_invoice_items
+      // Save invoice to Firebase crm_invoices / crm_invoice_items
       async function saveInvoice() {
         const g = getValue;
         const clientNameInput = g('inv-client-name');

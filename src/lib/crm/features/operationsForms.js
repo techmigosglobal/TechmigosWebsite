@@ -198,7 +198,7 @@ export function createOperationsForms({
       ${drawerSection('Basic Information', 'clients', `<div class="operations-drawer-grid">${field('name')}${field('email')}${field('role')}${field('status')}</div>`, 'profile-basic')}
       ${drawerSection('Organization', 'folder', `<div class="operations-drawer-grid">${field('client_id')}${field('department')}${field('username')}</div>`, 'profile-organization')}
       ${drawerSection('Permissions', 'lock', `<div class="operations-drawer-grid operations-drawer-grid--single">${profilePermissions(values)}</div>`, 'profile-permissions')}
-      ${drawerSection('Security', 'lock', `<div class="operations-drawer-grid operations-drawer-grid--single">${field('password')}<p class="operations-drawer-help">Passwords and invitations are handled by the existing Supabase admin-user operation.</p></div>`, 'profile-security')}
+      ${drawerSection('Security', 'lock', `<div class="operations-drawer-grid operations-drawer-grid--single">${field('password')}<p class="operations-drawer-help">Passwords and invitations are handled by the Firebase admin-user function.</p></div>`, 'profile-security')}
       <p class="crm-form-submit-status operations-drawer-status" data-form-submit-status role="status" aria-live="polite"></p>
       <footer class="operations-drawer-footer"><button class="crm-button" data-drawer-cancel type="button">Cancel</button><button class="crm-button primary" type="submit">${submitLabel}</button></footer>
     </form>`;

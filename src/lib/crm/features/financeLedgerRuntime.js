@@ -249,7 +249,7 @@ export function createFinanceLedgerRuntime({
               applyLedgerStateToRow(row, 'idle');
             }
           }, 1400);
-          toast('Saved to Supabase');
+          toast('Saved to Firebase');
         } catch (error) {
           setLedgerState(row.dataset.resource, row.dataset.rowId, 'dirty');
           applyLedgerStateToRow(row, 'dirty');

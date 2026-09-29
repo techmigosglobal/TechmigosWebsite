@@ -34,15 +34,16 @@
     "vercel:env:pull": "npx --yes vercel@59.16.0 env pull .env.vercel.local --environment=production",
     "vercel:build": "npx --yes vercel@59.16.0 build",
     "release:github": "./scripts/release-github.sh",
+    "firebase:import": "node scripts/firebase/import-backend.mjs",
     "backend:export": "node scripts/backend/export-backend.mjs",
     "backend:storage": "node scripts/backend/export-storage.mjs",
     "backend:update-ref": "node scripts/backend/update-frontend-ref.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.116.0",
     "@vercel/speed-insights": "2.0.0",
     "astro": "7.3.3",
     "chart.js": "4.5.1",
+    "firebase": "12.19.0",
     "jspdf": "4.2.1",
     "jspdf-autotable": "5.0.8",
     "sharp": "0.35.4"

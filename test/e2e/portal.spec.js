@@ -18,9 +18,9 @@ test('login screen exposes the invite-only portal flow', async ({ page }) => {
   await expect(page.getByRole('link', { name: /forgot password/i })).toBeVisible();
 });
 
-test('login page loads the bundled Supabase auth runtime', async ({ page }) => {
+test('login page loads the bundled Firebase auth runtime', async ({ page }) => {
   await page.goto('/login');
-  await page.waitForFunction(() => Boolean(window.tmSupabase), null, { timeout: 10_000 });
+  await page.waitForFunction(() => Boolean(window.tmFirebase), null, { timeout: 10_000 });
 });
 
 test('password recovery is available without opening the workspace', async ({ page }) => {

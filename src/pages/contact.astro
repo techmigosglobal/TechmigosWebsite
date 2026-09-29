@@ -275,8 +275,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         form.reset();
         return;
       }
-      const supabase = (window as any).tmSupabase;
-      if (!supabase) {
+      const firebase = (window as any).tmFirebase;
+      if (!firebase) {
         throw new Error('Secure form submission is unavailable. Please email info@techmigos.com.');
       }
       const payload = {
@@ -289,7 +289,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         source_path: '/contact',
       };
 
-      const { error } = await supabase
+      const { error } = await firebase
         .from('contact_leads')
         .insert([payload]);
 

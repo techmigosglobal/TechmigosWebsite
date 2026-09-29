@@ -1,0 +1,169 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return signedIn()
+        ? get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data
+        : {};
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().role == 'company_admin' && profile().status == 'active';
+    }
+
+    function isEmployee() {
+      return signedIn() && profile().role == 'company_member' && profile().status == 'active';
+    }
+
+    function isClient() {
+      return signedIn() && profile().role == 'client' && profile().status == 'active';
+    }
+
+    function clientId() {
+      return profile().client_id;
+    }
+
+    function isPublicLead() {
+      return request.resource.data.email is string
+        && request.resource.data.email.size() <= 320;
+    }
+
+    match /user_profiles/{uid} {
+      allow get: if signedIn() && (uid == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // Username login needs to resolve an alias before Firebase Auth can verify
+    // the password. The document contains no password or privileged profile data.
+    match /login_aliases/{username} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    match /crm_profiles/{profileId} {
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.auth_user_id == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /migration_meta/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /migration_proof_links/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /storage_objects/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Company administrators can manage all CRM records. Company members are
+    // restricted to the operational workspace resources.
+    match /crm_clients/{id} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /crm_finances/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /crm_activities/{id} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /crm_settings/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /crm_projects/{id} {
+      allow read: if isAdmin() || isEmployee()
+        || (isClient() && resource.data.client_id == clientId());
+      allow create, update: if isAdmin() || isEmployee();
+      allow delete: if isAdmin();
+    }
+
+    match /crm_project_members/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow write: if isAdmin();
+    }
+
+    match /crm_project_folders/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow create, update: if isAdmin() || isEmployee();
+      allow delete: if isAdmin();
+    }
+
+    match /crm_project_files/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow create, update: if isAdmin() || isEmployee();
+      allow delete: if isAdmin();
+    }
+
+    match /crm_tickets/{id} {
+      allow read: if isAdmin() || isEmployee()
+        || (isClient() && resource.data.client_id == clientId());
+      allow create: if isAdmin() || isEmployee()
+        || (isClient() && request.resource.data.client_id == clientId());
+      allow update: if isAdmin() || isEmployee();
+      allow delete: if isAdmin();
+    }
+
+    match /crm_ticket_messages/{id} {
+      allow read: if isAdmin() || isEmployee()
+        || (isClient()
+          && get(/databases/$(database)/documents/crm_tickets/$(resource.data.ticket_id)).data.client_id == clientId()
+          && resource.data.visibility == 'external');
+      allow create: if isAdmin() || (isEmployee() && request.resource.data.visibility == 'internal')
+        || (isClient()
+          && request.resource.data.visibility == 'external'
+          && get(/databases/$(database)/documents/crm_tickets/$(request.resource.data.ticket_id)).data.client_id == clientId());
+      allow update, delete: if isAdmin();
+    }
+
+    match /crm_invoices/{id} {
+      allow read: if isAdmin()
+        || (isClient() && resource.data.client_id == clientId());
+      allow write: if isAdmin();
+    }
+
+    match /crm_invoice_items/{id} {
+      allow read: if isAdmin()
+        || (isClient()
+          && get(/databases/$(database)/documents/crm_invoices/$(resource.data.invoice_id)).data.client_id == clientId());
+      allow write: if isAdmin();
+    }
+
+    // Public website forms create only their own lead/subscriber/application;
+    // reads and updates remain administrator-only.
+    match /contact_leads/{id} {
+      allow create: if isPublicLead();
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /newsletter_subscribers/{id} {
+      allow create: if request.resource.data.email is string
+        && request.resource.data.email.size() <= 320;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /career_applications/{id} {
+      allow create: if request.resource.data.email is string
+        && request.resource.data.email.size() <= 320;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

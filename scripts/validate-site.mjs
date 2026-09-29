@@ -6,7 +6,7 @@ const bannedPatterns = [
   'appshowcase',
   'php-backend',
   '/api/admin',
-  'NEXT_PUBLIC_SUPABASE',
+  'NEXT_PUBLIC_FIREBASE',
   '/showcase',
   'SchoolDesk',
   'school-desk',

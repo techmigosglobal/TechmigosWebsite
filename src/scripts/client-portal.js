@@ -111,7 +111,7 @@ async function portal(path, options = {}) {
 }
 
 function logout() {
-  window.tmSupabase?.auth?.signOut?.();
+  window.tmFirebase?.auth?.signOut?.();
   location.href = '/login';
 }
 
@@ -313,8 +313,8 @@ async function loadOverview(showStatus = true) {
 
 async function boot() {
   try {
-    if (!window.tmSupabase) throw new Error('Supabase is not configured for this deployment.');
-    const { data: { session } } = await window.tmSupabase.auth.getSession();
+    if (!window.tmFirebase) throw new Error('Firebase is not configured for this deployment.');
+    const { data: { session } } = await window.tmFirebase.auth.getSession();
     if (!session) return logout();
     const me = await portal('/api/portal/me');
     if (me.destination !== '/client') {

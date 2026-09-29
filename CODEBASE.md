@@ -1,39 +1,47 @@
 # TechMigos Website — Codebase Reference
 
-> **Audit date:** 2026-09-18
+> **Audit date:** 2026-09-29
 > **Repository:** `TechmigosWebsite`
 > **Branch audited:** `main`
 > **Purpose:** durable, source-grounded reference for future development in this repository.
 
-This file is the application-specific reference to read before making changes. It describes the code that exists in the repository today, the runtime data flows, the final Supabase security model, and the known gaps that affect future work.
+This file is the application-specific reference to read before making changes. The active browser backend is now Firebase project `techmigos-279f6`; Supabase references below describe the retained migration source and historical audit evidence.
+
+### Current backend after migration
+
+- Firestore stores the 21 migrated CRM/public collections using their existing collection names.
+- Firebase Authentication contains the 60 source users with preserved UIDs and profile aliases. Source password hashes were unavailable, so migrated users must use Firebase password reset before signing in.
+- Cloud Storage contains all 22 source objects (2,832,779 bytes), including 19 finance-linked proof files. Each object was downloaded and SHA-256 verified after upload.
+- `src/lib/firebase/supabaseBridge.js` keeps the existing repository contract stable while replacing Supabase Auth, PostgREST, Storage, RPCs, and Edge Function calls with Firebase SDK/Firestore/Storage/callable-function operations.
+- `firestore.rules`, `storage.rules`, and `functions/index.js` are the active authorization and privileged-operation sources. The `supabase/` directory is retained as historical source evidence only.
 
 It is intentionally separate from [`knowledge_Astro.md`](knowledge_Astro.md). That file is a generic Astro v4 knowledge base and is not an accurate application map for this project, which currently declares Astro 7 in [`package.json`](package.json).
 
 ## How to use this document
 
-Use the actual source files and the latest Supabase migration as the final authority if this document ever becomes stale. The practical precedence is:
+Use the actual source files and the Firebase rules/functions as the final authority if this document ever becomes stale. The practical precedence is:
 
 1. Current source under `src/`, `public/`, `scripts/`, and `supabase/functions/`.
-2. The final migration state under [`supabase/migrations/`](supabase/migrations/), especially the September 2026 RBAC migrations.
+2. [`firestore.rules`](firestore.rules), [`storage.rules`](storage.rules), and [`functions/index.js`](functions/index.js).
 3. Automated tests under [`test/`](test/).
 4. This document and older planning/audit documents.
 
-Do not copy credentials, service-role keys, or production secrets into this file. Public Supabase URL/key names are documented only by variable name and purpose.
+Do not copy credentials, service-account keys, or production secrets into this file. Firebase web configuration is publishable but should remain in environment configuration.
 
 ## Executive summary
 
 TechMigos is an Astro website deployed as a static Vercel site. It combines:
 
 - Public marketing and portfolio pages rendered by Astro.
-- Public browser-side forms that write directly to Supabase tables under RLS.
-- Supabase Auth for company and client login.
+- Public browser-side forms that write directly to Firestore under Firebase Security Rules.
+- Firebase Authentication for company and client login.
 - A client portal at `/client`.
 - Compatibility exports under `src/features/operations/`; the former operations shell and mock runtime are retired.
 - A shared CRM layout/controller pair in [`src/layouts/CrmLayout.astro`](src/layouts/CrmLayout.astro) and [`src/scripts/crm-workspace.js`](src/scripts/crm-workspace.js), now used by every `/company` feature route.
-- Supabase Storage for resumes, finance proofs, invoice assets, signatures, and project files.
-- One Supabase Edge Function, `admin-users`, for privileged Auth/profile administration.
+- Cloud Storage for resumes, finance proofs, invoice assets, signatures, and project files.
+- One Firebase callable Cloud Function, `adminUsers`, for privileged Auth/profile administration.
 
-The application is mostly a static document shell with bundled browser JavaScript. Astro produces the HTML; the browser then initializes Supabase, authenticates the user, loads CRM records, and hydrates or replaces parts of the page.
+The application is mostly a static document shell with bundled browser JavaScript. Astro produces the HTML; the browser then initializes Firebase, authenticates the user, loads CRM records, and hydrates or replaces parts of the page.
 
 The active tree has two deliberately tracked follow-ups:
 
@@ -51,28 +59,28 @@ flowchart TD
     Operations[Unified operations workspace]
     CompanyCRM[CrmLayout company workspace]
     Client[Client portal]
-    SupabaseJS[Supabase browser client]
+    FirebaseJS[Firebase browser SDK bridge]
     Repository[crm/repository.js]
-    Auth[Supabase Auth]
-    DB[(Supabase Postgres + RLS)]
-    Storage[(Supabase Storage)]
-    Edge[admin-users Edge Function]
+    Auth[Firebase Authentication]
+    DB[(Cloud Firestore + rules)]
+    Storage[(Firebase Cloud Storage)]
+    Edge[adminUsers callable function]
 
     Astro --> Base
     Base --> Marketing
     Base --> Operations
     Base --> CompanyCRM
     Base --> Client
-    Base --> SupabaseJS
+    Base --> FirebaseJS
     Browser --> Astro
-    Browser --> SupabaseJS
+    Browser --> FirebaseJS
     Operations --> Repository
     Finance --> Repository
     Client --> Repository
-    SupabaseJS --> Auth
-    SupabaseJS --> DB
-    SupabaseJS --> Storage
-    Repository --> SupabaseJS
+    FirebaseJS --> Auth
+    FirebaseJS --> DB
+    FirebaseJS --> Storage
+    Repository --> FirebaseJS
     Repository --> Edge
     Edge --> Auth
     Edge --> DB
@@ -83,12 +91,12 @@ flowchart TD
 | Boundary | Responsibility | Important implementation |
 |---|---|---|
 | Astro build | Generates static pages, metadata, content-driven pages, and sitemap files | `output: 'static'` in [`astro.config.mjs`](astro.config.mjs) |
-| Shared layout | SEO, fonts/preconnects, Supabase initialization, CRM repository bootstrap, site-wide motion | [`src/layouts/BaseLayout.astro`](src/layouts/BaseLayout.astro) |
+| Shared layout | SEO, fonts/preconnects, Firebase initialization, CRM repository bootstrap, site-wide motion | [`src/layouts/BaseLayout.astro`](src/layouts/BaseLayout.astro) |
 | Public browser code | Marketing interactions and direct public form submissions | Inline scripts in page/component files |
 | CRM browser code | Authenticated reads/writes, role-scoped rendering, project delivery, support, files, invoices, finance, reports, and client portal flows | [`src/scripts/crm-workspace.js`](src/scripts/crm-workspace.js), [`src/scripts/client-portal.js`](src/scripts/client-portal.js), [`src/lib/crm/routePolicy.js`](src/lib/crm/routePolicy.js), [`src/lib/crm/workspaceStore.js`](src/lib/crm/workspaceStore.js) |
-| Shared repository | Normalizes the browser-side `/api/portal/...` contract into Supabase operations | [`src/lib/crm/repository.js`](src/lib/crm/repository.js) |
-| Database | Durable authorization, relationships, constraints, ledger triggers, and RLS | [`supabase/migrations/`](supabase/migrations/) |
-| Edge Function | Privileged Auth user creation/invitation/profile changes | [`supabase/functions/admin-users/index.ts`](supabase/functions/admin-users/index.ts) |
+| Shared repository | Normalizes the browser-side `/api/portal/...` contract into Firestore/Storage operations | [`src/lib/crm/repository.js`](src/lib/crm/repository.js) |
+| Database | Durable authorization and CRM records | [`firestore.rules`](firestore.rules), [`firestore.indexes.json`](firestore.indexes.json) |
+| Cloud Function | Privileged Auth user creation/invitation/profile changes | [`functions/index.js`](functions/index.js) |
 
 There are no Astro API route files under `src/pages/api/`. The `/api/portal/...` paths are an internal repository abstraction used by browser code; they are parsed by `createCrmRepository()` and are not HTTP endpoints served by Astro.
 
@@ -111,7 +119,7 @@ There are no Astro API route files under `src/pages/api/`. The `/api/portal/...`
 | `src/lib/crm/features/reportExportRuntime.js` | Role-scoped report refresh/export/print actions and CSV, PDF, and finance export delivery |
 | `src/lib/crm/features/workspaceUtils.js` | Pure workspace payload validation/coercion, profile identity helpers, filtering, and relationship lookups shared by the browser controller |
 | `src/components/` | Shared navigation, footer, service, portfolio-focus, and CRM chrome components |
-| `src/lib/crm/repository.js` | Supabase repository and internal portal request router |
+| `src/lib/crm/repository.js` | Firebase-compatible repository and internal portal request router |
 | `src/lib/crm/permissions.js` | Client-side role/resource guard |
 | `src/lib/crm/routePolicy.js` | Canonical company route and role policy |
 | `src/lib/crm/workspaceStore.js` | Shared authenticated workspace state and selectors |
@@ -120,12 +128,12 @@ There are no Astro API route files under `src/pages/api/`. The `/api/portal/...`
 | `src/lib/crm/invoiceHtml.js` | Canonical escaped printable invoice renderer shared by company and client portals |
 | `src/lib/crm/popup.js` | Shared safe print-preview document replacement for CRM and client exports |
 | `src/lib/siteContent.ts` | File-backed portfolio/client/testimonial content loader and sanitizer |
-| `src/db/supabase.js` | Separate module-level Supabase client export |
+| `src/lib/firebase/supabaseBridge.js` | Firebase SDK bridge preserving the repository contract |
 | `src/scripts/crm-pdf.js` | jsPDF report generation/download helper |
 | `src/styles/global.css` | Global marketing/base styles and design tokens |
 | `src/styles/operations.css` | Shared CRM/Finance shell styles, navigation parity, responsive layout, and project-drive UI |
-| `supabase/migrations/` | Schema, RLS, storage, triggers, and RPC history |
-| `supabase/functions/admin-users/` | Server-side privileged user administration |
+| `supabase/migrations/` | Historical source schema, RLS, storage, trigger, and RPC history |
+| `functions/index.js` | Firebase callable privileged user administration |
 | `data/site-content.json` | Mutable file-backed site content used at build/runtime |
 | `data/leads.json` | Present data artifact; current public contact flow writes to Supabase instead |
 | `test/crm-rbac-finance.test.js` | Node tests for permissions, repository behavior, finance, and PDF export |
@@ -140,7 +148,7 @@ There are no Astro API route files under `src/pages/api/`. The `/api/portal/...`
 Declared in [`package.json`](package.json):
 
 - Astro `^7.3.2`, static output.
-- `@supabase/supabase-js` `2.116.0`.
+- Firebase `12.19.0` and Firebase Admin `14.5.0`.
 - Tailwind CSS `3.4.19`, PostCSS, Autoprefixer.
 - Canonical local CRM icon components under `src/components/crm/`; unused `astro-icon` and `lucide-react` packages were removed.
 - Sharp `^0.35.4` for Astro image service.
@@ -192,9 +200,9 @@ Names are listed in [`env.example.json`](env.example.json). Use `.env.local` for
 |---|---|---|
 | `PUBLIC_SITE_URL` | Public | Astro canonical/site URL |
 | `PUBLIC_API_BASE_URL` | Public/config | Optional legacy API base; currently the shared browser API fallback is empty |
-| `PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
-| `PUBLIC_SUPABASE_KEY` | Public/publishable | Browser Supabase key; still keep it in environment configuration |
-| `SITE_URL` | Edge Function config | Optional public origin used for invitation links; defaults to `https://www.techmigos.com` |
+| `PUBLIC_FIREBASE_API_KEY`, `PUBLIC_FIREBASE_AUTH_DOMAIN`, `PUBLIC_FIREBASE_PROJECT_ID` | Public | Firebase web app configuration |
+| `PUBLIC_FIREBASE_STORAGE_BUCKET`, `PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `PUBLIC_FIREBASE_APP_ID`, `PUBLIC_FIREBASE_MEASUREMENT_ID` | Public | Firebase Storage, messaging, app, and analytics configuration |
+| `SITE_URL` | Function config | Optional public origin used for invitation links; defaults to `https://www.techmigos.com` |
 | `CSRF_SECRET` | Secret | Intended server-side CSRF HMAC secret; no current Astro API route consumes it |
 | `ALLOWED_ORIGINS` | Server/config | Intended origin allowlist |
 | `LEAD_NOTIFICATION_EMAIL` | Server/config | Intended lead notification target |
@@ -205,14 +213,14 @@ Names are listed in [`env.example.json`](env.example.json). Use `.env.local` for
 | `SITE_CONTENT_PATH` | Server/build config | Overrides `data/site-content.json` path |
 | `FEATURED_PROJECT_ORDER` | Not currently read | `siteContent.ts` has a hard-coded featured order map instead |
 
-`SUPABASE_SERVICE_ROLE_KEY` is required by the deployed Edge Function runtime but is not a browser variable and is intentionally not listed as a client-side configuration value. Never expose it in `vercel.json`, `.env.local` delivered to the browser, or Markdown documentation.
+Firebase Admin credentials are provided by the deployed Cloud Functions runtime and are not browser variables. Never expose a service-account key in `vercel.json`, `.env.local` delivered to the browser, or Markdown documentation.
 
 ### Vercel behavior
 
 [`vercel.json`](vercel.json):
 
 - Builds with `npm run build:vercel` and serves `dist`.
-- Sets the public site/Supabase variables needed by the static build.
+- Sets the public site/Firebase variables needed by the static build.
 - Redirects `techmigos.com` to `https://www.techmigos.com/:path*`.
 - Adds `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, strict-origin referrer policy, and a Permissions Policy disabling camera, microphone, and geolocation.
 - Gives `/_astro/*` and `/images/*` immutable one-year caching.
@@ -242,8 +250,8 @@ All routes below are represented by current files unless marked otherwise. Astro
 | `/blog/[slug]` | `src/pages/blog/[slug].astro` | `astro:content`, Markdown `render()` | Article detail, tags/category related-post calculation, article JSON-LD |
 | `/careers` | `src/pages/careers/index.astro` | `astro:content` collection `careers` | Non-draft job listing, department/perk UI |
 | `/careers/[slug]` | `src/pages/careers/[slug].astro` | `astro:content`, raw Markdown read | Job detail, parsed table of contents, application form, resume upload |
-| `/contact` | `src/pages/contact.astro` | `BaseLayout`, direct Supabase insert | Public lead form writing to `contact_leads` |
-| `/support` | `src/pages/support.astro` | `BaseLayout`, direct Supabase insert | Public support request converted to a `contact_leads` row |
+| `/contact` | `src/pages/contact.astro` | `BaseLayout`, direct Firestore insert | Public lead form writing to `contact_leads` |
+| `/support` | `src/pages/support.astro` | `BaseLayout`, direct Firestore insert | Public support request converted to a `contact_leads` row |
 | `/privacy` | `src/pages/privacy.astro` | `BaseLayout` | Static legal page |
 | `/terms` | `src/pages/terms.astro` | `BaseLayout` | Static legal page |
 
@@ -251,7 +259,7 @@ All routes below are represented by current files unless marked otherwise. Astro
 
 | URL | Source | Access/rendering |
 |---|---|---|
-| `/login` | `src/pages/login.astro` | Public login UI; browser Supabase Auth; compact glass login panel; routes clients to `/client` and company users to `/company` |
+| `/login` | `src/pages/login.astro` | Public login UI; browser Firebase Auth; compact glass login panel; routes clients to `/client` and company users to `/company` |
 | `/reset-password` | `src/pages/reset-password.astro` | Public email recovery request using `auth.resetPasswordForEmail()` |
 | `/change-password` | `src/pages/change-password.astro` | Authenticated first-login flow through `admin-users`, or standard Supabase Auth recovery/password update |
 | `/client` | `src/pages/client.astro` | Client-only portal; repository-scoped projects, invoices, tickets, and external messages |
@@ -301,15 +309,15 @@ Head behavior:
 - Generates page title, description, robots, canonical, Open Graph, and Twitter tags.
 - Uses `PUBLIC_SITE_URL`/Astro site with `https://www.techmigos.com` fallback.
 - Emits Organization, WebSite, WebPage, and optional BreadcrumbList JSON-LD.
-- Preconnects Google Fonts and the Supabase project.
-- Loads the lockfile-managed Supabase/Chart browser modules through Astro/Vite; no CRM runtime is emitted for public/auth pages.
+- Preconnects Google Fonts and Firebase data origins.
+- Loads the lockfile-managed Firebase/Chart browser modules through Astro/Vite; no CRM runtime is emitted for public/auth pages.
 
 Browser globals initialized by the inline bootstrap:
 
 | Global | Meaning |
 |---|---|
-| `window.tmSupabase` | Browser Supabase client, or `null` if public variables are absent/initialization fails |
-| `window.tmCrmReady` | Promise resolved once `createCrmRepository(() => window.tmSupabase)` is exposed on CRM pages |
+| `window.tmFirebase` | Firebase compatibility bridge, or `null` if public variables are absent/initialization fails |
+| `window.tmCrmReady` | Promise resolved once `createCrmRepository(() => window.tmFirebase)` is exposed on CRM pages |
 | `window.tmCrm` | `{ repository }` object on CRM pages |
 | `window.__resolveTmCrm` | Internal CRM promise resolver |
 
@@ -326,11 +334,11 @@ The shared browser script also implements custom cursor behavior, scroll progres
 
 All active company feature pages render this layout with a route-specific `activeTab`: dashboard, projects, files, tickets/support, finance, analytics, reports, users, and settings. The page wrappers are intentionally thin; the shell and bundled controller own the shared sidebar/topbar, auth/session guard, data loading, renderer selection, interaction binding, modals, and repository writes.
 
-The shared header includes search, notifications, help, profile management, and a visible sign-out control. Sign-out clears CRM/session caches, calls Supabase Auth sign-out, and redirects to `/login`. The shared sidebar uses the canonical grouped navigation adapter and persists collapse state in `localStorage` under `tm_crm_sidebar_collapsed`.
+The shared header includes search, notifications, help, profile management, and a visible sign-out control. Sign-out clears CRM/session caches, calls Firebase Auth sign-out, and redirects to `/login`. The shared sidebar uses the canonical grouped navigation adapter and persists collapse state in `localStorage` under `tm_crm_sidebar_collapsed`.
 
 Header and rail dimensions are intentionally locked in the final shell section of [`src/styles/operations.css`](src/styles/operations.css). The authoritative desktop contract is a 264px sidebar, 66px topbar, 470px search field, 36px action/logout controls, 36px avatar, 40px brand mark, and 36px navigation rows for both `operations-page` and `finance-page`. At mobile widths the same two shells use a 56px rail and the same responsive topbar grid; this prevents dashboard-specific sizing from shifting the header between routes.
 
-The `/company/files` renderer is the active project-drive implementation. It starts at a project picker, enters one selected project, exposes its folders in the left drive rail, enters one folder, and then renders that folder’s live files in grid or list mode. Selecting a file keeps the file list visible and fills the right detail panel. Image and PDF previews use a short-lived Supabase Storage signed URL; unsupported MIME types retain open/download actions. Uploads are sent to the private `project-files` bucket and persist metadata in `crm_project_files`.
+The `/company/files` renderer is the active project-drive implementation. It starts at a project picker, enters one selected project, exposes its folders in the left drive rail, enters one folder, and then renders that folder’s live files in grid or list mode. Selecting a file keeps the file list visible and fills the right detail panel. Image and PDF previews use a short-lived Firebase Storage download URL; unsupported MIME types retain open/download actions. Uploads are sent to the private `project-files` bucket and persist metadata in `crm_project_files`.
 
 The Files visual language intentionally borrows the supplied reference without replacing the TechMigos theme: folder categories receive deterministic blue/orange/green/purple/red/brown tones from their names, and file cards receive MIME/extension tones for images, PDFs, design files, archives, spreadsheets, presentations, documents, video, and generic files. Grid mode uses a compact thumbnail-like icon block with a selected check marker; list mode remains a dense horizontal browser. These are presentation classes derived in `renderFilesReference()` and should stay data-independent so live uploads immediately inherit the same treatment.
 
@@ -344,10 +352,10 @@ The active CRM shell:
 - Uses the canonical grouped sidebar and shared CRM chrome components.
 - Uses `window.tmCrmReady` and `createCrmRepository()` for live authentication and data hydration.
 - Applies the canonical route policy for admin and assigned employee navigation.
-- Persists only non-sensitive shell preferences in `localStorage`; Supabase remains authoritative for business data.
+- Persists only non-sensitive shell preferences in `localStorage`; Firebase remains authoritative for business data.
 - Provides top-bar notifications, profile/account management, password reset, sign-out, and responsive keyboard-accessible controls.
 
-The database RLS policies remain the authority. Browser route and resource guards are UX/access pre-checks and must not be treated as a security boundary.
+Firestore and Storage Security Rules remain the authority. Browser route and resource guards are UX/access pre-checks and must not be treated as a security boundary.
 
 ## Public data and content systems
 
@@ -391,7 +399,7 @@ The collection schemas are defined in `src/content.config.ts`. The current repos
 
 ### Public forms
 
-Public form writes happen directly from the browser through `window.tmSupabase`:
+Public form writes happen directly from the browser through `window.tmFirebase`:
 
 | UI | Table | Payload behavior |
 |---|---|---|
@@ -411,21 +419,21 @@ All public forms include a honeypot field named `company_website`; a filled hone
 Flow:
 
 1. User enters a username or email and password.
-2. For email sign-in, the browser calls `supabase.auth.signInWithPassword()` directly. For usernames, it calls the `username-login` Edge Function; that server-side function resolves the email using its service-role client, verifies the password through Supabase Auth, and returns only the resulting session tokens.
-3. The browser installs the returned username-login session with `supabase.auth.setSession()`; it never receives the resolved email from the username lookup.
+2. For email sign-in, the browser calls Firebase Auth email/password sign-in directly. For usernames, the Firebase bridge resolves the migrated `login_aliases` document and then uses Firebase Auth email/password sign-in.
+3. The browser keeps the returned Firebase Auth session; the CRM bridge exposes the same session shape to the existing portal code.
 4. It reads the authenticated user’s active `crm_profiles` row.
 5. It records last login through `record_crm_last_login`.
 6. If `must_change_password` is true, redirect to `/change-password`.
 7. Otherwise, redirect clients to `/client`; company roles to `/company`.
 
-The current database role values are `company_admin`, `company_member`, and `client`. The E2E test labels the middle role “Employee” and uses `CRM_EMPLOYEE_*` environment variables, but the stored role is `company_member`.
+The current role values are `company_admin`, `company_member`, and `client`. The E2E test labels the middle role “Employee” and uses `CRM_EMPLOYEE_*` environment variables, but the stored role is `company_member`.
 
-The new `username-login` function is deployed with JWT verification disabled because it is a pre-authentication endpoint; it performs password verification itself and has an explicit CORS origin allowlist. The hosted anonymous username resolver grant remains until the updated website is deployed, to avoid breaking username sign-in on the currently served frontend.
+The Firebase callable `adminUsers` function is deployed in `asia-south1` for privileged profile operations. Username aliases contain only email and profile identifiers; password verification remains inside Firebase Auth.
 
 ### Password reset/change
 
-- `/reset-password` sends a Supabase Auth recovery email with a redirect to `/change-password`.
-- `/change-password` loads the authenticated profile first. Provisioned users with `must_change_password` use the `admin-users` Edge Function; normal recovery sessions use `auth.updateUser({ password })`, so the reset-email workflow reaches a working password update.
+- `/reset-password` sends a Firebase Auth recovery email with a redirect to `/change-password`.
+- `/change-password` loads the authenticated profile first. Provisioned users with `must_change_password` use the `adminUsers` callable function; normal recovery sessions use Firebase Auth `updatePassword`, so the reset-email workflow reaches a working password update.
 
 ### Client portal
 
@@ -443,7 +451,7 @@ The UI renders project progress/health, invoice balances, tickets, invoice print
 
 The former operations shell, mock adapters, and public operations script have been retired. Their preview assets remain for visual reference only. Active company pages use the shared CRM shell, canonical route policy, repository, workspace store, and reusable CRM components.
 - `/company` dashboard hydration from repository-scoped projects plus admin tickets, profiles, finances, and activities; dashboard project rows open the selected project workspace.
-- Dashboard shell interactions: desktop sidebar persistence/collapse, mobile menu/backdrop, top-bar popovers, live notification badge, profile menu, and Supabase sign-out.
+- Dashboard shell interactions: desktop sidebar persistence/collapse, mobile menu/backdrop, top-bar popovers, live notification badge, profile menu, and Firebase sign-out.
 - Settings toggles and CSV export.
 - Live project/user/ticket/file/stat hydration through the repository.
 
@@ -486,18 +494,18 @@ Important renderer families exposed by the shell and feature modules include das
 
 `getContext(force = false)`:
 
-1. Obtains the current Supabase Auth user.
+1. Obtains the current Firebase Auth user.
 2. Queries `crm_profiles` by `auth_user_id`.
 3. Requires an active profile and a valid role.
 4. Caches the context promise until forced/cleared.
 
-`requireResource(resource, method)` checks the client-side permission map before table operations. Supabase RLS is the actual security boundary and must be updated in migrations whenever a permission changes.
+`requireResource(resource, method)` checks the client-side permission map before collection operations. Firebase Security Rules are the actual security boundary and must be updated whenever a permission changes.
 
 `requireProjectAccess()` enforces the same assigned-project boundary in the repository as the final database policy: non-admin company users must be assigned through an active project membership, while administrators bypass that check. RLS remains authoritative.
 
 ### Resource/table map
 
-| Resource path segment | Supabase table |
+| Resource path segment | Firestore collection |
 |---|---|
 | `profiles` | `crm_profiles` |
 | `clients` | `crm_clients` |
@@ -539,7 +547,7 @@ The repository parses these path families in `request()`:
 | `/api/portal/profiles/:id` | Admin profile update via Edge Function |
 | `/api/portal/:resource` | Generic GET/POST/PATCH/DELETE for enabled resources |
 
-The repository sends multipart `FormData` for file operations and JSON for ordinary CRUD. Supabase errors are wrapped into readable `Error` messages.
+The repository sends multipart `FormData` for file operations and JSON for ordinary CRUD. Firebase errors are wrapped into readable `Error` messages.
 
 Project-drive-specific methods in `repository.js` are the preferred active path for the company Files page:
 

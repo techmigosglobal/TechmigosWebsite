@@ -2,7 +2,7 @@
 /// <reference types="astro/client" />
 
 interface Window {
-  tmSupabase: any;
+  tmFirebase: any;
   tmCrmReady: Promise<unknown>;
   tmCrm: { repository: any } | null;
   tmCrmPdf: { downloadCrmReportPdf: (...args: any[]) => unknown };

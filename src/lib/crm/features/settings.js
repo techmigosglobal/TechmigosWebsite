@@ -137,7 +137,7 @@ export async function renderSettings(context) {
       <div class="settings-reference-empty">
         <span class="settings-reference-empty-icon">${crmProjectIcon('layers')}</span>
         <strong>No integrations configured</strong>
-        <p>There is no integration contract configured for this workspace yet. Live data remains managed through Supabase.</p>
+        <p>There is no integration contract configured for this workspace yet. Live data remains managed through Firebase.</p>
       </div>
     </section>
     <section id="settings-team" class="crm-card settings-reference-card" style="margin-bottom:16px;">
@@ -147,13 +147,13 @@ export async function renderSettings(context) {
     </section>
     <section id="settings-preferences" class="crm-card settings-reference-card" style="margin-bottom:16px;">
       <div class="crm-card-head"><div><h2 class="crm-card-title">System Preferences</h2><p class="settings-reference-help">Workspace behavior follows the active browser and live portal configuration.</p></div><span class="settings-reference-readonly">Read only</span></div>
-      <div class="settings-reference-list"><div><span><strong>Workspace language</strong><small>English interface labels are active.</small></span><b class="settings-reference-indicator is-on">English</b></div><div><span><strong>Motion</strong><small>Respect the browser reduced-motion preference.</small></span><b class="settings-reference-indicator is-on">Supported</b></div><div><span><strong>Data source</strong><small>Records are loaded from the live Supabase workspace.</small></span><b class="settings-reference-indicator is-on">Live</b></div></div>
+      <div class="settings-reference-list"><div><span><strong>Workspace language</strong><small>English interface labels are active.</small></span><b class="settings-reference-indicator is-on">English</b></div><div><span><strong>Motion</strong><small>Respect the browser reduced-motion preference.</small></span><b class="settings-reference-indicator is-on">Supported</b></div><div><span><strong>Data source</strong><small>Records are loaded from the live Firebase workspace.</small></span><b class="settings-reference-indicator is-on">Live</b></div></div>
     </section>
       </div>
     </div>
   </div>`);
 
-  // Load real settings from Supabase
+  // Load real settings from Firebase
   try {
     const [companyRes, invoiceRes] = await Promise.all([
       portal('/api/portal/settings/company'),

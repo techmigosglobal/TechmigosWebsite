@@ -3,7 +3,7 @@
  *
  * Keeping these actions outside the browser controller makes the mutation,
  * selection, and export contracts reusable by every feature renderer while
- * leaving authorization and Supabase requests at the controller boundary.
+ * leaving authorization and Firebase requests at the controller boundary.
  */
 export function createRecordActions({
   state,

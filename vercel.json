@@ -6,8 +6,13 @@
     "NODE_ENV": "production",
     "PUBLIC_SITE_URL": "https://www.techmigos.com",
     "NEXT_PUBLIC_SITE_URL": "https://www.techmigos.com",
-    "PUBLIC_SUPABASE_URL": "https://lzlflnjrtxovzrniwmyq.supabase.co",
-    "PUBLIC_SUPABASE_KEY": "sb_publishable_c6ePngXzONzedvwFQnL6tw_5tyUCLHJ"
+    "PUBLIC_FIREBASE_API_KEY": "AIzaSyBlScJdnMdwlxho1scfBMbbr14z_QNEH54",
+    "PUBLIC_FIREBASE_AUTH_DOMAIN": "techmigos-279f6.firebaseapp.com",
+    "PUBLIC_FIREBASE_PROJECT_ID": "techmigos-279f6",
+    "PUBLIC_FIREBASE_STORAGE_BUCKET": "techmigos-279f6.firebasestorage.app",
+    "PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "220055400039",
+    "PUBLIC_FIREBASE_APP_ID": "1:220055400039:web:21596daa7438258cebaec2",
+    "PUBLIC_FIREBASE_MEASUREMENT_ID": "G-JM7JCQ4NVN"
   },
   "redirects": [
     {
@@ -45,7 +50,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://lzlflnjrtxovzrniwmyq.supabase.co;"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://firestore.googleapis.com https://firebasestorage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://asia-south1-techmigos-279f6.cloudfunctions.net;"
         },
         {
           "key": "Strict-Transport-Security",

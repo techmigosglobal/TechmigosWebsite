@@ -140,8 +140,7 @@ export function validateTicketInput(payload = {}, { creating = false } = {}) {
   }
 }
 
-// PostgREST caps every response at the project's `api.max_rows` setting (1000
-// by default in supabase/config.toml), so an unbounded select silently drops
+// The source project's database caps unbounded responses, so an unbounded select silently drops
 // rows once a table grows past that size. Every list read asks for one row more
 // than the cap so truncation can be reported instead of hidden.
 export const CRM_LIST_LIMIT = 1000;
@@ -159,7 +158,7 @@ async function fetchBoundedList(client, table, fields, resource, filters = {}) {
   return { items: truncated ? rows.slice(0, CRM_LIST_LIMIT) : rows, truncated };
 }
 
-function errorFrom(error, fallback = 'Supabase request failed.') {
+function errorFrom(error, fallback = 'Firebase request failed.') {
   const message = error?.message || fallback;
   const wrapped = new Error(message);
   wrapped.code = error?.code;
@@ -199,7 +198,7 @@ function validatePrivateObjectPath(value, prefixes, label) {
 }
 
 export function validateFinanceProofPath(value) {
-  return validatePrivateObjectPath(value, 'records', 'finance proof');
+  return validatePrivateObjectPath(value, ['records', 'pending'], 'finance proof');
 }
 
 export function validateInvoiceAssetPath(value) {
@@ -234,13 +233,13 @@ function cleanProjectFolderName(value) {
     .slice(0, 120) || 'Uploaded folder';
 }
 
-export function createCrmRepository(getSupabase) {
+export function createCrmRepository(getFirebase) {
   let contextPromise;
   let context = null;
 
   function sb() {
-    const client = getSupabase?.();
-    if (!client) throw new Error('Supabase client is not ready. Please refresh the page.');
+    const client = getFirebase?.();
+    if (!client) throw new Error('Firebase client is not ready. Please refresh the page.');
     return client;
   }
 

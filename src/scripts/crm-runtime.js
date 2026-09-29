@@ -1,20 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
 import { Chart } from 'chart.js/auto';
 import { createCrmRepository } from '../lib/crm/repository.js';
+import { createFirebaseBridge } from '../lib/firebase/supabaseBridge.js';
 
 window.Chart = Chart;
-window.tmSupabase = null;
+window.tmFirebase = null;
 window.tmCrmReady = new Promise((resolve) => { window.__resolveTmCrm = resolve; });
 
 try {
-  const sbUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
-  const sbKey = import.meta.env.PUBLIC_SUPABASE_KEY || '';
-  if (sbUrl && sbKey) {
-    window.tmSupabase = createClient(sbUrl, sbKey);
-  }
+  window.tmFirebase = createFirebaseBridge();
 } catch (error) {
-  console.error('Supabase init failed:', error);
+  console.error('Firebase init failed:', error);
 }
 
-window.tmCrm = { repository: createCrmRepository(() => window.tmSupabase) };
+window.tmCrm = { repository: createCrmRepository(() => window.tmFirebase) };
 window.__resolveTmCrm?.(window.tmCrm);

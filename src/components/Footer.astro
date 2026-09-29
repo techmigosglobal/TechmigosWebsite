@@ -245,11 +245,11 @@ const socialLinks = [
       };
 
       try {
-        const supabase = (window as any).tmSupabase;
-        if (!supabase) throw new Error('Newsletter service is unavailable right now.');
+        const firebase = (window as any).tmFirebase;
+        if (!firebase) throw new Error('Newsletter service is unavailable right now.');
         newsletterSubmit.disabled = true;
         newsletterSubmit.textContent = 'Subscribing...';
-        const { error } = await supabase
+        const { error } = await firebase
           .from('newsletter_subscribers')
           .insert([payload]);
 
