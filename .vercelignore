@@ -12,7 +12,7 @@ yarn-error.log
 .env.example
 .tmp-*
 docs/
-scripts/
+/scripts/
 !src/scripts/
 !src/scripts/crm-pdf.js
 php-backend/
