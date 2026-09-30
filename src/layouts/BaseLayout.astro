@@ -32,8 +32,24 @@ const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.tec
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
 const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
 const pageTitle = title === 'Home'
-  ? 'TechMigos | Web, Mobile, AI & Backend Development'
+  ? 'TechMigos | Software Development Company in Hyderabad'
   : `${title} | TechMigos`;
+const serviceCatalog = [
+  ['Web application development', '/services#web'],
+  ['Mobile app development', '/services#mobile'],
+  ['Quality assurance and testing', '/services#qa'],
+  ['Backend development', '/services#backend'],
+  ['AI and machine learning integration', '/services#ai'],
+  ['Technology consulting and training', '/services#consulting'],
+].map(([name, path]) => ({
+  '@type': 'Offer',
+  itemOffered: {
+    '@type': 'Service',
+    name,
+    provider: { '@id': `${siteOrigin}/#organization` },
+    url: new URL(path, siteOrigin).toString(),
+  },
+}));
 const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
 const breadcrumbLabels: Record<string, string> = {
   about: 'About', services: 'Services', portfolio: 'Portfolio', blog: 'Blog',
@@ -61,6 +77,15 @@ const structuredData = {
         'https://www.instagram.com/techmigos_official/',
         'https://medium.com/@techmigos',
       ],
+      areaServed: [
+        { '@type': 'City', name: 'Hyderabad' },
+        { '@type': 'Country', name: 'India' },
+      ],
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'TechMigos software development services',
+        itemListElement: serviceCatalog,
+      },
       contactPoint: {
         '@type': 'ContactPoint',
         email: 'info@techmigos.com',
@@ -72,6 +97,7 @@ const structuredData = {
       '@type': 'WebSite',
       '@id': `${siteOrigin}/#website`,
       name: 'TechMigos',
+      alternateName: 'TechMigos Software Development',
       url: siteOrigin,
       publisher: { '@id': `${siteOrigin}/#organization` },
       inLanguage: 'en-IN',
@@ -108,6 +134,7 @@ const structuredData = {
     <title>{pageTitle}</title>
     <meta name="title" content={pageTitle} />
     <meta name="description" content={description} />
+    <meta name="author" content="TechMigos" />
     <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
 
     <!-- Canonical -->
@@ -119,7 +146,9 @@ const structuredData = {
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
+    <meta property="og:locale" content="en_IN" />
     <meta property="og:image" content={absoluteOgImage} />
+    <meta property="og:image:alt" content={pageTitle} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -127,6 +156,7 @@ const structuredData = {
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absoluteOgImage} />
+    <meta name="twitter:image:alt" content={pageTitle} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/icon.png" />
