@@ -820,6 +820,17 @@ test('live role provisioning uses Supabase Auth and PostgREST directly', () => {
   assert.match(envScript, /readDotEnv\('\.env\.local'\)/);
 });
 
+test('Firebase user deletion removes the Auth identity and access directory while preserving CRM history', () => {
+  const source = readFileSync(fileURLToPath(new URL('../functions/index.js', import.meta.url)), 'utf8');
+  assert.match(source, /operation === 'delete_profile'/);
+  assert.match(source, /auth\.deleteUser\(uid\)/);
+  assert.match(source, /user_profiles\/\$\{uid\}/);
+  assert.match(source, /login_aliases/);
+  assert.match(source, /crm_project_members/);
+  assert.match(source, /assigned_user_id: null/);
+  assert.match(source, /owner_user_id: ''/);
+});
+
 test('public auth and CRM pages load only the runtime boundary they require', () => {
   const baseLayoutPath = fileURLToPath(new URL('../src/layouts/BaseLayout.astro', import.meta.url));
   const clientPath = fileURLToPath(new URL('../src/pages/client.astro', import.meta.url));

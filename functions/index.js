@@ -12,6 +12,7 @@ const REGION = 'asia-south1';
 const DEFAULT_STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || `${process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'techmigos-279f6'}.firebasestorage.app`;
 const ROLES = new Set(['company_admin', 'company_member', 'client']);
 const STATUSES = new Set(['active', 'inactive', 'pending']);
+const FIRESTORE_BATCH_LIMIT = 450;
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : value;
@@ -94,6 +95,66 @@ async function writeProfile({ id, uid, email, name, role, status, clientId, depa
   await batch.commit();
 }
 
+async function commitFirestoreOperations(operations) {
+  for (let offset = 0; offset < operations.length; offset += FIRESTORE_BATCH_LIMIT) {
+    const batch = db.batch();
+    operations.slice(offset, offset + FIRESTORE_BATCH_LIMIT).forEach((operation) => {
+      if (operation.type === 'delete') batch.delete(operation.ref);
+      else batch.update(operation.ref, operation.data);
+    });
+    await batch.commit();
+  }
+}
+
+async function deleteProfileAccount(profileId, callerUid) {
+  const id = Number(profileId);
+  if (!Number.isSafeInteger(id) || id < 1) throw new HttpsError('invalid-argument', 'A valid profile id is required.');
+  const profileRef = db.doc(`crm_profiles/${id}`);
+  const profileSnapshot = await profileRef.get();
+  if (!profileSnapshot.exists) throw new HttpsError('not-found', 'Profile not found.');
+  const profile = profileSnapshot.data();
+  const uid = clean(profile.auth_user_id);
+  if (!uid) throw new HttpsError('failed-precondition', 'This profile has no linked authentication account.');
+  if (uid === callerUid) throw new HttpsError('failed-precondition', 'You cannot delete the administrator account currently in use.');
+
+  const [aliases, memberships, assignedTickets, ownedProjects] = await Promise.all([
+    db.collection('login_aliases').where('user_id', '==', uid).get(),
+    db.collection('crm_project_members').where('profile_id', '==', id).get(),
+    db.collection('crm_tickets').where('assigned_user_id', '==', uid).get(),
+    db.collection('crm_projects').where('owner_user_id', '==', uid).get(),
+  ]);
+
+  try {
+    await auth.deleteUser(uid);
+  } catch (error) {
+    if (error?.code !== 'auth/user-not-found') throw new HttpsError('internal', 'Could not delete the Firebase authentication account.');
+  }
+
+  const operations = [
+    { type: 'delete', ref: profileRef },
+    { type: 'delete', ref: db.doc(`user_profiles/${uid}`) },
+    ...aliases.docs.map((snapshot) => ({ type: 'delete', ref: snapshot.ref })),
+    ...memberships.docs.map((snapshot) => ({ type: 'delete', ref: snapshot.ref })),
+    ...assignedTickets.docs.map((snapshot) => ({ type: 'update', ref: snapshot.ref, data: { assigned_user_id: null, assigned_to: '', updated_at: FieldValue.serverTimestamp() } })),
+    ...ownedProjects.docs.map((snapshot) => ({ type: 'update', ref: snapshot.ref, data: { owner_user_id: '', project_manager: '', updated_at: FieldValue.serverTimestamp() } })),
+  ];
+  try {
+    await commitFirestoreOperations(operations);
+  } catch (error) {
+    throw new HttpsError('internal', 'The authentication account was deleted, but directory cleanup did not finish. Retry the deletion or contact support.');
+  }
+
+  return {
+    ok: true,
+    profile_id: id,
+    deleted_auth_user_id: uid,
+    removed_aliases: aliases.size,
+    removed_project_memberships: memberships.size,
+    unassigned_tickets: assignedTickets.size,
+    unassigned_projects: ownedProjects.size,
+  };
+}
+
 export const adminUsers = onCall({ region: REGION }, async (request) => {
   const body = request.data || {};
   const operation = String(body.operation || '');
@@ -148,6 +209,10 @@ export const adminUsers = onCall({ region: REGION }, async (request) => {
     await writeProfile({ id, uid, email, name, role, status, clientId: body.client_id, department: clean(body.department) ?? existing.department, username, mustChangePassword: Boolean(existing.must_change_password), preserveCreatedAt: true });
     if (existing.username && existing.username.toLowerCase() !== username) await db.doc(`login_aliases/${existing.username.toLowerCase()}`).delete();
     return { profile: { ...existing, id, auth_user_id: uid, email, name, role, status, client_id: role === 'client' ? Number(body.client_id ?? existing.client_id) : null, department: clean(body.department) ?? existing.department, username } };
+  }
+
+  if (operation === 'delete_profile') {
+    return deleteProfileAccount(body.profile_id, request.auth.uid);
   }
 
   throw new Error(`Unsupported user operation: ${operation}`);

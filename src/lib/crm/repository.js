@@ -1009,7 +1009,9 @@ export function createCrmRepository(getFirebase) {
       if (profileBody.role && profileBody.role !== CRM_ROLES.CLIENT) profileBody.client_id = null;
       return adminUserOperation('update_profile', profileBody);
     }
-    if (resource === 'profiles' && method === 'DELETE') throw new Error('Deactivate users from User Management instead of deleting their CRM profile.');
+    if (resource === 'profiles' && method === 'DELETE' && id) {
+      return adminUserOperation('delete_profile', { profile_id: id });
+    }
     if (method === 'POST' && !id) {
       const payload = sanitize(resource, body);
       if (resource === 'projects') validateProjectPayload(payload, { creating: true });

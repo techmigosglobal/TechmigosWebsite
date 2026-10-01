@@ -41,7 +41,8 @@ export function createRecordActions({
   async function deleteRecord(resource, id) {
     if (!canDelete(resource)) return toast('You do not have permission to delete this record.');
     if (resource === 'profiles' && !isCompanyAdmin()) return toast('Only company admins can delete user records.');
-    if (!id || !confirm(`Delete this ${resource.slice(0, -1) || resource}? This cannot be undone.`)) return;
+    const label = resource === 'profiles' ? 'user account' : resource.slice(0, -1) || resource;
+    if (!id || !confirm(`Permanently delete this ${label}? Sign-in access will be removed and this cannot be undone.`)) return;
     try {
       await portal(`/api/portal/${resource}/${id}`, { method: 'DELETE' });
       toast('Deleted');
@@ -84,7 +85,9 @@ export function createRecordActions({
 
   async function bulkDelete() {
     const rows = selectedRows();
-    if (!rows.length || !confirm(`Delete ${rows.length} selected records?`)) return;
+    const profileCount = rows.filter((row) => row.dataset.resource === 'profiles').length;
+    const label = profileCount === rows.length ? 'user accounts' : 'selected records';
+    if (!rows.length || !confirm(`Permanently delete ${rows.length} selected ${label}? Sign-in access for selected accounts will be removed and this cannot be undone.`)) return;
     if (rows.some((row) => row.dataset.resource === 'profiles') && !isCompanyAdmin()) {
       return toast('Only company admins can bulk delete user records.');
     }

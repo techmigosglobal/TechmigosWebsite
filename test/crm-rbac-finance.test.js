@@ -107,7 +107,7 @@ test('employees can only use assigned project delivery and support resources', (
   assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'project_files'), true);
   assert.equal(canDelete(CRM_ROLES.EMPLOYEE, 'project_files'), false);
   assert.equal(canCreate(CRM_ROLES.EMPLOYEE, 'clients'), false);
-  assert.equal(canDelete(CRM_ROLES.ADMIN, 'profiles'), false);
+  assert.equal(canDelete(CRM_ROLES.ADMIN, 'profiles'), true);
   assert.equal(canRead(CRM_ROLES.CLIENT, 'project_files'), false);
   assert.equal(canUpdate(CRM_ROLES.CLIENT, 'project_folders'), false);
 });
@@ -320,6 +320,29 @@ test('client login creation forwards the selected client link', async () => {
   assert.equal(invocation.name, 'admin-users');
   assert.equal(invocation.options.body.role, CRM_ROLES.CLIENT);
   assert.equal(invocation.options.body.client_id, 42);
+});
+
+test('admin profile deletion dispatches the Firebase account deletion operation', async () => {
+  let invocation;
+  const profileQuery = {
+    select() { return this; },
+    eq() { return this; },
+    maybeSingle: async () => ({ data: { id: 1, auth_user_id: 'admin-auth-id', role: CRM_ROLES.ADMIN, status: 'active' }, error: null }),
+  };
+  const client = {
+    auth: { getUser: async () => ({ data: { user: { id: 'admin-auth-id' } }, error: null }) },
+    from: () => profileQuery,
+    functions: {
+      invoke: async (name, options) => {
+        invocation = { name, options };
+        return { data: { ok: true }, error: null };
+      },
+    },
+  };
+  await createCrmRepository(() => client).request('/api/portal/profiles/42', { method: 'DELETE' });
+
+  assert.equal(invocation.name, 'admin-users');
+  assert.deepEqual(invocation.options.body, { operation: 'delete_profile', profile_id: '42' });
 });
 
 test('confirmed cleanup is admin-only and sends normalized allowlisted records to the RPC', async () => {

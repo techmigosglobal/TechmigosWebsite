@@ -65,7 +65,8 @@ export function canCreate(role, resource) {
 }
 
 export function canDelete(role, resource) {
-  if (resource === 'profiles' || resource === 'settings') return false;
+  if (resource === 'settings') return false;
+  if (resource === 'profiles') return isAdmin(role);
   if (isEmployee(role) || isClient(role)) return false;
   if (canWrite(role, resource)) return true;
   return false;
