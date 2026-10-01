@@ -250,6 +250,7 @@ function authClient() {
     },
     async signInWithPassword({ email, password }) {
       try {
+        requireConfigured();
         const credential = await signInWithEmailAndPassword(firebaseAuth, email, password);
         return { data: { user: normalizeUser(credential.user), session: { user: normalizeUser(credential.user), access_token: await credential.user.getIdToken() } }, error: null };
       } catch (error) { return { data: { user: null, session: null }, error: firebaseError(error, 'Email or password is incorrect.') }; }
@@ -366,6 +367,7 @@ export function createFirebaseBridge() {
       async invoke(name, { body = {} } = {}) {
         if (name === 'username-login') {
           try {
+            requireConfigured();
             const username = String(body.username || '').trim().toLowerCase();
             const alias = await getDoc(doc(firebaseDb, 'login_aliases', username));
             if (!alias.exists()) throw new Error('Username or password is incorrect.');

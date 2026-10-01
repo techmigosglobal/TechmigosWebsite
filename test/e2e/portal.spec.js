@@ -23,6 +23,15 @@ test('login page loads the bundled Firebase auth runtime', async ({ page }) => {
   await page.waitForFunction(() => Boolean(window.tmFirebase), null, { timeout: 10_000 });
 });
 
+test('login page exposes a configured Firebase auth client', async ({ page }) => {
+  await page.goto('/login');
+  const result = await page.evaluate(async () => {
+    const session = await window.tmFirebase?.auth?.getSession?.();
+    return { error: session?.error?.message || null };
+  });
+  expect(result.error).toBeNull();
+});
+
 test('username login accepts a Firebase session without a Supabase refresh token', async ({ page }) => {
   await page.goto('/login');
   await page.evaluate(() => {
