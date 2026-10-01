@@ -23,6 +23,29 @@ test('login page loads the bundled Firebase auth runtime', async ({ page }) => {
   await page.waitForFunction(() => Boolean(window.tmFirebase), null, { timeout: 10_000 });
 });
 
+test('username login accepts a Firebase session without a Supabase refresh token', async ({ page }) => {
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const profile = { role: 'company_admin', status: 'active', must_change_password: false };
+    window.tmFirebase = {
+      functions: { invoke: async () => ({ data: { session: { access_token: 'firebase-access-token' } }, error: null }) },
+      auth: { setSession: async () => ({ data: { user: { id: 'test-user' } }, error: null }) },
+      from: () => ({
+        select() { return this; },
+        eq() { return this; },
+        limit() { return this; },
+        single: async () => ({ data: profile, error: null }),
+      }),
+      rpc: async () => ({ error: null }),
+    };
+  });
+
+  await page.getByLabel(/username or email/i).fill('test-user');
+  await page.locator('#password').fill('Password1!');
+  await page.getByRole('button', { name: /sign in/i }).click();
+  await expect(page).toHaveURL(/\/company(?:\/|$)/);
+});
+
 test('password recovery is available without opening the workspace', async ({ page }) => {
   await page.goto('/reset-password');
   await expect(page.getByRole('heading', { name: /reset your password/i })).toBeVisible();

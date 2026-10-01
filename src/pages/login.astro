@@ -200,7 +200,7 @@ const slides = [
           const { data: loginResult, error: loginError } = await window.tmFirebase.functions.invoke('username-login', {
             body: { username: loginId, password },
           });
-          if (loginError || !loginResult?.session?.access_token || !loginResult?.session?.refresh_token) {
+          if (loginError || !loginResult?.session?.access_token) {
             throw new Error('Username or password is incorrect.');
           }
           const { data, error: sessionError } = await window.tmFirebase.auth.setSession(loginResult.session);
