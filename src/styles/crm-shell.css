@@ -1444,6 +1444,27 @@ kbd.crm-search-kbd {
   white-space: nowrap;
 }
 
+.crm-select-column {
+  min-width: 92px;
+}
+
+.crm-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.crm-select-all input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #2563eb;
+}
+
 .crm-mini-action {
   min-height: 34px;
   border: 1px solid var(--crm-line);

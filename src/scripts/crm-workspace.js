@@ -970,6 +970,13 @@
           scheduleSave(field);
           return;
         }
+        const selectAll = event.target instanceof Element ? event.target.closest('[data-select-all]') : null;
+        if (selectAll && crmSurface(selectAll)) {
+          const table = selectAll.closest('table');
+          table?.querySelectorAll('[data-row-select]').forEach((input) => { input.checked = selectAll.checked; });
+          updateSelectionBar();
+          return;
+        }
         const element = event.target instanceof Element ? event.target.closest('[data-row-select]') : null;
         if (element && crmSurface(element)) updateSelectionBar();
       });

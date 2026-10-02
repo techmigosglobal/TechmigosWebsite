@@ -84,7 +84,10 @@ export function table(headers, rows, empty = 'No records yet.', tableClass = '')
     table.labelIndex += 1;
     return `<td data-label="${escapeHtml(headers[index] || '')}"${attrs}>`;
   }) : '';
-  return `<div class="crm-table-wrap"><table class="crm-table ${tableClass}"><thead><tr>${headers.map((item) => `<th>${item}</th>`).join('')}</tr></thead><tbody>${labeledRows || `<tr><td data-label="" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table></div>`;
+  const renderedHeaders = headers.map((item, index) => index === 0 && item === ''
+    ? '<th class="crm-select-column"><label class="crm-select-all"><input type="checkbox" data-select-all aria-label="Select all visible rows" /><span>Select all</span></label></th>'
+    : `<th>${item}</th>`).join('');
+  return `<div class="crm-table-wrap"><table class="crm-table ${tableClass}"><thead><tr>${renderedHeaders}</tr></thead><tbody>${labeledRows || `<tr><td data-label="" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table></div>`;
 }
 table.labelIndex = 0;
 

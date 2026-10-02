@@ -207,8 +207,17 @@ export function validateInvoiceAssetPath(value) {
 
 function validateFile(file, allowedTypes) {
   if (!file || typeof file.size !== 'number') throw new Error('No file provided.');
-  if (!allowedTypes.has(file.type)) throw new Error('Unsupported file type. Use PNG, JPEG, WebP, or PDF.');
-  if (file.size > FILE_LIMIT) throw new Error('File is too large. Maximum size is 10 MB.');
+  const type = fileContentType(file);
+  if (!allowedTypes.has(type)) throw new Error('Unsupported file type. Use PNG, JPEG, WebP, or PDF.');
+  if (file.size >= FILE_LIMIT) throw new Error('File is too large. Maximum size is 10 MB.');
+  return type;
+}
+
+function fileContentType(file) {
+  const declared = String(file?.type || '').toLowerCase();
+  if (declared) return declared;
+  const extension = String(file?.name || '').toLowerCase().split('.').pop();
+  return ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', pdf: 'application/pdf' })[extension] || '';
 }
 
 export function validateProjectFileInput(file) {
@@ -521,12 +530,12 @@ export function createCrmRepository(getFirebase) {
   async function uploadInvoiceSign(id, file) {
     await getContext();
     requireResource('invoices', 'POST');
-    validateFile(file, IMAGE_TYPES);
+    const contentType = validateFile(file, IMAGE_TYPES);
     const invoiceId = Number(id);
     if (!Number.isInteger(invoiceId)) throw new Error('Invalid invoice id.');
     const path = `signatures/${invoiceId}/${Date.now()}-${cleanPathSegment(file.name)}`;
     const client = sb();
-    const upload = await client.storage.from('invoice-signatures').upload(path, file, { upsert: true, contentType: file.type });
+    const upload = await client.storage.from('invoice-signatures').upload(path, file, { upsert: true, contentType });
     if (upload.error) throw errorFrom(upload.error, 'Could not upload invoice signature.');
     const { data: signed, error: signedError } = await client.storage.from('invoice-signatures').createSignedUrl(path, 600);
     if (signedError || !signed?.signedUrl) {
@@ -544,11 +553,11 @@ export function createCrmRepository(getFirebase) {
   async function uploadInvoiceAsset(category, file) {
     await getContext();
     requireResource('settings', 'PATCH');
-    validateFile(file, IMAGE_TYPES);
+    const contentType = validateFile(file, IMAGE_TYPES);
     const safeCategory = cleanPathSegment(category || 'asset');
     const path = `invoice-assets/${safeCategory}/${Date.now()}-${cleanPathSegment(file.name)}`;
     const client = sb();
-    const upload = await client.storage.from('invoice-signatures').upload(path, file, { upsert: true, contentType: file.type });
+    const upload = await client.storage.from('invoice-signatures').upload(path, file, { upsert: true, contentType });
     if (upload.error) throw errorFrom(upload.error, 'Could not upload invoice branding asset.');
     const { data, error } = await client.storage.from('invoice-signatures').createSignedUrl(path, 600);
     if (error || !data?.signedUrl) {
@@ -601,12 +610,12 @@ export function createCrmRepository(getFirebase) {
   async function uploadFinanceProof(id, file) {
     await getContext();
     requireResource('finances', 'POST');
-    validateFile(file, PROOF_TYPES);
+    const contentType = validateFile(file, PROOF_TYPES);
     const financeId = Number(id);
     if (!Number.isInteger(financeId)) throw new Error('Save the finance record before attaching proof.');
     const path = `records/${financeId}/${Date.now()}-${cleanPathSegment(file.name)}`;
     const client = sb();
-    const upload = await client.storage.from('finance-proofs').upload(path, file, { upsert: true, contentType: file.type });
+    const upload = await client.storage.from('finance-proofs').upload(path, file, { upsert: true, contentType });
     if (upload.error) throw errorFrom(upload.error, 'Could not upload finance proof.');
     const update = await client.from('crm_finances').update({ proof_url: path }).eq('id', financeId).select('id, proof_url').single();
     if (update.error) {

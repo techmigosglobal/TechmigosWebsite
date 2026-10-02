@@ -76,6 +76,14 @@ export function createRecordActions({
     const rows = selectedRows();
     els.selectedCount.textContent = `${rows.length} selected`;
     els.actionbar.classList.toggle('show', rows.length > 0);
+    document.querySelectorAll('[data-select-all]').forEach((control) => {
+      const table = control.closest('table');
+      const checkboxes = Array.from(table?.querySelectorAll('[data-row-select]') || []);
+      const checked = checkboxes.filter((input) => input.checked).length;
+      control.checked = checkboxes.length > 0 && checked === checkboxes.length;
+      control.indeterminate = checked > 0 && checked < checkboxes.length;
+      control.disabled = checkboxes.length === 0;
+    });
   }
 
   function clearSelection() {
@@ -91,12 +99,22 @@ export function createRecordActions({
     if (rows.some((row) => row.dataset.resource === 'profiles') && !isCompanyAdmin()) {
       return toast('Only company admins can bulk delete user records.');
     }
-    try {
-      await Promise.all(rows.map((row) => portal(`/api/portal/${row.dataset.resource}/${row.dataset.rowId}`, { method: 'DELETE' })));
-      toast(`Deleted ${rows.length} records`);
-      await loadData();
-    } catch (error) {
-      toast(error instanceof Error ? error.message : 'Bulk delete failed');
+    const failed = [];
+    let deleted = 0;
+    for (const row of rows) {
+      try {
+        await portal(`/api/portal/${row.dataset.resource}/${encodeURIComponent(row.dataset.rowId)}`, { method: 'DELETE' });
+        deleted += 1;
+      } catch (error) {
+        failed.push(`${row.dataset.resource}/${row.dataset.rowId}: ${error instanceof Error ? error.message : 'delete failed'}`);
+      }
+    }
+    clearSelection();
+    await loadData({ skipCache: true });
+    if (failed.length) {
+      toast(`${deleted} deleted; ${failed.length} failed. ${failed[0]}`);
+    } else {
+      toast(`Deleted ${deleted} records`);
     }
   }
 

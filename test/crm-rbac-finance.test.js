@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
   CRM_ROLES,
@@ -149,6 +151,14 @@ test('private storage paths stay inside their feature bucket prefixes', () => {
   assert.throws(() => validateFinanceProofPath('projects/42/receipt.pdf'), /invalid finance proof path/i);
   assert.throws(() => validateInvoiceAssetPath('records/42/receipt.pdf'), /invalid invoice asset path/i);
   assert.throws(() => validateInvoiceAssetPath('signatures/../other.png'), /invalid invoice asset path/i);
+});
+
+test('finance proof uploads accept extension-detected browser files but reject the 10 MB boundary', () => {
+  const repository = readFileSync(fileURLToPath(new URL('../src/lib/crm/repository.js', import.meta.url)), 'utf8');
+  assert.match(repository, /function fileContentType\(file\)/);
+  assert.match(repository, /if \(file\.size >= FILE_LIMIT\)/);
+  assert.match(repository, /const contentType = validateFile\(file, PROOF_TYPES\)/);
+  assert.match(repository, /from\('finance-proofs'\)\.upload\(path, file, \{ upsert: true, contentType \}\)/);
 });
 
 test('project input accepts internal projects but rejects incomplete or unsafe values', () => {
