@@ -106,12 +106,22 @@ async function commitFirestoreOperations(operations) {
   }
 }
 
+async function profileSnapshotById(profileId) {
+  const id = Number(profileId);
+  const direct = await db.doc(`crm_profiles/${id}`).get();
+  if (direct.exists) return direct;
+  const matches = await db.collection('crm_profiles').where('id', '==', id).limit(1).get();
+  return matches.empty ? null : matches.docs[0];
+}
+
 async function deleteProfileAccount(profileId, callerUid) {
   const id = Number(profileId);
   if (!Number.isSafeInteger(id) || id < 1) throw new HttpsError('invalid-argument', 'A valid profile id is required.');
-  const profileRef = db.doc(`crm_profiles/${id}`);
-  const profileSnapshot = await profileRef.get();
-  if (!profileSnapshot.exists) throw new HttpsError('not-found', 'Profile not found.');
+  const profileSnapshot = await profileSnapshotById(id);
+  // A cached directory can outlive a profile that was already removed. Treat
+  // that retry as successful so the caller can refresh and discard the stale row.
+  if (!profileSnapshot) return { ok: true, profile_id: id, already_deleted: true };
+  const profileRef = profileSnapshot.ref;
   const profile = profileSnapshot.data();
   const uid = clean(profile.auth_user_id);
   if (!uid) throw new HttpsError('failed-precondition', 'This profile has no linked authentication account.');
