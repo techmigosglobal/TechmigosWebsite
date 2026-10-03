@@ -12,6 +12,11 @@ export function createPeopleSelectionActions({ state, renderUsers, renderClients
       state.usersSection === 'clients' ? renderUsers() : renderClients();
       return true;
     }
+    if (element?.matches?.('#teams-search')) {
+      state.usersSearch = element.value;
+      renderUsers();
+      return true;
+    }
     if (!element?.matches?.('#employees-search')) return false;
     state.search = element.value;
     state.usersSection === 'employees' ? renderUsers() : renderEmployees();
@@ -77,6 +82,7 @@ function usersAdminTabs(active = state.usersSection || 'directory') {
     ['directory', 'Access Directory', state.data.profiles.length],
     ['employees', 'Employees', employeesFromState().length],
     ['clients', 'Clients', state.data.clients.length],
+    ['teams', 'Teams', (state.data.teams || []).length],
   ];
   return `<nav class="users-admin-tabs" aria-label="User management sections">${tabs.map(([key, label, count]) => `<button class="users-admin-tab${active === key ? ' active' : ''}" type="button" data-users-section="${key}" aria-current="${active === key ? 'page' : 'false'}">${label}<small>${count}</small></button>`).join('')}</nav>`;
 }
@@ -284,12 +290,26 @@ function employeeDetail(employee) {
     </div>`;
 }
 
+function renderTeams(options = {}) {
+  const embeddedInUsers = options.embeddedInUsers === true;
+  const query = String(state.usersSearch || '').trim().toLowerCase();
+  const teams = (state.data.teams || []).filter((team) => !query || [team.name, team.description, team.status].some((value) => String(value || '').toLowerCase().includes(query)));
+  const peopleById = new Map((state.data.profiles || []).map((profile) => [String(profile.id), profile]));
+  const rows = teams.map((team) => {
+    const members = (state.data.team_members || []).filter((member) => String(member.team_id) === String(team.id)).map((member) => peopleById.get(String(member.profile_id))).filter(Boolean);
+    const projects = (state.data.project_teams || []).filter((assignment) => String(assignment.team_id) === String(team.id));
+    return `<tr data-resource="teams" data-row-id="${team.id}"><td><strong>${escapeHtml(team.name)}</strong><br><small style="color:#64748b;">${escapeHtml(team.description || 'Reusable project team')}</small></td><td>${members.length ? members.slice(0, 4).map((person) => escapeHtml(person.name || person.email)).join(', ') : '<span style="color:#94a3b8;">No members</span>'}${members.length > 4 ? ` +${members.length - 4}` : ''}</td><td><strong>${projects.length}</strong></td><td>${badge(team.status || 'active', team.status === 'archived' ? 'red' : 'green')}</td><td>${isCompanyAdmin() ? rowActions('teams', team.id) : '<span style="color:#94a3b8;">View only</span>'}</td></tr>`;
+  }).join('');
+  replaceSafeMarkup(els.view, `${pageHead(embeddedInUsers ? 'User Management' : 'Teams', 'Reusable teams shared across projects. Team membership controls project access.', `${isCompanyAdmin() ? '<button class="crm-button primary" data-create="teams" type="button">+ Create Team</button>' : ''}`)}${embeddedInUsers ? usersAdminTabs('teams') : ''}<section class="crm-card"><div class="crm-card-head"><div><h2 class="crm-card-title">Reusable project teams</h2><p class="users-directory-subtitle">Update a team once and every assigned project receives the same roster.</p></div><div class="crm-toolbar"><input class="crm-input" id="teams-search" placeholder="Search teams..." value="${escapeHtml(state.usersSearch || '')}" /></div></div>${table(['Team', 'Members', 'Projects', 'Status', 'Actions'], rows, 'No teams found.')}</section>`);
+}
+
 
 
   return {
     usersAdminTabs,
     renderClients,
     renderEmployees,
+    renderTeams,
     employeesFromState,
     employeeProjects,
     employeeTickets,

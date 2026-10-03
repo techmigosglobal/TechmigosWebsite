@@ -38,7 +38,7 @@ const CLIENT_FIELDS = Object.freeze(['id', 'name', 'company', 'email', 'phone', 
 const CLIENT_PROJECT_FIELDS = Object.freeze(['id', 'client_id', 'name', 'client_name', 'status', 'health', 'progress', 'due_date', 'summary', 'created_at', 'updated_at']);
 const CLIENT_TICKET_FIELDS = Object.freeze(['id', 'client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'created_at', 'updated_at']);
 const CLIENT_INVOICE_FIELDS = Object.freeze(['id', 'client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'invoice_branding', 'is_recurring', 'created_at', 'updated_at']);
-const EMPLOYEE_PROJECT_FIELDS = Object.freeze(['id', 'client_id', 'name', 'client_name', 'project_manager', 'status', 'health', 'progress', 'due_date', 'summary', 'notes', 'created_at', 'updated_at']);
+const EMPLOYEE_PROJECT_FIELDS = Object.freeze(['id', 'client_id', 'name', 'client_name', 'project_manager', 'team_names', 'team_member_names', 'status', 'health', 'progress', 'due_date', 'summary', 'notes', 'created_at', 'updated_at']);
 const EMPLOYEE_TICKET_FIELDS = Object.freeze(['id', 'client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'created_at', 'updated_at']);
 const SETTINGS_FIELDS = Object.freeze({
   company: new Set(['company_name', 'company_email', 'company_phone', 'timezone', 'currency', 'company_address']),
@@ -787,6 +787,25 @@ export function createCrmRepository(getFirebase) {
     if (error) throw errorFrom(error, 'Could not update project membership.');
   }
 
+  async function adminTeamOperation(operation, body = {}) {
+    const current = await getContext();
+    if (!isAdmin(current.role)) throw new Error('Only company admins can manage teams and team payments.');
+    const { data, error } = await sb().functions.invoke('admin-teams', { body: { operation, ...body } });
+    if (error) throw errorFrom(error, 'Could not complete the team or payment operation.');
+    if (data?.error) throw new Error(data.error);
+    return data || { ok: true };
+  }
+
+  const createTeam = (body) => adminTeamOperation('create_team', body);
+  const updateTeam = (teamId, body) => adminTeamOperation('update_team', { team_id: teamId, ...body });
+  const deleteTeam = (teamId) => adminTeamOperation('delete_team', { team_id: teamId });
+  const setTeamMembers = (teamId, profileIds) => adminTeamOperation('set_team_members', { team_id: teamId, profile_ids: profileIds });
+  const setProjectTeams = (projectId, teamIds) => adminTeamOperation('set_project_teams', { project_id: projectId, team_ids: teamIds });
+  const createTeamPayment = (body) => adminTeamOperation('create_payment', body);
+  const updateTeamPayment = (paymentId, body) => adminTeamOperation('update_payment', { payment_id: paymentId, ...body });
+  const markTeamPaymentPaid = (paymentId, paidAt) => adminTeamOperation('mark_payment_paid', { payment_id: paymentId, paid_at: paidAt });
+  const deleteTeamPayment = (paymentId) => adminTeamOperation('delete_payment', { payment_id: paymentId });
+
   async function purgeConfirmedRecords(records, reason) {
     const current = await getContext();
     if (!isAdmin(current.role)) throw new Error('Only company admins can remove confirmed records.');
@@ -978,6 +997,16 @@ export function createCrmRepository(getFirebase) {
     if (resource === 'invoices' && id && sub === 'upload-sign' && method === 'POST') return uploadInvoiceSign(id, options.body?.get?.('file'));
     if (resource === 'finances' && sub === 'upload-proof' && method === 'POST') return uploadFinanceProof(id, options.body?.get?.('file'));
     if (resource === 'invoices' && id && !sub && method === 'GET') return getInvoiceDetail(id);
+    if (['teams', 'team_members', 'project_teams', 'team_project_payments'].includes(resource) && method !== 'GET') {
+      if (resource === 'teams' && method === 'POST') return { item: (await createTeam(body)).team };
+      if (resource === 'teams' && method === 'PATCH' && id) return updateTeam(id, body);
+      if (resource === 'teams' && method === 'DELETE' && id) return deleteTeam(id);
+      if (resource === 'team_members' && method === 'POST') return setTeamMembers(body.team_id, body.profile_ids || []);
+      if (resource === 'project_teams' && method === 'POST') return setProjectTeams(body.project_id, body.team_ids || []);
+      if (resource === 'team_project_payments' && method === 'POST') return { item: (await createTeamPayment(body)).payment };
+      if (resource === 'team_project_payments' && method === 'PATCH' && id) return { item: (await updateTeamPayment(id, body)).payment };
+      if (resource === 'team_project_payments' && method === 'DELETE' && id) return deleteTeamPayment(id);
+    }
     if (resource === 'project_files' && id && sub === 'download' && method === 'GET') return { url: await getProjectFileUrl(id) };
     if (resource === 'ticket_messages' && method !== 'GET') {
       throw new Error('Use the ticket conversation workflow for message changes.');
@@ -1077,6 +1106,15 @@ export function createCrmRepository(getFirebase) {
     deleteProjectFile,
     deleteProject,
     setProjectMembers,
+    createTeam,
+    updateTeam,
+    deleteTeam,
+    setTeamMembers,
+    setProjectTeams,
+    createTeamPayment,
+    updateTeamPayment,
+    markTeamPaymentPaid,
+    deleteTeamPayment,
     purgeConfirmedRecords,
     clearSession() { context = null; contextPromise = null; },
   };

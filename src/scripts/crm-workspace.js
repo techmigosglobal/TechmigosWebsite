@@ -125,6 +125,10 @@
         project_folders: [],
         project_files: [],
         ticket_messages: [],
+        teams: [],
+        team_members: [],
+        project_teams: [],
+        team_project_payments: [],
       },
     };
 
@@ -325,6 +329,8 @@
       openInvoiceEditIntegrated: (...args) => openInvoiceEditIntegrated(...args),
       repository: {
         setProjectMembers: (...args) => window.tmCrm.repository.setProjectMembers(...args),
+        setProjectTeams: (...args) => window.tmCrm.repository.setProjectTeams(...args),
+        setTeamMembers: (...args) => window.tmCrm.repository.setTeamMembers(...args),
       },
     });
     const {
@@ -750,6 +756,7 @@
       usersAdminTabs,
       renderClients,
       renderEmployees,
+      renderTeams,
       employeesFromState,
       employeeProjects,
       assignedUserName,
@@ -774,6 +781,7 @@
         nice,
         renderEmployees,
         renderClients,
+        renderTeams,
       });
     }
     async function renderSettings() {

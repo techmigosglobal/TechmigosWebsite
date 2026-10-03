@@ -296,6 +296,14 @@ async function invokeAdminUsers(body) {
   } catch (error) { return { data: null, error: firebaseError(error, 'Could not complete the admin user operation.') }; }
 }
 
+async function invokeAdminTeams(body) {
+  try {
+    if (!firebaseFunctions) throw new Error('Firebase Functions is not configured.');
+    const result = await httpsCallable(firebaseFunctions, 'adminTeams')(body);
+    return { data: result.data, error: null };
+  } catch (error) { return { data: null, error: firebaseError(error, 'Could not complete the team or payment operation.') }; }
+}
+
 function rpcClient(name, args = {}) {
   return {
     async execute() {
@@ -377,6 +385,7 @@ export function createFirebaseBridge() {
           } catch (error) { return { data: null, error: firebaseError(error, 'Username or password is incorrect.') }; }
         }
         if (name === 'admin-users') return invokeAdminUsers(body);
+        if (name === 'admin-teams') return invokeAdminTeams(body);
         return { data: null, error: new Error(`Unsupported Firebase function: ${name}`) };
       },
     },

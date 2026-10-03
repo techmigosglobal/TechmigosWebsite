@@ -16,6 +16,10 @@ export const CRM_TABLE_MAP = Object.freeze({
   project_members: 'crm_project_members',
   project_folders: 'crm_project_folders',
   project_files: 'crm_project_files',
+  teams: 'crm_teams',
+  team_members: 'crm_team_members',
+  project_teams: 'crm_project_teams',
+  team_project_payments: 'crm_team_project_payments',
 });
 
 export const CRM_RESOURCE_ALIASES = Object.freeze({
@@ -26,7 +30,7 @@ export const CRM_RESOURCE_ALIASES = Object.freeze({
 
 export const CRM_RESOURCE_FIELDS = Object.freeze({
   clients: ['id', 'name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes', 'created_at', 'updated_at'],
-  projects: ['id', 'client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes', 'created_at', 'updated_at'],
+  projects: ['id', 'client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'team_ids', 'team_names', 'team_member_names', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes', 'created_at', 'updated_at'],
   tickets: ['id', 'client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id', 'created_at', 'updated_at'],
   ticket_messages: ['id', 'ticket_id', 'body', 'author_name', 'author_role', 'visibility', 'created_at'],
   invoices: ['id', 'client_id', 'project_id', 'invoice_number', 'invoice_date', 'due_date', 'currency', 'customer_name', 'customer_email', 'customer_phone', 'billing_address', 'service_title', 'discount_amount', 'tax_amount', 'total_amount', 'received_amount', 'status', 'notes', 'payment_instructions', 'terms', 'sign_url', 'project_snapshot', 'invoice_branding', 'is_recurring', 'created_at', 'updated_at'],
@@ -38,17 +42,25 @@ export const CRM_RESOURCE_FIELDS = Object.freeze({
   project_members: ['id', 'project_id', 'profile_id', 'role', 'assigned_by', 'created_at'],
   project_folders: ['id', 'project_id', 'parent_id', 'name', 'created_by', 'created_at'],
   project_files: ['id', 'project_id', 'folder_id', 'object_path', 'original_name', 'mime_type', 'size_bytes', 'uploaded_by', 'created_at'],
+  teams: ['id', 'name', 'description', 'status', 'created_by', 'created_at', 'updated_at'],
+  team_members: ['id', 'team_id', 'profile_id', 'role', 'assigned_by', 'created_at'],
+  project_teams: ['id', 'project_id', 'team_id', 'assigned_by', 'created_at'],
+  team_project_payments: ['id', 'project_id', 'team_id', 'milestone_name', 'target_date', 'completed_date', 'amount', 'status', 'paid_at', 'payment_method', 'reference_id', 'proof_url', 'notes', 'finance_id', 'created_by', 'created_at', 'updated_at'],
 });
 
 export const CRM_WRITE_FIELDS = Object.freeze({
   clients: ['name', 'company', 'email', 'phone', 'status', 'marketing_opt_in', 'notes'],
-  projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
+  projects: ['client_id', 'name', 'client_name', 'project_manager', 'owner_user_id', 'team_ids', 'team_names', 'team_member_names', 'budget', 'expenses', 'revenue', 'status', 'health', 'progress', 'due_date', 'summary', 'notes'],
   tickets: ['client_id', 'project_id', 'subject', 'description', 'priority', 'status', 'assigned_to', 'assigned_user_id'],
   finances: ['invoice_id', 'client_id', 'project_id', 'transaction_date', 'transaction_type', 'reference_id', 'title', 'client', 'project', 'paid_by', 'received_by', 'payment_method', 'department', 'amount', 'status', 'notes', 'source', 'proof_url'],
   settings: ['settings'],
   project_members: ['project_id', 'profile_id', 'role'],
   project_folders: ['project_id', 'parent_id', 'name', 'created_by'],
   project_files: ['project_id', 'folder_id', 'object_path', 'original_name', 'mime_type', 'size_bytes', 'uploaded_by'],
+  teams: ['name', 'description', 'status'],
+  team_members: ['team_id', 'profile_id', 'role'],
+  project_teams: ['project_id', 'team_id'],
+  team_project_payments: ['project_id', 'team_id', 'milestone_name', 'target_date', 'completed_date', 'amount', 'status', 'paid_at', 'payment_method', 'reference_id', 'proof_url', 'notes'],
 });
 
 // Form fields intentionally include only values that the browser may submit;
@@ -63,13 +75,17 @@ export const CRM_FORM_FIELDS = Object.freeze({
   project_members: ['project_id', 'profile_id', 'role'],
   project_folders: ['project_id', 'parent_id', 'name'],
   ticket_messages: ['ticket_id', 'body', 'author_name', 'author_role', 'visibility'],
+  teams: ['name', 'description', 'status'],
+  team_members: ['team_id', 'profile_id', 'role'],
+  project_teams: ['project_id', 'team_id'],
+  team_project_payments: ['project_id', 'team_id', 'milestone_name', 'target_date', 'completed_date', 'amount', 'status', 'payment_method', 'reference_id', 'proof_url', 'notes'],
 });
 
 export const CRM_NUMERIC_FIELDS = new Set([
   'client_id', 'lead_id', 'project_id', 'ticket_id', 'invoice_id', 'profile_id', 'folder_id', 'related_id',
   'amount', 'budget', 'value', 'progress', 'expenses', 'revenue',
   'discount_amount', 'tax_amount', 'total_amount', 'received_amount',
-  'size_bytes', 'quantity', 'rate', 'sort_order',
+  'size_bytes', 'quantity', 'rate', 'sort_order', 'team_id', 'finance_id',
 ]);
 
 export const CRM_BOOLEAN_FIELDS = new Set(['marketing_opt_in', 'is_recurring']);

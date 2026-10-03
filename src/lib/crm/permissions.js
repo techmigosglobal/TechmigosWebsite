@@ -8,6 +8,7 @@ export const CRM_RESOURCES = Object.freeze([
   'clients', 'projects', 'tickets', 'ticket_messages', 'invoices',
   'invoice_items', 'finances', 'activities', 'profiles', 'settings',
   'project_members', 'project_folders', 'project_files',
+  'teams', 'team_members', 'project_teams', 'team_project_payments',
 ]);
 
 export const DISABLED_CRM_RESOURCES = new Set(['leads', 'deals', 'followups', 'campaigns']);

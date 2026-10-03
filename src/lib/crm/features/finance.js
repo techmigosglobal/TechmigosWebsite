@@ -73,7 +73,7 @@ export function renderFinance(context) {
       const sh = state.accSubTab || 'all';
       if (sh === 'income') rows = incomeRows();
       else if (sh === 'expenses') rows = rows.filter(r => normalizedStatus(r.transaction_type) === 'expense');
-      else if (sh === 'salary') rows = rows.filter(r => normalizedStatus(r.transaction_type) === 'salary');
+      else if (sh === 'salary') rows = rows.filter(r => normalizedStatus(r.transaction_type) === 'salary' && r.source !== 'team_project_payment');
       else if (sh === 'invoices') rows = [
         ...state.data.invoices.map((invoice) => ({
           ...invoice,
@@ -94,6 +94,7 @@ export function renderFinance(context) {
       return rows;
     };
     const finRows = getFinRows();
+    const teamPaymentRows = (state.data.team_project_payments || []);
     const txPage = state.accTxPage || 1, txPer = 12;
     const txTotal = finRows.length;
     const txPageRows = finRows.slice((txPage - 1) * txPer, txPage * txPer);
@@ -168,6 +169,7 @@ export function renderFinance(context) {
       </tr>`).join('')}
       </tbody></table></div>`;
     };
+    const teamPaymentsPanel = state.accSubTab === 'salary' ? `<section class="crm-card" style="padding:18px;margin-bottom:16px;"><div class="crm-card-head"><div><h2 class="crm-card-title">Project team payments</h2><p class="users-directory-subtitle">One aggregate payment per reusable team, project, and milestone.</p></div>${isCompanyAdmin() ? '<button class="crm-button primary" data-create="team_project_payments" type="button">+ Add team payment</button>' : ''}</div>${teamPaymentRows.length ? `<div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>Project</th><th>Team</th><th>Milestone</th><th>Amount</th><th>Status</th><th>Paid date</th><th>Actions</th></tr></thead><tbody>${teamPaymentRows.map((payment) => { const project = state.data.projects.find((item) => String(item.id) === String(payment.project_id)); const team = (state.data.teams || []).find((item) => String(item.id) === String(payment.team_id)); return `<tr><td>${escapeHtml(project?.name || `Project #${payment.project_id}`)}</td><td>${escapeHtml(team?.name || `Team #${payment.team_id}`)}</td><td>${escapeHtml(payment.milestone_name || 'Milestone')}</td><td style="font-weight:700;">${fmtINR(payment.amount)}</td><td>${sBadge(payment.status)}</td><td>${fmtDate(payment.paid_at)}</td><td>${isCompanyAdmin() ? `<button class="crm-button" data-edit-resource="team_project_payments" data-edit-id="${payment.id}" type="button">Edit</button><button class="crm-button" data-delete-resource="team_project_payments" data-delete-id="${payment.id}" type="button" style="color:#dc2626;">Delete</button>` : '—'}</td></tr>`; }).join('')}</tbody></table></div>` : '<p style="padding:20px 0;color:#94a3b8;">No project team payments yet. Add a payment when a milestone is ready to settle.</p>'}</section>` : '';
 
     const proofPanel = (panelId) => {
       const row = state.data.finances.find(r => String(r.id) === String(state.accSelectedId));
@@ -228,7 +230,7 @@ export function renderFinance(context) {
       ${financialPulse}
       <div style="display:grid;grid-template-columns:1fr 620px;gap:14px;">
         <div class="crm-card" style="padding:18px;">
-          ${subTabs([['all', 'All Records'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Salary'], ['invoices', 'Invoices']])}
+          ${subTabs([['all', 'All Records'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Legacy salaries'], ['invoices', 'Invoices']])}
           ${txTable(finRows.slice(0, 8), true)}
         </div>
         ${proofPanel('acc-ov-proof')}
@@ -237,7 +239,7 @@ export function renderFinance(context) {
 
     // ── TRANSACTIONS TAB ──
     const transactionsTab = `<div class="finance-tab-stack finance-transactions-stack" style="display:flex;flex-direction:column;gap:18px;">
-      ${financialPulse}
+        ${financialPulse}
       <div class="acc-transactions-workspace">
       <div class="acc-transactions-left">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
@@ -247,7 +249,8 @@ export function renderFinance(context) {
             ${canWriteFinance ? '<button class="crm-button primary" data-add-inline-finance type="button">+ Add Transaction</button><button class="crm-button" data-add-invoice-finance type="button">+ Add Invoice Entry</button>' : ''}
           </div>
         </div>
-        ${subTabs([['all', 'All'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Salary'], ['invoices', 'Invoices']])}
+        ${subTabs([['all', 'All'], ['income', 'Income'], ['expenses', 'Expenses'], ['salary', 'Legacy salaries'], ['invoices', 'Invoices']])}
+        ${teamPaymentsPanel}
         ${txTable(txPageRows, true)}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 2px;">
           <span style="font-size:12px;color:#94a3b8;">Showing ${txTotal ? ((txPage - 1) * txPer + 1) : 0}–${Math.min(txPage * txPer, txTotal)} of ${txTotal} transactions</span>

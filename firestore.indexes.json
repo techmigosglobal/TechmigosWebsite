@@ -7,7 +7,10 @@
     { "collectionGroup": "crm_ticket_messages", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "ticket_id", "order": "ASCENDING" }, { "fieldPath": "visibility", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "ASCENDING" }] },
     { "collectionGroup": "crm_project_members", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "profile_id", "order": "ASCENDING" }] },
     { "collectionGroup": "crm_project_files", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
-    { "collectionGroup": "crm_project_folders", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "ASCENDING" }] }
+    { "collectionGroup": "crm_project_folders", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_team_members", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "team_id", "order": "ASCENDING" }, { "fieldPath": "profile_id", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_project_teams", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "team_id", "order": "ASCENDING" }] },
+    { "collectionGroup": "crm_team_project_payments", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "project_id", "order": "ASCENDING" }, { "fieldPath": "team_id", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] }
   ],
   "fieldOverrides": []
 }

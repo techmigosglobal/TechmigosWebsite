@@ -2,8 +2,10 @@ import { replaceSafeMarkup } from '../safeMarkup.js';
 
 export function renderUsers(context) {
   const { state, els, employeeProjects, clientName, rowActions, usersAdminTabs, pageHead, metric, badge, crmProjectIcon, table, escapeHtml, nice, renderEmployees, renderClients } = context;
+  const renderTeams = context.renderTeams;
   if (state.usersSection === 'employees') return renderEmployees({ embeddedInUsers: true });
   if (state.usersSection === 'clients') return renderClients({ embeddedInUsers: true });
+  if (state.usersSection === 'teams') return renderTeams({ embeddedInUsers: true });
 
   const profiles = state.data.profiles || [];
   const linkedClientIds = new Set(profiles.filter((profile) => profile.role === 'client' && profile.client_id).map((profile) => String(profile.client_id)));

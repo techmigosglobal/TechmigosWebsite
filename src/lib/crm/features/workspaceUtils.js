@@ -11,7 +11,7 @@ export function generateTemporaryPassword(randomSource = globalThis.crypto) {
 
 export function generateProfileUsername(raw = {}, profiles = []) {
   const emailPrefix = String(raw.email || '').split('@')[0];
-  const fallback = emailPrefix || String(raw.name || 'user');
+  const fallback = String(raw.username || '').trim() || emailPrefix || String(raw.name || 'user');
   const base = String(fallback)
     .trim()
     .toLowerCase()
@@ -62,6 +62,17 @@ export function validateWorkspacePayload(resource, payload = {}) {
     if (payload.amount === undefined || payload.amount === null || String(payload.amount).trim() === '' || isNaN(Number(payload.amount))) return 'A valid amount is required.';
     if (!payload.status) return 'Status is required.';
     if (!['pending', 'paid', 'received', 'half_payment', 'cancelled'].includes(payload.status)) return 'Choose a valid finance status.';
+  }
+  if (resource === 'teams') {
+    if (!payload.name || !String(payload.name).trim()) return 'Team name is required.';
+    if (String(payload.name).trim().length > 120) return 'Team names must be 120 characters or fewer.';
+  }
+  if (resource === 'team_project_payments') {
+    if (!payload.project_id) return 'Select a project for this team payment.';
+    if (!payload.team_id) return 'Select a team for this payment.';
+    if (!payload.milestone_name || !String(payload.milestone_name).trim()) return 'Milestone name is required.';
+    if (!Number.isFinite(Number(payload.amount)) || Number(payload.amount) <= 0) return 'Payment amount must be greater than zero.';
+    if (payload.status === 'paid' && !payload.paid_at) return 'Paid date is required when marking a payment paid.';
   }
   return '';
 }

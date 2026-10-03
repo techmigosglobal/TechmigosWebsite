@@ -21,15 +21,18 @@ export function createOperationsForms({
     .sort((a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || '')));
 
   const projectTeamMarkup = (values = {}) => {
-    const current = new Set(state.data.project_members
-      .filter((member) => String(member.project_id) === String(values.id))
-      .map((member) => String(member.profile_id)));
-    const people = projectDeliveryPeople();
-    if (!people.length) return '<p class="crm-help wide">No active delivery people are available to assign yet. Create an active admin or employee login first.</p>';
-    return `<fieldset class="wide project-team-field"><legend>Delivery people</legend><div class="project-team-intro"><span>Choose everyone who should work on this project.</span><strong>${current.size} selected</strong></div><div class="project-team-picker">${people.map((person) => {
-      const roleLabel = person.role === 'company_admin' ? 'Admin' : 'Employee';
-      const details = [roleLabel, person.department, person.email || person.username].filter(Boolean).join(' · ');
-      return `<label class="project-team-option"><input type="checkbox" name="project_member_id" value="${person.id}"${current.has(String(person.id)) ? ' checked' : ''} /><span class="project-team-option-copy"><strong>${escapeHtml(person.name || person.email || 'Unnamed user')}</strong><small>${escapeHtml(details)}</small></span></label>`;
+    const current = new Set((state.data.project_teams || [])
+      .filter((assignment) => String(assignment.project_id) === String(values.id))
+      .map((assignment) => String(assignment.team_id)));
+    const teams = (state.data.teams || []).filter((team) => (team.status || 'active') === 'active');
+    if (!teams.length) {
+      const legacyMembers = projectDeliveryPeople().filter((person) => state.data.project_members.some((member) => String(member.project_id) === String(values.id) && String(member.profile_id) === String(person.id)));
+      if (legacyMembers.length) return `<fieldset class="wide project-team-field"><legend>Legacy project members</legend><div class="project-team-picker">${legacyMembers.map((person) => `<label class="project-team-option"><input type="checkbox" name="project_member_id" value="${person.id}" checked disabled /><span class="project-team-option-copy"><strong>${escapeHtml(person.name || person.email || 'Unnamed user')}</strong><small>Move this project to a reusable team to change membership.</small></span></label>`).join('')}</div></fieldset>`;
+      return '<p class="crm-help wide">No reusable teams are available yet. Create a team in User Management first.</p>';
+    }
+    return `<fieldset class="wide project-team-field"><legend>Project teams</legend><div class="project-team-intro"><span>Choose every reusable team that should work on this project.</span><strong>${current.size} selected</strong></div><div class="project-team-picker">${teams.map((team) => {
+      const memberCount = (state.data.team_members || []).filter((member) => String(member.team_id) === String(team.id)).length;
+      return `<label class="project-team-option"><input type="checkbox" name="project_team_id" value="${team.id}"${current.has(String(team.id)) ? ' checked' : ''} /><span class="project-team-option-copy"><strong>${escapeHtml(team.name)}</strong><small>${escapeHtml(team.description || `${memberCount} member${memberCount === 1 ? '' : 's'}`)}</small></span></label>`;
     }).join('')}</div></fieldset>`;
   };
 
@@ -39,6 +42,11 @@ export function createOperationsForms({
     const employeeOpts = () => `<option value="">— Unassigned —</option>${employeesFromState().map((employee) => `<option value="${escapeHtml(employee.name)}"${values.assigned_to === employee.name || values.project_manager === employee.name ? ' selected' : ''}>${escapeHtml(employee.name)}</option>`).join('')}`;
     const employeeIdOpts = () => `<option value="">— Unassigned —</option>${employeesFromState().map((employee) => `<option value="${escapeHtml(employee.auth_user_id)}"${String(values.assigned_user_id) === String(employee.auth_user_id) ? ' selected' : ''}>${escapeHtml(employee.name || employee.email)}</option>`).join('')}`;
     const projectManagerOpts = () => `<option value="">— Set later —</option>${projectDeliveryPeople().map((employee) => `<option value="${employee.id}"${String(values.project_manager_profile_id) === String(employee.id) || values.project_manager === employee.name ? ' selected' : ''}>${escapeHtml(employee.name || employee.email)}${employee.department ? ` · ${escapeHtml(employee.department)}` : ''}</option>`).join('')}`;
+    const teamMemberMarkup = () => {
+      const current = new Set((state.data.team_members || []).filter((member) => String(member.team_id) === String(values.id)).map((member) => String(member.profile_id)));
+      const people = projectDeliveryPeople();
+      return `<fieldset class="wide project-team-field"><legend>Team members</legend><div class="project-team-picker">${people.map((person) => `<label class="project-team-option"><input type="checkbox" name="team_profile_id" value="${person.id}"${current.has(String(person.id)) ? ' checked' : ''} /><span class="project-team-option-copy"><strong>${escapeHtml(person.name || person.email || 'Unnamed user')}</strong><small>${escapeHtml([person.role === 'company_admin' ? 'Admin' : 'Employee', person.department, person.email].filter(Boolean).join(' · '))}</small></span></label>`).join('') || '<p class="crm-help">No active users available.</p>'}</div></fieldset>`;
+    };
 
     const configs = {
       projects: [
@@ -54,6 +62,12 @@ export function createOperationsForms({
         { name: 'health', label: 'Health', type: 'select', html: `<select name="health">${selectOpts([['on_track', 'On Track'], ['watch', 'Watch'], ['at_risk', 'At Risk'], ['breached', 'Breached']], values.health || 'on_track')}</select>` },
         { name: 'summary', label: 'Summary', type: 'textarea', wide: true, placeholder: 'Brief project overview...' },
         { name: 'notes', label: 'Notes', type: 'textarea', wide: true, placeholder: 'Internal notes...' },
+      ],
+      teams: [
+        { name: 'name', label: 'Team Name *', type: 'text', required: true, wide: true, placeholder: 'e.g. Product Design' },
+        { name: 'status', label: 'Status', type: 'select', html: `<select name="status">${selectOpts([['active', 'Active'], ['archived', 'Archived']], values.status || 'active')}</select>` },
+        { name: 'description', label: 'Description', type: 'textarea', wide: true, placeholder: 'What this team delivers...' },
+        { name: 'team_members', label: 'Team members', type: 'html', html: teamMemberMarkup(), wide: true },
       ],
       tickets: [
         { name: 'client_id', label: 'Client *', type: 'select', required: true, html: `<select name="client_id" required>${clientOpts()}</select>` },
@@ -113,6 +127,20 @@ export function createOperationsForms({
         { name: 'paid_by', label: 'Role', type: 'text', placeholder: 'e.g. Developer' },
         { name: 'received_by', label: 'Bank Name', type: 'text', placeholder: 'e.g. HDFC Bank' },
         { name: 'payment_method', label: 'Account No.', type: 'text', placeholder: 'Last 4 digits' },
+      ],
+      team_project_payments: [
+        { name: 'project_id', label: 'Project *', type: 'select', required: true, html: `<select name="project_id" required><option value="">— Select project —</option>${state.data.projects.map((project) => `<option value="${project.id}"${String(values.project_id) === String(project.id) ? ' selected' : ''}>${escapeHtml(project.name)}</option>`).join('')}</select>` },
+        { name: 'team_id', label: 'Team *', type: 'select', required: true, html: `<select name="team_id" required><option value="">— Select team —</option>${(state.data.teams || []).filter((team) => (team.status || 'active') === 'active').map((team) => `<option value="${team.id}"${String(values.team_id) === String(team.id) ? ' selected' : ''}>${escapeHtml(team.name)}</option>`).join('')}</select>` },
+        { name: 'milestone_name', label: 'Milestone *', type: 'text', required: true, placeholder: 'e.g. Design handoff' },
+        { name: 'amount', label: 'Team amount (₹) *', type: 'number', required: true, min: '0.01', step: 'any', placeholder: '0' },
+        { name: 'status', label: 'Status', type: 'select', html: `<select name="status">${selectOpts([['pending', 'Pending'], ['paid', 'Paid'], ['cancelled', 'Cancelled']], values.status || 'pending')}</select>` },
+        { name: 'paid_at', label: 'Paid date', type: 'date' },
+        { name: 'target_date', label: 'Target date', type: 'date' },
+        { name: 'completed_date', label: 'Completed date', type: 'date' },
+        { name: 'payment_method', label: 'Payment method', type: 'text', placeholder: 'UPI / Bank / Cash' },
+        { name: 'reference_id', label: 'Reference', type: 'text', placeholder: 'UTR / invoice reference' },
+        { name: 'proof_url', label: 'Payment proof', type: 'html', html: financeProofFieldMarkup({ ...values, id: values.finance_id }) },
+        { name: 'notes', label: 'Notes', type: 'textarea', wide: true, placeholder: 'Payment notes...' },
       ],
       clients: [
         { name: 'company', label: 'Company Name *', type: 'text', required: true, wide: true, placeholder: 'e.g. Acme Corp' },
@@ -204,6 +232,17 @@ export function createOperationsForms({
     </form>`;
   };
 
+  const teamFormMarkup = (values = {}, submitLabel = 'Save') => {
+    const fields = createFields('teams', values);
+    const field = (name) => fieldMarkup(fields.find((item) => item.name === name), values, 'teams');
+    return `<form id="crm-edit-form" class="operations-drawer-form" autocomplete="off">
+      ${drawerSection('Team details', 'clients', `<div class="operations-drawer-grid">${field('name')}${field('status')}${field('description')}</div>`, 'team-details')}
+      ${drawerSection('Members', 'clients', `<div class="operations-drawer-grid">${field('team_members')}</div>`, 'team-members')}
+      <p class="crm-form-submit-status operations-drawer-status" data-form-submit-status role="status" aria-live="polite"></p>
+      <footer class="operations-drawer-footer"><button class="crm-button" data-drawer-cancel type="button">Cancel</button><button class="crm-button primary" type="submit">${submitLabel}</button></footer>
+    </form>`;
+  };
+
   const syncDrawerState = (form = documentRef?.getElementById('crm-edit-form')) => {
     const roleSelect = form?.querySelector('[name="role"]');
     const permissionNote = form?.querySelector('[data-permission-role-note]');
@@ -220,6 +259,7 @@ export function createOperationsForms({
   const formMarkup = (resource, values = {}, submitLabel = 'Save', { invite = false } = {}) => {
     if (resource === 'projects') return projectFormMarkup(values, submitLabel, { invite });
     if (resource === 'profiles') return profileFormMarkup(values, submitLabel, { invite });
+    if (resource === 'teams') return teamFormMarkup(values, submitLabel);
     const fields = createFields(resource, values);
     const rows = fields.map((field) => fieldMarkup(field, values, resource, { invite })).join('');
     const validation = resource === 'profiles' && !values.id && !invite ? ' novalidate' : '';

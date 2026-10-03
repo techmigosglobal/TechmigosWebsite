@@ -107,6 +107,25 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /crm_teams/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow write: if isAdmin();
+    }
+
+    match /crm_team_members/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow write: if isAdmin();
+    }
+
+    match /crm_project_teams/{id} {
+      allow read: if isAdmin() || isEmployee();
+      allow write: if isAdmin();
+    }
+
+    match /crm_team_project_payments/{id} {
+      allow read, write: if isAdmin();
+    }
+
     match /crm_project_folders/{id} {
       allow read: if isAdmin() || isEmployee();
       allow create, update: if isAdmin() || isEmployee();

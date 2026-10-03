@@ -63,6 +63,25 @@ function validatePassword(password) {
   return value;
 }
 
+function normalizeUsername(value, fallback = 'user') {
+  const source = String(value || fallback).trim().toLowerCase();
+  let username = source.replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+  if (username.length < 3) username = 'user';
+  return username;
+}
+
+async function uniqueUsername(value, profileId = null) {
+  const base = normalizeUsername(value);
+  let candidate = base;
+  for (let suffix = 2; suffix < 10000; suffix += 1) {
+    const alias = await db.doc(`login_aliases/${candidate}`).get();
+    if (!alias.exists || String(alias.data()?.profile_id || '') === String(profileId || '')) return candidate;
+    const suffixText = `-${suffix}`;
+    candidate = `${base.slice(0, 64 - suffixText.length)}${suffixText}`;
+  }
+  throw new HttpsError('already-exists', 'Could not generate a unique username.');
+}
+
 async function nextProfileId() {
   const snapshot = await db.collection('crm_profiles').orderBy('id', 'desc').limit(1).get();
   return snapshot.empty ? 1 : Number(snapshot.docs[0].data().id || 0) + 1;
@@ -190,11 +209,11 @@ export const adminUsers = onCall({ region: REGION }, async (request) => {
     const name = clean(body.name) || email;
     const role = clean(body.role) || 'company_member';
     const status = clean(body.status) || (operation === 'invite' ? 'pending' : 'active');
-    const username = clean(body.username)?.toLowerCase();
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) throw new Error('A valid email is required.');
-    if (!ROLES.has(role)) throw new Error('Choose a valid CRM role.');
-    if (!STATUSES.has(status)) throw new Error('Choose a valid account status.');
-    if (!username || !/^[a-z0-9._-]{3,64}$/.test(username)) throw new Error('Username must contain 3-64 lowercase letters, numbers, dots, underscores, or hyphens.');
+    const usernameInput = clean(body.username);
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) throw new HttpsError('invalid-argument', 'A valid email is required.');
+    if (!ROLES.has(role)) throw new HttpsError('invalid-argument', 'Choose a valid CRM role.');
+    if (!STATUSES.has(status)) throw new HttpsError('invalid-argument', 'Choose a valid account status.');
+    const username = await uniqueUsername(usernameInput || email.split('@')[0] || name);
     const password = operation === 'provision' ? validatePassword(body.password || `${cryptoRandom()}A!`) : undefined;
     const user = await auth.createUser({ email, displayName: name, ...(password ? { password } : {}), emailVerified: operation === 'provision', disabled: status === 'inactive' });
     const id = await nextProfileId();
@@ -213,12 +232,12 @@ export const adminUsers = onCall({ region: REGION }, async (request) => {
     const role = clean(body.role) || existing.role;
     const status = clean(body.status) || existing.status;
     const username = clean(body.username)?.toLowerCase() || existing.username;
-    if (!ROLES.has(role) || !STATUSES.has(status)) throw new Error('Choose a valid role and status.');
-    if (!username || !/^[a-z0-9._-]{3,64}$/.test(username)) throw new Error('Username must contain 3-64 lowercase letters, numbers, dots, underscores, or hyphens.');
+    if (!ROLES.has(role) || !STATUSES.has(status)) throw new HttpsError('invalid-argument', 'Choose a valid role and status.');
+    const normalizedUsername = await uniqueUsername(username || email.split('@')[0] || name, id);
     await auth.updateUser(uid, { email, displayName: name, disabled: status === 'inactive' });
-    await writeProfile({ id, uid, email, name, role, status, clientId: body.client_id, department: clean(body.department) ?? existing.department, username, mustChangePassword: Boolean(existing.must_change_password), preserveCreatedAt: true });
-    if (existing.username && existing.username.toLowerCase() !== username) await db.doc(`login_aliases/${existing.username.toLowerCase()}`).delete();
-    return { profile: { ...existing, id, auth_user_id: uid, email, name, role, status, client_id: role === 'client' ? Number(body.client_id ?? existing.client_id) : null, department: clean(body.department) ?? existing.department, username } };
+    await writeProfile({ id, uid, email, name, role, status, clientId: body.client_id, department: clean(body.department) ?? existing.department, username: normalizedUsername, mustChangePassword: Boolean(existing.must_change_password), preserveCreatedAt: true });
+    if (existing.username && existing.username.toLowerCase() !== normalizedUsername) await db.doc(`login_aliases/${existing.username.toLowerCase()}`).delete();
+    return { profile: { ...existing, id, auth_user_id: uid, email, name, role, status, client_id: role === 'client' ? Number(body.client_id ?? existing.client_id) : null, department: clean(body.department) ?? existing.department, username: normalizedUsername } };
   }
 
   if (operation === 'delete_profile') {
@@ -226,6 +245,199 @@ export const adminUsers = onCall({ region: REGION }, async (request) => {
   }
 
   throw new Error(`Unsupported user operation: ${operation}`);
+});
+
+function numericId(value, label) {
+  const id = Number(value);
+  if (!Number.isSafeInteger(id) || id < 1) throw new HttpsError('invalid-argument', `${label} must be a valid positive integer.`);
+  return id;
+}
+
+function paymentStatus(value) {
+  const status = String(value || 'pending').trim().toLowerCase();
+  if (!['pending', 'paid', 'cancelled'].includes(status)) throw new HttpsError('invalid-argument', 'Choose pending, paid, or cancelled for a team payment.');
+  return status;
+}
+
+async function teamById(teamId) {
+  const snapshot = await db.doc(`crm_teams/${teamId}`).get();
+  if (!snapshot.exists) throw new HttpsError('not-found', 'The selected team was not found.');
+  return snapshot;
+}
+
+async function projectById(projectId) {
+  const snapshot = await db.doc(`crm_projects/${projectId}`).get();
+  if (!snapshot.exists) throw new HttpsError('not-found', 'The selected project was not found.');
+  return snapshot;
+}
+
+async function rebuildProjectMemberships(projectId, teamIds, caller) {
+  const memberships = await db.collection('crm_project_members').where('project_id', '==', projectId).get();
+  const projectTeams = await db.collection('crm_project_teams').where('project_id', '==', projectId).get();
+  const teams = [];
+  const memberSources = new Map();
+  for (const teamId of teamIds) {
+    const team = await teamById(teamId);
+    teams.push(team);
+    const members = await db.collection('crm_team_members').where('team_id', '==', teamId).get();
+    members.docs.forEach((member) => {
+      const profileId = Number(member.data().profile_id);
+      if (!Number.isSafeInteger(profileId) || profileId < 1) return;
+      const sources = memberSources.get(profileId) || [];
+      sources.push(teamId);
+      memberSources.set(profileId, sources);
+    });
+  }
+  const batch = db.batch();
+  projectTeams.docs.forEach((snapshot) => batch.delete(snapshot.ref));
+  memberships.docs.forEach((snapshot) => batch.delete(snapshot.ref));
+  let nextProjectTeamId = await nextNumericId('crm_project_teams');
+  let nextMemberId = await nextNumericId('crm_project_members');
+  const now = FieldValue.serverTimestamp();
+  const memberNames = [];
+  for (const profileId of memberSources.keys()) {
+    const profileSnapshot = await db.doc(`crm_profiles/${profileId}`).get();
+    if (profileSnapshot.exists) memberNames.push(String(profileSnapshot.data().name || profileSnapshot.data().email || `Profile #${profileId}`));
+  }
+  batch.update(db.doc(`crm_projects/${projectId}`), {
+    team_ids: teamIds,
+    team_names: teams.map((team) => String(team.data().name || team.id)),
+    team_member_names: memberNames,
+    updated_at: now,
+  });
+  teams.forEach((team) => {
+    batch.set(db.doc(`crm_project_teams/${nextProjectTeamId}`), {
+      id: nextProjectTeamId++, project_id: projectId, team_id: Number(team.data().id || team.id), assigned_by: caller.id || caller.auth_user_id, created_at: now,
+    });
+  });
+  memberSources.forEach((sourceTeamIds, profileId) => {
+    batch.set(db.doc(`crm_project_members/${nextMemberId}`), {
+      id: nextMemberId++, project_id: projectId, profile_id: profileId, role: 'member', source_team_ids: [...new Set(sourceTeamIds)], assigned_by: caller.id || caller.auth_user_id, created_at: now,
+    });
+  });
+  await batch.commit();
+  return { team_ids: teamIds, member_ids: [...memberSources.keys()] };
+}
+
+export const adminTeams = onCall({ region: REGION }, async (request) => {
+  const caller = await requireAdmin(request);
+  const body = request.data || {};
+  const operation = String(body.operation || '');
+  const actor = caller.id || caller.auth_user_id;
+
+  if (operation === 'create_team') {
+    const name = clean(body.name);
+    if (!name || name.length > 120) throw new HttpsError('invalid-argument', 'Team name is required and must be 120 characters or fewer.');
+    const id = await nextNumericId('crm_teams');
+    const data = { id, name, description: clean(body.description) || '', status: clean(body.status) || 'active', created_by: actor, created_at: FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp() };
+    await db.doc(`crm_teams/${id}`).set(data);
+    return { team: { id, name: data.name, description: data.description, status: data.status, created_by: data.created_by } };
+  }
+
+  if (operation === 'update_team') {
+    const id = numericId(body.team_id, 'Team id');
+    await teamById(id);
+    const patch = {};
+    if (body.name !== undefined) {
+      const name = clean(body.name);
+      if (!name || name.length > 120) throw new HttpsError('invalid-argument', 'Team name is required and must be 120 characters or fewer.');
+      patch.name = name;
+    }
+    if (body.description !== undefined) patch.description = clean(body.description) || '';
+    if (body.status !== undefined && !['active', 'archived'].includes(String(body.status))) throw new HttpsError('invalid-argument', 'Choose active or archived for a team.');
+    if (body.status !== undefined) patch.status = String(body.status);
+    if (!Object.keys(patch).length) throw new HttpsError('invalid-argument', 'No team changes were supplied.');
+    patch.updated_at = FieldValue.serverTimestamp();
+    await db.doc(`crm_teams/${id}`).set(patch, { merge: true });
+    return { ok: true, team_id: id };
+  }
+
+  if (operation === 'delete_team') {
+    const id = numericId(body.team_id, 'Team id');
+    await teamById(id);
+    const [members, assignments, payments] = await Promise.all([
+      db.collection('crm_team_members').where('team_id', '==', id).get(),
+      db.collection('crm_project_teams').where('team_id', '==', id).get(),
+      db.collection('crm_team_project_payments').where('team_id', '==', id).get(),
+    ]);
+    const batch = db.batch();
+    members.docs.forEach((snapshot) => batch.delete(snapshot.ref));
+    assignments.docs.forEach((snapshot) => batch.delete(snapshot.ref));
+    payments.docs.forEach((snapshot) => {
+      batch.delete(snapshot.ref);
+      if (snapshot.data().finance_id) batch.delete(db.doc(`crm_finances/${snapshot.data().finance_id}`));
+    });
+    batch.delete(db.doc(`crm_teams/${id}`));
+    await batch.commit();
+    for (const assignment of assignments.docs) await rebuildProjectMemberships(Number(assignment.data().project_id), [], caller);
+    return { ok: true, team_id: id };
+  }
+
+  if (operation === 'set_team_members') {
+    const teamId = numericId(body.team_id, 'Team id');
+    await teamById(teamId);
+    const profileIds = [...new Set((body.profile_ids || []).map((value) => Number(value)).filter((value) => Number.isSafeInteger(value) && value > 0))];
+    const existing = await db.collection('crm_team_members').where('team_id', '==', teamId).get();
+    const batch = db.batch();
+    existing.docs.forEach((snapshot) => batch.delete(snapshot.ref));
+    let nextId = await nextNumericId('crm_team_members');
+    profileIds.forEach((profileId) => batch.set(db.doc(`crm_team_members/${nextId}`), { id: nextId++, team_id: teamId, profile_id: profileId, role: 'member', assigned_by: actor, created_at: FieldValue.serverTimestamp() }));
+    await batch.commit();
+    const assignments = await db.collection('crm_project_teams').where('team_id', '==', teamId).get();
+    for (const assignment of assignments.docs) {
+      const projectId = Number(assignment.data().project_id);
+      const projectAssignments = await db.collection('crm_project_teams').where('project_id', '==', projectId).get();
+      await rebuildProjectMemberships(projectId, projectAssignments.docs.map((item) => Number(item.data().team_id)), caller);
+    }
+    return { ok: true, team_id: teamId, profile_ids: profileIds };
+  }
+
+  if (operation === 'set_project_teams') {
+    const projectId = numericId(body.project_id, 'Project id');
+    await projectById(projectId);
+    const teamIds = [...new Set((body.team_ids || []).map((value) => Number(value)).filter((value) => Number.isSafeInteger(value) && value > 0))];
+    const result = await rebuildProjectMemberships(projectId, teamIds, caller);
+    return { ok: true, project_id: projectId, ...result };
+  }
+
+  if (['create_payment', 'update_payment', 'mark_payment_paid', 'delete_payment'].includes(operation)) {
+    const paymentId = operation === 'create_payment' ? null : numericId(body.payment_id, 'Payment id');
+    const existingSnapshot = paymentId ? await db.doc(`crm_team_project_payments/${paymentId}`).get() : null;
+    if (paymentId && !existingSnapshot.exists) throw new HttpsError('not-found', 'The team payment was not found.');
+    const existing = existingSnapshot?.data() || {};
+    if (operation === 'delete_payment') {
+      const batch = db.batch();
+      batch.delete(db.doc(`crm_team_project_payments/${paymentId}`));
+      if (existing.finance_id) batch.delete(db.doc(`crm_finances/${existing.finance_id}`));
+      await batch.commit();
+      return { ok: true, payment_id: paymentId };
+    }
+    const projectId = numericId(body.project_id ?? existing.project_id, 'Project id');
+    const teamId = numericId(body.team_id ?? existing.team_id, 'Team id');
+    await projectById(projectId);
+    await teamById(teamId);
+    const status = operation === 'mark_payment_paid' ? 'paid' : paymentStatus(body.status ?? existing.status);
+    const amount = Number(body.amount ?? existing.amount);
+    if (!Number.isFinite(amount) || amount <= 0) throw new HttpsError('invalid-argument', 'Payment amount must be greater than zero.');
+    const paidAt = body.paid_at ?? existing.paid_at ?? (status === 'paid' ? new Date().toISOString().slice(0, 10) : null);
+    if (status === 'paid' && !paidAt) throw new HttpsError('invalid-argument', 'A paid date is required when marking a payment paid.');
+    const id = paymentId || await nextNumericId('crm_team_project_payments');
+    const financeId = Number(existing.finance_id || await nextNumericId('crm_finances'));
+    const payment = {
+      id, project_id: projectId, team_id: teamId, milestone_name: clean(body.milestone_name ?? existing.milestone_name) || 'Project milestone', target_date: clean(body.target_date ?? existing.target_date) || null, completed_date: clean(body.completed_date ?? existing.completed_date) || null,
+      amount, status, paid_at: status === 'paid' ? paidAt : null, payment_method: clean(body.payment_method ?? existing.payment_method) || '', reference_id: clean(body.reference_id ?? existing.reference_id) || '', proof_url: clean(body.proof_url ?? existing.proof_url) || '', notes: clean(body.notes ?? existing.notes) || '', finance_id: financeId, created_by: existing.created_by || actor, created_at: existing.created_at || FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp(),
+    };
+    const projectName = (await projectById(projectId)).data().name || `Project #${projectId}`;
+    const teamName = (await teamById(teamId)).data().name || `Team #${teamId}`;
+    const finance = { id: financeId, project_id: projectId, project: projectName, transaction_date: payment.completed_date || payment.paid_at || new Date().toISOString().slice(0, 10), transaction_type: 'salary', title: `${teamName} · ${payment.milestone_name}`, amount, status: status === 'paid' ? 'paid' : status, payment_method: payment.payment_method, reference_id: payment.reference_id, proof_url: payment.proof_url, notes: payment.notes, source: 'team_project_payment', updated_at: FieldValue.serverTimestamp(), created_at: existing.created_at || FieldValue.serverTimestamp() };
+    const batch = db.batch();
+    batch.set(db.doc(`crm_team_project_payments/${id}`), payment, { merge: true });
+    batch.set(db.doc(`crm_finances/${financeId}`), finance, { merge: true });
+    await batch.commit();
+    return { ok: true, payment: { id, project_id: projectId, team_id: teamId, milestone_name: payment.milestone_name, target_date: payment.target_date, completed_date: payment.completed_date, amount, status, paid_at: payment.paid_at, payment_method: payment.payment_method, reference_id: payment.reference_id, proof_url: payment.proof_url, notes: payment.notes, finance_id: financeId } };
+  }
+
+  throw new HttpsError('invalid-argument', `Unsupported team operation: ${operation}`);
 });
 
 // Storage objects restored through the GCS API do not have Firebase download

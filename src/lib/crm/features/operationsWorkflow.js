@@ -81,6 +81,7 @@ export function createOperationsWorkflow({
       income: { transaction_date: today, transaction_type: 'income', status: 'received', amount: 0, source: 'manual' },
       expense: { transaction_date: today, transaction_type: 'expense', status: 'paid', amount: 0, source: 'manual' },
       salary: { transaction_date: today, transaction_type: 'salary', status: 'pending', amount: 0, source: 'manual' },
+      team_project_payments: { status: 'pending', amount: 0 },
       clients: { status: 'active' },
       profiles: { role: state.userCreateClientId ? 'client' : 'company_member', client_id: state.userCreateClientId || '', status: 'active' },
       ticket_messages: { ticket_id: state.selectedTicketId || '', visibility: 'external' },
@@ -115,7 +116,7 @@ export function createOperationsWorkflow({
     bindOperationsDrawerSections();
     const form = documentRef?.getElementById('crm-edit-form');
     if (actualResource === 'finances') bindLinkedClientProjectFields(form);
-    if (actualResource === 'finances') bindFinanceProofField();
+    if (actualResource === 'finances' || actualResource === 'team_project_payments') bindFinanceProofField();
     if (actualResource === 'profiles') bindProfileClientLinkFields(form);
     configureCrmEditForm({ resource: actualResource, sourceResource: financeSubresource ? resource : '', mode: 'create', invite });
   }
@@ -140,7 +141,7 @@ export function createOperationsWorkflow({
     bindOperationsDrawerSections();
     const form = documentRef?.getElementById('crm-edit-form');
     if (resource === 'finances') bindLinkedClientProjectFields(form);
-    if (resource === 'finances') bindFinanceProofField();
+    if (resource === 'finances' || resource === 'team_project_payments') bindFinanceProofField();
     if (resource === 'profiles') bindProfileClientLinkFields(form);
     configureCrmEditForm({ resource, mode: 'edit', id, employeeEdit });
   }
@@ -169,7 +170,11 @@ export function createOperationsWorkflow({
       }
       if (sourceResource) raw.transaction_type = sourceResource;
       if (resource === 'finances' && !raw.transaction_type) raw.transaction_type = 'expense';
-      if (resource === 'profiles' && !String(raw.username || '').trim()) raw.username = generateProfileUsername(raw);
+      if (resource === 'profiles' && mode === 'create') {
+        raw.username = generateProfileUsername(raw);
+        const usernameInput = form.querySelector('[name="username"]');
+        if (usernameInput) usernameInput.value = raw.username;
+      }
       let generatedPassword = '';
       if (resource === 'profiles' && mode === 'create' && !invite && !String(raw.password || '').trim()) {
         generatedPassword = createTemporaryPassword();
@@ -186,7 +191,10 @@ export function createOperationsWorkflow({
       const path = mode === 'edit' ? `/api/portal/${resource}/${encodeURIComponent(id)}` : `/api/portal/${resource}`;
       const result = await portal(path, { method: mode === 'edit' ? 'PATCH' : 'POST', body: JSON.stringify(body) });
       if (resource === 'projects' && !employeeEdit && result?.item?.id && isCompanyAdmin()) {
-        await repository.setProjectMembers(Number(result.item.id), projectMemberIds(formData, raw));
+        await repository.setProjectTeams(Number(result.item.id), formData.getAll('project_team_id').map(Number).filter((id) => Number.isInteger(id) && id > 0));
+      }
+      if (resource === 'teams' && (result?.item?.id || result?.team_id || id) && isCompanyAdmin()) {
+        await repository.setTeamMembers(Number(result?.item?.id || result?.team_id || id), formData.getAll('team_profile_id').map(Number).filter((id) => Number.isInteger(id) && id > 0));
       }
       els.modal.classList.remove('open');
       toast(mode === 'edit' ? 'Saved' : resource === 'profiles' ? 'Login created successfully' : `${nice(sourceResource || resource)} created successfully`);
