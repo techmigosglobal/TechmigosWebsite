@@ -1,7 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getFunctions } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
 
 const config = {
@@ -22,8 +20,6 @@ const app = firebaseConfigured()
   ? (getApps().length ? getApp() : initializeApp(config))
   : null;
 
-export const firebaseAuth = app ? getAuth(app) : null;
 export const firebaseDb = app ? getFirestore(app) : null;
 export const firebaseStorage = app ? getStorage(app) : null;
-export const firebaseFunctions = app ? getFunctions(app, 'asia-south1') : null;
 export { app, config as firebaseConfig };

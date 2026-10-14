@@ -5,15 +5,17 @@
 > **Branch audited:** `main`
 > **Purpose:** durable, source-grounded reference for future development in this repository.
 
-This file is the application-specific reference to read before making changes. The active browser backend is now Firebase project `techmigos-279f6`; Supabase references below describe the retained migration source and historical audit evidence.
+This file is the application-specific reference to read before making changes. The current public website uses Firebase project `techmigos-279f6` only for anonymous contact, newsletter, and career submission flows. The authenticated portal, CRM routes, Firebase Authentication, CRM collections, Storage private-workspace paths, and callable Cloud Functions were removed on 2026-10-14; sections below that describe those systems are historical migration evidence, not active routes.
 
-### Current backend after migration
+### Current backend after cleanup
 
-- Firestore stores the 21 migrated CRM/public collections using their existing collection names.
-- Firebase Authentication contains the 60 source users with preserved UIDs and profile aliases. Source password hashes were unavailable, so migrated users must use Firebase password reset before signing in.
-- Cloud Storage contains all 22 source objects (2,832,779 bytes), including 19 finance-linked proof files. Each object was downloaded and SHA-256 verified after upload.
-- `src/lib/firebase/supabaseBridge.js` keeps the existing repository contract stable while replacing Supabase Auth, PostgREST, Storage, RPCs, and Edge Function calls with Firebase SDK/Firestore/Storage/callable-function operations.
-- `firestore.rules`, `storage.rules`, and `functions/index.js` are the active authorization and privileged-operation sources. The `supabase/` directory is retained as historical source evidence only.
+- Firestore is empty except for anonymous writes to `contact_leads`, `newsletter_subscribers`, and `career_applications` under `firestore.rules`.
+- Firebase Authentication is empty; the former portal users and callable functions were removed.
+- The default Firebase Storage bucket is empty. Anonymous resume uploads are limited to the public career-form path by `storage.rules`.
+- `src/lib/firebase/publicBridge.js` is the only browser Firebase bridge; it contains no Auth, CRM, or callable-function client.
+- The `supabase/` directory and older CRM documents in this file are historical migration evidence only.
+
+Everything below this current-state section is historical migration evidence and must not be treated as an active route, feature, collection, function, or deployment requirement.
 
 It is intentionally separate from [`knowledge_Astro.md`](knowledge_Astro.md). That file is a generic Astro v4 knowledge base and is not an accurate application map for this project, which currently declares Astro 7 in [`package.json`](package.json).
 

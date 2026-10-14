@@ -26,15 +26,14 @@ Use it as the primary process guide for planning, implementation, testing, and r
 
 ## Firebase Backend
 
-This project uses Firebase project `techmigos-279f6` for Firestore, Authentication, Cloud Storage, and callable Cloud Functions.
+This project uses Firebase project `techmigos-279f6` for public Firestore form submissions and anonymous career resume uploads. The authenticated portal, Firebase Authentication integration, CRM collections, and callable Cloud Functions have been removed.
 
-- **Browser bridge:** `src/lib/firebase/supabaseBridge.js` preserves the existing CRM repository contract while using the Firebase modular SDK.
+- **Browser bridge:** `src/lib/firebase/publicBridge.js` exposes only the public Firestore insert and resume upload contract.
 - **Configuration:** app code reads the public Firebase web configuration from `.env.local` (`PUBLIC_FIREBASE_*`). Never commit private service-account credentials.
-- **Server function:** `functions/index.js` contains the privileged `adminUsers` callable function for user provisioning and profile administration.
-- **Migration source:** `supabase/` and `scripts/backend/` remain historical export evidence only; active browser traffic uses Firebase.
+- **Migration source:** `supabase/` and `scripts/backend/` remain historical export evidence only; active browser traffic uses the public Firebase bridge.
 
 Key patterns:
 
-- CRM records are Firestore documents in collections named after the existing `crm_*` tables.
-- Firebase Auth `uid` values are preserved from the verified source export and mirrored in `user_profiles`.
-- Storage uploads persist the bucket-relative object path in the matching Firestore record; finance proof paths are under `finance-proofs/`.
+- Public forms write to `contact_leads`, `newsletter_subscribers`, and `career_applications`.
+- Resume uploads are anonymous, limited to `resumes/applications/`, and restricted by Storage Rules to PDF/DOC/DOCX files below 5 MiB.
+- The connected Firebase project was emptied as part of the portal removal; public form submissions can create new records after deployment.

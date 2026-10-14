@@ -50,12 +50,17 @@ function relative(file) {
 
 const requiredFiles = [
   'dist/robots.txt',
-  'src/lib/crm/repository.js',
-  'scripts/provision-portal-user.mjs',
-  'dist/change-password/index.html',
-  'dist/login/index.html',
-  'dist/company/finance/index.html',
-  'dist/reset-password/index.html',
+  'dist/index.html',
+  'dist/contact/index.html',
+  'dist/support/index.html',
+];
+
+const removedRoutes = [
+  'dist/login',
+  'dist/reset-password',
+  'dist/change-password',
+  'dist/client',
+  'dist/company',
 ];
 
 const failures = [];
@@ -64,6 +69,15 @@ for (const file of requiredFiles) {
     await fs.access(path.join(root, file));
   } catch {
     failures.push(`Missing required file: ${file}`);
+  }
+}
+
+for (const route of removedRoutes) {
+  try {
+    await fs.access(path.join(root, route));
+    failures.push(`Removed authenticated route still exists: ${route}`);
+  } catch {
+    // Expected: authenticated portal output was removed.
   }
 }
 

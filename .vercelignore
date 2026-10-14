@@ -4,6 +4,9 @@
 .cursor
 .claude
 .openclaw
+.backend-export/
+.freebuff/
+.env*
 .agents
 node_modules
 npm-debug.log

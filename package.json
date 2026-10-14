@@ -12,12 +12,9 @@
     "build:vercel": "npm run build",
     "build:full": "npm run build",
     "test": "node --test test/*.test.js",
-    "test:db:invoice-ledger": "node scripts/test-invoice-ledger-migration.mjs",
     "security:osv": "node scripts/audit-osv-lockfile.mjs",
     "test:e2e": "playwright test",
     "test:e2e:live": "CRM_LIVE_REQUIRED=1 playwright test",
-    "crm:prepare-live": "node scripts/prepare-live-identities.mjs",
-    "crm:cleanup-live": "node scripts/cleanup-live-identities.mjs",
     "security:audit": "npm audit --audit-level=low",
     "security:scan": "python3 .agents/skills/vulnerability-scanner/scripts/security_scan.py . --output summary",
     "qa:checklist": "python3 .agents/scripts/checklist.py .",
@@ -26,7 +23,6 @@
     "validate": "npm run build && node scripts/validate-site.mjs",
     "leads:export": "node scripts/lead-management.mjs export",
     "leads:list": "node scripts/lead-management.mjs list",
-    "portal:user": "node scripts/provision-portal-user.mjs",
     "vercel:whoami": "npx --yes vercel@59.16.0 whoami",
     "vercel:login:techmigos": "npx --yes vercel@59.16.0 login techmigos.global@gmail.com",
     "vercel:link": "npx --yes vercel@59.16.0 link --yes --project techmigos-website",
@@ -34,7 +30,6 @@
     "vercel:env:pull": "npx --yes vercel@59.16.0 env pull .env.vercel.local --environment=production",
     "vercel:build": "npx --yes vercel@59.16.0 build",
     "release:github": "./scripts/release-github.sh",
-    "firebase:import": "node scripts/firebase/import-backend.mjs",
     "backend:export": "node scripts/backend/export-backend.mjs",
     "backend:storage": "node scripts/backend/export-storage.mjs",
     "backend:update-ref": "node scripts/backend/update-frontend-ref.mjs"
@@ -42,10 +37,7 @@
   "dependencies": {
     "@vercel/speed-insights": "2.0.0",
     "astro": "7.3.3",
-    "chart.js": "4.5.1",
     "firebase": "12.19.0",
-    "jspdf": "4.2.1",
-    "jspdf-autotable": "5.0.8",
     "sharp": "0.35.4"
   },
   "devDependencies": {
