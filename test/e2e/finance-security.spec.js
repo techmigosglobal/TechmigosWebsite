@@ -35,6 +35,25 @@ test('server validates saves and rejects stale concurrent revisions',async()=>{
   const latest=await api({action:'load'},admin);
   expect(latest.body.result.state.teams.find(t=>t.id==='team-1').name).toBe('Renamed team');
 });
+test('team administrators appear in their teams and retain full administrator access',async({page})=>{
+  for(const [email,password] of [['vinay@techmigos.com','LocalAdmin@12345'],['vishal@techmigos.com','LocalAdmin@67890']]){
+    const admin=await token(email,password),loaded=await api({action:'load'},admin);
+    expect(loaded.body.result.profile.role).toBe('admin');
+    expect(loaded.body.result.state.projects.map(project=>project.id).sort()).toEqual(['p-arish','p-focus']);
+    await page.goto('/login');await page.locator('#email').fill(email);await page.locator('#password').fill(password);await page.locator('#login-submit').click();
+    await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();
+    await page.locator('.sidebar [data-page="teams"]').click();
+    for(const [teamId,adminEmail] of [['team-1','vinay@techmigos.com'],['team-2','vishal@techmigos.com']]){
+      const card=page.locator('.project-card').filter({has:page.locator(`[data-act="edit-team"][data-id="${teamId}"]`)});
+      const row=card.locator('.list-row').filter({hasText:adminEmail});
+      await expect(row).toContainText('Administrator');await expect(row.getByRole('button',{name:'Edit access'})).toHaveCount(0);
+    }
+    await expect(page.locator('.list-row').filter({hasText:'member-one@example.com'}).getByRole('button',{name:'Edit access'})).toBeVisible();
+    await page.evaluate(async()=>window.TechmigosFinanceAuth.signOut());
+    await expect(page).toHaveURL(/\/login\/?$/);
+  }
+});
+
 test('Teams creates a login, propagates its name and restricts the member workspace',async({page,browser})=>{
   await page.goto('/login');await page.locator('#email').fill('vinay@techmigos.com');await page.locator('#password').fill('LocalAdmin@12345');await page.locator('#login-submit').click();
   await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();

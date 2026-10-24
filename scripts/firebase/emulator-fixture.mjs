@@ -19,8 +19,8 @@ export async function seedEmulators() {
   const app=getApps().find(app=>app.name==='finance-tests')||initializeApp({projectId:TEST_PROJECT,storageBucket:`${TEST_PROJECT}.appspot.com`},'finance-tests');
   const db=getFirestore(app),auth=getAuth(app),state=financeFixture();
   const accounts=[
-    {uid:'owner-vinay',name:'Vinay',email:'vinay@techmigos.com',password:'LocalAdmin@12345',role:'admin',teamId:''},
-    {uid:'owner-vishal',name:'Vishal',email:'vishal@techmigos.com',password:'LocalAdmin@67890',role:'admin',teamId:''},
+    {uid:'owner-vinay',name:'Vinay',email:'vinay@techmigos.com',password:'LocalAdmin@12345',role:'admin',teamId:'team-1'},
+    {uid:'owner-vishal',name:'Vishal',email:'vishal@techmigos.com',password:'LocalAdmin@67890',role:'admin',teamId:'team-2'},
     {uid:'member-one',name:'Example member',email:'member-one@example.com',password:'Example@123',role:'member',teamId:'team-1'},
   ];
   const batch=db.batch();

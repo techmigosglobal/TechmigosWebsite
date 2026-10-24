@@ -89,6 +89,11 @@ restricted to the finance proof path. Existing public resume upload rules remain
   refuses to replace a different migration. Bootstrap passwords must be supplied
   via environment variables. CLI credentials are handled privately and temporary
   ADC material is removed after execution.
+- `node scripts/firebase/assign-admin-teams.mjs` previews the requested founder
+  memberships. `--apply` assigns Vinay to Developer's Team and Vishal to
+  Operation's Team after checking their existing active administrator profiles
+  against Firebase Authentication. It preserves roles and credentials, backs up
+  the profiles privately, and verifies both assignments after the atomic update.
 - `scripts/firebase/verify-live.mjs <original-backup.json>` verifies actual Auth,
   exact imported data, callable authorization, member isolation, proof bytes,
   protected Storage reads and disabled sessions. Its temporary test account and

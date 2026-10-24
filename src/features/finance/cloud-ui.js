@@ -28,9 +28,9 @@ function renderTeams(){
   const members=ui.members||[];
   return `${pageHeader('Teams','Manage team names, members and their login access.',`<button class="btn primary" data-act="add-team">${icon('plus')} Add Team</button>`)}
   <div class="project-list">${state.teams.map(t=>{
-    const people=members.filter(m=>m.role==='member'&&m.teamId===t.id),assigned=state.projects.filter(p=>p.teamIds?.includes(t.id)||p.shares.some(s=>s.teamId===t.id));
+    const people=members.filter(m=>m.teamId===t.id),assigned=state.projects.filter(p=>p.teamIds?.includes(t.id)||p.shares.some(s=>s.teamId===t.id));
     return `<article class="project-card"><div class="flex-between"><h2 class="section-title">${esc(t.name)}</h2><div class="btn-stack"><button class="btn small" data-act="edit-team" data-id="${esc(t.id)}">Rename</button><button class="btn danger small" data-act="delete-team" data-id="${esc(t.id)}">Remove</button></div></div><p class="note">${assigned.length} assigned projects · ${people.filter(m=>m.active).length} active members</p>
-      ${people.map(m=>`<div class="list-row"><div><strong>${esc(m.name)}</strong><div class="second-line">${esc(m.email)} · ${m.active?'Active':'Disabled'}</div></div><button class="btn small" data-act="edit-member" data-id="${esc(m.uid)}">Edit access</button></div>`).join('')||'<div class="empty">No members yet. Add a member to create their login.</div>'}
+      ${people.map(m=>`<div class="list-row"><div><strong>${esc(m.name)}</strong><div class="second-line">${esc(m.email)} · ${m.active?'Active':'Disabled'}${m.role==='admin'?' · Administrator':''}</div></div>${m.role==='member'?`<button class="btn small" data-act="edit-member" data-id="${esc(m.uid)}">Edit access</button>`:''}</div>`).join('')||'<div class="empty">No members yet. Add a member to create their login.</div>'}
       <div class="space-top btn-stack"><button class="btn primary small" data-act="add-member" data-team="${esc(t.id)}">${icon('plus')} Add member</button><button class="btn small" data-act="assign-team-projects" data-id="${esc(t.id)}">Assign projects</button></div></article>`
   }).join('')||'<div class="empty">Create a team to add members.</div>'}</div>
   <div class="hintbox space-top">Members can view only their assigned team’s projects and payouts. Administrators manage finance records and account access.</div>`;

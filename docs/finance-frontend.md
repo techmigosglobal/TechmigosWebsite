@@ -13,6 +13,9 @@ credentials nor the private starter ledger are included in static assets.
 Teams manages team names, member login credentials and project assignments.
 Members receive only their assigned team's projects and payout records. Payout
 percentages remain in project shares. Server validation and rules enforce access.
+Administrators assigned to a team appear in its member list with an Administrator
+label. Their team membership does not restrict their access to finance records.
+Teams cannot change administrator credentials or downgrade their role.
 
 Proofs are stored privately in Firebase Storage. Images, PDFs, audio and video
 use the browser's native viewers; unsupported formats remain downloadable.
