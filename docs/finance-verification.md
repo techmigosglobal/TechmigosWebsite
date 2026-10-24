@@ -78,3 +78,35 @@ payment and team-preview workflows passed on rerun. DESIGN.md lint reports zero
 errors or warnings. The live callable still rejects anonymous access with 401.
 The deployed backend and reconciliation are live; publish this frontend build
 before sharing new PDF payment links, then regenerate the PDFs.
+
+## Fixed project value rule — 2026-10-25
+
+This user instruction supersedes the receipt-based entitlement rule described
+in older verification notes. Every future project requires a fixed value, and
+team entitlements use that value even before any cash is received. Recurring
+and explicitly company-only service invoices belong entirely to the company.
+Actual receipts and payouts remain unchanged. Existing project values come from
+the user's explicit input, provided through a private local JSON file rather than
+embedding contract amounts in the public frontend or migration source.
+
+The value migration previews these changes, stores a private backup, rebuilds
+member projections in one revision and checks ledger hashes after the update.
+Historical invoice descriptions are not used to invent recurring classifications.
+
+Validation: 22 unit tests, TypeScript checking, the 19-page production build and
+static-site validation pass. Five targeted emulator browser workflows pass:
+future-project fixed values and company-only receipts, server validation and
+older-client compatibility, project CRUD and payouts, team-row previews, and
+paid-invoice reconciliation. The future-project check also verifies member
+entitlements, editing the fixed value, reload persistence and mobile overflow.
+The separate existing proof-removal/reset workflow could not finish: the first
+run lost the Storage emulator's scratch directory, and an isolated rerun reported
+Firestore offline during login. These emulator failures do not establish a
+production regression, but that workflow is not counted as passing this run.
+The static premium audit retains its seven existing event-delegation findings.
+
+The finance callable was deployed successfully. The explicit-value migration
+updated the two requested projects and their team projections atomically.
+Readback confirmed the requested values, and the transaction/invoice ledger
+hash was identical before and after the migration. Private backups and the
+migration report remain ignored by Git.

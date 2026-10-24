@@ -34,8 +34,19 @@ Firebase integration and team-restricted member accounts are now authorized.
   indicates its pressed state, and retains focus. Selecting it again or clearing
   the filter restores recent project transactions. Opening another project resets
   the filter. Record payout remains an independent action; previewing never saves data.
-- Preserve original financial rules: invoices do not count as received cash,
-  paid payouts reduce cash, and team shares use received project income.
+- Invoices do not count as received cash until settled, and paid payouts reduce cash.
+- The user's 2026-10-25 instruction replaces the earlier receipt-based share rule:
+  every new project requires a positive fixed project value. Team entitlement is
+  fixed value × that project's configured percentage, regardless of receipts.
+  Project cards show that fixed value; cash is reported separately. Existing
+  projects use the values supplied by the user, retaining configured percentages.
+- Recurring invoice receipts belong 100% to the company and never increase project
+  value or team entitlements. Monthly-plan/source-Recurring invoices are automatic;
+  manual service invoices have an explicit Company-only option. This classification
+  persists on receipts so deleting an invoice does not reallocate its historical income.
+- `functions/project-finance.js` owns shared calculation logic for the browser,
+  server member projections and migration verification. Older clients and backups
+  cannot accidentally remove already saved project values or income classifications.
 - Choosing Paid when saving an invoice records only the unpaid balance as a
   linked received-income transaction in the same atomic server save. Paid is
   then derived from linked receipts, allowing receipt corrections. Other invoice

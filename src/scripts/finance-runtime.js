@@ -3,6 +3,9 @@ import { doc, getDoc, onSnapshot, connectFirestoreEmulator } from 'firebase/fire
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import { ref, uploadBytes, getBlob, deleteObject, connectStorageEmulator } from 'firebase/storage';
 import { app, firebaseDb as db, firebaseStorage as storage } from '../lib/firebase/client.js';
+import { calculateProjectMetrics, isCompanyInvoice } from '../../functions/project-finance.js';
+
+window.FinanceProjectFinance = { calculate: calculateProjectMetrics, isCompanyInvoice };
 
 const auth = app ? getAuth(app) : null;
 const functions = app ? getFunctions(app, 'asia-south1') : null;

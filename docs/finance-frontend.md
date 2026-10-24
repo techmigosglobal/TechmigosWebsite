@@ -17,6 +17,20 @@ Administrators assigned to a team appear in its member list with an Administrato
 label. Their team membership does not restrict their access to finance records.
 Teams cannot change administrator credentials or downgrade their role.
 
+Every new project requires a Fixed project value. Project cards show that value,
+and the team's entitlement is its configured percentage of that value. Editing
+the value recalculates entitlement but never creates cash. Received cash, expenses
+and payouts remain actual ledger amounts. Recurring invoice receipts belong
+entirely to the company and never change project value or team entitlement.
+The same rule applies to every future project, not just the initial two.
+
+Monthly invoices are automatically company-only. For manual maintenance/service
+invoices, select Company-only service income in the invoice form. Existing imports
+are not guessed from their descriptions. Receipts retain their company-only flag
+if their invoice is later deleted. Project Details and Reports show company-only
+income separately; expected company net is the fixed company project share plus
+company-only receipts minus recorded project expenses. Actual cash remains separate.
+
 In a project's Overview, click a row in Team payout breakdown to show that team's
 transactions in the adjacent panel. Team-name buttons support Enter and Space.
 The preview includes only records assigned to that team in the current project;
@@ -41,7 +55,8 @@ recalculates that invoice's total; received cash changes only through receipts.
 The ordinary Edit invoice flow still edits its metadata and amount. Changing
 its description/amount replaces custom rows with a single matching service.
 Choosing Paid creates a linked receipt for the remaining balance, updating the
-project's Received total, cash and team entitlements in one server save. Existing
+project's Received total and cash in one server save. Fixed team entitlements do
+not change. Existing
 partial/full receipts are counted once. Later invoice status is derived from the
 receipts, so editing or deleting a receipt can reopen the balance. Other statuses
 and service edits do not automatically create income.

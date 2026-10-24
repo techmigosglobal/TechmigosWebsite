@@ -146,6 +146,7 @@ test('project CRUD, team shares, expense and salary calculations', async ({ page
   await nav(page, 'projects');
   await act(page, 'add-project');
   await field(page, 'name').fill('QA project');
+  await field(page, 'projectValue').fill('10000');
   await field(page, 'client').fill('QA client');
   await page.getByRole('button', { name: 'Save Project', exact: true }).click();
   const project = (await readState(page)).projects.find(item => item.name === 'QA project');
@@ -187,6 +188,30 @@ test('project CRUD, team shares, expense and salary calculations', async ({ page
   await readState(page);
   await page.reload();
   await expect.poll(async () => (await readState(page)).settings.businessName).toBe('Techmigos QA');
+});
+
+test('fixed project values apply to future projects and recurring invoices pay the company only', async ({ page,browser }) => {
+  test.setTimeout(180000);
+  await login(page);await nav(page,'projects');await act(page,'add-project');
+  await field(page,'name').fill('Future fixed project');await field(page,'projectValue').fill('80000');
+  await page.getByRole('button',{name:'Save Project',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  const project=(await readState(page)).projects.find(p=>p.name==='Future fixed project');
+  await page.locator(`[data-act="edit-shares"][data-id="${project.id}"]`).click();await field(page,'share_team-1').fill('25');await field(page,'share_team-2').fill('25');await page.locator('[data-form="shareForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  const before=await page.evaluate(id=>projectMetrics(id),project.id);expect(before.received).toBe(0);expect(before.shares.map(s=>s.allotted)).toEqual([20000,20000]);
+  const card=page.locator('.project-card').filter({hasText:'Future fixed project'});await expect(card.locator('.mini-stats')).toHaveText('Project value₹80,000.00');
+  await nav(page,'invoices');await act(page,'add-invoice');await field(page,'projectId').selectOption(project.id);await field(page,'description').fill('Future monthly service');await field(page,'amount').fill('2000');await field(page,'status').selectOption('Paid');await page.locator('#invoiceRecurring').check();
+  await page.locator('[data-form="invoiceForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);await idle(page);
+  let metrics=await page.evaluate(id=>projectMetrics(id),project.id);expect(metrics.projectValue).toBe(80000);expect(metrics.recurringIncome).toBe(2000);expect(metrics.companyShare).toBe(40000);expect(metrics.shares.map(s=>s.allotted)).toEqual([20000,20000]);expect(metrics.received).toBe(2000);
+  await act(page,'add-invoice');await field(page,'projectId').selectOption(project.id);await field(page,'description').fill('One-off company support');await field(page,'amount').fill('500');await field(page,'status').selectOption('Paid');await page.locator('#invoiceForm [name="companyOnly"]').check();await page.locator('[data-form="invoiceForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);await idle(page);
+  metrics=await page.evaluate(id=>projectMetrics(id),project.id);expect(metrics.recurringIncome).toBe(2500);expect(metrics.shares.map(s=>s.allotted)).toEqual([20000,20000]);
+  const memberContext=await browser.newContext(),memberPage=await memberContext.newPage();
+  await memberPage.goto(`${process.env.PLAYWRIGHT_BASE_URL}/login`);await memberPage.locator('#email').fill('member-one@example.com');await memberPage.locator('#password').fill('Example@123');await memberPage.locator('#login-submit').click();
+  await expect(memberPage.getByRole('heading',{name:'Your team’s projects'})).toBeVisible();await expect(memberPage.locator('.project-card').filter({hasText:'Future fixed project'})).toContainText('₹20,000.00');await expect(memberPage.locator('#mainContent')).not.toContainText('Future monthly service');await memberContext.close();
+  await nav(page,'projects');await page.locator(`[data-act="edit-project"][data-id="${project.id}"]`).click();await expect(field(page,'projectValue')).toHaveValue('80000');await field(page,'projectValue').fill('90000');await page.getByRole('button',{name:'Save Project',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.reload();await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();await nav(page,'projects');
+  metrics=await page.evaluate(id=>projectMetrics(id),project.id);expect(metrics.projectValue).toBe(90000);expect(metrics.shares.map(s=>s.allotted)).toEqual([22500,22500]);expect(metrics.recurringIncome).toBe(2500);expect(metrics.received).toBe(2500);
+  await expect(card.locator('.mini-stats')).toHaveText('Project value₹90,000.00');await expect(card).not.toContainText('₹2,500.00');await card.screenshot({path:'reports/finance-fixed-project-value.png'});
+  await page.setViewportSize({width:390,height:844});await expect(card).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('project team rows preview matching transactions without changing payout actions', async ({ page }) => {
@@ -257,6 +282,7 @@ test('monthly plan editing, proof removal, unused project deletion and confirmed
   await nav(page, 'projects');
   await act(page, 'add-project');
   await field(page, 'name').fill('Disposable project');
+  await field(page, 'projectValue').fill('1000');
   await page.locator('[data-form="projectForm"]').click();
   const project = (await readState(page)).projects.find(item => item.name === 'Disposable project');
   await page.locator(`[data-act="edit-project"][data-id="${project.id}"]`).click();

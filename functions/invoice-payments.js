@@ -1,3 +1,4 @@
+import { isCompanyInvoice } from './project-finance.js';
 const cents = value => Math.round((value + Number.EPSILON) * 100);
 
 // A Paid status is an explicit instruction to settle the remaining invoice balance.
@@ -17,6 +18,11 @@ export function settlePaidInvoices(state, paymentDate) {
       result.transactions.push(receipt); receipts.push(receipt);
     }
     invoice.status = 'Pending';
+  }
+  for (const tx of result.transactions) {
+    if (tx.type !== 'income' || !tx.linkedInvoiceId) continue;
+    const invoice = result.invoices.find(invoice => invoice.id === tx.linkedInvoiceId);
+    if (invoice && (isCompanyInvoice(invoice) || tx.companyOnly !== undefined)) tx.companyOnly = isCompanyInvoice(invoice);
   }
   return { state: result, receipts };
 }

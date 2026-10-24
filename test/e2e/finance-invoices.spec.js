@@ -65,5 +65,5 @@ test('paid invoices credit project income and only the balance missing from link
   await page.locator(`[data-act="view-invoice"][data-id="${invoiceId}"]`).click();await page.getByRole('button',{name:'Edit invoice',exact:true}).click();await expect(page.locator('#invoiceForm [name="status"]')).toHaveValue('Paid');await page.locator('[data-form="invoiceForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();
   expect(await page.evaluate(id=>state.transactions.filter(tx=>tx.linkedInvoiceId===id).length,invoiceId)).toBe(2);expect(await page.evaluate(()=>projectMetrics('p-focus').received)).toBe(before.received+100);
-  await page.locator('.sidebar [data-page="projects"]').click();const card=page.locator('.project-card').filter({hasText:'Example Beta'});await expect(card).toContainText('₹100.00');
+  await page.locator('.sidebar [data-page="projects"]').click();const card=page.locator('.project-card').filter({hasText:'Example Beta'});await expect(card.locator('.mini-stats')).toHaveText('Project value₹10,000.00');
 });

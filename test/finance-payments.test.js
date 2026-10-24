@@ -5,12 +5,12 @@ import { validateState, buildTeamView } from '../functions/domain.js';
 import { financeFixture } from './fixtures/finance-state.js';
 import { invoicePaymentUrl, paymentDetails, upiPaymentUri } from '../src/lib/finance-payment.js';
 
-test('settling a paid invoice credits its project once and updates team entitlements', () => {
+test('settling a paid invoice credits income once without changing fixed team entitlements', () => {
   const state = financeFixture();state.invoices[0].status = 'Paid';state.invoices[0].projectId = 'p-arish';
   const settled = settlePaidInvoices(state, '2026-10-24');validateState(settled.state);
   assert.equal(settled.receipts.length, 1);assert.equal(settled.receipts[0].amount, 100);
   assert.equal(settled.receipts[0].date, '2026-10-24');assert.equal(settled.receipts[0].projectId, 'p-arish');
-  assert.equal(buildTeamView(settled.state, 'team-1').projects[0].allotted, 3030);
+  assert.equal(buildTeamView(settled.state, 'team-1').projects[0].allotted, 3000);
   assert.equal(state.transactions.length, 18);
   assert.deepEqual(settlePaidInvoices(settled.state).state, settled.state);
   settled.state.invoices[0].status = 'Paid';

@@ -1,3 +1,5 @@
+import { calculateProjectMetrics } from './project-finance.js';
+
 export const COLLECTIONS = {
   teams: 'finance_teams', projects: 'finance_projects', transactions: 'finance_transactions',
   invoices: 'finance_invoices', recurringTemplates: 'finance_plans',
@@ -43,7 +45,8 @@ export function validateState(input) {
   const teams = new Set(input.teams.map(team => team.id));
   recordArray(input.projects, 'project', project => {
     const keys=['id','name','client','status','shares'];
-    if(keys.some(key=>!(key in project))||Object.keys(project).some(key=>![...keys,'teamIds','invoiceTemplate'].includes(key)))fail('Invalid project fields.');
+    if(keys.some(key=>!(key in project))||Object.keys(project).some(key=>![...keys,'teamIds','invoiceTemplate','projectValue'].includes(key)))fail('Invalid project fields.');
+    if(project.projectValue!==undefined&&(!amount(project.projectValue)||Math.abs(project.projectValue*100-Math.round(project.projectValue*100))>0.001))fail('Enter a positive fixed project value with at most two decimal places.');
     if(project.teamIds!==undefined&&(!ids(project.teamIds,100)||project.teamIds.some(id=>!teams.has(id))))fail('Invalid project team assignments.');
     if(project.invoiceTemplate!==undefined)validateInvoiceTemplate(project.invoiceTemplate);
     if (!text(project.name, 100, true) || !text(project.client, 120) || !['Active', 'Completed', 'On Hold'].includes(project.status)) fail('Invalid project details.');
@@ -58,7 +61,8 @@ export function validateState(input) {
   });
   const projects = new Set(input.projects.map(project => project.id));
   recordArray(input.transactions, 'transaction', tx => {
-    exact(tx, ['id', 'date', 'description', 'type', 'amount', 'projectId', 'status', 'teamId', 'payee', 'notes', 'proofIds', 'linkedInvoiceId', 'source'], 'transaction');
+    const keys=['id', 'date', 'description', 'type', 'amount', 'projectId', 'status', 'teamId', 'payee', 'notes', 'proofIds', 'linkedInvoiceId', 'source'];
+    if(keys.some(key=>!(key in tx))||Object.keys(tx).some(key=>![...keys,'companyOnly'].includes(key))||(tx.companyOnly!==undefined&&(typeof tx.companyOnly!=='boolean'||tx.type!=='income')))fail('Invalid transaction fields.');
     if (!date(tx.date) || !text(tx.description, 250, true) || !amount(tx.amount) || !['income', 'expense', 'salary'].includes(tx.type)
       || !(tx.type === 'income' ? ['Received', 'Pending'] : ['Paid', 'Pending']).includes(tx.status)
       || !text(tx.payee, 250) || !text(tx.notes, 5000) || !text(tx.source, 100) || !text(tx.linkedInvoiceId, 100)
@@ -66,7 +70,7 @@ export function validateState(input) {
   });
   recordArray(input.invoices, 'invoice', invoice => {
     const keys=['id', 'invoiceNo', 'projectId', 'description', 'amount', 'issuedDate', 'dueDate', 'status', 'notes', 'proofIds', 'templateId', 'period', 'source'];
-    if(keys.some(key=>!(key in invoice))||Object.keys(invoice).some(key=>![...keys,'items'].includes(key)))fail('Invalid invoice fields.');
+    if(keys.some(key=>!(key in invoice))||Object.keys(invoice).some(key=>![...keys,'items','companyOnly'].includes(key))||(invoice.companyOnly!==undefined&&typeof invoice.companyOnly!=='boolean'))fail('Invalid invoice fields.');
     if(invoice.items!==undefined){
       if(!Array.isArray(invoice.items)||!invoice.items.length||invoice.items.length>24)fail('An invoice requires 1–24 services.');
       let total=0;
@@ -111,10 +115,9 @@ export function buildTeamView(state, teamId) {
   return {
     team,
     projects: assigned.map(project => {
-      const pct = project.shares.find(share => share.teamId === teamId)?.pct||0;
-      const income = state.transactions.filter(tx => tx.projectId === project.id && tx.type === 'income' && tx.status === 'Received').reduce((total, tx) => total + tx.amount, 0);
-      const paid = round(payouts.filter(tx => tx.projectId === project.id && tx.status === 'Paid').reduce((total, tx) => total + tx.amount, 0));
-      const allotted = round(income * pct / 100);
+      const share = calculateProjectMetrics(state, project.id).shares.find(share => share.teamId === teamId);
+      const paid = share?.paid ?? round(payouts.filter(tx => tx.projectId === project.id && tx.status === 'Paid').reduce((total, tx) => total + tx.amount, 0));
+      const allotted = share?.allotted || 0;
       return { id: project.id, name: project.name, client: project.client, status: project.status, allotted, paid, remaining: round(Math.max(0, allotted - paid)) };
     }),
     payouts: payouts.map(({ id, date, description, amount, projectId, status, teamId: assignedTeam, payee, proofIds }) => ({ id, date, description, amount, projectId, status, teamId: assignedTeam, payee, proofIds })),

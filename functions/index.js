@@ -49,10 +49,26 @@ async function saveFinance(input, uid) {
     state = validateState(settlePaidInvoices(validateState(input.state), paymentDate).state);
   } catch (error) { reject('invalid-argument', error.message); }
   if (!Number.isInteger(input.revision) || input.revision < 0) reject('invalid-argument', 'Invalid workspace revision.');
+  const requestedState = state;
   return db.runTransaction(async tx => {
+    let state = structuredClone(requestedState);
     const meta = await tx.get(root);
     if ((meta.data()?.revision || 0) !== input.revision) reject('aborted', 'Another administrator updated this workspace. Reload the latest data and try again.');
     const before = await readFinance(tx);
+    for (const project of state.projects) {
+      const previous = before.projects.find(item => item.id === project.id);
+      if (project.projectValue === undefined && previous?.projectValue !== undefined) project.projectValue = previous.projectValue;
+      if (!previous && project.projectValue === undefined) reject('invalid-argument', 'Enter a fixed project value when creating a project.');
+    }
+    for (const invoice of state.invoices) {
+      const previous = before.invoices.find(item => item.id === invoice.id);
+      if (invoice.companyOnly === undefined && previous?.companyOnly !== undefined) invoice.companyOnly = previous.companyOnly;
+    }
+    for (const record of state.transactions) {
+      const previous = before.transactions.find(item => item.id === record.id);
+      if (record.type === 'income' && record.companyOnly === undefined && previous?.companyOnly !== undefined) record.companyOnly = previous.companyOnly;
+    }
+    try { state = validateState(settlePaidInvoices(state).state); } catch (error) { reject('invalid-argument', error.message); }
     const [users, proofs] = await Promise.all([tx.get(profiles), tx.get(proofCollection)]);
     const teamIds = new Set(state.teams.map(team => team.id));
     if (users.docs.some(doc => doc.data().role === 'member' && !teamIds.has(doc.data().teamId))) reject('failed-precondition', 'Reassign a team’s members before removing the team.');

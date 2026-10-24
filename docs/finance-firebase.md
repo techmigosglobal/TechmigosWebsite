@@ -16,7 +16,7 @@ Financial starter data is no longer included in the public HTML or JS bundle.
 | Collection | Purpose |
 |---|---|
 | `finance_transactions` | Original income, expenses and salary records |
-| `finance_projects` | Project details, shares, optional `teamIds`, and private `invoiceTemplate` settings |
+| `finance_projects` | Project details, fixed `projectValue`, shares, optional `teamIds`, and private `invoiceTemplate` settings |
 | `finance_teams` | Stable team IDs and customizable names |
 | `finance_invoices` / `finance_plans` | Invoices and recurring billing plans |
 | `finance_settings/main` | Invoice business profile |
@@ -39,8 +39,18 @@ embedded PNG/JPEG data; external image URLs are rejected. See
 
 Mutations run on the backend. Each save validates record fields, dates, amounts,
 IDs, relationships and shares, checks the expected revision, and commits record
-changes and team views atomically. Stale revisions are rejected. The original
-financial calculations are retained, including separate invoice/cash accounting.
+changes and team views atomically. Stale revisions are rejected. Invoice totals
+and cash stay separate. Per the 2026-10-25 instruction, team entitlements now use
+fixed project values, not collected income. `functions/project-finance.js` is the
+shared calculation owner for browser metrics and server projections.
+
+New project saves require a positive `projectValue` with at most two decimals.
+Missing values on legacy projects are not guessed from receipts. Older clients
+and backups preserve already stored values if the field is omitted. Recurring
+invoices (monthly-plan ID or Recurring source) and explicitly `companyOnly`
+service invoices allocate their receipts entirely to company income. The backend
+copies this classification onto linked income records for durable accounting.
+Changing the fixed project value never creates income or changes past payouts.
 
 ## Teams and credentials
 
@@ -101,6 +111,11 @@ restricted to the finance proof path. Existing public resume upload rules remain
   payment dates were not supplied; admins can correct those dates in the ledger.
   Repeating the command adds no duplicates. New Paid saves settle on the current
   date in Asia/Kolkata, and save responses include the normalized workspace.
+- `node scripts/firebase/set-fixed-project-values.mjs --values-file <private-json>`
+  previews explicit `{id,name,value}` project entries from a local private file;
+  `--apply` saves those values and rebuilds private team projections atomically. It backs up
+  the workspace privately and verifies transaction/invoice hashes remain equal.
+  Future projects obtain their values from the required project-creation field.
 - `scripts/firebase/verify-live.mjs <original-backup.json>` verifies actual Auth,
   exact imported data, callable authorization, member isolation, proof bytes,
   protected Storage reads and disabled sessions. Its temporary test account and

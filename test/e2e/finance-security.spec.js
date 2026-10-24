@@ -35,6 +35,18 @@ test('server validates saves and rejects stale concurrent revisions',async()=>{
   const latest=await api({action:'load'},admin);
   expect(latest.body.result.state.teams.find(t=>t.id==='team-1').name).toBe('Renamed team');
 });
+test('server requires fixed values for new projects and preserves values from older clients',async()=>{
+  const admin=await token(),state=financeFixture();
+  state.projects.push({id:'new-project',name:'New project',client:'',status:'Active',shares:[]});
+  expect((await api({action:'save',state,revision:1},admin)).status).toBe(400);
+  state.projects.pop();delete state.projects[0].projectValue;
+  const saved=await api({action:'save',state,revision:1},admin);expect(saved.status).toBe(200);expect(saved.body.result.state.projects[0].projectValue).toBe(10000);
+  const companyState=saved.body.result.state;companyState.invoices[0].companyOnly=true;companyState.invoices[0].status='Paid';
+  const settled=await api({action:'save',state:companyState,revision:2},admin);expect(settled.status).toBe(200);
+  const legacy=settled.body.result.state;delete legacy.invoices[0].companyOnly;for(const tx of legacy.transactions)delete tx.companyOnly;
+  const preserved=await api({action:'save',state:legacy,revision:3},admin);expect(preserved.status).toBe(200);expect(preserved.body.result.state.invoices[0].companyOnly).toBe(true);expect(preserved.body.result.state.transactions.find(tx=>tx.linkedInvoiceId===legacy.invoices[0].id).companyOnly).toBe(true);
+});
+
 test('team administrators appear in their teams and retain full administrator access',async({page})=>{
   for(const [email,password] of [['vinay@techmigos.com','LocalAdmin@12345'],['vishal@techmigos.com','LocalAdmin@67890']]){
     const admin=await token(email,password),loaded=await api({action:'load'},admin);
