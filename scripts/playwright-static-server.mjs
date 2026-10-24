@@ -1,9 +1,9 @@
 import { createReadStream, promises as fs } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 
-const root = resolve(process.cwd(), 'dist');
-const port = 4321;
+const root = resolve(process.cwd(), process.env.PLAYWRIGHT_STATIC_ROOT || 'dist');
+const port = Number(process.env.PLAYWRIGHT_STATIC_PORT || 4321);
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
   '.gif': 'image/gif',
@@ -34,7 +34,7 @@ function candidatePaths(requestPath) {
 async function resolveFile(requestPath) {
   for (const candidate of candidatePaths(requestPath)) {
     const absolute = resolve(candidate);
-    if (absolute !== root && !absolute.startsWith(`${root}/`)) continue;
+    if (absolute !== root && !absolute.startsWith(`${root}${sep}`)) continue;
     try {
       const info = await fs.stat(absolute);
       if (info.isFile()) return absolute;

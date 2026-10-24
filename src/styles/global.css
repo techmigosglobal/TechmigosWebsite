@@ -459,6 +459,12 @@ body.cursor-hovering #cursor-ring {
 /* ============================================
    SCROLLBAR
    ============================================ */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: #2563eb #f1f5f9;
+    scrollbar-width: thin;
+  }
+}
 ::-webkit-scrollbar {
   width: 6px;
 }

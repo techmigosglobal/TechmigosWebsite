@@ -52,8 +52,11 @@ const currentPath = Astro.url.pathname;
       </div>
 
       <!-- CTA Button -->
-      <div class="hidden lg:flex items-center gap-3">
-        <a href="/contact" class="btn-primary text-sm px-5 py-2.5 shine-hover">
+      <div class="flex items-center gap-3 ml-auto lg:ml-0 mr-2 lg:mr-0">
+        <a href="/login" class="text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg px-3 py-2 hover:bg-primary-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+          Login
+        </a>
+        <a href="/contact" class="hidden lg:inline-flex btn-primary text-sm px-5 py-2.5 shine-hover">
           Get a Free Quote
         </a>
       </div>

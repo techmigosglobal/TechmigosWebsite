@@ -2,6 +2,40 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Finance users: uid, role(admin/member), active, teamId, name, email,
+    // validAfter. Server-only writes; members may get only their own profile.
+    // Finance record collections retain the original validated HTML schemas.
+    // finance_team_views contains only that team's projects and payouts.
+    function financeUser() {
+      return get(/databases/$(database)/documents/finance_users/$(request.auth.uid)).data;
+    }
+    function activeFinanceUser() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/finance_users/$(request.auth.uid))
+        && financeUser().active == true
+        && request.auth.token.auth_time >= financeUser().get('validAfter', 0);
+    }
+    function financeAdmin() {
+      return activeFinanceUser() && financeUser().role == 'admin';
+    }
+    match /finance_users/{uid} {
+      allow get: if financeAdmin() || (activeFinanceUser() && request.auth.uid == uid);
+      allow list: if financeAdmin();
+      allow write: if false;
+    }
+    match /finance_team_views/{teamId} {
+      allow get: if financeAdmin() || (activeFinanceUser() && financeUser().teamId == teamId);
+      allow list: if financeAdmin();
+      allow write: if false;
+    }
+    match /finance_proofs/{id} {
+      allow read: if financeAdmin() || (activeFinanceUser() && financeUser().teamId in resource.data.teamIds);
+      allow write: if false;
+    }
+    match /{financeCollection}/{id} {
+      allow read: if financeCollection in ['finance_workspace', 'finance_teams', 'finance_projects', 'finance_transactions', 'finance_invoices', 'finance_plans', 'finance_settings', 'finance_initial'] && financeAdmin();
+      allow write: if false;
+    }
     function validEmail() {
       return request.resource.data.email is string
         && request.resource.data.email.size() <= 320;

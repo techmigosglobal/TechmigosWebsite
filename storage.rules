@@ -2,6 +2,25 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function financeUser() {
+      return firestore.get(/databases/(default)/documents/finance_users/$(request.auth.uid)).data;
+    }
+    function activeFinanceUser() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/finance_users/$(request.auth.uid))
+        && financeUser().active == true
+        && request.auth.token.auth_time >= financeUser().get('validAfter', 0);
+    }
+    function financeAdmin() {
+      return activeFinanceUser() && financeUser().role == 'admin';
+    }
+    match /finance/proofs/{proofId}/file {
+      allow read: if financeAdmin() || (activeFinanceUser()
+        && firestore.exists(/databases/(default)/documents/finance_proofs/$(proofId))
+        && financeUser().teamId in firestore.get(/databases/(default)/documents/finance_proofs/$(proofId)).data.teamIds);
+      allow create, update: if financeAdmin() && request.resource.size <= 25 * 1024 * 1024;
+      allow delete: if financeAdmin();
+    }
     match /resumes/applications/{path=**} {
       allow create, update: if request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');

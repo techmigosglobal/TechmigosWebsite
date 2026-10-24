@@ -45,7 +45,7 @@ async function walk(dir) {
 }
 
 function relative(file) {
-  return path.relative(root, file);
+  return path.relative(root, file).split(path.sep).join('/');
 }
 
 const requiredFiles = [
@@ -53,10 +53,11 @@ const requiredFiles = [
   'dist/index.html',
   'dist/contact/index.html',
   'dist/support/index.html',
+  'dist/login/index.html',
+  'dist/finance/index.html',
 ];
 
 const removedRoutes = [
-  'dist/login',
   'dist/reset-password',
   'dist/change-password',
   'dist/client',
@@ -94,7 +95,8 @@ for (const file of await walk(root)) {
 const htmlFiles = (await walk(path.join(root, 'dist'))).filter((file) => file.endsWith('.html'));
 for (const file of htmlFiles) {
   const html = await fs.readFile(file, 'utf8');
-  const mainLandmarkCount = (html.match(/<main\b/g) || []).length;
+  const documentHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  const mainLandmarkCount = (documentHtml.match(/<main\b/g) || []).length;
   if (mainLandmarkCount !== 1) {
     failures.push(`Expected exactly one main landmark but found ${mainLandmarkCount} in ${relative(file)}`);
   }

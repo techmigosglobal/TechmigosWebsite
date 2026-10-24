@@ -14,6 +14,7 @@
     "test": "node --test test/*.test.js",
     "security:osv": "node scripts/audit-osv-lockfile.mjs",
     "test:e2e": "playwright test",
+    "test:finance": "node scripts/firebase/test-finance.mjs",
     "test:e2e:live": "CRM_LIVE_REQUIRED=1 playwright test",
     "security:audit": "npm audit --audit-level=low",
     "security:scan": "python3 .agents/skills/vulnerability-scanner/scripts/security_scan.py . --output summary",
@@ -38,7 +39,8 @@
     "@vercel/speed-insights": "2.0.0",
     "astro": "7.3.3",
     "firebase": "12.19.0",
-    "sharp": "0.35.4"
+    "qrcode": "1.5.4",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
@@ -49,6 +51,7 @@
     "typescript": "5.9.3"
   },
   "overrides": {
-    "yaml": "2.9.0"
+    "yaml": "2.9.0",
+    "@grpc/grpc-js": "1.13.6"
   }
 }

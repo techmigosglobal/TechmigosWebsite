@@ -1,0 +1,12 @@
+---
+import financeDocument from '../features/finance/Techmigos_Finance_Standalone.html?raw';
+import cloudUI from '../features/finance/cloud-ui.js?raw';
+import invoiceUI from '../features/finance/invoice-ui.js?raw';
+const markup = financeDocument.replace('// FINANCE_CLOUD_UI', () => cloudUI).replace('// FINANCE_INVOICE_UI', () => invoiceUI);
+---
+<Fragment set:html={markup.split('</body>')[0]} />
+<script>
+  import '../scripts/finance-runtime.js';
+  import '../features/finance/invoice-document.js';
+</script>
+<Fragment set:html="</body></html>" />

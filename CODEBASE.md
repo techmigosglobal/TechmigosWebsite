@@ -5,14 +5,26 @@
 > **Branch audited:** `main`
 > **Purpose:** durable, source-grounded reference for future development in this repository.
 
-This file is the application-specific reference to read before making changes. The current public website uses Firebase project `techmigos-279f6` only for anonymous contact, newsletter, and career submission flows. The authenticated portal, CRM routes, Firebase Authentication, CRM collections, Storage private-workspace paths, and callable Cloud Functions were removed on 2026-10-14; sections below that describe those systems are historical migration evidence, not active routes.
+This file is the application-specific reference to read before making changes. Firebase project `techmigos-279f6` supports public forms and the finance workspace added on 2026-10-24. The older CRM portal was removed on 2026-10-14; historical CRM sections below remain migration evidence.
 
-### Current backend after cleanup
+### Finance frontend added 2026-10-24
 
-- Firestore is empty except for anonymous writes to `contact_leads`, `newsletter_subscribers`, and `career_applications` under `firestore.rules`.
-- Firebase Authentication is empty; the former portal users and callable functions were removed.
-- The default Firebase Storage bucket is empty. Anonymous resume uploads are limited to the public career-form path by `storage.rules`.
-- `src/lib/firebase/publicBridge.js` is the only browser Firebase bridge; it contains no Auth, CRM, or callable-function client.
+- `src/pages/login.astro` uses Firebase Authentication through
+  `src/scripts/finance-runtime.js` for administrators and team members.
+- `src/pages/finance.astro` renders the supplied complete document from
+  `src/features/finance/Techmigos_Finance_Standalone.html`, retaining its imported
+  calculations and interface. Firestore holds records; protected Storage holds proofs.
+- The website's `Navbar.astro` includes a compact Login link on all screen sizes.
+- The new Teams feature manages names, members, credentials and project access.
+  `functions/index.js` validates finance mutations and builds team-scoped views.
+  See `docs/finance-firebase.md` for current schemas, permissions and verification.
+
+### Public backend after cleanup
+
+- Public forms write to `contact_leads`, `newsletter_subscribers`, and `career_applications`. Private finance collections contain the migrated ledger, teams, projects and invoices.
+- Firebase Auth now has finance administrators; the new finance callable is deployed.
+- Protected finance proof files use `finance/proofs/`. Anonymous resume uploads remain limited to the public career-form path by `storage.rules`.
+- `src/lib/firebase/publicBridge.js` still owns public forms; finance has its own authenticated runtime.
 - The `supabase/` directory and older CRM documents in this file are historical migration evidence only.
 
 Everything below this current-state section is historical migration evidence and must not be treated as an active route, feature, collection, function, or deployment requirement.

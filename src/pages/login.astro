@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Finance Login" description="Sign in to the TechMigos finance workspace to manage project income, expenses, team payouts, invoices and financial reports." noIndex hideFooter>
+  <div class="login-main">
+    <section class="login-card" aria-labelledby="login-title">
+      <a class="login-brand" href="/" aria-label="TechMigos home">
+        <img src="/icon.png" width="36" height="36" alt="" />
+        <span>TechMigos <span class="finance-label">Finance</span></span>
+      </a>
+      <h1 id="login-title">Welcome back</h1>
+      <p class="login-intro">Sign in to manage projects, transactions and invoices.</p>
+      <form id="finance-login" novalidate>
+        <div class="login-field">
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" autocomplete="username" inputmode="email" required aria-describedby="login-error" placeholder="you@techmigos.com" />
+        </div>
+        <div class="login-field">
+          <label for="password">Password</label>
+          <div class="password-wrap">
+            <input id="password" name="password" type="password" autocomplete="current-password" required aria-describedby="login-error" />
+            <button id="toggle-password" type="button" aria-controls="password" aria-label="Show password" aria-pressed="false">Show</button>
+          </div>
+        </div>
+        <p id="login-error" class="login-error" role="alert" aria-live="polite"></p>
+        <button id="login-submit" class="login-submit" type="submit">Login</button>
+      </form>
+      <a class="back-link" href="/">← Back to TechMigos</a>
+      <noscript><p class="login-error">Enable JavaScript in your browser to sign in.</p></noscript>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  import '../scripts/finance-runtime.js';
+</script>
+
+<style>
+  .login-main { min-height: 100svh; padding: 120px 20px 48px; display: grid; place-items: center; background: #f5f8fd; color: #10274b; }
+  .login-card { width: min(100%, 440px); padding: 32px; background: white; border: 1px solid #e5eaf3; border-radius: 15px; box-shadow: 0 7px 28px rgba(33,65,118,.06); }
+  .login-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #10274b; margin-bottom: 30px; }
+  .finance-label { color: #175de8; }
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -.7px; margin: 0 0 8px; }
+  .login-intro { color: #52647e; line-height: 1.6; font-size: 14px; margin: 0 0 26px; }
+  .login-field { margin-top: 18px; }
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  input { width: 100%; min-height: 46px; padding: 11px 12px; border: 1px solid #bdcbe0; border-radius: 8px; background: white; font-size: 16px; color: #10274b; }
+  input[aria-invalid="true"] { border-color: #b42337; }
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 68px; }
+  #toggle-password { position: absolute; right: 4px; top: 3px; min-height: 40px; min-width: 56px; border: 0; border-radius: 6px; background: transparent; color: #175de8; font-size: 12px; font-weight: 700; cursor: pointer; }
+  #toggle-password:hover { background: #ebf2ff; }
+  .login-error { min-height: 42px; padding-top: 10px; color: #b42337; line-height: 1.5; font-size: 13px; }
+  .login-submit { width: 100%; min-height: 46px; border: 0; border-radius: 8px; background: #175de8; color: white; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .login-submit:hover { background: #0c49c3; }
+  .login-submit:disabled { opacity: .65; cursor: wait; }
+  input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #175de8; outline-offset: 3px; }
+  .back-link { display: block; margin-top: 24px; text-align: center; color: #52647e; font-size: 13px; }
+  .back-link:hover { color: #175de8; text-decoration: underline; }
+  @media (max-width: 480px) { .login-card { padding: 24px; } }
+</style>
