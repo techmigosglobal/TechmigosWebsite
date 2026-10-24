@@ -1,0 +1,52 @@
+---
+const canonicalUrl = new URL('/pay', Astro.site || 'https://www.techmigos.com');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Invoice Payment | TechMigos</title>
+    <meta name="description" content="View the recipient and amount for your TechMigos invoice, scan its UPI QR code, copy the UPI ID or open your UPI app to complete payment." />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" href="/icon.png" />
+  </head>
+  <body>
+    <main>
+      <section class="payment-card" aria-labelledby="payment-title">
+        <a class="brand" href="/"><img src="/icon.png" width="32" height="32" alt="" />TechMigos Finance</a>
+        <h1 id="payment-title">Invoice payment</h1>
+        <p id="payment-error" role="alert" hidden></p>
+        <p id="payment-loading" role="status">Preparing payment details…</p>
+        <div id="payment-details" hidden>
+          <p id="payment-note"></p>
+          <p class="amount" id="payment-amount"></p>
+          <dl><dt>Pay to</dt><dd id="payment-payee"></dd><dt>UPI ID</dt><dd id="payment-upi"></dd></dl>
+          <img id="payment-qr" width="240" height="240" alt="Scan this QR code with your UPI app to pay this invoice" />
+          <a id="payment-open" class="primary">Open UPI app</a>
+          <button id="payment-copy" type="button">Copy UPI ID</button>
+          <p id="payment-status" role="status" aria-live="polite"></p>
+          <p class="help">On a computer, scan the QR with your phone. If your UPI app does not open, copy the UPI ID and pay the amount shown.</p>
+          <p class="help">Check the recipient and amount in your payment app before confirming. This page does not verify payment; share your receipt with the invoice sender.</p>
+        </div>
+        <noscript><p>Enable JavaScript to view the QR code. You can also use the UPI details printed on your invoice.</p></noscript>
+      </section>
+    </main>
+  </body>
+</html>
+<script>
+  import '../scripts/finance-payment.js';
+</script>
+<style>
+  :global(*){box-sizing:border-box} :global(body){margin:0;background:#f5f8fd;color:#10274b;font:14px/1.5 Inter,system-ui,sans-serif}
+  main{min-height:100svh;display:grid;place-items:center;padding:32px 16px}
+  .payment-card{width:min(100%,440px);padding:28px;background:#fff;border:1px solid #e5eaf3;border-radius:15px;box-shadow:0 7px 28px rgba(33,65,118,.06)}
+  .brand{display:flex;align-items:center;gap:10px;color:#10274b;font-weight:800;text-decoration:none} h1{font-size:24px;margin:24px 0 8px}
+  .amount{font-size:32px;font-weight:800;margin:10px 0} dl{display:grid;grid-template-columns:70px 1fr;gap:6px} dt{color:#52647e} dd{margin:0;overflow-wrap:anywhere}
+  #payment-qr{display:block;max-width:100%;height:auto;margin:20px auto} button,.primary{display:block;width:100%;min-height:44px;padding:10px 16px;border-radius:8px;text-align:center;font:inherit;font-weight:700;cursor:pointer}
+  .primary{background:#175de8;color:#fff;text-decoration:none;margin-top:16px;border:1px solid #175de8}.primary:hover{background:#0c49c3}
+  button{margin-top:10px;background:white;border:1px solid #bdcbe0;color:#175de8} button:hover{background:#ebf2ff}
+  a:focus-visible,button:focus-visible{outline:3px solid #175de8;outline-offset:3px}.help{color:#52647e;font-size:12px} #payment-status{min-height:22px} #payment-error{color:#b42337}
+</style>

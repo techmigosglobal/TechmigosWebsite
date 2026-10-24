@@ -5,6 +5,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { createHash } from 'node:crypto';
 import { COLLECTIONS, validateState, validateMember, buildTeamView, proofTeams } from './domain.js';
+import { settlePaidInvoices } from './invoice-payments.js';
 
 initializeApp();
 const db = getFirestore();
@@ -43,7 +44,10 @@ async function loadFinance(profile) {
 
 async function saveFinance(input, uid) {
   let state;
-  try { state = validateState(input.state); } catch (error) { reject('invalid-argument', error.message); }
+  try {
+    const paymentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    state = validateState(settlePaidInvoices(validateState(input.state), paymentDate).state);
+  } catch (error) { reject('invalid-argument', error.message); }
   if (!Number.isInteger(input.revision) || input.revision < 0) reject('invalid-argument', 'Invalid workspace revision.');
   return db.runTransaction(async tx => {
     const meta = await tx.get(root);
@@ -77,7 +81,7 @@ async function saveFinance(input, uid) {
     }
     if (writes > 450) reject('resource-exhausted', 'Too many records changed at once. Import this backup in smaller batches.');
     tx.set(root, { revision, updatedAt: FieldValue.serverTimestamp(), updatedBy: uid });
-    return { revision };
+    return { revision, state };
   });
 }
 

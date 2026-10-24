@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { invoicePaymentUrl, paymentDetails, upiPaymentUri } from '../../lib/finance-payment.js';
 
 // One document renderer supplies the preview, print pages and downloadable PDF.
 // The landscape grid follows the user's TM_INV21-1 reference.
@@ -32,8 +33,10 @@ export async function renderInvoiceDocument(model) {
   const paragraph = (value, x, top, width, size = 14, bold = false) => { const lines = wrap(value, width, size, bold); lines.forEach((text, index) => label(text, x, top + index * (size + 4), size, bold)); return lines.length * (size + 4); };
   const logo = model.template.logoDataUrl === '' ? null : await loadImage(model.template.logoDataUrl || '/icon.png');
   const signature = model.template.signatureDataUrl ? await loadImage(model.template.signatureDataUrl) : null;
-  const payment = model.template.upiId && model.balance > 0 ? `upi://pay?${new URLSearchParams({pa:model.template.upiId,pn:model.template.payeeName || model.template.sellerName,am:model.balance.toFixed(2),cu:'INR',tn:`Invoice ${model.invoiceNo}`})}` : '';
-  const qr = payment ? await loadImage(await QRCode.toDataURL(payment, { width: 300, margin: 2, errorCorrectionLevel: 'M' })) : null;
+  const details = model.template.upiId && model.balance > 0 ? paymentDetails({pa:model.template.upiId,pn:(model.template.payeeName || model.template.sellerName).slice(0,100),am:model.balance.toFixed(2),tn:`Invoice ${model.invoiceNo}`}) : null;
+  const origin = import.meta.env.PUBLIC_FINANCE_EMULATORS === 'true' ? location.origin : import.meta.env.PUBLIC_SITE_URL?.trim() || 'https://www.techmigos.com';
+  const payment = details ? invoicePaymentUrl(details, origin) : '';
+  const qr = details ? await loadImage(await QRCode.toDataURL(upiPaymentUri(details), { width: 300, margin: 2, errorCorrectionLevel: 'M' })) : null;
   const begin = () => {
     canvas = document.createElement('canvas'); canvas.width = WIDTH * 3; canvas.height = HEIGHT * 3; ctx = canvas.getContext('2d'); ctx.scale(3, 3); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, WIDTH, HEIGHT); pages.push(canvas);
     box(LEFT, 1, RIGHT - LEFT, 788); if (logo) picture(logo, 56, 16, 79, 79);
@@ -68,7 +71,7 @@ export async function renderInvoiceDocument(model) {
   label('Terms and Conditions',54,y+17,16,true);
   const terms=wrap(model.template.terms,480,13), available=Math.floor((footerHeight-58)/17);
   terms.slice(0,available).forEach((text,index)=>label(text,54,y+48+index*17,13));
-  if(qr){paymentPage=pages.length-1;paymentRect=[687,y+15,120,195];ctx.drawImage(qr,687,y+15,120,120);label('Scan or tap to Pay',747,y+139,12,true,'center');fit(model.template.payeeName||model.template.sellerName,747,y+157,250,12,false,'center');fit(`${model.template.upiId} · ${cash(model.balance)}`,747,y+175,250,11,false,'center');label('Tap to pay',747,y+193,12,true,'center');}
+  if(qr){paymentPage=pages.length-1;paymentRect=[622,y+15,250,196];ctx.drawImage(qr,687,y+15,120,120);label('Scan or tap to Pay',747,y+139,12,true,'center');fit(model.template.payeeName||model.template.sellerName,747,y+157,250,12,false,'center');fit(`${model.template.upiId} · ${cash(model.balance)}`,747,y+175,250,11,false,'center');label('Tap to pay',747,y+193,12,true,'center');}
   if(signature)picture(signature,945,y+124,90,40);
   label('Authorised Signatory For',989,y+170,13,false,'center');label(model.template.signatoryName||model.template.sellerName,989,y+188,13,false,'center');
   // Long terms continue on clearly marked pages instead of disappearing.
@@ -78,18 +81,20 @@ export async function renderInvoiceDocument(model) {
 
 export function invoicePagesPdf(pages, options={}) {
   const encoder = new TextEncoder(), parts = []; let length=0; const offsets=[0];
+  const hasPayment = Boolean(options.payment && Number.isInteger(options.paymentPage) && options.paymentPage >= 0 && options.paymentPage < pages.length), annotationId = 3 + pages.length * 3;
   const add=value=>{const bytes=typeof value==='string'?encoder.encode(value):value;parts.push(bytes);length+=bytes.length;};
   const object=(id,value)=>{offsets[id]=length;add(`${id} 0 obj\n`);value();add('\nendobj\n');};
   add('%PDF-1.4\n%Techmigos\n');object(1,()=>add('<< /Type /Catalog /Pages 2 0 R >>'));
   object(2,()=>add(`<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_,n)=>`${3+n*3} 0 R`).join(' ')}] >>`));
   pages.forEach((data,n)=>{
     const id=3+n*3,binary=atob(data.split(',')[1]),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
-    let link='';if(options.payment&&options.paymentPage===n){const[x,y,w,h]=options.paymentRect,sx=842/WIDTH,sy=595.33/HEIGHT,uri=options.payment.replace(/[\\()]/g,char=>'\\'+char);link=` /Annots [<< /Type /Annot /Subtype /Link /Rect [${x*sx} ${(HEIGHT-y-h)*sy} ${(x+w)*sx} ${(HEIGHT-y)*sy}] /Border [0 0 0] /A << /S /URI /URI (${uri}) >> >>]`;}
+    const link = hasPayment && options.paymentPage === n ? ` /Annots [${annotationId} 0 R]` : '';
     object(id,()=>add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595.33] /Resources << /XObject << /Im${n} ${id+1} 0 R >> >> /Contents ${id+2} 0 R${link} >>`));
     object(id+1,()=>{add(`<< /Type /XObject /Subtype /Image /Width ${WIDTH*3} /Height ${HEIGHT*3} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n`);add(bytes);add('\nendstream');});
     const stream=`q 842 0 0 595.33 0 0 cm /Im${n} Do Q\n`;object(id+2,()=>add(`<< /Length ${encoder.encode(stream).length} >>\nstream\n${stream}endstream`));
   });
-  const count=3+pages.length*3,xref=length;add(`xref\n0 ${count}\n0000000000 65535 f \n`);for(let id=1;id<count;id++)add(`${String(offsets[id]).padStart(10,'0')} 00000 n \n`);add(`trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  if(hasPayment){const[x,y,w,h]=options.paymentRect,sx=842/WIDTH,sy=595.33/HEIGHT,uri=options.payment.replace(/[\\()]/g,char=>'\\'+char);object(annotationId,()=>add(`<< /Type /Annot /Subtype /Link /Rect [${x*sx} ${(HEIGHT-y-h)*sy} ${(x+w)*sx} ${(HEIGHT-y)*sy}] /Border [0 0 0] /Contents (Open invoice payment options) /A << /S /URI /URI (${uri}) >> >>`));}
+  const count=3+pages.length*3+(hasPayment?1:0),xref=length;add(`xref\n0 ${count}\n0000000000 65535 f \n`);for(let id=1;id<count;id++)add(`${String(offsets[id]).padStart(10,'0')} 00000 n \n`);add(`trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
   return new Blob(parts,{type:'application/pdf'});
 }
 

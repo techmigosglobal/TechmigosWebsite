@@ -17,6 +17,13 @@ Administrators assigned to a team appear in its member list with an Administrato
 label. Their team membership does not restrict their access to finance records.
 Teams cannot change administrator credentials or downgrade their role.
 
+In a project's Overview, click a row in Team payout breakdown to show that team's
+transactions in the adjacent panel. Team-name buttons support Enter and Space.
+The preview includes only records assigned to that team in the current project;
+an empty message identifies teams with no records. Clear the team filter or click
+the selected team again to restore recent project transactions. Record payout
+still opens its own form, and transaction rows still open the receipt inspector.
+
 Proofs are stored privately in Firebase Storage. Images, PDFs, audio and video
 use the browser's native viewers; unsupported formats remain downloadable.
 Each file can be up to 25 MiB. Full backups include proof bytes.
@@ -33,6 +40,11 @@ edits individual service rows (description, quantity, unit and rate). Saving
 recalculates that invoice's total; received cash changes only through receipts.
 The ordinary Edit invoice flow still edits its metadata and amount. Changing
 its description/amount replaces custom rows with a single matching service.
+Choosing Paid creates a linked receipt for the remaining balance, updating the
+project's Received total, cash and team entitlements in one server save. Existing
+partial/full receipts are counted once. Later invoice status is derived from the
+receipts, so editing or deleting a receipt can reopen the balance. Other statuses
+and service edits do not automatically create income.
 
 Preview, Download PDF and Print use one shared landscape renderer. It produces
 crisp 3× image pages, supports rupee and Unicode text, and paginates services,
@@ -40,6 +52,13 @@ notes and terms. PDF pages are A4 landscape; their text is rasterized. The
 preview also provides an accessible text summary. The QR uses the current
 remaining balance; paid invoices omit the payment request. Print opens the
 browser's printer chooser. It requires pop-ups; the downloaded PDF is a fallback.
+
+Tap to pay in the PDF uses an HTTPS link to `/pay`; the QR encodes the UPI intent
+directly. The public payment page supports Open UPI app, QR and copying the UPI
+ID without requiring a finance login. It never verifies or marks a payment paid.
+Details are kept in the URL fragment rather than HTTP query logs. PDF links use
+PUBLIC_SITE_URL (default https://www.techmigos.com); emulator tests use their
+local origin. Deploy the updated website before sharing new payment links.
 
 ## Development and verification
 

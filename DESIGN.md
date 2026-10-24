@@ -31,6 +31,8 @@ existing financial colors remain authoritative. No redesign is requested.
 The standalone document's `:root` owns finance CSS tokens. Login is the entry
 surface and follows those values through its scoped styles. Marketing tokens
 remain owned by `src/styles/global.css` and existing shared components.
+The public `/pay` handoff follows the finance entry palette and compact white
+card, with readable recipient/amount details, a high-contrast QR and blue action.
 
 ## Typography
 Preserve the standalone system/Inter stack and the marketing site's fonts.

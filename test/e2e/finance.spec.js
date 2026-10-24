@@ -189,6 +189,69 @@ test('project CRUD, team shares, expense and salary calculations', async ({ page
   await expect.poll(async () => (await readState(page)).settings.businessName).toBe('Techmigos QA');
 });
 
+test('project team rows preview matching transactions without changing payout actions', async ({ page }) => {
+  await login(page);
+  await nav(page, 'projects');
+  await page.locator('[data-act="edit-shares"][data-id="p-arish"]').click();
+  await expect(page.getByText('Example only: Team 1 25%', { exact: false })).toHaveCount(0);
+  await field(page, 'share_team-2').fill('20');
+  await page.locator('[data-form="shareForm"]').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await idle(page);
+  await page.locator('[data-act="project-detail"][data-id="p-arish"]').click();
+  const preview = page.locator('#projectTeamTransactions');
+  const teamButton = id => page.locator(`button[data-act="preview-team-transactions"][data-team="${id}"]`);
+  await expect(preview.getByRole('heading')).toHaveText('Recent project transactions');
+  await expect(preview.locator('tbody tr')).toHaveCount(5);
+
+  await page.locator('tr[data-act="preview-team-transactions"][data-team="team-1"] td').nth(1).click();
+  await expect(teamButton('team-1')).toHaveAttribute('aria-pressed', 'true');
+  await expect(teamButton('team-1')).toBeFocused();
+  await expect(preview.getByRole('heading')).toHaveText('Team 1 transactions');
+  await expect(preview.locator('tbody tr')).toHaveCount(1);
+  await expect(preview).toContainText('Example tx-payout');
+  await page.locator('[data-act="pay-team"][data-team="team-2"]').click();
+  await expect(field(page, 'teamId')).toHaveValue('team-2');
+  expect(await page.evaluate(() => ui.detailTeamId)).toBe('team-1');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  await teamButton('team-2').focus();await page.keyboard.press('Enter');
+  await expect(preview.getByRole('heading')).toHaveText('Team 2 transactions');
+  await expect(preview).toContainText('No transactions for this team');
+  await page.locator('[data-act="pay-team"][data-team="team-2"]').click();
+  await field(page, 'description').fill('QA second team payout');await field(page, 'amount').fill('500');
+  await page.getByRole('button', { name: 'Save transaction', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);await idle(page);
+  await expect(preview.locator('tbody tr')).toHaveCount(1);
+  await expect(preview).toContainText('QA second team payout');
+  await addTransaction(page, 'salary', 'QA other project payout', 100, { project: 'p-focus', team: 'team-1' });
+  await teamButton('team-1').focus();await page.keyboard.press('Space');
+  await expect(preview.locator('tbody tr')).toHaveCount(1);
+  await expect(preview).not.toContainText('QA other project payout');
+  await expect(preview).not.toContainText('QA second team payout');
+  await page.locator('#mainContent .two-col').screenshot({ path: 'reports/finance-team-transactions.png' });
+
+  await page.locator('[data-act="clear-project-team"]').click();
+  await expect(preview.getByRole('heading')).toHaveText('Recent project transactions');
+  await expect(preview.locator('tbody tr')).toHaveCount(5);
+  await teamButton('team-1').click();await teamButton('team-1').click();
+  await expect(teamButton('team-1')).toHaveAttribute('aria-pressed', 'false');
+  await expect(preview.getByRole('heading')).toHaveText('Recent project transactions');
+  await teamButton('team-1').click();await preview.locator('tbody tr').click();
+  await expect(page.getByRole('heading', { name: 'All Transactions' })).toBeVisible();
+  await expect(page.locator('#proofArea')).toContainText('No receipt or proof attached');
+
+  await nav(page, 'projects');await page.locator('[data-act="project-detail"][data-id="p-arish"]').click();
+  await expect(preview.getByRole('heading')).toHaveText('Recent project transactions');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await teamButton('team-2').click();await expect(preview.getByRole('heading')).toBeVisible();
+  await expect(preview).toContainText('QA second team payout');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator('.mobile-nav [data-page="projects"]').click();await page.locator('[data-act="project-detail"][data-id="p-focus"]').click();
+  await expect(preview.getByRole('heading')).toHaveText('Recent project transactions');
+  await expect(preview).toContainText('QA other project payout');
+});
+
 test('monthly plan editing, proof removal, unused project deletion and confirmed reset', async ({ page }) => {
   await login(page);
   await nav(page, 'projects');

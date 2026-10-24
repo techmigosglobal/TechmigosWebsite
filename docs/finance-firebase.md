@@ -94,6 +94,13 @@ restricted to the finance proof path. Existing public resume upload rules remain
   Operation's Team after checking their existing active administrator profiles
   against Firebase Authentication. It preserves roles and credentials, backs up
   the profiles privately, and verifies both assignments after the atomic update.
+- `node scripts/firebase/reconcile-paid-invoices.mjs` previews imported Paid
+  invoices missing linked receipts; `--apply` adds only their unpaid balances
+  and rebuilds team projections in one revision. A private pre-change backup is
+  saved locally. Historical receipts use invoice issue dates because actual
+  payment dates were not supplied; admins can correct those dates in the ledger.
+  Repeating the command adds no duplicates. New Paid saves settle on the current
+  date in Asia/Kolkata, and save responses include the normalized workspace.
 - `scripts/firebase/verify-live.mjs <original-backup.json>` verifies actual Auth,
   exact imported data, callable authorization, member isolation, proof bytes,
   protected Storage reads and disabled sessions. Its temporary test account and

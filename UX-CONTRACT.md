@@ -7,7 +7,7 @@ Firebase integration and team-restricted member accounts are now authorized.
 |---|---|---|---|---|
 | Form | login.astro; standalone field/selectField and handleForm | Required fields and original finance constraints | Login, create, edit | finance E2E |
 | Select/Listbox | standalone selectField and native select controls | Supplied HTML | Native | finance E2E |
-| Table Selection | standalone txTable/actionHandler | Original selected transaction inspector | Single transaction | finance E2E |
+| Table Selection | standalone txTable/shareSection/actionHandler | Original transaction inspector and project team preview | Single transaction / project-scoped team filter | finance E2E |
 | Date | standalone native date inputs and formatters | Supplied HTML dates and INR amounts | Native | finance E2E |
 | Scrollbar | standalone stylesheet; marketing global.css | Existing document scrolling and table overflow | Native | Narrow viewport E2E |
 | Toast | standalone toast | Escaped status message in toastHost | Existing finance notifications | finance E2E |
@@ -29,8 +29,20 @@ Firebase integration and team-restricted member accounts are now authorized.
 - Narrow-screen tables scroll within their panel, Logout stays visible, and
   Settings is included in the original mobile navigation style.
 - Returning to Transactions restores the selected record's proof preview.
+- In project Overview, selecting a team payout row filters the adjacent transaction
+  panel by both project and team. The team-name button supports keyboard selection,
+  indicates its pressed state, and retains focus. Selecting it again or clearing
+  the filter restores recent project transactions. Opening another project resets
+  the filter. Record payout remains an independent action; previewing never saves data.
 - Preserve original financial rules: invoices do not count as received cash,
   paid payouts reduce cash, and team shares use received project income.
+- Choosing Paid when saving an invoice records only the unpaid balance as a
+  linked received-income transaction in the same atomic server save. Paid is
+  then derived from linked receipts, allowing receipt corrections. Other invoice
+  statuses do not add income. The user's 2026-10-24 request authorizes this rule.
+- Invoice payment links open the public `/pay` page through an HTTPS PDF link.
+  The page displays only the link's payment details and QR, opens UPI only after
+  an explicit click, and never reads private finance data or confirms settlement.
 - Finance starter data is absent from the static build. All finance writes run
   through a validated, administrator-only callable; stale revisions are rejected.
 - Teams owns names, members, credentials and explicit project access assignments.
@@ -42,6 +54,6 @@ Firebase integration and team-restricted member accounts are now authorized.
   same-HTML requirement. This task does not replace the original CRUD UX.
 - Invoice project templates independently customize business/client details,
   terms, UPI destination, logo and signature. Service rows recalculate invoice
-  totals on explicit save; invoice edits do not create cash income. Templates
+  totals on explicit save; choosing Paid explicitly records any unpaid balance. Templates
   never expose private details in member projections. One document renderer
   produces all preview, print and PDF pages, including overflow pagination.

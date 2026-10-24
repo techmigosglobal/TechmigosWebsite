@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import {seedEmulators} from '../../scripts/firebase/emulator-fixture.mjs';
 
 test('both project templates persist independently; services, PDF and landscape print share the document',async({page,context})=>{
+  test.setTimeout(180000);
   await seedEmulators();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/login');await page.locator('#email').fill('vinay@techmigos.com');await page.locator('#password').fill('LocalAdmin@12345');await page.locator('#login-submit').click();
   await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();
@@ -27,10 +28,42 @@ test('both project templates persist independently; services, PDF and landscape 
   expect(await page.evaluate(()=>state.projects.map(p=>p.invoiceTemplate.clientName))).toEqual(['ArishVille School','FocusToday']);
   await page.locator('.sidebar [data-page="invoices"]').click();await page.locator(`[data-act="view-invoice"][data-id="${invoice.id}"]`).click();await expect(page.locator('.invoice-page')).toHaveCount(1);
   await page.screenshot({path:'reports/finance-invoice-template.png',fullPage:true});
+  const previewPayment=page.getByRole('link',{name:'Open invoice payment options'});await expect(previewPayment).toHaveCount(1);
+  const paymentHref=await previewPayment.getAttribute('href');expect(new URL(paymentHref).pathname).toBe('/pay');
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download PDF',exact:true}).click();const download=await pending;const data=await fs.readFile(await download.path());expect(data.subarray(0,8).toString()).toBe('%PDF-1.4');await fs.writeFile('reports/finance-invoice-template.pdf',data);
+  const pdfSource=data.toString('latin1');expect(pdfSource).toContain(`/URI (${paymentHref})`);expect(pdfSource).not.toContain('/URI (upi:');expect(pdfSource).toMatch(/\/Annots \[\d+ 0 R\]/);
+  const paymentPopup=context.waitForEvent('page');await previewPayment.click();const paymentPage=await paymentPopup;
+  await expect(paymentPage.locator('#payment-amount')).toContainText('11,499.00');await expect(paymentPage.locator('#payment-upi')).toHaveText('v5219@slc');
+  await expect(paymentPage.locator('#payment-qr')).toHaveJSProperty('naturalWidth',480);
+  const uri=new URL(await paymentPage.getByRole('link',{name:'Open UPI app'}).getAttribute('href'));expect(uri.protocol).toBe('upi:');expect(uri.searchParams.get('am')).toBe('11499.00');expect(uri.searchParams.get('tn')).toBe('Invoice TM_INV21');
+  await paymentPage.getByRole('link',{name:'Open UPI app'}).focus();await expect(paymentPage.getByRole('link',{name:'Open UPI app'})).toBeFocused();
+  await paymentPage.setViewportSize({width:390,height:844});expect(await paymentPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await paymentPage.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{document.body.dataset.copied=text}}}));
+  await paymentPage.getByRole('button',{name:'Copy UPI ID'}).click();await expect(paymentPage.locator('body')).toHaveAttribute('data-copied','v5219@slc');await expect(paymentPage.locator('#payment-status')).toHaveText('UPI ID copied.');
+  await paymentPage.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('Denied')}}}));await paymentPage.getByRole('button',{name:'Copy UPI ID'}).click();await expect(paymentPage.locator('#payment-status')).toContainText('copy it manually');
+  await paymentPage.goto('/pay#pa=javascript:bad&pn=Example&am=0');await expect(paymentPage.locator('#payment-error')).toBeVisible();await expect(paymentPage.getByRole('link',{name:'Open UPI app'})).toBeHidden();await paymentPage.close();
   await context.addInitScript(()=>{window.print=()=>{document.body.dataset.printed='true'}});
   const popupPromise=context.waitForEvent('page');await page.getByRole('button',{name:'Print',exact:true}).click();const popup=await popupPromise;await expect(popup.locator('body')).toHaveAttribute('data-printed','true');await expect(popup.locator('img')).toHaveCount(1);await expect(popup.locator('img')).toHaveJSProperty('naturalWidth',3369);await popup.close();
   // Long documents paginate without clipping services or terms.
-  const pages=await page.evaluate(async()=>{const model=invoiceDocumentModel(state.invoices[0]);model.items=Array.from({length:24},(_,n)=>({description:`Service ${n+1} — full detail`,quantity:1,unit:'Service',rate:10,total:10}));model.amount=240;model.template.terms='Extended service terms. '.repeat(70);return(await window.FinanceInvoiceDocument.render(model)).pages.length});expect(pages).toBeGreaterThan(1);
+  const pages=await page.evaluate(async()=>{const model=invoiceDocumentModel(state.invoices[0]);model.items=Array.from({length:24},(_,n)=>({description:`Service ${n+1} — full detail`,quantity:1,unit:'Service',rate:10,total:10}));model.amount=240;model.balance=240;model.template.terms='Extended service terms. '.repeat(70);const result=await window.FinanceInvoiceDocument.render(model);const pdf=await window.FinanceInvoiceDocument.pdf(result.pages,result).text();return{count:result.pages.length,paymentPage:result.paymentPage,annotations:(pdf.match(/\/Annots/g)||[]).length}});expect(pages.count).toBeGreaterThan(1);expect(pages.paymentPage).toBeGreaterThan(0);expect(pages.annotations).toBe(1);
   expect(errors).toEqual([]);
+});
+
+test('paid invoices credit project income and only the balance missing from linked receipts',async({page})=>{
+  await seedEmulators();
+  await page.goto('/login');await page.locator('#email').fill('vinay@techmigos.com');await page.locator('#password').fill('LocalAdmin@12345');await page.locator('#login-submit').click();
+  await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();
+  const before=await page.evaluate(()=>({income:globalMetrics().income,received:projectMetrics('p-focus').received,other:projectMetrics('p-arish').received,revision:ui.revision}));
+  const invoiceId=await page.evaluate(()=>state.invoices[0].id);
+  await page.locator('.sidebar [data-page="invoices"]').click();await page.locator(`[data-act="view-invoice"][data-id="${invoiceId}"]`).click();
+  await page.getByRole('button',{name:'Record receipt',exact:true}).click();await page.locator('#transactionForm [name="amount"]').fill('40');await page.getByRole('button',{name:'Save transaction',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.locator(`[data-act="view-invoice"][data-id="${invoiceId}"]`).click();await page.getByRole('button',{name:'Edit invoice',exact:true}).click();await page.locator('#invoiceForm [name="status"]').selectOption('Paid');await page.locator('[data-form="invoiceForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  const after=await page.evaluate(id=>({income:globalMetrics().income,received:projectMetrics('p-focus').received,other:projectMetrics('p-arish').received,receipts:state.transactions.filter(tx=>tx.linkedInvoiceId===id),status:invoiceStatus(state.invoices.find(i=>i.id===id))}),invoiceId);
+  expect(after.income).toBe(before.income+100);expect(after.received).toBe(before.received+100);expect(after.other).toBe(before.other);expect(after.status).toBe('Paid');expect(after.receipts.map(tx=>tx.amount).sort((a,b)=>a-b)).toEqual([40,60]);
+  await page.locator(`[data-act="view-invoice"][data-id="${invoiceId}"]`).click();await expect(page.locator('.invoice-page')).toHaveCount(1);await expect(page.getByRole('link',{name:'Open invoice payment options'})).toHaveCount(0);
+  await page.getByRole('button',{name:'Record receipt',exact:true}).click();await expect(page.locator('#toastHost')).toContainText('already cover');
+  await page.locator(`[data-act="view-invoice"][data-id="${invoiceId}"]`).click();await page.getByRole('button',{name:'Edit invoice',exact:true}).click();await expect(page.locator('#invoiceForm [name="status"]')).toHaveValue('Paid');await page.locator('[data-form="invoiceForm"]').click();await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.reload();await expect(page.getByRole('heading',{name:'Dashboard Overview'})).toBeVisible();
+  expect(await page.evaluate(id=>state.transactions.filter(tx=>tx.linkedInvoiceId===id).length,invoiceId)).toBe(2);expect(await page.evaluate(()=>projectMetrics('p-focus').received)).toBe(before.received+100);
+  await page.locator('.sidebar [data-page="projects"]').click();const card=page.locator('.project-card').filter({hasText:'Example Beta'});await expect(card).toContainText('₹100.00');
 });
