@@ -86,3 +86,25 @@ test('company allocation shows project purchases as paid expenses and keeps pend
     assert.equal(context.m.shares[0].paid, 4000);
   }
 });
+
+test('company allocation row includes received company invoice income without increasing team shares', () => {
+  const state = financeFixture(), project = state.projects[0];
+  project.projectValue = 30000;
+  project.shares[0].pct = 50;
+  state.invoices[0] = { ...state.invoices[0], projectId: project.id, companyOnly: true, amount: 5000 };
+  state.transactions = [
+    { type: 'expense', projectId: project.id, status: 'Paid', amount: 352 },
+    { type: 'income', projectId: project.id, status: 'Received', amount: 5000, linkedInvoiceId: state.invoices[0].id },
+    { type: 'income', projectId: project.id, status: 'Pending', amount: 3000, companyOnly: true },
+    { type: 'income', projectId: state.projects[1].id, status: 'Received', amount: 4000, companyOnly: true },
+  ];
+  const context = vm.createContext({ p: project, m: calculateProjectMetrics(state, project.id), label: () => '', statusLabel: () => '' });
+  vm.runInContext(source, context);
+  const html = vm.runInContext('shareSection(p,m)', context);
+  const companyRow = html.slice(html.indexOf('<strong>Company allocation</strong>'));
+  assert.ok(companyRow.includes('₹20,000.00'));
+  assert.ok(companyRow.includes('₹15,000.00 project share'));
+  assert.ok(companyRow.includes('₹5,000.00 received company invoice income'));
+  assert.ok(companyRow.includes('₹19,648.00'));
+  assert.equal(context.m.shares[0].allotted, 15000);
+});
