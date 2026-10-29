@@ -2,11 +2,14 @@
 import financeDocument from '../features/finance/Techmigos_Finance_Standalone.html?raw';
 import cloudUI from '../features/finance/cloud-ui.js?raw';
 import invoiceUI from '../features/finance/invoice-ui.js?raw';
-const markup = financeDocument.replace('// FINANCE_CLOUD_UI', () => cloudUI).replace('// FINANCE_INVOICE_UI', () => invoiceUI);
+import approvalUI from '../features/finance/approval-ui.js?raw';
+import allocationUI from '../features/finance/expense-allocation-ui.js?raw';
+const markup = financeDocument.replace('// FINANCE_CLOUD_UI', () => cloudUI).replace('// FINANCE_INVOICE_UI', () => invoiceUI).replace('// FINANCE_APPROVAL_UI', () => approvalUI).replace('// FINANCE_ALLOCATION_UI', () => allocationUI);
 ---
 <Fragment set:html={markup.split('</body>')[0]} />
 <script>
   import '../scripts/finance-runtime.js';
   import '../features/finance/invoice-document.js';
+  import '../features/finance/approval-document.js';
 </script>
 <Fragment set:html="</body></html>" />

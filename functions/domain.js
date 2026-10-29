@@ -1,4 +1,6 @@
 import { calculateProjectMetrics } from './project-finance.js';
+import { validateApprovalImages } from './proof-approvals.js';
+import { validateExpenseAllocations } from './expense-allocations.js';
 
 export const COLLECTIONS = {
   teams: 'finance_teams', projects: 'finance_projects', transactions: 'finance_transactions',
@@ -62,7 +64,8 @@ export function validateState(input) {
   const projects = new Set(input.projects.map(project => project.id));
   recordArray(input.transactions, 'transaction', tx => {
     const keys=['id', 'date', 'description', 'type', 'amount', 'projectId', 'status', 'teamId', 'payee', 'notes', 'proofIds', 'linkedInvoiceId', 'source'];
-    if(keys.some(key=>!(key in tx))||Object.keys(tx).some(key=>![...keys,'companyOnly'].includes(key))||(tx.companyOnly!==undefined&&(typeof tx.companyOnly!=='boolean'||tx.type!=='income')))fail('Invalid transaction fields.');
+    if(keys.some(key=>!(key in tx))||Object.keys(tx).some(key=>![...keys,'companyOnly','projectAllocations'].includes(key))||(tx.companyOnly!==undefined&&(typeof tx.companyOnly!=='boolean'||tx.type!=='income')))fail('Invalid transaction fields.');
+    validateExpenseAllocations(tx, projects);
     if (!date(tx.date) || !text(tx.description, 250, true) || !amount(tx.amount) || !['income', 'expense', 'salary'].includes(tx.type)
       || !(tx.type === 'income' ? ['Received', 'Pending'] : ['Paid', 'Pending']).includes(tx.status)
       || !text(tx.payee, 250) || !text(tx.notes, 5000) || !text(tx.source, 100) || !text(tx.linkedInvoiceId, 100)
@@ -91,7 +94,9 @@ export function validateState(input) {
       || plan.dayOfMonth < 1 || plan.dayOfMonth > 28 || !date(plan.startDate) || !text(plan.notes, 5000) || typeof plan.enabled !== 'boolean'
       || (plan.createdAt !== undefined && !text(plan.createdAt, 40))) fail('Invalid monthly plan.');
   });
-  exact(input.settings, ['businessName', 'businessEmail', 'businessAddress', 'businessPhone', 'currency'], 'settings');
+  const settingsKeys = ['businessName', 'businessEmail', 'businessAddress', 'businessPhone', 'currency'];
+  exact(input.settings, [...settingsKeys, ...(input.settings?.approvalImages !== undefined ? ['approvalImages'] : [])], 'settings');
+  if (input.settings.approvalImages !== undefined) validateApprovalImages(input.settings.approvalImages);
   const settings = input.settings;
   if (!text(settings.businessName, 150, true) || !text(settings.businessEmail, 320) || !text(settings.businessAddress, 2000) || !text(settings.businessPhone, 80) || settings.currency !== 'INR') fail('Invalid business details.');
   return structuredClone(input);

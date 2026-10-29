@@ -1,10 +1,11 @@
+import { transactionsForProject } from './expense-allocations.js';
 const round = value => Math.round((value + Number.EPSILON) * 100) / 100;
 const total = (rows, value = row => row.amount) => round(rows.reduce((sum, row) => sum + Number(value(row) || 0), 0));
 export const isCompanyInvoice = invoice => Boolean(invoice?.companyOnly || invoice?.templateId || invoice?.source === 'Recurring');
 
 export function calculateProjectMetrics(state, projectId) {
   const project = state.projects.find(item => item.id === projectId);
-  const rows = state.transactions.filter(tx => tx.projectId === projectId);
+  const rows = transactionsForProject(state, projectId);
   const income = rows.filter(tx => tx.type === 'income' && tx.status === 'Received');
   const expenses = rows.filter(tx => tx.type === 'expense');
   const payouts = rows.filter(tx => tx.type === 'salary');

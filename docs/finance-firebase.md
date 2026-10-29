@@ -74,6 +74,32 @@ the migration does not invent team shares or allocate previously unassigned pay.
 
 ## Proof files
 
+Only Vinay's active administrator account (`vinay@techmigos.com`, checked against
+both Firebase Auth and the finance profile) can select **Approve & add proof**
+for a transaction with no attached proofs. The approval form requires the reason
+for the missing receipt and a saved/uploaded signature. It reuses saved invoice
+signatures where available; a round blue Techmigos stamp is the default when no
+stamp image has been saved. Approval images are remembered in optional
+`settings.approvalImages`, editable only by Vinay.
+
+`prepareApproval` creates the server-owned transaction snapshot, approver and
+timestamp. `finishApproval` verifies the workspace revision and unchanged missing
+proof status, then atomically attaches the PDF, updates team views and records
+its SHA-256 hash in the private `finance_approval_audit` collection. Drafts expire
+after 15 minutes. This is an internal approval voucher, explicitly labelled as
+having no original receipt; it does not certify bank settlement. Approved PDFs
+cannot be overwritten through Storage. Only Vinay may remove a voucher, and
+transaction details cannot change while its approval remains attached.
+
+Expenses can optionally carry `projectAllocations: [{projectId, amount}]` with
+two or more distinct existing projects, positive two-decimal shares and an exact
+sum equal to the expense total. Their legacy `projectId` is blank. The form splits
+equally by default, distributes any remaining paise deterministically, and allows
+custom amounts. A shared expense remains one ledger/proof record. Company totals
+count its full amount once; each project uses only its allocated amount in its
+transactions, expenses and company balance. Pending expenses still do not reduce
+cash. CSV exports include allocation details; JSON backups retain the shares.
+
 Proofs use protected Storage paths `finance/proofs/{id}/file`, up to 25 MiB per
 file. Images and PDFs preview inline; browser-supported audio/video use native
 players. Other formats remain downloadable. SVGs render as images and arbitrary

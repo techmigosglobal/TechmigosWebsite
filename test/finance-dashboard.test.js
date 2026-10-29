@@ -8,7 +8,7 @@ import { financeFixture } from './fixtures/finance-state.js';
 const document = readFileSync(new URL('../src/features/finance/Techmigos_Finance_Standalone.html', import.meta.url), 'utf8');
 const lines = document.split(/\r?\n/);
 const helpers = ['money', 'moneyShort', 'esc', 'round', 'sum', 'creditedTx', 'expenseTx', 'paidTx', 'allShares', 'companyPct'];
-const functions = ['globalMetrics', 'kpi', 'renderDashboard', 'shareSection'];
+const functions = ['globalMetrics', 'kpi', 'renderDashboard', 'shareSection', 'linkedInvoiceReceived', 'invoiceStatus'];
 const source = [
   ...helpers.map(name => lines.find(line => line.startsWith(`const ${name}=`))),
   ...functions.map(name => {
@@ -58,6 +58,13 @@ test('company balance shows positive, zero and small negative balances without r
     ]);
     assert.ok(html.includes(`<div class="metric">${balance}</div>`));
   }
+});
+
+test('new invoices do not treat unlinked income as their payment', () => {
+  const context = vm.createContext({ state: { transactions: [{ type: 'income', status: 'Received', amount: 10000, linkedInvoiceId: '' }] } });
+  vm.runInContext(source, context);
+  assert.equal(vm.runInContext("linkedInvoiceReceived('')", context), 0);
+  assert.equal(vm.runInContext("invoiceStatus({id:'',status:'Pending',amount:''})", context), 'Pending');
 });
 
 test('company allocation shows project purchases as paid expenses and keeps pending expenses separate', () => {

@@ -18,8 +18,12 @@ service firebase.storage {
       allow read: if financeAdmin() || (activeFinanceUser()
         && firestore.exists(/databases/(default)/documents/finance_proofs/$(proofId))
         && financeUser().teamId in firestore.get(/databases/(default)/documents/finance_proofs/$(proofId)).data.teamIds);
-      allow create, update: if financeAdmin() && request.resource.size <= 25 * 1024 * 1024;
-      allow delete: if financeAdmin();
+      function unlockedProof() {
+        return !firestore.exists(/databases/(default)/documents/finance_proofs/$(proofId))
+          || !('approval' in firestore.get(/databases/(default)/documents/finance_proofs/$(proofId)).data);
+      }
+      allow create, update: if financeAdmin() && unlockedProof() && request.resource.size <= 25 * 1024 * 1024;
+      allow delete: if financeAdmin() && unlockedProof();
     }
     match /resumes/applications/{path=**} {
       allow create, update: if request.resource.size < 5 * 1024 * 1024

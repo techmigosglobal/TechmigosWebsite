@@ -61,7 +61,7 @@ test('Company allocation previews project expenses and paid invoice receipts and
   const cloud = readFileSync(new URL('../../src/features/finance/cloud-ui.js', import.meta.url), 'utf8');
   await page.route('**/__company-expenses-regression', route => route.fulfill({
     status: 200, contentType: 'text/html', headers: { 'Content-Security-Policy': policy },
-    body: source.replace('// FINANCE_CLOUD_UI', () => cloud),
+    body: source.replace('// FINANCE_CLOUD_UI', () => cloud).replace('// FINANCE_APPROVAL_UI', () => readFileSync(new URL('../../src/features/finance/approval-ui.js', import.meta.url), 'utf8')).replace('// FINANCE_ALLOCATION_UI', () => readFileSync(new URL('../../src/features/finance/expense-allocation-ui.js', import.meta.url), 'utf8')),
   }));
   await page.goto('/__company-expenses-regression');
   const state = financeFixture();
@@ -88,7 +88,7 @@ test('Company allocation previews project expenses and paid invoice receipts and
   const metrics = Object.fromEntries(state.projects.map(project => [project.id, calculateProjectMetrics(state, project.id)]));
   await page.evaluate(({ records, metrics, bytes }) => {
     window.TechmigosFinanceAuth = { currentUser: () => ({ role: 'admin', name: 'Test admin' }) };
-    window.FinanceProjectFinance = { calculate: (_state, id) => metrics[id] };
+    window.FinanceProjectFinance = { calculate: (_state, id) => metrics[id], transactionsForProject: (records,id) => records.transactions.filter(t=>t.projectId===id) };
     window.FinanceBackend = { proofOp: async () => ({ id: 'pdf', name: 'purchase.pdf', mime: 'application/pdf',
       blob: new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }), size: bytes.length, addedAt: '2026-10-29' }) };
     state = records;

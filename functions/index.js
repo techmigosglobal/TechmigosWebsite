@@ -3,7 +3,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { canApproveMissing, makeApprovalDraft, transactionFingerprint, validateApprovalAttachment } from './proof-approvals.js';
 import { COLLECTIONS, validateState, validateMember, buildTeamView, proofTeams } from './domain.js';
 import { settlePaidInvoices } from './invoice-payments.js';
 
@@ -70,6 +71,15 @@ async function saveFinance(input, uid) {
     }
     try { state = validateState(settlePaidInvoices(state).state); } catch (error) { reject('invalid-argument', error.message); }
     const [users, proofs] = await Promise.all([tx.get(profiles), tx.get(proofCollection)]);
+    const caller = users.docs.find(user => user.id === uid)?.data();
+    if (JSON.stringify(before.settings.approvalImages) !== JSON.stringify(state.settings.approvalImages) && !canApproveMissing(caller)) reject('permission-denied', 'Only Vinay can change approval signature and stamp images.');
+    for (const proof of proofs.docs) {
+      if (!proof.data().approval) continue;
+      const previous = before.transactions.find(record => record.id === proof.data().approval.transactionId);
+      const next = state.transactions.find(record => record.id === proof.data().approval.transactionId);
+      try { validateApprovalAttachment(proof.data(), previous, next, uid); } catch (error) { reject('failed-precondition', error.message); }
+      if (state.invoices.some(record => record.proofIds.includes(proof.id)) || state.transactions.some(record => record.proofIds.includes(proof.id) && record.id !== proof.data().approval.transactionId)) reject('failed-precondition', 'An approval voucher belongs only to its original transaction.');
+    }
     const teamIds = new Set(state.teams.map(team => team.id));
     if (users.docs.some(doc => doc.data().role === 'member' && !teamIds.has(doc.data().teamId))) reject('failed-precondition', 'Reassign a team’s members before removing the team.');
     const proofIds = new Set(proofs.docs.map(doc => doc.id));
@@ -161,9 +171,52 @@ async function removeProof(id) {
   return { deleted: true };
 }
 
+async function prepareApproval(input, profile) {
+  const payload = await loadFinance(profile);
+  if (input.revision !== payload.revision) reject('aborted', 'Reload the latest workspace before approving.');
+  let draft;
+  try { draft = makeApprovalDraft(payload.state, input.transactionId, profile, { id: `approval-${randomUUID()}`, approvedAt: new Date().toISOString(), reason: input.reason }); }
+  catch (error) { reject('failed-precondition', error.message); }
+  await db.doc(`finance_approval_drafts/${draft.id}`).create({ ...draft, revision: payload.revision });
+  return draft;
+}
+
+async function finishApproval(input, profile) {
+  if (!/^approval-[a-f0-9-]{36}$/.test(input.id || '')) reject('invalid-argument', 'Invalid approval reference.');
+  const draftRef = db.doc(`finance_approval_drafts/${input.id}`), file = getStorage().bucket().file(`finance/proofs/${input.id}/file`);
+  const draft = (await draftRef.get()).data();
+  if (!draft || draft.approvedByUid !== profile.uid || Date.now() - Date.parse(draft.approvedAt) > 15 * 60 * 1000) reject('failed-precondition', 'Approval expired. Start again.');
+  const [metadata] = await file.getMetadata();
+  if (metadata.contentType !== 'application/pdf' || Number(metadata.size) > 5 * 1024 * 1024) reject('invalid-argument', 'Approval must be a PDF no larger than 5 MiB.');
+  const [bytes] = await file.download();
+  if (!bytes.subarray(0, 5).equals(Buffer.from('%PDF-'))) reject('invalid-argument', 'Invalid approval PDF.');
+  return db.runTransaction(async tx => {
+    const meta = await tx.get(root), currentDraft = await tx.get(draftRef), state = await readFinance(tx);
+    const transaction = state.transactions.find(record => record.id === draft.transaction.id);
+    if (!currentDraft.exists || currentDraft.data().completed || meta.data().revision !== draft.revision || !transaction || transaction.proofIds.length || transactionFingerprint(transaction) !== draft.transactionHash) reject('aborted', 'The transaction or workspace changed. Reload before approving.');
+    const approval = { kind: 'internal-approval', transactionId: transaction.id, transactionHash: draft.transactionHash, approvedByUid: profile.uid,
+      approvedByName: profile.name, approvedAt: draft.approvedAt, committedAt: new Date().toISOString(), documentHash: createHash('sha256').update(bytes).digest('hex') };
+    const proof = { id: draft.id, name: `Approved_${transaction.id}.pdf`, size: bytes.length, mime: 'application/pdf', storagePath: file.name,
+      addedAt: approval.committedAt, ownerUid: profile.uid, teamIds: transaction.type === 'salary' && transaction.teamId ? [transaction.teamId] : [], approval };
+    transaction.proofIds = [proof.id];
+    const revision = draft.revision + 1;
+    tx.create(proofCollection.doc(proof.id), proof);
+    tx.create(db.doc(`finance_approval_audit/${draft.id}`), { ...draft, ...approval, signatureDataUrl: null, stampDataUrl: null });
+    tx.update(db.doc(`finance_transactions/${transaction.id}`), { proofIds: transaction.proofIds });
+    for (const team of state.teams) tx.set(db.doc(`finance_team_views/${team.id}`), { ...buildTeamView(state, team.id), revision });
+    tx.update(root, { revision, updatedAt: FieldValue.serverTimestamp(), updatedBy: profile.uid });
+    tx.delete(draftRef);
+    return { state, revision };
+  });
+}
+
 export const financeApi = onCall({ region: 'asia-south1', maxInstances: 3, memory: '256MiB', timeoutSeconds: 60 }, async request => {
   const action = request.data?.action;
   const profile = await profileFor(request, action !== 'load');
+  if (['prepareApproval', 'finishApproval'].includes(action)) {
+    if (!canApproveMissing(profile) || request.auth.token.email?.toLowerCase() !== 'vinay@techmigos.com') reject('permission-denied', 'Only Vinay’s administrator account can approve missing proofs.');
+    return action === 'prepareApproval' ? prepareApproval(request.data, profile) : finishApproval(request.data, profile);
+  }
   if (action === 'load') return loadFinance(profile);
   if (action === 'save') return saveFinance(request.data, profile.uid);
   if (action === 'member') return manageMember(request.data.member);

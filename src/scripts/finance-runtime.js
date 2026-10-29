@@ -4,8 +4,9 @@ import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/
 import { ref, uploadBytes, getBlob, deleteObject, connectStorageEmulator } from 'firebase/storage';
 import { app, firebaseDb as db, firebaseStorage as storage } from '../lib/firebase/client.js';
 import { calculateProjectMetrics, isCompanyInvoice } from '../../functions/project-finance.js';
+import { splitExpense, transactionInProject, transactionsForProject } from '../../functions/expense-allocations.js';
 
-window.FinanceProjectFinance = { calculate: calculateProjectMetrics, isCompanyInvoice };
+window.FinanceProjectFinance = { calculate: calculateProjectMetrics, isCompanyInvoice, splitExpense, transactionInProject, transactionsForProject };
 
 const auth = app ? getAuth(app) : null;
 const functions = app ? getFunctions(app, 'asia-south1') : null;
@@ -78,6 +79,13 @@ window.TechmigosFinanceAuth = {
 };
 
 window.FinanceBackend = {
+  prepareApproval: (transactionId, reason, revision) => call({ action: 'prepareApproval', transactionId, reason, revision }),
+  async finishApproval(id, blob) {
+    const file = ref(storage, `finance/proofs/${id}/file`);
+    await uploadBytes(file, blob, { contentType: 'application/pdf' });
+    try { return await call({ action: 'finishApproval', id }); }
+    catch (error) { await deleteObject(file).catch(() => {}); throw error; }
+  },
   load: () => call({ action: 'load' }),
   save: (state, revision) => call({ action: 'save', state, revision }),
   members: async () => (await call({ action: 'members' })).members,

@@ -14,6 +14,72 @@ const act = async (page, name) => {await idle(page);await page.locator(`[data-ac
 const field = (page, name) => page.locator(`#modalHost [name="${name}"]`);
 const pageErrors = new WeakMap();
 
+test('shared expense splits equally, supports custom shares, survives editing and appears in both projects', async ({ page }) => {
+  await login(page); await nav(page, 'transactions');
+  await act(page, 'add-tx');
+  await page.locator('[data-act="switch-tx-type"][data-type="expense"]').click();
+  await field(page, 'description').fill('Shared equipment purchase');
+  await field(page, 'amount').fill('100.01');
+  await page.locator('#expense-shared').check();
+  await page.locator('[data-expense-project][value="p-arish"]').check();
+  await page.locator('[data-expense-project][value="p-focus"]').check();
+  await expect(field(page, 'allocation_p-arish')).toHaveValue('50.01');
+  await expect(field(page, 'allocation_p-focus')).toHaveValue('50.00');
+  await field(page, 'allocation_p-arish').fill('60.01');
+  await field(page, 'allocation_p-focus').fill('40.00');
+  await field(page, 'status').selectOption('Paid');
+  await page.getByRole('button', { name: 'Save transaction', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const tx = (await readState(page)).transactions.find(t => t.description === 'Shared equipment purchase');
+  expect(tx.amount).toBe(100.01); expect(tx.projectId).toBe('');
+  expect(tx.projectAllocations).toEqual([{projectId:'p-arish',amount:60.01},{projectId:'p-focus',amount:40}]);
+  await page.getByRole('textbox', { name: 'Search transactions' }).fill('Shared equipment purchase');
+  await page.locator('.data-table tbody tr').click();
+  await act(page, 'edit-tx');
+  await expect(page.locator('#expense-shared')).toBeChecked();
+  await expect(field(page, 'allocation_p-arish')).toHaveValue('60.01');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  for (const [projectId, amount] of [['p-arish','₹60.01'],['p-focus','₹40.00']]) {
+    await nav(page,'projects'); await page.locator(`[data-act="project-detail"][data-id="${projectId}"]`).click();
+    await page.getByRole('button',{name:'Show company transactions'}).click();
+    const row=page.locator('#projectTeamTransactions tbody tr').filter({hasText:'Shared equipment purchase'});
+    await expect(row).toContainText(amount); await expect(row).toContainText('Shared total ₹100.01');
+  }
+});
+
+test('only Vinay approves missing proofs and signed vouchers cannot be silently changed', async ({ page }) => {
+  await login(page); await nav(page,'transactions');
+  await page.getByLabel('Proof status').selectOption('missing');
+  await page.getByRole('textbox',{name:'Search transactions'}).fill('Example tx-expense');
+  await page.locator('.data-table tbody tr').click(); await act(page,'approve-missing-proof');
+  await page.getByLabel('Why is the original receipt missing?').fill('Original purchase receipt is unavailable; reviewed by Vinay.');
+  const signature=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=300;c.height=90;const x=c.getContext('2d');x.font='italic 32px serif';x.fillText('Vinay (test signature)',10,50);return c.toDataURL('image/png').split(',')[1]});
+  await page.locator('#approval-signature').setInputFiles({name:'test-signature.png',mimeType:'image/png',buffer:Buffer.from(signature,'base64')});
+  await expect(page.locator('#approval-signatureDataUrl-status')).toHaveText('Image ready to save');
+  await page.getByRole('dialog').getByRole('button',{name:'Approve & add proof',exact:true}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // The Missing filter correctly hides the newly approved row; the inspector remains open.
+  await expect(page.locator('#proofArea')).toContainText('Internal approval voucher');
+  await expect(page.locator('#proofArea')).toContainText('Approved by Vinay');
+  await expect(page.locator('#proofArea iframe')).toBeVisible();
+  const approved=(await readState(page)).transactions.find(t=>t.id==='tx-expense');
+  expect(approved.proofIds).toHaveLength(1);
+  expect(await page.evaluate(async id=>(await proofOp('get',id)).approval.approvedByUid,approved.proofIds[0])).toBe('owner-vinay');
+  const overwrite=await page.evaluate(async id=>{try{await window.FinanceBackend.proofOp('put',{id,name:'overwrite.pdf',mime:'application/pdf',blob:new Blob(['%PDF-1.4'],{type:'application/pdf'})});return ''}catch(e){return e.code||e.message}},approved.proofIds[0]);
+  expect(overwrite).toContain('unauthorized');
+  const editError=await page.evaluate(async()=>{const next=structuredClone(state);next.transactions.find(t=>t.id==='tx-expense').amount++;try{await window.FinanceBackend.save(next,ui.revision);return ''}catch(e){return e.message}});
+  expect(editError).toContain('Remove the approval voucher');
+  await page.getByRole('button',{name:'Logout',exact:true}).click();
+  await login(page,accounts[1]); await nav(page,'transactions');
+  await page.getByRole('textbox',{name:'Search transactions'}).fill('Example tx-example-3');
+  await page.locator('.data-table tbody tr').click();
+  await expect(page.locator('[data-act="approve-missing-proof"]')).toHaveCount(0);
+  const denied=await page.evaluate(async()=>{try{await window.FinanceBackend.prepareApproval('tx-example-3','No receipt',ui.revision);return ''}catch(e){return e.message}});
+  expect(denied).toContain('Only Vinay');
+  const removal=await page.evaluate(async()=>{const next=structuredClone(state);next.transactions.find(t=>t.id==='tx-expense').proofIds=[];try{await window.FinanceBackend.save(next,ui.revision);return ''}catch(e){return e.message}});
+  expect(removal).toContain('Only Vinay');
+});
+
 test.beforeEach(async ({ page }) => {
   await seedEmulators();
   const errors = [];
