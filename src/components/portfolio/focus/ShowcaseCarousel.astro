@@ -93,95 +93,120 @@ const {
 </section>
 
 <script>
-  const track = document.getElementById('focus-carousel-track');
-  const slides = Array.from(document.querySelectorAll('.focus-slide'));
-  const dots = Array.from(document.querySelectorAll('.focus-dot'));
-  const prevButton = document.getElementById('focus-carousel-prev');
-  const nextButton = document.getElementById('focus-carousel-next');
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let activeIndex = 0;
-  let autoAdvance: number | undefined;
+  let disposeCarousel: (() => void) | undefined;
 
-  if (track && slides.length && dots.length) {
-    const activate = (index: number) => {
+  function initShowcaseCarousel() {
+    const section = document.getElementById('focus-showcase');
+    const track = section?.querySelector<HTMLElement>('#focus-carousel-track');
+    if (!section || !track || disposeCarousel) return;
+    const slides = [...track.querySelectorAll<HTMLElement>('.focus-slide')];
+    const dots = [...section.querySelectorAll<HTMLButtonElement>('.focus-dot')];
+    if (!slides.length) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let activeIndex = 0;
+    let inView = false;
+    let pointerOver = false;
+    let manualSelection = false;
+    let timer: number | undefined;
+    let frame = 0;
+
+    function activate(index: number) {
       activeIndex = index;
       dots.forEach((dot, dotIndex) => {
         dot.classList.toggle('bg-primary-600', dotIndex === index);
         dot.classList.toggle('w-8', dotIndex === index);
         dot.classList.toggle('bg-slate-300', dotIndex !== index);
-        dot.setAttribute('aria-current', dotIndex === index ? 'true' : 'false');
+        dot.setAttribute('aria-current', String(dotIndex === index));
       });
-    };
+    }
 
-    const scrollToSlide = (index: number) => {
-      const boundedIndex = (index + slides.length) % slides.length;
-      const target = slides[boundedIndex];
-      if (!target) return;
-      target.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
-      activate(boundedIndex);
-    };
+    function scrollToSlide(index: number) {
+      const next = (index + slides.length) % slides.length;
+      const bounds = track!.getBoundingClientRect();
+      const slide = slides[next].getBoundingClientRect();
+      const left = track!.scrollLeft + slide.left - bounds.left + (slide.width - bounds.width) / 2;
+      track!.scrollTo({ left, top: 0, behavior: reduced.matches ? 'instant' : 'smooth' });
+      activate(next);
+    }
 
-    const stopAutoAdvance = () => {
-      if (autoAdvance) {
-        window.clearInterval(autoAdvance);
-        autoAdvance = undefined;
-      }
-    };
-
-    const startAutoAdvance = () => {
-      if (prefersReducedMotion || slides.length < 2 || autoAdvance) return;
-      autoAdvance = window.setInterval(() => {
+    function syncPlayback() {
+      window.clearTimeout(timer);
+      if (reduced.matches || slides.length < 2 || !inView || document.hidden || pointerOver || manualSelection || section!.contains(document.activeElement)) return;
+      timer = window.setTimeout(() => {
         scrollToSlide(activeIndex + 1);
+        syncPlayback();
       }, 3600);
-    };
+    }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const index = Number(entry.target.getAttribute('data-slide-index') || 0);
-          activate(index);
+    function choose(index: number) {
+      manualSelection = true;
+      syncPlayback();
+      scrollToSlide(index);
+    }
+
+    const visibility = new IntersectionObserver(([entry]) => {
+      inView = entry.intersectionRatio >= .15;
+      syncPlayback();
+    }, { threshold: .15 });
+    visibility.observe(track);
+
+    dots.forEach((dot, index) => dot.addEventListener('click', () => choose(index), { signal }));
+    section.querySelector('#focus-carousel-prev')?.addEventListener('click', () => choose(activeIndex - 1), { signal });
+    section.querySelector('#focus-carousel-next')?.addEventListener('click', () => choose(activeIndex + 1), { signal });
+    track.addEventListener('pointerdown', () => {
+      manualSelection = true;
+      syncPlayback();
+    }, { signal });
+    track.addEventListener('scroll', () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const center = track!.getBoundingClientRect().left + track!.clientWidth / 2;
+        let nearest = 0;
+        let distance = Infinity;
+        slides.forEach((slide, index) => {
+          const bounds = slide.getBoundingClientRect();
+          const delta = Math.abs(bounds.left + bounds.width / 2 - center);
+          if (delta < distance) {
+            nearest = index;
+            distance = delta;
+          }
         });
-      },
-      { root: track, threshold: 0.6 }
-    );
-
-    slides.forEach((slide) => observer.observe(slide));
-
-    dots.forEach((dot) => {
-      dot.addEventListener('click', () => {
-        const index = Number(dot.getAttribute('data-dot-index') || 0);
-        const target = slides[index];
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
+        if (track!.scrollLeft < 2) nearest = 0;
+        else if (track!.scrollLeft + track!.clientWidth >= track!.scrollWidth - 2) nearest = slides.length - 1;
+        activate(nearest);
       });
-    });
-
-    prevButton?.addEventListener('click', () => {
-      stopAutoAdvance();
-      scrollToSlide(activeIndex - 1);
-      startAutoAdvance();
-    });
-
-    nextButton?.addEventListener('click', () => {
-      stopAutoAdvance();
-      scrollToSlide(activeIndex + 1);
-      startAutoAdvance();
-    });
-
-    track.addEventListener('mouseenter', stopAutoAdvance);
-    track.addEventListener('mouseleave', startAutoAdvance);
-    track.addEventListener('focusin', stopAutoAdvance);
-    track.addEventListener('focusout', startAutoAdvance);
+    }, { signal, passive: true });
+    section.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse') return;
+      pointerOver = true;
+      syncPlayback();
+    }, { signal });
+    section.addEventListener('pointerleave', () => {
+      pointerOver = false;
+      syncPlayback();
+    }, { signal });
+    section.addEventListener('focusin', syncPlayback, { signal });
+    section.addEventListener('focusout', () => queueMicrotask(() => { if (!signal.aborted) syncPlayback(); }), { signal });
+    document.addEventListener('visibilitychange', syncPlayback, { signal });
+    reduced.addEventListener('change', syncPlayback, { signal });
 
     activate(0);
-    startAutoAdvance();
+    disposeCarousel = () => {
+      controller.abort();
+      visibility.disconnect();
+      window.clearTimeout(timer);
+      cancelAnimationFrame(frame);
+      disposeCarousel = undefined;
+    };
   }
+
+  initShowcaseCarousel();
+  document.addEventListener('astro:page-load', initShowcaseCarousel);
+  document.addEventListener('astro:before-swap', () => disposeCarousel?.());
 </script>
 
 <style>

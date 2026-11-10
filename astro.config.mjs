@@ -14,5 +14,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Keep bundled scripts compatible with the production CSP without per-build hashes.
+      assetsInlineLimit: (filePath) => filePath.endsWith('.js') ? false : undefined,
+    },
   },
 });

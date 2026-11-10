@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { careersEmail } from '../../lib/careers';
 
 const allJobs = await getCollection('careers', ({ data }) => !data.draft);
 allJobs.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
@@ -10,10 +11,9 @@ function entrySlug(entry: { id: string }) {
 }
 
 const perks = [
-  { marker: '01', title: 'Remote-First', description: 'Work from anywhere in the world. We trust you to do your best work wherever you thrive.' },
-  { marker: '02', title: 'Equity for All', description: 'Every team member gets equity so you share in the success you help create.' },
-  { marker: '03', title: 'Flexible Hours', description: 'We care about results, not rigid schedules. Own your time and your output.' },
-  { marker: '04', title: 'Team Retreats', description: 'Annual all-hands retreats where the whole team gets together IRL to connect and celebrate.' },
+  { marker: '01', title: 'Work on real workflows', description: 'Help clients solve practical problems across web, mobile, and desktop software.' },
+  { marker: '02', title: 'Work across disciplines', description: 'Sales, design, and engineering each bring a different perspective to the same project.' },
+  { marker: '03', title: 'See a project through', description: 'Connect early client conversations with what gets built, tested, and released.' },
 ];
 
 const departments = ['All', ...new Set(allJobs.map(job => job.data.department))];
@@ -21,7 +21,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
 
 <BaseLayout
   title="Software Careers at TechMigos"
-  description="Join TechMigos. We're building world-class software with a remote-first, diverse team that cares about craft, culture, and impact."
+  description="Explore TechMigos careers in business development, backend engineering, and sales and marketing. Read the open roles and apply by email."
 >
   <!-- HERO -->
   <section class="pt-36 pb-20 relative overflow-hidden">
@@ -44,19 +44,9 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
         </span>
       </h1>
       <p class="reveal stagger-2 text-xl text-indigo-200 max-w-2xl mx-auto mb-10">
-        Work with world-class engineers, designers, and strategists on products used by millions. A culture that puts people first.
+        Help businesses plan, build, and improve websites, mobile apps, and desktop software.
       </p>
-      <div class="reveal stagger-3 flex flex-wrap justify-center gap-3 text-white/90">
-        {[
-          'Remote-First Team',
-          'Global Client Delivery',
-          'Career Growth Focused',
-        ].map(s => (
-          <span class="px-4 py-2 rounded-full bg-white/10 border border-white/20 text-sm font-semibold">
-            {s}
-          </span>
-        ))}
-      </div>
+      <a href="#open-positions" class="btn-primary inline-flex">View open positions</a>
     </div>
   </section>
 
@@ -84,12 +74,13 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
   </section>
 
   <!-- OPEN POSITIONS -->
-  <section class="section-padding bg-gray-50">
+  <section id="open-positions" class="section-padding bg-gray-50 scroll-mt-20">
     <div class="container-custom">
       <div class="text-center mb-12 reveal">
         <span class="section-eyebrow">Open Roles</span>
         <h2 class="text-4xl font-bold text-gray-900 mb-2">Open Positions</h2>
         <p class="text-gray-500">{allJobs.length} {allJobs.length === 1 ? 'position' : 'positions'} available</p>
+        <p class="mt-3 text-gray-600">Send your resume to <a class="inline-block font-semibold text-primary-700 underline" href={`mailto:${careersEmail}`}>{careersEmail}</a>. Use the role title as your email subject.</p>
       </div>
 
       {allJobs.length > 0 ? (
@@ -100,6 +91,8 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
               <button
                 class="dept-filter px-5 py-2 rounded-full text-sm font-semibold transition-[background-color,border-color,color,box-shadow] duration-300"
                 data-department={dept}
+                type="button"
+                aria-pressed={dept === 'All'}
               >
                 {dept}
               </button>
@@ -122,17 +115,13 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
                     <span class="flex items-center gap-1 px-3 py-1 bg-primary-50 text-primary-700 rounded-full font-medium">
                       🏢 {job.data.department}
                     </span>
-                    <span class="flex items-center gap-1 text-gray-500">
-                      {job.data.location}
-                    </span>
-                    <span class="flex items-center gap-1 text-gray-500">
-                      {job.data.type}
-                    </span>
+                    {job.data.location && <span class="text-gray-500">{job.data.location}</span>}
+                    {job.data.type && <span class="text-gray-500">{job.data.type}</span>}
                   </div>
                 </div>
                 <div class="flex-shrink-0">
                   <span class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-bold group-hover:bg-primary-700 transition-colors shine-hover">
-                    Apply Now
+                    View role
                     <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                     </svg>
@@ -147,7 +136,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
           <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 text-sm font-black uppercase tracking-[0.22em] text-primary-700 mb-6">Open</div>
           <h3 class="text-2xl font-bold text-gray-900 mb-3">No open positions right now</h3>
           <p class="text-gray-500 text-lg mb-8 max-w-md mx-auto">We're growing! Send us your CV anyway — we'd love to meet talented people.</p>
-          <a href="mailto:careers@techmigos.com" class="btn-primary shine-hover">
+          <a href={`mailto:${careersEmail}`} class="btn-primary shine-hover">
             Send Your CV
           </a>
         </div>
@@ -163,7 +152,7 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
       <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
         We're always interested in meeting talented people. Tell us how you'd like to contribute.
       </p>
-      <a href="mailto:careers@techmigos.com" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
+      <a href={`mailto:${careersEmail}`} class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
         Get in Touch
       </a>
     </div>
@@ -174,27 +163,31 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
   @reference "../../styles/global.css";
 
   .dept-filter { @apply text-gray-600 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-600; }
-  .dept-filter.active {
+  .dept-filter[aria-pressed="true"] {
     background: linear-gradient(135deg, #4F46E5, #06B6D4);
     @apply text-white border-transparent shadow-md;
   }
 </style>
 
 <script>
-  const filters = document.querySelectorAll('.dept-filter');
-  const jobs = document.querySelectorAll('.job-item');
+  function initCareerFilters() {
+    const group = document.getElementById('department-filters');
+    if (!group || group.dataset.initialized) return;
+    group.dataset.initialized = 'true';
+    const filters = group.querySelectorAll<HTMLButtonElement>('.dept-filter');
+    const jobs = document.querySelectorAll<HTMLElement>('.job-item');
 
-  filters.forEach(filter => {
-    filter.addEventListener('click', () => {
-      const dept = filter.getAttribute('data-department');
-      filters.forEach(f => f.classList.remove('active'));
-      filter.classList.add('active');
-      jobs.forEach(job => {
-        const jobDept = job.getAttribute('data-department');
-        (job as HTMLElement).style.display = (dept === 'All' || dept === jobDept) ? 'flex' : 'none';
+    filters.forEach(filter => {
+      filter.addEventListener('click', () => {
+        const department = filter.dataset.department;
+        filters.forEach(button => button.setAttribute('aria-pressed', String(button === filter)));
+        jobs.forEach(job => {
+          job.hidden = department !== 'All' && department !== job.dataset.department;
+        });
       });
     });
-  });
+  }
 
-  document.querySelector('.dept-filter[data-department="All"]')?.classList.add('active');
+  initCareerFilters();
+  document.addEventListener('astro:page-load', initCareerFilters);
 </script>

@@ -11,7 +11,7 @@ const services = [
     title: 'Web Application Development',
     color: 'from-indigo-500 to-blue-500',
     description: [
-      'We build high-performance web applications that handle millions of users while maintaining blazing-fast load times. Our engineers are experts in modern JavaScript frameworks and server-side technologies.',
+      'We build high-performance web applications designed for performance and usability. Our engineers are experts in modern JavaScript frameworks and server-side technologies.',
       'From e-commerce platforms to enterprise dashboards, we architect solutions that scale with your business — following best practices in code quality, testing, and CI/CD to ensure long-term maintainability.',
       'Our web applications are built with accessibility and SEO in mind, ensuring your product reaches the widest audience possible.',
     ],
@@ -30,7 +30,7 @@ const services = [
     title: 'Mobile Apps',
     color: 'from-blue-500 to-cyan-500',
     description: [
-      'We create native and cross-platform mobile applications that deliver exceptional user experiences on both iOS and Android. Our team has shipped 50+ mobile apps to the App Store and Google Play.',
+      'We create native and cross-platform mobile applications that deliver exceptional user experiences on both iOS and Android. We work across the mobile product lifecycle.',
       'Whether you need React Native for speed or native Swift/Kotlin for peak performance, we have the expertise. We follow platform-specific guidelines ensuring your app feels native on every device.',
       'From concept to App Store, we handle the full mobile development lifecycle including ASO, push notifications, and ongoing maintenance.',
     ],
@@ -42,6 +42,18 @@ const services = [
       'App Store deployment and ASO',
     ],
     techStack: ['Swift', 'Kotlin', 'React Native', 'Flutter', 'Firebase', 'GraphQL'],
+  },
+  {
+    id: 'desktop',
+    icon: 'web',
+    title: 'Desktop Software',
+    color: 'from-blue-500 to-cyan-500',
+    description: [
+      'We design and build desktop software for Windows, macOS and Linux.',
+      'From focused utilities to full business applications, we create workflows that fit the way your team works.',
+    ],
+    deliverables: ['Windows, macOS and Linux applications', 'Cross-platform desktop experiences', 'Integrations with your existing services', 'Testing and release support'],
+    techStack: ['Desktop applications', 'Cross-platform development', 'API integration'],
   },
   {
     id: 'qa',
@@ -141,32 +153,51 @@ const faqs = [
   { question: 'Do you sign NDAs?', answer: 'Yes, always. We sign NDAs before any detailed discussions. Your IP and business ideas are treated with strict confidentiality.' },
   { question: 'What are your payment terms?', answer: 'Typically: 30% upfront, 30% at design approval, 40% at launch. For larger projects, we can structure milestone-based payments.' },
 ];
+const serviceLabels: Record<string, string> = {
+  web: 'Web', mobile: 'Mobile', desktop: 'Desktop', qa: 'Testing', backend: 'Backend', ai: 'AI integration', consulting: 'Consulting',
+};
+const bestFit: Record<string, string> = {
+  web: 'Storefronts, customer portals, and tools that teams use in a browser.',
+  mobile: 'Products that people need on the go, on Android or iOS.',
+  desktop: 'Specialized workflows that benefit from a dedicated computer application.',
+  qa: 'Teams preparing for launch or trying to prevent recurring defects.',
+  backend: 'Products that need reliable APIs, integrations, or a new data foundation.',
+  ai: 'Workflows with a clear task to assist and a way to evaluate the results.',
+  consulting: 'Teams and institutions weighing a technical decision or planning training.',
+};
 ---
 
 <BaseLayout
   title="Software Development Services in Hyderabad"
-  description="TechMigos offers web and mobile development, QA automation, backend engineering, AI/ML integration, consulting, and technical training."
+  ogImage="/images/og/services.png"
+  description="TechMigos offers web, mobile and desktop development, QA automation, backend engineering, AI/ML integration, consulting, and technical training."
 >
   <!-- HERO -->
-  <section class="pt-36 pb-16 relative overflow-hidden">
-    <div class="absolute inset-0 dot-pattern opacity-40"></div>
-    <div class="absolute -top-32 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
+  <section class="service-hero pt-32 pb-12 sm:pt-36 sm:pb-16 relative overflow-hidden">
     <div class="container-custom relative z-10">
       <nav class="mb-8 reveal" aria-label="Breadcrumb">
         <ol class="flex items-center space-x-2 text-sm">
-          <li><a href="/" class="text-gray-400 hover:text-primary-600 transition-colors">Home</a></li>
+          <li><a href="/" class="text-gray-500 hover:text-primary-600 transition-colors">Home</a></li>
           <li class="text-gray-300">/</li>
           <li class="text-primary-600 font-semibold">Services</li>
         </ol>
       </nav>
-      <div class="max-w-3xl">
-        <span class="section-eyebrow reveal">What We Offer</span>
-        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
-          End-to-End<br><span class="text-gradient">Technology Services</span>
-        </h1>
-        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed">
-          From concept to global scale — comprehensive services to take your product from idea to market leader.
-        </p>
+      <div class="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:items-end">
+        <div class="max-w-3xl">
+          <span class="section-eyebrow">What we build</span>
+          <h1 class="text-4xl sm:text-6xl font-extrabold text-gray-900 mb-5 leading-tight tracking-tight">
+            Software development services
+          </h1>
+          <p class="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-[47ch]">
+            Build a website, app, or desktop tool. Bring us in to test a release, improve your backend, or work through a technical decision.
+          </p>
+        </div>
+        <nav class="service-chooser" aria-label="Choose a starting point">
+          <p>What are you working on?</p>
+          <a href="#web">Building a new product <span aria-hidden="true">↘</span></a>
+          <a href="#qa">Improving an existing product <span aria-hidden="true">↘</span></a>
+          <a href="#consulting">Making a technical decision <span aria-hidden="true">↘</span></a>
+        </nav>
       </div>
     </div>
   </section>
@@ -174,36 +205,37 @@ const faqs = [
   <!-- SERVICE QUICK LINKS -->
   <div class="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
     <div class="container-custom py-3">
-      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <nav aria-label="Service sections" class="service-nav flex gap-2 overflow-x-auto py-1">
         {services.map(s => (
           <a
             href={`#${s.id}`}
-            class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-[background-color,color] duration-200 whitespace-nowrap"
+            class="flex-shrink-0 flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-colors whitespace-nowrap"
           >
-            <ServiceIcon name={s.icon} class="w-4 h-4" /> {s.title.split(' ')[0]} {s.title.split(' ')[1]}
+            <ServiceIcon name={s.icon} class="w-4 h-4" /> {serviceLabels[s.id]}
           </a>
         ))}
-      </div>
+      </nav>
     </div>
   </div>
 
   <!-- SERVICES CONTENT -->
   <section class="py-16 bg-white">
     <div class="container-custom">
-      <div class="space-y-32">
-        {services.map((service, idx) => (
-          <article id={service.id} class="scroll-mt-36">
+      <div class="space-y-12 sm:space-y-20">
+        {services.map((service) => (
+          <article id={service.id} class="service-detail scroll-mt-40">
             <!-- Section header -->
-            <div class="flex items-start gap-6 mb-10 reveal">
-              <div class={`w-16 h-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
-                <ServiceIcon name={service.icon} class="w-8 h-8 text-white" />
+            <div class="flex items-start gap-4 sm:gap-6 mb-6 sm:mb-9 reveal">
+              <div class={`size-12 sm:size-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                <ServiceIcon name={service.icon} class="size-6 sm:size-8 text-white" />
               </div>
               <div>
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">{service.title}</h2>
+                <h2 class="text-2xl sm:text-4xl font-bold text-gray-900">{service.title}</h2>
+                <p class="mt-2 text-sm sm:text-base text-gray-600"><strong class="text-primary-800">Best fit.</strong> {bestFit[service.id]}</p>
               </div>
             </div>
 
-            <div class="grid lg:grid-cols-5 gap-12">
+            <div class="grid lg:grid-cols-5 gap-7 lg:gap-12">
               <!-- Description -->
               <div class="lg:col-span-3 space-y-4 reveal-left">
                 {service.description.map(para => (
@@ -222,7 +254,7 @@ const faqs = [
 
                 <div class="pt-4">
                   <a href={`/contact?service=${service.id}`} class="btn-primary inline-flex items-center shine-hover group">
-                    Get a Quote
+                    Discuss {serviceLabels[service.id].toLowerCase()}
                     <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                     </svg>
@@ -232,7 +264,7 @@ const faqs = [
 
               <!-- Deliverables card -->
               <div class="lg:col-span-2 reveal-right">
-                <div class="bg-gray-50 rounded-2xl p-7 border border-gray-100 h-full">
+                <div class="bg-[#f7f5ff] rounded-2xl p-5 sm:p-7 border border-indigo-100">
                   <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
                     <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)">✓</span>
                     What We Deliver
@@ -251,9 +283,6 @@ const faqs = [
               </div>
             </div>
 
-            {idx < services.length - 1 && (
-              <div class="mt-20 border-t border-gray-100"></div>
-            )}
           </article>
         ))}
       </div>
@@ -270,26 +299,36 @@ const faqs = [
       </div>
 
       <div class="max-w-3xl mx-auto space-y-3">
-        {faqs.map((faq, index) => (
-          <div class={`faq-item bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden reveal stagger-${Math.min(index + 1, 6)}`}>
-            <button
-              class="faq-trigger w-full px-7 py-5 text-left flex items-center justify-between group"
-              aria-expanded="false"
-              aria-controls={`faq-${index}`}
-            >
+        {faqs.map((faq) => (
+          <details name="service-faq" class="service-faq bg-white rounded-2xl border border-gray-200">
+            <summary class="px-5 sm:px-7 py-4 text-left flex items-center justify-between gap-4 group">
               <span class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{faq.question}</span>
-              <div class="faq-icon w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-[background-color,transform] duration-300 flex-shrink-0 ml-4">
+              <span aria-hidden="true" class="faq-icon w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-transform duration-300 flex-shrink-0">
                 <svg class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
-              </div>
-            </button>
-            <div id={`faq-${index}`} class="faq-body">
-              <p class="text-gray-600 px-7 pb-6 leading-relaxed">{faq.answer}</p>
-            </div>
-          </div>
+              </span>
+            </summary>
+            <p class="text-gray-600 px-5 sm:px-7 pb-6 leading-relaxed">{faq.answer}</p>
+          </details>
         ))}
       </div>
+    </div>
+  </section>
+
+  <!-- RELATED -->
+  <section class="py-12 bg-white">
+    <div class="container-custom">
+      <nav aria-label="Related pages" class="grid gap-6 md:grid-cols-2">
+        <a href="/work" class="block rounded-2xl border border-gray-200 p-6 hover:border-primary-300 transition-colors">
+          <span class="text-sm font-semibold text-primary-600">See the work</span>
+          <span class="block mt-2 text-xl font-bold text-gray-900">Products we have shipped for clients</span>
+        </a>
+        <a href="/blog" class="block rounded-2xl border border-gray-200 p-6 hover:border-primary-300 transition-colors">
+          <span class="text-sm font-semibold text-primary-600">Read the blog</span>
+          <span class="block mt-2 text-xl font-bold text-gray-900">Guides on planning websites, apps and desktop software</span>
+        </a>
+      </nav>
     </div>
   </section>
 
@@ -322,50 +361,63 @@ const faqs = [
 })} />
 </BaseLayout>
 
+<style>
+  .service-hero { background: radial-gradient(ellipse at 92% 20%, #ded9ff 0, transparent 58%), #f5f4ff; }
+  .service-chooser { background: #ffffffbd; border: 1px solid #d9d3fa; border-radius: 1rem; padding: 1rem 1.15rem; }
+  .service-chooser p { margin-bottom: .35rem; color: #4b3a91; font-size: .85rem; font-weight: 750; }
+  .service-chooser a { display: flex; justify-content: space-between; align-items: center; gap: .8rem; min-height: 2.75rem; padding-block: .5rem; border-top: 1px solid #e2ddf8; color: #26204d; font-weight: 650; }
+  .service-chooser a:hover { color: #4f35b3; }
+  .service-nav { scrollbar-width: thin; scrollbar-color: #bfb2ec transparent; }
+  .service-nav a[aria-current="location"] { color: #4427a7; background: #eee8ff; }
+  .service-detail { min-width: 0; border-bottom: 1px solid #e8e3f6; padding-bottom: clamp(2rem, 5vw, 4rem); }
+  .service-detail:last-child { padding-bottom: 0; border-bottom: 0; }
+  .service-faq summary { cursor: pointer; list-style: none; }
+  .service-faq summary::-webkit-details-marker { display: none; }
+  .service-faq[open] .faq-icon { transform: rotate(180deg); }
+  :is(.service-chooser a, .service-faq summary):focus-visible { outline: 2px solid #4f35b3; outline-offset: 3px; }
+  .service-nav a:focus-visible { outline: 2px solid #4f35b3; outline-offset: -2px; }
+</style>
+
 <script>
-  // Smooth FAQ accordion with CSS max-height
-  document.querySelectorAll('.faq-trigger').forEach((trigger) => {
-    trigger.addEventListener('click', () => {
-      const body = trigger.nextElementSibling as HTMLElement;
-      const icon = trigger.querySelector('svg') as SVGElement;
-      const iconWrap = trigger.querySelector('.faq-icon') as HTMLElement;
-      const isOpen = body.classList.contains('open');
+  let stopServiceNav: (() => void) | undefined;
 
-      // Close all
-      document.querySelectorAll('.faq-body').forEach(b => b.classList.remove('open'));
-      document.querySelectorAll('.faq-icon svg').forEach(i => i.classList.remove('rotate-180'));
-      document.querySelectorAll('.faq-icon').forEach(w => (w as HTMLElement).classList.remove('bg-primary-100'));
-      document.querySelectorAll('.faq-trigger').forEach(t => t.setAttribute('aria-expanded', 'false'));
+  function initServiceNav() {
+    const nav = document.querySelector<HTMLElement>('.service-nav');
+    if (!nav || stopServiceNav) return;
+    const articles = [...document.querySelectorAll<HTMLElement>('.service-detail')];
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
+    let frame = 0;
+    let current: HTMLAnchorElement | undefined;
 
-      // Open clicked one
-      if (!isOpen) {
-        body.classList.add('open');
-        icon?.classList.add('rotate-180');
-        iconWrap?.classList.add('bg-primary-100');
-        iconWrap?.querySelector('svg')?.classList.add('text-primary-600');
-        trigger.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
+    function update() {
+      frame = 0;
+      const threshold = nav!.getBoundingClientRect().bottom + 24;
+      const visible = articles.findLast(article => article.getBoundingClientRect().top <= threshold);
+      const next = links.find(link => link.hash === '#' + visible?.id);
+      if (next === current) return;
+      current?.removeAttribute('aria-current');
+      current = next;
+      current?.setAttribute('aria-current', 'location');
+      if (!next) return;
+      const bounds = next.getBoundingClientRect();
+      const rail = nav!.getBoundingClientRect();
+      if (bounds.left < rail.left) nav!.scrollLeft -= rail.left - bounds.left;
+      else if (bounds.right > rail.right) nav!.scrollLeft += bounds.right - rail.right;
+    }
 
-  // Active sidebar link on scroll
-  const articleEls = document.querySelectorAll('article[id]');
-  const navLinks = document.querySelectorAll('.service-nav a');
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', schedule);
+    stopServiceNav = () => {
+      removeEventListener('scroll', schedule);
+      removeEventListener('resize', schedule);
+      cancelAnimationFrame(frame);
+      stopServiceNav = undefined;
+    };
+    schedule();
+  }
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        navLinks.forEach(link => {
-          const href = link.getAttribute('href') || '';
-          if (href === `#${entry.target.id}`) {
-            link.classList.add('text-primary-600', 'bg-primary-50');
-          } else {
-            link.classList.remove('text-primary-600', 'bg-primary-50');
-          }
-        });
-      }
-    });
-  }, { rootMargin: '-20% 0px -60% 0px' });
-
-  articleEls.forEach(el => observer.observe(el));
+  initServiceNav();
+  document.addEventListener('astro:page-load', initServiceNav);
+  document.addEventListener('astro:before-swap', () => stopServiceNav?.());
 </script>

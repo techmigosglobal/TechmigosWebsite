@@ -2,7 +2,7 @@
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Services', href: '/services' },
-  { name: 'Portfolio', href: '/portfolio' },
+  { name: 'Work', href: '/work' },
   { name: 'About', href: '/about' },
   { name: 'Blog', href: '/blog' },
   { name: 'Careers', href: '/careers' },
@@ -12,7 +12,7 @@ const navLinks = [
 const currentPath = Astro.url.pathname;
 ---
 
-<header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500">
+<header id="navbar" transition:persist class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500">
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-20">
       <!-- Logo -->
@@ -52,15 +52,10 @@ const currentPath = Astro.url.pathname;
       </div>
 
       <!-- CTA Button -->
-      <div class="flex items-center gap-3 ml-auto lg:ml-0 mr-2 lg:mr-0">
-        <a href="/login" class="text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg px-3 py-2 hover:bg-primary-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
-          Login
-        </a>
+      <div class="flex items-center gap-1.5 sm:gap-3 ml-auto lg:ml-0">
         <a href="/contact" class="hidden lg:inline-flex btn-primary text-sm px-5 py-2.5 shine-hover">
           Get a Free Quote
         </a>
-      </div>
-
       <!-- Mobile Menu Button -->
       <button
         id="mobile-menu-btn"
@@ -74,6 +69,12 @@ const currentPath = Astro.url.pathname;
         <span class="hamburger-line w-5 h-0.5 bg-current rounded-full transition-[transform,opacity] duration-300"></span>
         <span class="hamburger-line w-5 h-0.5 bg-current rounded-full transition-[transform,opacity] duration-300 origin-center"></span>
       </button>
+        <a href="/login" aria-label="Log in to TechMigos Finance" title="Finance login" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary-200 text-primary-800 hover:text-primary-700 hover:bg-primary-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+          <svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 5h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5M3 12h12m-4-4 4 4-4 4" />
+          </svg>
+        </a>
+      </div>
     </div>
   </nav>
 
@@ -124,13 +125,15 @@ const currentPath = Astro.url.pathname;
 </style>
 
 <script>
+  const initNavbar = () => {
+  let menuOpen = false;
   const navbar = document.getElementById('navbar') as HTMLElement;
   const mobileMenuBtn = document.getElementById('mobile-menu-btn') as HTMLButtonElement;
   const mobileMenu = document.getElementById('mobile-menu') as HTMLElement;
-  let menuOpen = false;
-
   // Handle scroll — add glass effect
   let ticking = false;
+  if (!(window as any).__navScrollBound) {
+  (window as any).__navScrollBound = true;
   window.addEventListener('scroll', () => {
     if (!ticking) {
       requestAnimationFrame(() => {
@@ -150,6 +153,7 @@ const currentPath = Astro.url.pathname;
       ticking = true;
     }
   });
+  }
 
   // Initialize
   if (window.scrollY > 20) {
@@ -181,16 +185,32 @@ const currentPath = Astro.url.pathname;
   });
 
   // Close on link click
+  const closeMenu = (returnFocus = false) => {
+    if (!menuOpen) return;
+    menuOpen = false;
+    mobileMenuBtn?.classList.remove('open');
+    mobileMenuBtn?.setAttribute('aria-expanded', 'false');
+    mobileMenu.style.maxHeight = '0';
+    mobileMenu.style.opacity = '0';
+    window.setTimeout(() => {
+      if (!menuOpen) mobileMenu.hidden = true;
+    }, 500);
+    if (returnFocus) mobileMenuBtn?.focus();
+  };
+
   mobileMenu?.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      menuOpen = false;
-      mobileMenuBtn?.classList.remove('open');
-      mobileMenuBtn?.setAttribute('aria-expanded', 'false');
-      mobileMenu.style.maxHeight = '0';
-      mobileMenu.style.opacity = '0';
-      window.setTimeout(() => {
-        if (!menuOpen) mobileMenu.hidden = true;
-      }, 500);
-    });
+    link.addEventListener('click', () => closeMenu());
   });
+
+  // Escape closes the open drawer and returns focus to its toggle
+  (window as any).__navClose = closeMenu;
+  if (!(window as any).__navKeyBound) {
+    (window as any).__navKeyBound = true;
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') (window as any).__navClose?.(true);
+    });
+  }
+  };
+  initNavbar();
+  document.addEventListener('astro:page-load', initNavbar);
 </script>

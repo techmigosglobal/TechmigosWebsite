@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -25,14 +26,17 @@ const {
 } = Astro.props;
 
 const siteOrigin = Astro.site?.toString().replace(/\/$/, '') || 'https://www.techmigos.com';
-const canonicalURL = new URL(Astro.url.pathname, siteOrigin);
+const canonicalPath = Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\/+$/, '') || '/';
+const canonicalURL = new URL(canonicalPath, siteOrigin);
 const absoluteOgImage = new URL(ogImage, siteOrigin).toString();
 const pageTitle = title === 'Home'
   ? 'TechMigos | Software Development Company in Hyderabad'
   : `${title} | TechMigos`;
+const organizationDescription = 'TechMigos is a software development company in Hyderabad, India, building websites, mobile apps, and desktop software for businesses.';
 const serviceCatalog = [
   ['Web application development', '/services#web'],
   ['Mobile app development', '/services#mobile'],
+  ['Desktop software development', '/services#desktop'],
   ['Quality assurance and testing', '/services#qa'],
   ['Backend development', '/services#backend'],
   ['AI and machine learning integration', '/services#ai'],
@@ -48,7 +52,7 @@ const serviceCatalog = [
 }));
 const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
 const breadcrumbLabels: Record<string, string> = {
-  about: 'About', services: 'Services', portfolio: 'Portfolio', blog: 'Blog',
+  about: 'About', services: 'Services', work: 'Work', blog: 'Blog',
   careers: 'Careers', contact: 'Contact', support: 'Support', privacy: 'Privacy Policy', terms: 'Terms of Service',
 };
 const breadcrumbs = pathSegments.map((segment, index) => ({
@@ -64,7 +68,7 @@ const structuredData = {
       name: 'TechMigos',
       url: siteOrigin,
       logo: `${siteOrigin}/icon.png`,
-      description,
+      description: organizationDescription,
       email: 'info@techmigos.com',
       sameAs: [
         'https://linkedin.com/company/techmigos',
@@ -104,6 +108,7 @@ const structuredData = {
       name: pageTitle,
       description,
       url: canonicalURL.toString(),
+      primaryImageOfPage: { '@type': 'ImageObject', contentUrl: absoluteOgImage },
       isPartOf: { '@id': `${siteOrigin}/#website` },
       about: { '@id': `${siteOrigin}/#organization` },
       inLanguage: 'en-IN',
@@ -122,10 +127,12 @@ const structuredData = {
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
   <head>
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <ClientRouter />
+    <meta name='impact-site-verification' value='3f14c4f6-43d0-44e8-85e8-8cd0845c441a' />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    <meta name='impact-site-verification' value='3f14c4f6-43d0-44e8-85e8-8cd0845c441a' />
 
     <!-- Primary Meta Tags -->
     <title>{pageTitle}</title>
@@ -195,6 +202,7 @@ const structuredData = {
     <SpeedInsights />
 
     <script>
+      const initGlobalEffects = () => {
       // ============================================
       // CUSTOM CURSOR
       // ============================================
@@ -211,7 +219,8 @@ const structuredData = {
         ring?.remove();
       }
 
-      if (allowEnhancedMotion && dot && ring) {
+      if (allowEnhancedMotion && dot && ring && !window.__techmigosCursor) {
+        window.__techmigosCursor = true;
         const cursorDot = dot;
         const cursorRing = ring;
 
@@ -250,7 +259,8 @@ const structuredData = {
       // SCROLL PROGRESS BAR
       // ============================================
       const progressBar = document.getElementById('page-progress');
-      if (!reducedMotion.matches && progressBar) {
+      if (!reducedMotion.matches && progressBar && !window.__techmigosProgress) {
+        window.__techmigosProgress = true;
         window.addEventListener('scroll', () => {
           const scrollTop = window.scrollY;
           const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -342,6 +352,9 @@ const structuredData = {
           });
         });
       }
+      };
+      initGlobalEffects();
+      document.addEventListener('astro:page-load', initGlobalEffects);
     </script>
   </body>
 </html>

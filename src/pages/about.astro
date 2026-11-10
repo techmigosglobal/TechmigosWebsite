@@ -83,6 +83,7 @@ const technologies = [
 
 <BaseLayout
   title="About TechMigos Software Studio"
+  ogImage="/images/og/about.png"
   description="Learn about TechMigos — our mission, team, values, and the technologies we use to build world-class software."
 >
   <!-- ========================================
@@ -307,6 +308,7 @@ const technologies = [
 </style>
 
 <script>
+  const initAbout = () => {
   const aboutReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const aboutFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -397,4 +399,7 @@ const technologies = [
       window.addEventListener('resize', resizeCanvas, { passive: true });
     });
   }
+  };
+  initAbout();
+  document.addEventListener('astro:page-load', initAbout);
 </script>

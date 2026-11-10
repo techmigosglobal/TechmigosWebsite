@@ -2,662 +2,249 @@
 export const prerender = true;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ServiceIcon from '../components/ServiceIcon.astro';
 import { loadSiteContent } from '../lib/siteContent';
+import '../styles/signal-garden.css';
+
+const { projects } = await loadSiteContent();
+const selectedWork = ['hastkala', 'focus-today', 'notiva'].flatMap((slug) =>
+  projects.filter((project) => project.slug === slug)
+);
+
+const phases = [
+  { label: 'Start', lines: ['Give your next', 'idea room to grow.'], title: 'Start with an idea', copy: 'Define the smallest release that makes the idea useful.' },
+  { label: 'Improve', lines: ['Make the familiar', 'work better.'], title: 'Improve what exists', copy: 'Find the friction in a real workflow and test the change.' },
+  { label: 'Expand', lines: ['Build for what', 'comes next.'], title: 'Expand a product', copy: 'Support new users, devices, and integrations as the product grows.' },
+];
+
+const branches = Array.from({ length: 48 }, (_, index) => {
+  const angle = index * Math.PI / 24;
+  const variation = Math.sin(index * 2.41);
+  const color = ['#176bc2', '#dc4830', '#247b31', '#5143c8', '#a05e04', '#176bc2'][index % 6];
+  const forms = [
+    { width: 287, height: 145, twist: .63, spin: 0 },
+    { width: 245, height: 154, twist: -.73, spin: -.17 },
+    { width: 362, height: 154, twist: 1.07, spin: .26 },
+  ].map(({ width, height, twist, spin }) => {
+    const x = Math.round(500 + Math.cos(angle + spin) * (width + variation * 21));
+    const y = Math.round(194 + Math.sin(angle + spin) * (height + variation * 14));
+    const controlX = Math.round(500 + Math.cos(angle + twist + spin) * (width + 43));
+    const controlY = Math.round(194 + Math.sin(angle + twist + spin) * (height + 10));
+    return { x, y, path: 'M500 194 Q' + controlX + ' ' + controlY + ' ' + x + ' ' + y };
+  });
+  return { forms, color, radius: index % 7 === 0 ? 4.8 : 2.6 };
+});
 
 const services = [
-  {
-    icon: 'web',
-    title: 'Web Development',
-    description: 'Custom web applications built with modern frameworks that scale to millions.',
-    href: '/services#web',
-    color: 'from-indigo-500 to-blue-500',
-  },
-  {
-    icon: 'mobile',
-    title: 'Mobile Apps',
-    description: 'Native iOS & Android apps with React Native & Flutter — ship to both stores fast.',
-    href: '/services#mobile',
-    color: 'from-blue-500 to-cyan-500',
-  },
-  {
-    icon: 'qa',
-    title: 'Quality Assurance & Testing',
-    description: 'Comprehensive manual and automated testing to ensure stable, release-ready software.',
-    href: '/services#qa',
-    color: 'from-pink-500 to-rose-500',
-  },
-  {
-    icon: 'backend',
-    title: 'Backend Development',
-    description: 'Robust APIs, databases, and business logic built for performance, security, and scale.',
-    href: '/services#backend',
-    color: 'from-cyan-500 to-sky-500',
-  },
-  {
-    icon: 'ai',
-    title: 'AI/ML Integration',
-    description: 'Intelligent features powered by the latest LLMs and ML pipelines.',
-    href: '/services#ai',
-    color: 'from-emerald-500 to-teal-500',
-  },
-  {
-    icon: 'consulting',
-    title: 'Tech Consulting',
-    description: 'Architecture, education technology, teacher training, technical guidance, and motivation programs.',
-    href: '/services#consulting',
-    color: 'from-amber-500 to-orange-500',
-  },
+  { id: 'web', name: 'Web development', detail: 'Websites, storefronts, and applications built around what people come to do.', color: 'blue' },
+  { id: 'mobile', name: 'Mobile apps', detail: 'Android and iOS experiences that make the important tasks easy to find and finish.', color: 'orange' },
+  { id: 'desktop', name: 'Desktop software', detail: 'Tools for Windows, macOS, and Linux that fit the way teams already work.', color: 'green' },
 ];
 
-const stats = [
-  { value: 'Web', label: 'Product Engineering', icon: 'Build' },
-  { value: 'Mobile', label: 'App Delivery', icon: 'Ship' },
-  { value: 'Cloud', label: 'Scale Readiness', icon: 'Scale' },
-  { value: 'AI', label: 'Applied Intelligence', icon: 'Adapt' },
+const chapters = [
+  { title: 'Find the right problem', detail: 'Agree on the people, workflows, and decisions the product needs to support.' },
+  { title: 'Make it testable', detail: 'Put a prototype in front of people early enough for their feedback to change the plan.' },
+  { title: 'Build for the next release', detail: 'Ship the useful parts first, then use what you learn to decide what comes next.' },
 ];
 
-const trustHighlights = [
-  'Strong Client Satisfaction',
-  'Cross-Industry Delivery Experience',
-  'Responsive Project Communication',
-  'Reliable, Long-Term Delivery Partner',
-  'On-Time, On-Budget Delivery',
-  'Transparent Progress Reporting',
-  'Security-First Engineering Practices',
-];
-
-const processSteps = [
-  {
-    number: '01',
-    title: 'Discovery & Strategy',
-    description: 'Deep-dive into your goals, audience, and competitive landscape to define a bulletproof roadmap.',
-    icon: 'Plan',
-  },
-  {
-    number: '02',
-    title: 'Design & Prototype',
-    description: 'Stunning interfaces and interactive prototypes that bring your vision to life before a line of code is written.',
-    icon: 'Design',
-  },
-  {
-    number: '03',
-    title: 'Build & Test',
-    description: 'Clean, scalable code with rigorous automated testing ensuring flawless performance at every scale.',
-    icon: 'Build',  
-  },
-  {
-    number: '04',
-    title: 'Launch & Support',
-    description: 'Deploy with confidence and ongoing support to keep your product thriving and evolving.',
-    icon: 'Launch',
-  },
-];
-
-const { testimonials, projects } = await loadSiteContent();
-const featuredWork = projects.filter((project) => project.featured).slice(0, 3);
-const showTestimonials = false;
+const motes = Array.from({ length: 23 }, (_, index) => ({
+  x: 27 + (index * 137) % 1346,
+  y: 29 + (index * 107) % 802,
+  radius: index % 5 === 0 ? 3.6 : 1.6,
+}));
 ---
 
-<BaseLayout title="Home" description="TechMigos is a Hyderabad software development company building web apps, mobile apps, backend systems, QA automation, and AI solutions for startups, schools, and enterprises.">
-
-  <!-- ========================================
-       HERO SECTION
-       ======================================== -->
-  <section id="homepage-hero" class="homepage-hero relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
-    <!-- Animated grid background -->
-    <div class="absolute inset-0 grid-pattern opacity-60" style="z-index: 0;"></div>
-
-    <!-- Canvas for interactive neural particle network background -->
-    <canvas id="hero-network-canvas" class="absolute inset-0 pointer-events-none opacity-50" style="z-index: 1;"></canvas>
-
-    <!-- Animated gradient blobs -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-blob"></div>
-      <div class="absolute top-40 -left-40 w-[500px] h-[500px] bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-blob" style="animation-delay: 2s;"></div>
-      <div class="absolute -bottom-40 left-1/2 w-[500px] h-[500px] bg-sky-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" style="animation-delay: 4s;"></div>
-    </div>
-
-    <!-- Floating tech icon particles -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none" id="hero-particles">
-      {[
-        { top: '15%', left: '8%', delay: '0s', dur: '7s', size: '40px', opacity: '0.12' },
-        { top: '70%', left: '5%', delay: '1s', dur: '9s', size: '30px', opacity: '0.08' },
-        { top: '25%', left: '90%', delay: '3s', dur: '8s', size: '50px', opacity: '0.10' },
-        { top: '80%', left: '85%', delay: '2s', dur: '6s', size: '35px', opacity: '0.12' },
-        { top: '45%', left: '92%', delay: '0.5s', dur: '10s', size: '25px', opacity: '0.08' },
-        { top: '55%', left: '3%', delay: '4s', dur: '7s', size: '45px', opacity: '0.09' },
-      ].map(p => (
-        <div
-          class="absolute rounded-full bg-gradient-to-br from-primary-400 to-accent-400 animate-float"
-          style={`top:${p.top};left:${p.left};width:${p.size};height:${p.size};animation-delay:${p.delay};animation-duration:${p.dur};opacity:${p.opacity};`}
-        ></div>
-      ))}
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full py-20">
-      <div class="text-center max-w-5xl mx-auto">
-        <!-- Eyebrow -->
-        <div class="reveal stagger-1 flex justify-center mb-6">
-          <span class="section-eyebrow">
-            <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse inline-block"></span>
-            Startup-friendly and enterprise-ready delivery
-          </span>
-        </div>
-
-        <!-- Main heading with typewriter -->
-        <h1 class="reveal stagger-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-[1.05] tracking-tight mb-6">
-          We Build Software<br>
-          That <span class="text-gradient" id="rotating-text">Scales With You</span>
-        </h1>
-
-        <p class="reveal stagger-3 text-xl sm:text-2xl text-gray-500 mb-10 max-w-3xl mx-auto leading-relaxed">
-          Based in Hyderabad, TechMigos partners with startups and enterprises to design, build, and ship
-          <strong class="text-gray-700">world-class digital products</strong> that drive growth.
-        </p>
-
-        <div class="reveal stagger-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="/contact" class="btn-primary text-lg px-10 py-4 shine-hover group">
-            Start a Project
-            <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-            </svg>
-          </a>
-          <a href="/portfolio" class="btn-ghost text-lg px-10 py-4 group">
-            <svg class="w-5 h-5 mr-2 group-hover:scale-125 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            See Our Work
-          </a>
-        </div>
-
-        <!-- Mini stats strip -->
-        <div class="reveal stagger-5 mt-16 flex flex-wrap justify-center gap-6 md:gap-12">
-          {stats.map(s => (
-            <div class="text-center">
-              <div class="text-3xl font-black text-primary-600 tabular-nums">{s.value}</div>
-              <div class="text-sm text-gray-500 mt-0.5">{s.label}</div>
-            </div>
-          ))}
-        </div>
+<BaseLayout title="Home" description="TechMigos is a software development company in Hyderabad. We design and build websites, Android and iOS apps, and desktop software for businesses." ogImage="/images/og/signal-garden.png">
+  <div class="signal-home" data-signal-home>
+    <section class="signal-hero" data-signal-hero aria-labelledby="signal-title">
+      <div class="signal-atmosphere" aria-hidden="true" data-signal-atmosphere>
+        <div class="signal-halo signal-halo-blue" data-signal-halo></div>
+        <div class="signal-halo signal-halo-rose" data-signal-halo></div>
+        <svg class="signal-field" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="signal-field-ink">
+              <stop offset="0" stop-color="#7162d0" stop-opacity="0" />
+              <stop offset=".62" stop-color="#7162d0" stop-opacity=".33" />
+              <stop offset="1" stop-color="#2687b4" stop-opacity=".06" />
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#signal-field-ink)">
+            {Array.from({ length: 10 }, (_, i) => (
+              <path d={`M${610 - i * 42} 840 C${865 - i * 25} ${660 - i * 26} ${690 + i * 37} ${540 + i * 10} ${1470 + i * 15} ${240 - i * 20}`} />
+            ))}
+          </g>
+        </svg>
+        <svg viewBox="0 0 1400 850" preserveAspectRatio="xMidYMid slice" class="signal-motes">
+          {motes.map(({ x, y, radius }) => <circle cx={x} cy={y} r={radius} />)}
+        </svg>
       </div>
-    </div>
-
-    <!-- Scroll indicator -->
-    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
-      <span class="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
-      <div class="w-px h-8 bg-gradient-to-b from-gray-400 to-transparent animate-pulse"></div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       TRUST METRICS STRIP
-       ======================================== -->
-  <section class="py-10 bg-gray-50 border-y border-gray-100 overflow-hidden">
-    <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">Trusted delivery, measurable outcomes</p>
-    <div class="relative">
-      <div class="flex w-max animate-trust-ticker whitespace-nowrap">
-        {[...trustHighlights, ...trustHighlights].map((item) => (
-          <div class="mx-3 sm:mx-4 px-6 py-3 rounded-full bg-white border border-gray-200 shadow-sm text-sm sm:text-base font-semibold text-gray-700">
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       SERVICES SECTION
-       ======================================== -->
-  <section class="section-padding bg-white relative overflow-hidden">
-    <!-- Background decor -->
-    <div class="absolute top-0 right-0 w-96 h-96 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">What We Do</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">End-to-End Technology</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          From concept to launch — comprehensive services that take your product to market and beyond.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service, i) => (
-          <a
-            href={service.href}
-            class={`group relative bg-white rounded-2xl p-7 border border-gray-100 glow-card shine-hover tilt-card stagger-${i + 1} reveal overflow-hidden`}
-          >
-            <!-- Gradient corner accent -->
-            <div class={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-bl-3xl rounded-tr-2xl`}></div>
-            
-            {/* Animated icon bg */}
-            <div class={`w-14 h-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-[transform,box-shadow] duration-300`}>
-              <ServiceIcon name={service.icon} class="w-7 h-7 text-white" />
-            </div>
-
-            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-              {service.title}
-            </h3>
-            <p class="text-gray-500 leading-relaxed text-sm">{service.description}</p>
-            
-            <!-- Arrow -->
-            <div class="mt-5 flex items-center text-primary-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-[opacity,transform] duration-300">
-              Learn more
-              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-              </svg>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       FEATURED WORK
-       ======================================== -->
-  <section class="section-padding bg-gray-50">
-    <div class="container-custom">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Portfolio</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Our Best Work</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          Selected projects that showcase our expertise across industries and cutting-edge technologies.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featuredWork.map((project, i) => (
-          <a href={project.href || `/portfolio/${project.slug}`} class={`group block bg-white rounded-2xl overflow-hidden shadow-sm glow-card stagger-${i + 1} reveal`}>
-            <div class="relative overflow-hidden">
-              <img
-                src={project.image}
-                alt={project.title}
-                class="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-700"
-                loading="lazy"
-                width="800"
-                height="600"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                <div>
-                  <div class="flex gap-2 mb-3">
-                    {project.tags.map(tag => (
-                      <span class="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-full border border-white/30">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <span class="text-white font-semibold flex items-center gap-2">
-                    View Case Study
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="p-6">
-              <span class="text-sm font-semibold text-primary-600 mb-2 block uppercase tracking-wide">{project.category}</span>
-              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                {project.title}
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">{project.description}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-
-      <div class="text-center mt-12 reveal">
-        <a href="/portfolio" class="btn-ghost group">
-          View All Projects
-          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       PROCESS SECTION
-       ======================================== -->
-  <section class="section-padding bg-white relative overflow-hidden">
-    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-64 h-64 bg-accent-50 rounded-full blur-3xl opacity-50"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Our Process</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">How We Work</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-          A battle-tested methodology that delivers exceptional results, every single time.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
-        <!-- Connecting line (desktop) -->
-        <div class="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-0.5 z-0">
-          <div class="h-full bg-gradient-to-r from-primary-200 via-accent-300 to-primary-200 rounded-full"></div>
-        </div>
-
-        {processSteps.map((step, i) => (
-          <div class={`relative text-center stagger-${i + 1} reveal`}>
-            <div class="relative z-10 inline-flex items-center justify-center w-28 h-28 rounded-full mb-6 animate-pulse-glow" style="background: linear-gradient(135deg, #4F46E5, #06B6D4);">
-              <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center">
-                <div class="text-center">
-                  <div class="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-500">{step.icon}</div>
-                  <div class="text-sm font-black text-primary-600">{step.number}</div>
-                </div>
-              </div>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-3">{step.title}</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">{step.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       TESTIMONIALS
-       ======================================== -->
-    {showTestimonials && (
-    <section class="section-padding bg-gray-50 relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-80 h-80 bg-primary-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-    <div class="container-custom relative z-10">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Testimonials</span>
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">What Our Clients Say</h2>
-        <p class="text-lg text-gray-500">Don't take our word for it — hear from the companies we've helped grow.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {testimonials.map((t, i) => (
-          <div class={`group bg-white rounded-2xl p-8 shadow-sm overflow-hidden relative glow-card stagger-${i + 1} reveal`}>
-            <!-- Gradient accent top line -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-accent-400 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-            
-            <!-- Result badge -->
-            <div class="absolute top-6 right-6 px-3 py-1 bg-primary-50 text-primary-700 text-xs font-bold rounded-full border border-primary-100">
-              {t.result}
-            </div>
-
-            <!-- Stars -->
-            <div class="flex gap-1 mb-5">
-              {[...Array(5)].map(() => (
-                <svg class="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                </svg>
+      <div class="signal-scene signal-wrap">
+        <div class="signal-intro" data-signal-intro>
+          <h1 id="signal-title">
+            <span class="sr-only">{phases[0].lines.join(' ')}</span>
+            <span class="signal-headlines" aria-hidden="true">
+              {phases.map(({ lines }, index) => (
+                <span class="signal-headline" data-signal-headline={index} data-active={index === 0 ? '' : undefined}>
+                  <span class="signal-line">{lines[0]}</span>
+                  <span class="signal-line"><span data-signal-type>{lines[1]}</span></span>
+                </span>
               ))}
-            </div>
+            </span>
+          </h1>
+          <p>Web, mobile, and desktop development from first release through the next version.</p>
+        </div>
 
-            <blockquote class="text-gray-700 mb-6 leading-relaxed text-base italic">
-              "{t.quote}"
-            </blockquote>
+        <div class="signal-stage" data-signal-stage>
+          <svg class="signal-flora" viewBox="0 0 1000 388" aria-hidden="true">
+            <ellipse class="signal-orbit" cx="500" cy="194" rx="462" ry="178" />
+            <ellipse class="signal-orbit signal-orbit-inner" cx="500" cy="194" rx="358" ry="148" />
+            <g data-signal-drift>
+              {branches.map(({ forms, color, radius }) => (
+                <g class="signal-branch" data-signal-forms={JSON.stringify(forms)}>
+                  <path d={forms[0].path} stroke={color} pathLength="1" />
+                  <circle cx={forms[0].x} cy={forms[0].y} r={radius} fill={color} />
+                </g>
+              ))}
+            </g>
+            <g class="signal-core">
+              <circle cx="500" cy="194" r="28" />
+              <image href="/icon.png" x="481" y="175" width="38" height="38" />
+            </g>
+          </svg>
+        </div>
 
-            <div class="flex items-center">
-              <div class="relative mr-4">
-                <img src={t.avatar} alt={t.name} class="w-12 h-12 rounded-full object-cover ring-2 ring-primary-100" loading="lazy" width="48" height="48"/>
-                <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
-              </div>
-              <div>
-                <div class="font-bold text-gray-900">{t.name}</div>
-                <div class="text-sm text-gray-500">{t.role}, <span class="text-primary-600 font-medium">{t.company}</span></div>
-              </div>
-            </div>
+        <div class="signal-console">
+          <div class="signal-choices" data-signal-choices hidden role="group" aria-label="Explore product stages">
+            {phases.map(({ label }, index) => (
+              <button type="button" data-signal-choice={index} aria-pressed={index === 0}>{label}</button>
+            ))}
           </div>
+          <div class="signal-panels" aria-live="off" aria-atomic="true" data-signal-panels>
+            {phases.map(({ title, copy }, index) => (
+              <div data-signal-panel={index} hidden={index !== 0}>
+                <strong>{title}</strong>
+                <p>{copy}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="signal-hero-foot signal-wrap">
+        <a href="#signal-services" class="signal-down">Explore the studio <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
+
+    <section class="signal-services signal-wrap" id="signal-services" aria-labelledby="signal-services-title">
+      <div class="signal-section-head" data-signal-reveal>
+        <div>
+          <p class="signal-kicker">What we build</p>
+          <h2 id="signal-services-title">Software for the<br />way people work.</h2>
+        </div>
+        <p>TechMigos is a software development studio based in Hyderabad, India. We work with businesses and product teams from the first prototype through release and the next version.</p>
+      </div>
+      <div class="signal-service-list">
+        {services.map(({ id, name, detail, color }) => (
+          <a class:list={['signal-service', 'signal-' + color]} href={'/services#' + id} data-signal-service>
+            <span class="signal-service-dot" aria-hidden="true"></span>
+            <h3>{name}</h3>
+            <p>{detail}</p>
+            <span class="signal-arrow" aria-hidden="true">↗</span>
+          </a>
         ))}
       </div>
-    </div>
-  </section>
-  )}
+      <p class="signal-more">Explore <a href="/services#backend">backend development</a>, <a href="/services#qa">QA and testing</a>, <a href="/services#ai">AI integration</a>, and <a href="/services#consulting">technology consulting</a>.</p>
+      <p class="signal-more">Planning a project? Read our guides to <a href="/blog/web-app-vs-mobile-app">choosing between a web or mobile app</a> and <a href="/blog/website-redesign-seo-accessibility">protecting search visibility during a website redesign</a>.</p>
+    </section>
 
-  <!-- ========================================
-       CTA BANNER
-       ======================================== -->
-  <section class="py-24 relative overflow-hidden">
-    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg, #2563eb, #0ea5e9, #06b6d4, #2563eb); background-size: 300% 300%;"></div>
-    <!-- Animated shapes -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-20 -left-20 w-80 h-80 bg-white/5 rounded-full"></div>
-      <div class="absolute -bottom-20 -right-20 w-96 h-96 bg-white/5 rounded-full"></div>
-      <div class="absolute top-1/2 left-1/4 w-2 h-2 bg-white/40 rounded-full animate-float"></div>
-      <div class="absolute top-1/3 right-1/4 w-3 h-3 bg-white/30 rounded-full animate-float" style="animation-delay:1s;"></div>
-      <div class="absolute bottom-1/3 left-1/3 w-2 h-2 bg-white/40 rounded-full animate-float" style="animation-delay:2s;"></div>
-    </div>
+    {selectedWork.length > 0 && (
+      <section class="signal-work" aria-labelledby="signal-work-title">
+        <div class="signal-wrap">
+          <div class="signal-section-head" data-signal-reveal>
+            <div><p class="signal-kicker">Selected work</p><h2 id="signal-work-title">Ideas out in the world.</h2></div>
+            <a class="signal-link" href="/work">Browse all projects <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="signal-projects">
+            {selectedWork.map((project) => (
+              <article class:list={['signal-project', 'signal-project-' + project.slug]} data-signal-card>
+                <a href={project.href || '/work/' + project.slug}>
+                  <div class="signal-project-media" data-signal-project>
+                    <img src={project.image} alt="" loading="lazy" decoding="async" width="800" height="560" />
+                  </div>
+                  <div class="signal-project-copy">
+                    <p class="signal-kicker">{project.category} project</p>
+                    <h3>{project.title} <span aria-hidden="true">↗</span></h3>
+                    <p>{project.description}</p>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
 
-    <div class="container-custom relative z-10 text-center reveal">
-      <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 text-white/90 text-sm font-semibold rounded-full border border-white/20 mb-6">
-        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-        Currently accepting new projects
-      </span>
-      <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-        Ready to bring your<br>idea to life?
-      </h2>
-      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-        Let's collaborate to build something extraordinary.<br>Schedule a free consultation today — no commitment required.
-      </p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/contact" class="group inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:bg-gray-50 transition-[background-color,box-shadow,transform] duration-300 shadow-2xl hover:shadow-white/25 hover:-translate-y-1 text-lg shine-hover">
-          Let's Talk
-          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+    <section class="signal-chapter" aria-labelledby="signal-chapter-title">
+      <div class="signal-wrap signal-chapter-grid">
+        <div class="signal-chapter-art" data-signal-orbit aria-hidden="true">
+          <svg viewBox="0 0 520 520" data-signal-orbit-layer>
+            <g data-signal-rings>
+              {Array.from({ length: 17 }, (_, index) => (
+                <ellipse cx="260" cy="260" rx={112 + index * 5.5} ry={49 + index * 4.3} transform={'rotate(' + index * 12 + ' 260 260)'} />
+              ))}
+            </g>
+            <g data-signal-satellites>
+              <circle cx="453" cy="260" r="4" fill="#a7a3ff" />
+              <circle cx="91" cy="260" r="3" fill="#eda777" />
+            </g>
           </svg>
-        </a>
-        <a href="/portfolio" class="inline-flex items-center justify-center px-10 py-4 border-2 border-white/40 text-white font-bold rounded-xl hover:bg-white/10 hover:border-white/70 transition-[background-color,border-color] duration-300 text-lg">
-          View Portfolio
-        </a>
+          <div class="signal-chapter-logo"><img src="/icon.png" width="88" height="88" alt="" loading="lazy" /></div>
+        </div>
+        <div class="signal-chapter-copy">
+          <div data-signal-reveal><p class="signal-kicker">How we work</p><h2 id="signal-chapter-title">Give the work<br />room to evolve.</h2></div>
+          <ol>
+            {chapters.map(({ title, detail }, index) => (
+              <li data-signal-step>
+                <details name="signal-process" open={index === 0}>
+                  <summary><span aria-hidden="true">0{index + 1}</span><strong>{title}</strong></summary>
+                  <p>{detail}</p>
+                </details>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
+    </section>
+
+    <section class="signal-contact signal-wrap" aria-labelledby="signal-contact-title">
+      <div class="signal-contact-rings" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div data-signal-reveal>
+        <p class="signal-kicker">Work with TechMigos</p>
+        <h2 id="signal-contact-title">What would you<br />like to build?</h2>
+        <p>Tell us about the product, the people using it, or the workflow you want to make easier.</p>
+        <a class="signal-cta" href="/contact">Plan a project <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+    <div class="signal-preferences signal-wrap">
+      <button type="button" data-signal-motion aria-pressed="false" hidden>Reduce homepage motion <span aria-hidden="true">✓</span></button>
     </div>
-  </section>
+  </div>
 </BaseLayout>
 
-<style>
-  .homepage-hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0;
-    background: radial-gradient(30rem circle at var(--hero-x, 50%) var(--hero-y, 35%), rgba(20, 184, 166, 0.16), transparent 62%);
-    transition: opacity 250ms ease;
-  }
-
-  .homepage-hero.is-interactive::after { opacity: 1; }
-
-  @keyframes trustTicker {
-    from { transform: translateX(-50%); }
-    to { transform: translateX(0); }
-  }
-  .animate-trust-ticker {
-    animation: trustTicker 22s linear infinite;
-  }
-
-  /* Rotating text animation */
-  @keyframes textFade {
-    0%, 18% { opacity: 1; transform: translateY(0); }
-    22%, 96% { opacity: 0; transform: translateY(-20px); }
-    100% { opacity: 0; }
-  }
-
-  /* Spotlight glow effect for cards */
-  .glow-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(280px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(37, 99, 235, 0.07), transparent 45%);
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: inherit;
-  }
-  .glow-card:hover::after {
-    opacity: 1;
-  }
-</style>
-
 <script>
-  // Rotating hero text
-  const phrases = ['Scales With You', 'Drives Growth', 'Wins Markets', 'Makes an Impact', 'Delights Users'];
-  let currentPhrase = 0;
-  const el = document.getElementById('rotating-text');
+  import { mountSignalGarden } from '../scripts/signal-garden';
 
-  if (el) {
-    setInterval(() => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(-12px)';
-      el.style.transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-      setTimeout(() => {
-        currentPhrase = (currentPhrase + 1) % phrases.length;
-        el.textContent = phrases[currentPhrase];
-        el.style.transform = 'translateY(12px)';
-        el.style.opacity = '0';
-        setTimeout(() => {
-          el.style.transform = 'translateY(0)';
-          el.style.opacity = '1';
-        }, 50);
-      }, 400);
-    }, 3000);
+  let dispose: (() => void) | undefined;
+
+  function init() {
+    if (dispose) return;
+    const home = document.querySelector<HTMLElement>('[data-signal-home]');
+    if (home) dispose = mountSignalGarden(home);
   }
 
-  // Debugging info
-  console.log('[Antigravity] Hero script initializing...');
-
-  const hero = document.getElementById('homepage-hero');
-  const canvas = document.getElementById('hero-network-canvas') as HTMLCanvasElement;
-
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  if (canvas && !prefersReduced) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const context = ctx;
-      let width = 0;
-      let height = 0;
-      
-      const particles: Array<{x: number, y: number, vx: number, vy: number, r: number}> = [];
-      const particleCount = 45;
-      
-      let mouse = { x: -1000, y: -1000 };
-      
-      function resize() {
-        const rect = hero ? hero.getBoundingClientRect() : null;
-        width = canvas.width = canvas.offsetWidth || (rect ? rect.width : window.innerWidth);
-        height = canvas.height = canvas.offsetHeight || (rect ? rect.height : window.innerHeight);
-        
-        console.log(`[Antigravity] Canvas resized to ${width}x${height}`);
-        
-        if (particles.length === 0) {
-          for (let i = 0; i < particleCount; i++) {
-            particles.push({
-              x: Math.random() * width,
-              y: Math.random() * height,
-              vx: (Math.random() - 0.5) * 0.45,
-              vy: (Math.random() - 0.5) * 0.45,
-              r: Math.random() * 2 + 1
-            });
-          }
-        } else {
-          particles.forEach(p => {
-            if (p.x > width) p.x = Math.random() * width;
-            if (p.y > height) p.y = Math.random() * height;
-          });
-        }
-      }
-      
-      const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-      if (hero && hasFinePointer) {
-        hero.addEventListener('mousemove', (e) => {
-          const rect = hero.getBoundingClientRect();
-          mouse.x = e.clientX - rect.left;
-          mouse.y = e.clientY - rect.top;
-        }, { passive: true });
-        
-        hero.addEventListener('mouseleave', () => {
-          mouse.x = -1000;
-          mouse.y = -1000;
-        }, { passive: true });
-
-        hero.classList.add('is-interactive');
-        hero.addEventListener('pointermove', (event) => {
-          const rect = hero.getBoundingClientRect();
-          hero.style.setProperty('--hero-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-          hero.style.setProperty('--hero-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
-        }, { passive: true });
-      }
-      
-      window.addEventListener('resize', resize, { passive: true });
-      resize();
-      
-      function draw() {
-        context.clearRect(0, 0, width, height);
-        
-        // Brand teal particles and subtle blue connecting lines
-        context.fillStyle = 'rgba(13, 148, 136, 0.45)'; // teal-600
-        context.strokeStyle = 'rgba(37, 99, 235, 0.08)'; // blue-600
-        
-        for (let i = 0; i < particleCount; i++) {
-          const p = particles[i];
-          if (!p) continue;
-          
-          p.x += p.vx;
-          p.y += p.vy;
-          
-          if (p.x < 0 || p.x > width) p.vx *= -1;
-          if (p.y < 0 || p.y > height) p.vy *= -1;
-          
-          if (p.x < 0) p.x = 0;
-          if (p.x > width) p.x = width;
-          if (p.y < 0) p.y = 0;
-          if (p.y > height) p.y = height;
-          
-          if (mouse.x > 0) {
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 180) {
-              p.x += dx * 0.005;
-              p.y += dy * 0.005;
-            }
-          }
-          
-          context.beginPath();
-          context.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          context.fill();
-          
-          for (let j = i + 1; j < particleCount; j++) {
-            const p2 = particles[j];
-            if (!p2) continue;
-            const dx = p.x - p2.x;
-            const dy = p.y - p2.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 110) {
-              context.beginPath();
-              context.lineWidth = (1 - dist / 110) * 0.8;
-              context.moveTo(p.x, p.y);
-              context.lineTo(p2.x, p2.y);
-              context.stroke();
-            }
-          }
-        }
-        
-        requestAnimationFrame(draw);
-      }
-      
-      draw();
-    }
-  }
-
-  if (!prefersReduced) {
-    document.querySelectorAll('.glow-card').forEach(card => {
-      card.addEventListener('mousemove', (e) => {
-        const mouseEvent = e as MouseEvent;
-        const rect = (card as HTMLElement).getBoundingClientRect();
-        const x = mouseEvent.clientX - rect.left;
-        const y = mouseEvent.clientY - rect.top;
-        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
-      }, { passive: true });
-    });
-  }
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', () => {
+    dispose?.();
+    dispose = undefined;
+  });
+  init();
 </script>

@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { careersEmail } from '../../lib/careers';
 
 type ParsedSection = {
   title: string;
@@ -86,6 +87,8 @@ export async function getStaticPaths() {
 }
 
 const { job } = Astro.props;
+const emailApplication = job.data.applicationMethod === 'email';
+const resumeLink = `mailto:${careersEmail}?subject=${encodeURIComponent(job.data.title)}`;
 
 const sourcePath = path.join(process.cwd(), 'src', 'content', 'careers', `${job.id}.md`);
 const rawSource = await fs.readFile(sourcePath, 'utf-8').catch(() => '');
@@ -97,8 +100,8 @@ const roleOverview = findSection(parsedSections, ['Role Overview']);
 
 const essentials = [
   { label: 'Department', value: job.data.department },
-  { label: 'Location', value: job.data.location },
-  { label: 'Employment', value: job.data.type },
+  ...(job.data.location ? [{ label: 'Location', value: job.data.location }] : []),
+  ...(job.data.type ? [{ label: 'Employment', value: job.data.type }] : []),
   { label: 'Posted', value: formatPostedDate(job.data.pubDate) },
   ...(job.data.salary ? [{ label: 'Compensation', value: job.data.salary }] : []),
 ];
@@ -109,7 +112,7 @@ const essentials = [
   description={`${job.data.title} - ${job.data.description}`}
   ogType="article"
 >
-  <script
+  {job.data.location && <script
     is:inline
     type="application/ld+json"
     set:html={JSON.stringify({
@@ -129,10 +132,10 @@ const essentials = [
           addressLocality: job.data.location,
         },
       },
-      employmentType: job.data.type.toUpperCase().replace('-', '_'),
+      ...(job.data.type ? { employmentType: job.data.type.toUpperCase().replace('-', '_') } : {}),
       datePosted: job.data.pubDate.toISOString().split('T')[0],
     })}
-  />
+  />}
 
   <section class="career-hero pt-32 pb-16 relative overflow-hidden">
     <div class="hero-noise" aria-hidden="true"></div>
@@ -161,13 +164,13 @@ const essentials = [
 
           <div class="reveal stagger-3 flex flex-wrap gap-2 text-sm mb-8">
             <span class="role-pill">{job.data.department}</span>
-            <span class="role-pill">{job.data.location}</span>
-            <span class="role-pill">{job.data.type}</span>
+            {job.data.location && <span class="role-pill">{job.data.location}</span>}
+            {job.data.type && <span class="role-pill">{job.data.type}</span>}
             {job.data.salary && <span class="role-pill">{job.data.salary}</span>}
           </div>
 
           <div class="reveal stagger-4 hero-actions">
-            <a href="#apply" class="btn-primary hero-cta">Start Application</a>
+            <a href="#apply" class="btn-primary hero-cta">{emailApplication ? 'How to apply' : 'Start Application'}</a>
             <a href="#role-details" class="btn-ghost hero-cta-secondary">Read Role Details</a>
           </div>
         </div>
@@ -281,6 +284,18 @@ const essentials = [
     </div>
   </section>
 
+  {emailApplication ? (
+    <section id="apply" class="pb-20 scroll-mt-24">
+      <div class="container-custom">
+        <div class="application-shell p-6 sm:p-9">
+          <h2 class="section-title">Apply for {job.data.title}</h2>
+          <p class="mt-3 text-slate-600">Attach your resume and include a short note about a project or result relevant to the role. Use <strong>{job.data.title}</strong> as the subject line.</p>
+          <p class="mt-3 text-slate-600">Send your application to <a class="inline-block font-semibold text-primary-700 underline" href={resumeLink}>{careersEmail}</a>.</p>
+          <a href={resumeLink} class="btn-primary mt-5 inline-flex">Email your resume</a>
+        </div>
+      </div>
+    </section>
+  ) : (
   <section id="apply" class="pb-28">
     <div class="container-custom">
       <div class="application-shell reveal">
@@ -436,6 +451,7 @@ const essentials = [
       </div>
     </div>
   </section>
+  )}
 </BaseLayout>
 
 <style>
@@ -1238,7 +1254,13 @@ const essentials = [
   }
 </style>
 
-<script is:inline>
+<script>
+  import { careersEmail } from '../../lib/careers';
+
+  function initCareerDetail() {
+  const hero = document.querySelector<HTMLElement>('.career-hero');
+  if (!hero || hero.dataset.careerInitialized) return;
+  hero.dataset.careerInitialized = 'true';
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
   const ALLOWED_FILE_TYPES = [
     'application/pdf',
@@ -1377,6 +1399,7 @@ const essentials = [
     }, { rootMargin: '-35% 0px -55% 0px', threshold: [0.2, 0.6] });
 
     sections.forEach((section) => observer.observe(section));
+    document.addEventListener('astro:before-swap', () => observer.disconnect(), { once: true });
 
     tocLinks.forEach((link) => {
       link.addEventListener('click', () => {
@@ -1504,7 +1527,7 @@ const essentials = [
         return;
       }
       if (!window.tmFirebase) {
-        throw new Error('Secure application submission is unavailable. Please email careers@techmigos.com.');
+        throw new Error(`Secure application submission is unavailable. Please email ${careersEmail}.`);
       }
       const cv = formData.get('cv');
       let resumeUrl = '';
@@ -1561,4 +1584,8 @@ const essentials = [
       setLoading(false);
     }
   });
+  }
+
+  initCareerDetail();
+  document.addEventListener('astro:page-load', initCareerDetail);
 </script>

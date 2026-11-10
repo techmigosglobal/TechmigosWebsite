@@ -1,0 +1,279 @@
+---
+export const prerender = true;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { loadSiteContent } from '../../lib/siteContent';
+
+const { projects } = await loadSiteContent();
+const categories = ['All', ...new Set(projects.map((project) => project.category))];
+const platforms = ['All platforms', ...new Set(projects.map((project) => project.category === 'Web' ? 'Web' : 'Mobile'))];
+---
+
+<BaseLayout
+  title="Software Product Portfolio"
+  ogImage="/images/og/portfolio.png"
+  description="Explore TechMigos case studies for shipped mobile apps, web platforms, productivity tools, voice notes, finance, and civic publishing products."
+>
+  <!-- HERO -->
+  <section class="pt-36 pb-16 relative overflow-hidden">
+    <div class="absolute inset-0 dot-pattern opacity-50"></div>
+    <div class="absolute -top-32 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
+    <div class="container-custom relative z-10 text-center">
+      <div class="reveal">
+        <span class="section-eyebrow">Our Work</span>
+      </div>
+      <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4">
+        Products We've <span class="text-gradient">Shipped</span>
+      </h1>
+      <p class="reveal stagger-2 text-xl text-gray-500 max-w-2xl mx-auto">
+        {projects.length} projects showcasing our expertise across web, mobile, and AI/ML.
+      </p>
+    </div>
+  </section>
+
+  <!-- STICKY FILTER TABS -->
+  <div class="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+    <div class="container-custom py-4 space-y-3">
+      <div class="max-w-xl mx-auto">
+        <label for="portfolio-search" class="sr-only">Search projects</label>
+        <input
+          id="portfolio-search"
+          type="search"
+          placeholder="Search by project, stack, or keyword..."
+          class="form-control text-sm"
+        />
+      </div>
+      <h2 class="sr-only">Case studies</h2>
+      <div class="flex flex-wrap justify-center gap-2" id="portfolio-filters">
+        {categories.map((category) => (
+          <button
+            class="portfolio-filter px-5 py-2 rounded-full text-sm font-semibold transition-[background-color,color,box-shadow] duration-300"
+            data-category={category}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+      <div class="flex flex-wrap justify-center gap-2" id="portfolio-platforms" aria-label="Filter projects by platform">
+        {platforms.map((platform) => (
+          <button
+            class="portfolio-platform px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 text-gray-600 transition-[background-color,color,border-color,box-shadow] duration-300"
+            data-platform={platform}
+            aria-pressed={platform === 'All platforms' ? 'true' : 'false'}
+          >
+            {platform}
+          </button>
+        ))}
+      </div>
+      <p id="portfolio-meta" role="status" aria-live="polite" class="text-center text-sm text-gray-500"></p>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO GRID -->
+  <section class="section-padding bg-gray-50">
+    <div class="container-custom">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="portfolio-grid">
+        {projects.map((project, i) => (
+          <a
+            href={project.href || `/work/${project.slug}`}
+            class={`portfolio-item group block bg-white rounded-2xl overflow-hidden border border-gray-100 glow-card stagger-${i + 1} reveal`}
+            data-category={project.category}
+            data-platform={project.category === 'Web' ? 'Web' : 'Mobile'}
+            data-title={project.title}
+            data-description={project.description}
+            data-tags={project.tags.join(' ')}
+          >
+            <!-- Image -->
+            <div class="relative overflow-hidden">
+              <img
+                src={project.image}
+                alt={project.title}
+                class="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-700"
+                loading="lazy"
+                width="800"
+                height="600"
+              />
+              <!-- Result badge -->
+              <div class="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-bold rounded-full shadow-sm">
+                {project.result}
+              </div>
+              <!-- Hover overlay -->
+              <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-5">
+                <div class="flex flex-wrap gap-1.5 mb-3">
+                  {project.tags.map(tag => (
+                    <span class="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-full border border-white/30">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <span class="text-white font-semibold flex items-center gap-2 text-sm">
+                  View Case Study
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-primary-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>{project.emoji}</span>
+                  {project.category}
+                </span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">{project.title}</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">{project.description}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div id="portfolio-empty" class="hidden text-center py-12"><p class="text-gray-600 mb-4">No projects match your search.</p><button type="button" id="portfolio-reset" class="btn-ghost">Clear filters</button></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#2563eb,#0ea5e9,#06b6d4,#2563eb); background-size:300% 300%;"></div>
+    <div class="container-custom relative z-10 text-center reveal">
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Have a project in mind?</h2>
+      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">Let's discuss how we can bring your vision to life.</p>
+      <a href="/contact" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
+        Start a Conversation
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .portfolio-filter {
+    @apply text-gray-600 bg-gray-100 hover:bg-primary-100 hover:text-primary-600;
+  }
+  .portfolio-filter.active {
+    background: linear-gradient(135deg, #4F46E5, #06B6D4);
+    @apply text-white shadow-md;
+  }
+  .portfolio-platform.active {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+  }
+  .portfolio-item {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .portfolio-item.hidden-filter {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95);
+  }
+</style>
+
+<script>
+  const initPortfolio = () => {
+  const filters = document.querySelectorAll('.portfolio-filter');
+  const platformFilters = document.querySelectorAll('.portfolio-platform');
+  const items = document.querySelectorAll('.portfolio-item');
+  const searchInput = document.getElementById('portfolio-search');
+  const meta = document.getElementById('portfolio-meta');
+  const empty = document.getElementById('portfolio-empty');
+  let selectedCategory = 'All';
+  let selectedPlatform = 'All platforms';
+
+  function applyFilters() {
+    const searchTerm = String((searchInput as HTMLInputElement | null)?.value || '').toLowerCase().trim();
+    let visibleCount = 0;
+
+    items.forEach((item) => {
+      const itemCat = item.getAttribute('data-category');
+      const itemPlatform = item.getAttribute('data-platform');
+      const title = String(item.getAttribute('data-title') || '').toLowerCase();
+      const description = String(item.getAttribute('data-description') || '').toLowerCase();
+      const tags = String(item.getAttribute('data-tags') || '').toLowerCase();
+
+      const matchesCategory = selectedCategory === 'All' || selectedCategory === itemCat;
+      const matchesPlatform = selectedPlatform === 'All platforms' || selectedPlatform === itemPlatform;
+      const matchesSearch =
+        !searchTerm ||
+        title.includes(searchTerm) ||
+        description.includes(searchTerm) ||
+        tags.includes(searchTerm);
+
+      if (matchesCategory && matchesPlatform && matchesSearch) {
+        item.classList.remove('hidden-filter');
+        (item as HTMLElement).style.display = 'block';
+        visibleCount += 1;
+      } else {
+        item.classList.add('hidden-filter');
+        setTimeout(() => {
+          if (item.classList.contains('hidden-filter')) {
+            (item as HTMLElement).style.display = 'none';
+          }
+        }, 400);
+      }
+    });
+
+    if (empty) empty.classList.toggle('hidden', visibleCount !== 0);
+    if (meta) {
+      const projectText = visibleCount === 1 ? 'project' : 'projects';
+      const categoryText = selectedCategory === 'All' ? 'all categories' : selectedCategory;
+      meta.textContent = `Showing ${visibleCount} ${projectText} in ${categoryText}`;
+    }
+  }
+
+  filters.forEach((filter) => {
+    filter.addEventListener('click', () => {
+      const category = filter.getAttribute('data-category') || 'All';
+      selectedCategory = category;
+      filters.forEach(f => { f.classList.remove('active'); f.setAttribute('aria-pressed', 'false'); });
+      filter.classList.add('active');
+      filter.setAttribute('aria-pressed', 'true');
+      applyFilters();
+    });
+  });
+
+  platformFilters.forEach((filter) => {
+    filter.addEventListener('click', () => {
+      selectedPlatform = filter.getAttribute('data-platform') || 'All platforms';
+      platformFilters.forEach(item => {
+        item.classList.remove('active');
+        item.setAttribute('aria-pressed', 'false');
+      });
+      filter.classList.add('active');
+      filter.setAttribute('aria-pressed', 'true');
+      applyFilters();
+    });
+  });
+
+  searchInput?.addEventListener('input', () => {
+    applyFilters();
+  });
+
+  document.getElementById('portfolio-reset')?.addEventListener('click', () => {
+    if (searchInput instanceof HTMLInputElement) searchInput.value = '';
+    selectedCategory = 'All';
+    selectedPlatform = 'All platforms';
+    filters.forEach(item => {
+      item.classList.toggle('active', item.getAttribute('data-category') === 'All');
+      item.setAttribute('aria-pressed', String(item.getAttribute('data-category') === 'All'));
+    });
+    platformFilters.forEach(item => {
+      item.classList.toggle('active', item.getAttribute('data-platform') === 'All platforms');
+      item.setAttribute('aria-pressed', String(item.getAttribute('data-platform') === 'All platforms'));
+    });
+    applyFilters();
+    searchInput?.focus();
+  });
+  document.querySelector('.portfolio-filter[data-category="All"]')?.setAttribute('aria-pressed', 'true');
+  document.querySelector('.portfolio-filter[data-category="All"]')?.classList.add('active');
+  document.querySelector('.portfolio-platform[data-platform="All platforms"]')?.classList.add('active');
+  applyFilters();
+  };
+  initPortfolio();
+  document.addEventListener('astro:page-load', initPortfolio);
+</script>

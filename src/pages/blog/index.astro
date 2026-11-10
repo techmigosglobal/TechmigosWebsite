@@ -19,8 +19,9 @@ const categories = ['All', ...dynamicCategories];
 ---
 
 <BaseLayout
-  title="Software Engineering Blog"
-  description="SEO-focused tutorials, portfolio case studies, and future technology insights for students, programmers, and developers by Ravali at TechMigos."
+  title="Product Development Insights"
+  ogImage="/images/og/blog.png"
+  description="Practical guidance for businesses planning websites, mobile apps and desktop software, from discovery through launch and support."
 >
   <section class="pt-36 pb-16 relative overflow-hidden">
     <div class="absolute inset-0 dot-pattern opacity-50"></div>
@@ -28,11 +29,11 @@ const categories = ['All', ...dynamicCategories];
     <div class="container-custom relative z-10">
       <div class="max-w-3xl">
         <span class="section-eyebrow reveal">The TechMigos Blog</span>
-        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-          Practical Tech Insights for<br /><span class="text-gradient">Students & Developers</span>
+          <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
+          Practical guidance for<br /><span class="text-gradient">building useful products</span>
         </h1>
         <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed mb-8">
-          Monthly deep-dives on portfolio engineering, software trends, AI, cloud, and career growth in real-world development.
+          Clear decisions on websites, mobile apps, desktop software, AI, accessibility and the work that happens after launch.
         </p>
 
         <div class="reveal stagger-3 bg-white border border-gray-200 rounded-2xl p-3 shadow-sm">
@@ -51,7 +52,7 @@ const categories = ['All', ...dynamicCategories];
   {featuredPost && (
     <section class="pb-16 bg-white">
       <div class="container-custom">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 reveal">Featured Post</p>
+        <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 reveal">Featured Post</p>
         <a href={`/blog/${entrySlug(featuredPost)}`} class="group block bg-gray-50 rounded-3xl overflow-hidden hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-500 border border-gray-100 reveal">
           <div class="grid lg:grid-cols-2 gap-0">
             <div class="relative overflow-hidden">
@@ -70,7 +71,7 @@ const categories = ['All', ...dynamicCategories];
               <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors leading-tight">
                 {featuredPost.data.title}
               </h2>
-              <p class="text-gray-600 mb-6 leading-relaxed">{featuredPost.data.description}</p>
+              <p class="text-gray-600 mb-6 leading-relaxed">{featuredPost.data.seoDescription || featuredPost.data.description}</p>
               <div class="flex items-center text-sm text-gray-500 gap-3 flex-wrap">
                 <span class="font-medium text-gray-700">{featuredPost.data.author}</span>
                 <span class="w-1 h-1 rounded-full bg-gray-400"></span>
@@ -116,7 +117,7 @@ const categories = ['All', ...dynamicCategories];
               class={`post-item group bg-white rounded-2xl overflow-hidden border border-gray-100 glow-card stagger-${i + 1} reveal`}
               data-category={post.data.category}
               data-title={post.data.title.toLowerCase()}
-              data-description={post.data.description.toLowerCase()}
+              data-description={(post.data.seoDescription || post.data.description).toLowerCase()}
               data-tags={post.data.tags.join(' ').toLowerCase()}
             >
               <a href={`/blog/${entrySlug(post)}`} class="block">
@@ -136,7 +137,7 @@ const categories = ['All', ...dynamicCategories];
                   </div>
                 </div>
                 <div class="p-6">
-                  <div class="flex items-center gap-2 mb-3 text-xs text-gray-400 flex-wrap">
+                  <div class="flex items-center gap-2 mb-3 text-xs text-gray-500 flex-wrap">
                     <span>{post.data.readTime || 6} min read</span>
                     <span>•</span>
                     <span>{post.data.pubDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -144,7 +145,7 @@ const categories = ['All', ...dynamicCategories];
                   <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-tight">
                     {post.data.title}
                   </h3>
-                  <p class="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-2">{post.data.description}</p>
+                  <p class="text-gray-500 text-sm mb-5 leading-relaxed line-clamp-2">{post.data.seoDescription || post.data.description}</p>
                   <div class="flex flex-wrap gap-2 mb-4">
                     {post.data.tags.slice(0, 3).map((tag: string) => (
                       <span class="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600">#{tag}</span>
@@ -187,6 +188,7 @@ const categories = ['All', ...dynamicCategories];
 </style>
 
 <script>
+  const initBlog = () => {
   const filters = Array.from(document.querySelectorAll('.category-filter'));
   const posts = Array.from(document.querySelectorAll<HTMLElement>('.post-item'));
   const searchInput = document.getElementById('blog-search');
@@ -246,4 +248,7 @@ const categories = ['All', ...dynamicCategories];
   const defaultFilter = document.querySelector('.category-filter[data-category="All"]');
   defaultFilter?.classList.add('active');
   applyFilters();
+  };
+  initBlog();
+  document.addEventListener('astro:page-load', initBlog);
 </script>

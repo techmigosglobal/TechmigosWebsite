@@ -180,14 +180,15 @@ const caseStudyNotes = [
 <BaseLayout
   title="Hastkala Indian Artisan E-Commerce Case Study"
   description="Hastkala case study: a Next.js artisan marketplace with 50 products, smart filters, ratings, discounts, wishlist, cart, and a live storefront."
-  ogImage={`${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`}
+  ogImage="/images/home/hastkala-artisan.webp"
   ogType="article"
 >
+  <script is:inline type="application/ld+json" set:html={JSON.stringify({ '@context': 'https://schema.org', '@type': 'CreativeWork', name: 'Hastkala Indian Artisan E-Commerce Case Study', description: 'A Next.js artisan marketplace with 50 products, smart filters, ratings, discounts, wishlist, cart, and a live storefront.', url: 'https://www.techmigos.com/work/hastkala', creator: { '@type': 'Organization', name: 'TechMigos', url: 'https://www.techmigos.com' }, image: 'https://www.techmigos.com/images/home/hastkala-artisan.webp' })} />
   <HeroSection
     appName={appName}
     eyebrow="Indian Artisan E-Commerce Platform"
     tagline='"Celebrate the Artistry of Indian Hands" — a Next.js marketplace connecting 2,000+ artisans across 25+ states with buyers through smart filters, rich product cards, and a brand rooted in Indian craft heritage.'
-    heroImage={`${SITE}/indian-artisan-handcrafted-pottery-weaving-textile.jpg`}
+    heroImage="/images/home/hastkala-artisan.webp"
     webUrl={liveUrl}
     primaryLabel="Visit Live Site ↗"
     supportText="50 curated handcrafted products • 4 categories • Price-range slider • Star ratings with up to 423 reviews • Discount badges up to -43% • Wishlist & cart • Full storefront navigation — live on Vercel."
@@ -238,7 +239,7 @@ const caseStudyNotes = [
       <p class="font-semibold text-slate-800">Hastkala by TechMigos</p>
       <div class="flex items-center gap-4">
         <a href={liveUrl} target="_blank" rel="noopener noreferrer" class="hover:text-primary-700">Visit Live Site ↗</a>
-        <a href="/portfolio" class="hover:text-primary-700">All Projects</a>
+        <a href="/work" class="hover:text-primary-700">All Projects</a>
         <a href="/contact" class="hover:text-primary-700">Start Similar Build</a>
       </div>
     </div>

@@ -252,6 +252,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
+const initSupport = () => {
   const form = document.getElementById('support-form') as HTMLFormElement;
   const toast = document.getElementById('form-toast') as HTMLElement;
   const toastMessage = document.getElementById('toast-message') as HTMLElement;
@@ -341,4 +342,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       setLoading(false);
     }
   });
+  };
+  initSupport();
+  document.addEventListener('astro:page-load', initSupport);
 </script>

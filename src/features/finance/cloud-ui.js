@@ -21,7 +21,7 @@ async function bootFinance(){
       ui.pendingCloud=true;
       if(!ui.cloudBusy&&!ui.saving&&!$('#modalHost .modal-wrap'))reloadCloud().catch(cloudError);
     },cloudError);
-  }catch(error){$('#app').innerHTML='<main class="main"><div class="panel" style="padding:24px"><h1>Unable to open finance</h1><p id="bootError"></p><button class="btn primary" onclick="location.reload()">Try again</button> <a class="btn" href="/login">Return to login</a></div></main>';$('#bootError').textContent=error.message}
+  }catch(error){$('#app').innerHTML='<main class="main"><div class="panel" style="padding:24px"><h1>Unable to open finance</h1><p id="bootError"></p><button class="btn primary" id="retryFinance">Try again</button> <a class="btn" href="/login">Return to login</a></div></main>';$('#bootError').textContent=error.message;$('#retryFinance').addEventListener('click',()=>location.reload())}
 }
 window.addEventListener('finance-profile-updated',()=>{if($('#mainContent'))render()});
 function renderTeams(){

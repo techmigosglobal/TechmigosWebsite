@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "start": "astro preview",
     "build": "astro build",
-    "build:vercel": "npm run build",
+    "build:vercel": "npm run build && node scripts/validate-site.mjs --output-only",
     "build:full": "npm run build",
     "test": "node --test test/*.test.js",
     "security:osv": "node scripts/audit-osv-lockfile.mjs",
@@ -39,6 +39,7 @@
     "@vercel/speed-insights": "2.0.0",
     "astro": "7.3.3",
     "firebase": "12.19.0",
+    "gsap": "^3.13.0",
     "qrcode": "1.5.4",
     "sharp": "0.35.5"
   },
