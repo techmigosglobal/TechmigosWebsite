@@ -21,6 +21,11 @@
       "permanent": true
     },
     {
+      "source": "/portfolio",
+      "destination": "/work",
+      "permanent": true
+    },
+    {
       "source": "/portfolio/index.html",
       "destination": "/work",
       "permanent": true
