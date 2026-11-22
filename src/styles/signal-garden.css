@@ -65,11 +65,12 @@ body:has(.signal-home) #cursor-ring { display: none; }
 .signal-line > span { display: inline-block; }
 .signal-intro p { color: var(--signal-copy); margin: clamp(1.05rem, 2vw, 1.7rem) auto 0; font-size: clamp(1rem, 1.65vw, 1.3rem); line-height: 1.52; max-width: 39ch; }
 .signal-stage { width: min(60rem, 83vw); margin: .15rem auto 0; position: relative; }
-.signal-flora { width: 100%; display: block; overflow: visible; }
+.signal-flora { width: 100%; display: block; overflow: visible; filter: drop-shadow(0 6px 24px rgba(70, 48, 180, 0.09)); }
 .signal-orbit { stroke: #8984bb; stroke-opacity: .45; fill: none; }
 .signal-orbit-inner { stroke-dasharray: 1.2 6; stroke-opacity: .65; }
 .signal-branch path { fill: none; stroke-width: 1.35; }
-.signal-core > circle { fill: #fff; stroke: #d9d5f0; stroke-width: 1.5; }
+.signal-branch circle { will-change: transform, cx, cy; filter: drop-shadow(0 0 3px currentColor); }
+.signal-core > circle { fill: #fff; stroke: #d9d5f0; stroke-width: 1.5; filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.35)); }
 .signal-console { position: relative; z-index: 1; min-height: 7rem; padding-inline: 1rem; text-align: center; }
 .signal-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
 .signal-choices button {
@@ -147,12 +148,28 @@ body:has(.signal-home) #cursor-ring { display: none; }
 .signal-chapter { position: relative; overflow: clip; background: #1a1540; color: #f5f2ff; padding-block: clamp(4.4rem, 10vw, 9.5rem); }
 .signal-chapter-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: clamp(2rem, 5vw, 6rem); }
 .signal-chapter-art { display: grid; place-items: center; isolation: isolate; position: relative; min-width: 0; aspect-ratio: 1; touch-action: pan-y pinch-zoom; }
-.signal-chapter-art::before { position: absolute; z-index: -1; inset: 5%; content: ""; border-radius: 50%; background: radial-gradient(ellipse, #5c4ba081, #271c54 45%, transparent 73%); }
+.signal-chapter-art::before { position: absolute; z-index: -1; inset: 5%; content: ""; border-radius: 50%; background: radial-gradient(ellipse, #5c4ba099, #271c54 50%, transparent 75%); filter: blur(6px); }
 .signal-chapter-art svg { display: block; width: 100%; fill: none; stroke: #9f9cf9; stroke-opacity: .57; overflow: visible; }
+.signal-chapter-art [data-signal-rings] { transform-box: fill-box; transform-origin: 260px 260px; will-change: transform; }
+.signal-chapter-art [data-signal-satellites] { transform-box: fill-box; transform-origin: 260px 260px; will-change: transform; }
+.signal-chapter-art [data-signal-satellites] circle { filter: drop-shadow(0 0 6px currentColor); }
 .signal-chapter-art ellipse:nth-child(4n + 1) { stroke: #6eaee9; }
 .signal-chapter-art ellipse:nth-child(4n + 3) { stroke: #ea9e68; }
-.signal-chapter-logo { position: absolute; width: 5.9rem; height: 5.9rem; display: grid; place-items: center; border-radius: 50%; background: #fff; }
-.signal-chapter-logo img { width: 4.5rem; height: 4.5rem; object-fit: contain; }
+.signal-chapter-logo {
+  position: absolute;
+  width: 5.9rem;
+  height: 5.9rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 35px rgba(159, 156, 249, 0.4), 0 0 15px rgba(255, 255, 255, 0.6);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+.signal-chapter-logo:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 48px rgba(159, 156, 249, 0.65), 0 0 24px rgba(255, 255, 255, 0.85);
+}
 .signal-chapter .signal-kicker { color: #c7bcff; }
 .signal-chapter ol { margin: 2rem 0 0; padding: 0; list-style: none; }
 .signal-chapter li { border-top: 1px solid #8a7cac70; }
@@ -166,9 +183,45 @@ body:has(.signal-home) #cursor-ring { display: none; }
 .signal-chapter summary:focus-visible { outline-color: #b9adff; }
 .signal-contact { position: relative; isolation: isolate; overflow: clip; padding-block: clamp(4.6rem, 10vw, 9rem); text-align: center; }
 .signal-contact-rings { position: absolute; z-index: -1; inset: 0; display: grid; place-items: center; pointer-events: none; }
-.signal-contact-rings i { grid-area: 1 / 1; width: min(90%, 54rem); aspect-ratio: 2; border: 1px solid #c9c0f4; border-radius: 50%; opacity: .52; }
-.signal-contact-rings i:nth-child(2) { width: min(78%, 45rem); }
-.signal-contact-rings i:nth-child(3) { width: min(65%, 36rem); }
+.signal-contact-rings i {
+  grid-area: 1 / 1;
+  width: min(90%, 54rem);
+  aspect-ratio: 2;
+  border: 1.5px solid rgba(201, 192, 244, 0.65);
+  border-radius: 50%;
+  display: block;
+  box-sizing: border-box;
+  animation: signal-ring-pulse 6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.signal-contact-rings i:nth-child(1) {
+  animation-delay: 0s;
+}
+.signal-contact-rings i:nth-child(2) {
+  width: min(78%, 45rem);
+  animation-delay: 2s;
+  border-color: rgba(179, 165, 239, 0.75);
+}
+.signal-contact-rings i:nth-child(3) {
+  width: min(65%, 36rem);
+  animation-delay: 4s;
+  border-color: rgba(157, 140, 232, 0.85);
+}
+
+@keyframes signal-ring-pulse {
+  0%, 100% {
+    transform: scale(0.97);
+    opacity: 0.35;
+    border-color: rgba(201, 192, 244, 0.45);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.035);
+    opacity: 0.85;
+    border-color: rgba(139, 124, 246, 0.85);
+    box-shadow: 0 0 25px rgba(139, 124, 246, 0.25), inset 0 0 20px rgba(139, 124, 246, 0.12);
+  }
+}
 .signal-contact p:not(.signal-kicker) { max-width: 42ch; margin: 1.15rem auto 1.45rem; color: var(--signal-copy); line-height: 1.55; }
 .signal-cta { display: inline-flex; align-items: center; gap: .85rem; min-height: 2.9rem; border-radius: 999px; background: var(--signal-violet); color: #fff; padding: .55rem 1.05rem; font-weight: 720; }
 .signal-cta:hover { background: #36268c; }

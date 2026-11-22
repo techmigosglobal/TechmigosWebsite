@@ -14,6 +14,9 @@ const perks = [
   { marker: '01', title: 'Work on real workflows', description: 'Help clients solve practical problems across web, mobile, and desktop software.' },
   { marker: '02', title: 'Work across disciplines', description: 'Sales, design, and engineering each bring a different perspective to the same project.' },
   { marker: '03', title: 'See a project through', description: 'Connect early client conversations with what gets built, tested, and released.' },
+  { marker: '04', title: 'Ship to production', description: 'Deploy software used by thousands of daily users with rigorous CI/CD and zero-downtime releases.' },
+  { marker: '05', title: 'Modern tooling & AI', description: 'Build with TypeScript, Astro, Next.js, Flutter, and cutting-edge generative AI developer workflows.' },
+  { marker: '06', title: 'Direct senior mentorship', description: 'Learn directly from veteran architects through pair programming, code reviews, and system design.' },
 ];
 
 const departments = ['All', ...new Set(allJobs.map(job => job.data.department))];
@@ -63,10 +66,15 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {perks.map((perk, i) => (
-          <div class={`glow-card bg-white rounded-2xl p-7 border border-gray-100 group stagger-${i + 1} reveal`}>
-            <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-sm font-black tracking-[0.2em] text-primary-700 mb-4 group-hover:scale-110 transition-transform duration-300">{perk.marker}</div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">{perk.title}</h3>
-            <p class="text-gray-500 text-sm leading-relaxed">{perk.description}</p>
+          <div class={`glow-card bg-white rounded-2xl p-7 border border-slate-200/80 group stagger-${i + 1} reveal flex flex-col justify-between h-full hover:-translate-y-1 hover:shadow-xl transition-all duration-300`}>
+            <div>
+              <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-sm font-black tracking-[0.2em] text-primary-700 mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xs border border-primary-100">{perk.marker}</div>
+              <h3 class="text-lg font-bold text-gray-900 mb-2 leading-snug">{perk.title}</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">{perk.description}</p>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100 text-xs font-semibold text-primary-600">
+              ✦ TechMigos Standard
+            </div>
           </div>
         ))}
       </div>
@@ -80,7 +88,9 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
         <span class="section-eyebrow">Open Roles</span>
         <h2 class="text-4xl font-bold text-gray-900 mb-2">Open Positions</h2>
         <p class="text-gray-500">{allJobs.length} {allJobs.length === 1 ? 'position' : 'positions'} available</p>
-        <p class="mt-3 text-gray-600">Send your resume to <a class="inline-block font-semibold text-primary-700 underline" href={`mailto:${careersEmail}`}>{careersEmail}</a>. Use the role title as your email subject.</p>
+        <!--email_off-->
+        <p class="mt-3 text-gray-600">Send your resume to <a class="inline-block font-semibold text-primary-700 underline hover:text-primary-800" href={`mailto:${careersEmail}`}>{careersEmail}</a>. Use the role title as your email subject.</p>
+        <!--/email_off-->
       </div>
 
       {allJobs.length > 0 ? (
@@ -145,15 +155,23 @@ const departments = ['All', ...new Set(allJobs.map(job => job.data.department))]
   </section>
 
   <!-- CTA -->
-  <section class="py-24 relative overflow-hidden">
-    <div class="absolute inset-0 animate-gradient-shift" style="background: linear-gradient(135deg,#2563eb,#0ea5e9,#06b6d4,#2563eb); background-size:300% 300%;"></div>
-    <div class="container-custom relative z-10 text-center reveal">
-      <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-6">Don't see the perfect role?</h2>
-      <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-        We're always interested in meeting talented people. Tell us how you'd like to contribute.
+  <section class="py-24 sm:py-32 bg-slate-900 text-white relative overflow-hidden">
+    <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none"></div>
+    <div class="absolute inset-0 grid-pattern opacity-10 pointer-events-none"></div>
+
+    <div class="container-custom relative z-10 text-center max-w-4xl mx-auto reveal">
+      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-6">
+        Open Applications
+      </span>
+      <h2 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight mb-6">
+        Don't See The Perfect Role?
+      </h2>
+      <p class="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+        We're always looking for exceptional engineers, architects, and product builders. Tell us about your superpower and how you want to contribute.
       </p>
-      <a href={`mailto:${careersEmail}`} class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-700 font-bold rounded-xl hover:-translate-y-1 transition-[box-shadow,transform] duration-300 shadow-2xl text-lg shine-hover">
-        Get in Touch
+      <a href={`mailto:${careersEmail}`} class="btn-primary text-base px-9 py-4 rounded-xl shine-hover shadow-xl shadow-blue-500/30 inline-flex items-center gap-2">
+        Send General Application <span>→</span>
       </a>
     </div>
   </section>

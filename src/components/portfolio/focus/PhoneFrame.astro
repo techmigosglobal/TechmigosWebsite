@@ -29,6 +29,7 @@ const isPreframedScreenshot = src.includes('/screenshots/');
     loading={priority ? 'eager' : 'lazy'}
     decoding="async"
     class={`focus-device-shot ${className}`}
+    onerror="this.onerror=null; this.src='/images/og/portfolio.png';"
   />
 ) : (
   <div class={`focus-phone-shell ${className}`}>
@@ -41,6 +42,7 @@ const isPreframedScreenshot = src.includes('/screenshots/');
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
       class="focus-phone-image"
+      onerror="this.onerror=null; this.src='/images/og/portfolio.png';"
     />
   </div>
 )}

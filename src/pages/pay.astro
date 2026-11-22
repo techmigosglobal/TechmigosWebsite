@@ -24,7 +24,7 @@ const canonicalUrl = new URL('/pay', Astro.site || 'https://www.techmigos.com');
           <p id="payment-note"></p>
           <p class="amount" id="payment-amount"></p>
           <dl><dt>Pay to</dt><dd id="payment-payee"></dd><dt>UPI ID</dt><dd id="payment-upi"></dd></dl>
-          <img id="payment-qr" width="240" height="240" alt="Scan this QR code with your UPI app to pay this invoice" />
+          <img id="payment-qr" width="240" height="240" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' fill='%23f8fafc' rx='16'/%3E%3Cpath d='M60 60h40v40H60zm80 0h40v40h-40zM60 140h40v40H60z' fill='%23cbd5e1'/%3E%3C/svg%3E" alt="Scan this QR code with your UPI app to pay this invoice" />
           <a id="payment-open" class="primary">Open UPI app</a>
           <button id="payment-copy" type="button">Copy UPI ID</button>
           <p id="payment-status" role="status" aria-live="polite"></p>

@@ -186,6 +186,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
 
         <div class="lg:col-span-2 reveal-right space-y-6">
+          <!--email_off-->
           {[
             {
               icon: '⚡',
@@ -218,7 +219,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           ].map((item, i) => (
             <a
               href={item.href}
-              class={`flex items-start gap-4 p-5 rounded-2xl border border-gray-100 bg-white hover:border-primary-200 hover:shadow-lg transition-[border-color,box-shadow,transform] duration-300 group glow-card stagger-${i + 1}`}
+              class={`flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white hover:border-primary-300 hover:shadow-xl transition-all duration-300 group glow-card stagger-${i + 1}`}
             >
               <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform" style="background: linear-gradient(135deg, rgba(79,70,229,0.1), rgba(6,182,212,0.1))">
                 {item.icon}
@@ -230,6 +231,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               </div>
             </a>
           ))}
+          <!--/email_off-->
 
           <div class="rounded-3xl border border-gray-100 bg-gray-50 p-6">
             <h3 class="text-base font-bold text-gray-900 mb-4">Include these details if possible</h3>

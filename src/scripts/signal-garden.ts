@@ -40,10 +40,11 @@ export function mountSignalGarden(home: HTMLElement) {
   let motionReduced = false;
   try { motionReduced = localStorage.getItem(motionPreference) === 'true'; } catch { /* Storage is optional. */ }
   let stageSelected = false;
-  let stageVisible = false;
-  let orbitVisible = false;
+  let stageVisible = true;
+  let orbitVisible = true;
   let carouselHovered = false;
   let timer: number | undefined;
+  let userInteractedTimeout: number | undefined;
   let introductionPlayed = false;
   let context: gsap.Context | undefined;
   let ambient: gsap.core.Timeline | undefined;
@@ -132,7 +133,7 @@ export function mountSignalGarden(home: HTMLElement) {
     pointerMotion.clear();
     renderHeadline(selected, false);
     renderForm(selected, false);
-    preference.hidden = reduced.matches;
+    preference.hidden = false;
     preference.setAttribute('aria-pressed', String(motionReduced));
     home.toggleAttribute('data-motion-reduced', !motionEnabled());
     if (!motionEnabled()) {
@@ -157,12 +158,35 @@ export function mountSignalGarden(home: HTMLElement) {
       introductionPlayed = true;
 
       gsap.set(drift, { svgOrigin: '500 194' });
-      ambient = gsap.timeline({ repeat: -1, yoyo: true, paused: true, defaults: { duration: 8, ease: 'sine.inOut' } })
-        .fromTo(drift, { rotation: -4, scale: .97 }, { rotation: 5, scale: 1.035 }, 0)
-        .fromTo('.signal-halo-blue', { xPercent: 4, yPercent: 1 }, { xPercent: 37, yPercent: 24 }, 0)
-        .fromTo('.signal-halo-rose', { xPercent: -3, yPercent: 1 }, { xPercent: -30, yPercent: -20 }, 0)
-        .fromTo('.signal-field', { x: 12, y: 15 }, { x: -32, y: -24 }, 0)
-        .fromTo('.signal-motes', { x: -10, y: 5, opacity: .22 }, { x: 14, y: -10, opacity: .45 }, 0);
+      ambient = gsap.timeline({ repeat: -1, yoyo: true, paused: true, defaults: { duration: 5.5, ease: 'sine.inOut' } })
+        .fromTo(drift, { rotation: -5, scale: .96 }, { rotation: 5, scale: 1.04 }, 0)
+        .fromTo('.signal-halo-blue', { xPercent: 4, yPercent: 1 }, { xPercent: 32, yPercent: 20 }, 0)
+        .fromTo('.signal-halo-rose', { xPercent: -3, yPercent: 1 }, { xPercent: -28, yPercent: -18 }, 0)
+        .fromTo('.signal-field', { x: 10, y: 12 }, { x: -28, y: -20 }, 0)
+        .fromTo('.signal-motes', { x: -8, y: 5, opacity: .22 }, { x: 12, y: -8, opacity: .48 }, 0);
+
+      // Continuous organic wave on the branch tips
+      gsap.to(tips, {
+        scale: 1.35,
+        transformOrigin: 'center center',
+        duration: 1.8,
+        stagger: {
+          each: 0.04,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut'
+        }
+      });
+
+      // Ambient pulsing on core logo
+      gsap.to('.signal-core', {
+        scale: 1.05,
+        duration: 2.8,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        transformOrigin: '500px 194px'
+      });
 
       home.querySelectorAll<HTMLElement>('[data-signal-reveal]').forEach((item) => {
         gsap.from(item, {
@@ -180,15 +204,33 @@ export function mountSignalGarden(home: HTMLElement) {
           scrollTrigger: { trigger: items[0], start: 'top 92%', once: true },
         });
       }
-      gsap.from('.signal-contact-rings i', {
-        scale: .7, opacity: .15, duration: 1.15, stagger: .12, ease: 'power3.out', clearProps: 'opacity,transform',
-        scrollTrigger: { trigger: '.signal-contact', start: 'top 85%', once: true },
+
+      // Continuous harmonic breathing for contact rings
+      gsap.to('.signal-contact-rings i', {
+        scale: 1.04,
+        opacity: 0.85,
+        duration: 2.8,
+        stagger: 0.9,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut'
       });
 
       gsap.set('[data-signal-rings], [data-signal-satellites]', { svgOrigin: '260 260' });
-      orbitMotion = gsap.timeline({ repeat: -1, paused: true, defaults: { duration: 32, ease: 'none' } })
-        .to('[data-signal-rings]', { rotation: 360 }, 0)
-        .to('[data-signal-satellites]', { rotation: -720 }, 0);
+      orbitMotion = gsap.timeline({ repeat: -1, paused: true, defaults: { ease: 'none' } })
+        .to('[data-signal-rings]', { rotation: 360, duration: 16 }, 0)
+        .to('[data-signal-satellites]', { rotation: -360, duration: 10 }, 0);
+
+      // Satellites radiant pulse
+      gsap.to('[data-signal-satellites] circle', {
+        scale: 1.35,
+        transformOrigin: 'center center',
+        duration: 1.5,
+        stagger: 0.4,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut'
+      });
 
       const setPointerMotion = (surface: HTMLElement, target: Element) => pointerMotion.set(surface, {
         x: gsap.quickTo(target, 'x', { duration: .55, ease: 'power3.out' }),
@@ -214,6 +256,11 @@ export function mountSignalGarden(home: HTMLElement) {
 
   buttons.forEach((button, index) => button.addEventListener('click', () => {
     stageSelected = true;
+    window.clearTimeout(userInteractedTimeout);
+    userInteractedTimeout = window.setTimeout(() => {
+      stageSelected = false;
+      syncPlayback();
+    }, 10000);
     syncPlayback();
     select(index);
   }, { signal }));
@@ -256,15 +303,40 @@ export function mountSignalGarden(home: HTMLElement) {
     surface.addEventListener('pointerup', (event) => { if (event.pointerType !== 'mouse') reset(); }, { signal });
   }
 
-  for (const details of home.querySelectorAll<HTMLDetailsElement>('[data-signal-step] details')) {
-    details.addEventListener('toggle', () => {
-      if (!details.open || !motionEnabled()) return;
-      detailTween?.revert();
-      detailTween = gsap.from(details.querySelector('p'), {
-        opacity: .35, x: 8, duration: .32, ease: 'power3.out', clearProps: 'opacity,transform',
+  function highlightOrbitStep(index: number) {
+    const ellipses = home.querySelectorAll<SVGEllipseElement>('[data-signal-rings] ellipse');
+    ellipses.forEach((el, i) => {
+      const isStep1 = index === 0 && i < 6;
+      const isStep2 = index === 1 && i >= 6 && i < 12;
+      const isStep3 = index === 2 && i >= 12;
+      const active = isStep1 || isStep2 || isStep3;
+      gsap.to(el, {
+        stroke: active ? (index === 0 ? '#6eaee9' : index === 1 ? '#ea9e68' : '#c7bcff') : '',
+        strokeWidth: active ? 2.2 : 1,
+        strokeOpacity: active ? 0.95 : 0.45,
+        duration: 0.4,
+        ease: 'power2.out'
       });
-    }, { signal });
+    });
   }
+
+  const stepDetails = [...home.querySelectorAll<HTMLDetailsElement>('[data-signal-step] details')];
+  stepDetails.forEach((details, stepIndex) => {
+    details.addEventListener('toggle', () => {
+      if (!details.open) return;
+      stepDetails.forEach((other) => {
+        if (other !== details) other.open = false;
+      });
+      if (motionEnabled()) {
+        detailTween?.revert();
+        detailTween = gsap.from(details.querySelector('p'), {
+          opacity: .35, x: 8, duration: .32, ease: 'power3.out', clearProps: 'opacity,transform',
+        });
+        highlightOrbitStep(stepIndex);
+      }
+    }, { signal });
+  });
+  highlightOrbitStep(0);
 
   const visibility = new IntersectionObserver((entries) => {
     for (const entry of entries) {
@@ -284,6 +356,7 @@ export function mountSignalGarden(home: HTMLElement) {
   return () => {
     listeners.abort();
     window.clearTimeout(timer);
+    window.clearTimeout(userInteractedTimeout);
     visibility.disconnect();
     morph?.kill();
     panelTween?.kill();

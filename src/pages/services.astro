@@ -264,18 +264,18 @@ const bestFit: Record<string, string> = {
 
               <!-- Deliverables card -->
               <div class="lg:col-span-2 reveal-right">
-                <div class="bg-[#f7f5ff] rounded-2xl p-5 sm:p-7 border border-indigo-100">
-                  <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
-                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs" style="background: linear-gradient(135deg,#4F46E5,#06B6D4)">✓</span>
-                    What We Deliver
+                <div class="bg-slate-50/90 rounded-2xl p-6 sm:p-7 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+                  <h3 class="font-bold text-slate-900 mb-5 flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs bg-gradient-to-r from-blue-600 to-cyan-500 font-bold shadow-xs">✓</span>
+                    <span>What We Deliver</span>
                   </h3>
-                  <ul class="space-y-3">
+                  <ul class="space-y-3.5">
                     {service.deliverables.map(item => (
                       <li class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-primary-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span class="text-gray-700 text-sm">{item}</span>
+                        <span class="text-slate-700 text-sm font-medium leading-relaxed">{item}</span>
                       </li>
                     ))}
                   </ul>
