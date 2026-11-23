@@ -19,7 +19,7 @@ const isLinkActive = (href: string) => {
 };
 ---
 
-<header id="navbar" transition:persist class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500">
+<header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500">
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-20">
       <!-- Logo -->
@@ -44,15 +44,17 @@ const isLinkActive = (href: string) => {
         {navLinks.slice(0, -1).map((link) => (
           <a
             href={link.href}
+            data-nav-link
+            data-href={link.href}
             class={`relative px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 link-underline ${
               isLinkActive(link.href)
-                ? 'text-primary-600 font-bold'
+                ? 'text-primary-600 font-bold active-nav-link'
                 : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50/80'
             }`}
           >
             {link.name}
             {isLinkActive(link.href) && (
-              <span class="absolute bottom-0 left-3.5 right-3.5 h-0.5 rounded-full bg-gradient-to-r from-primary-500 to-accent-400"></span>
+              <span class="nav-indicator absolute bottom-0 left-3.5 right-3.5 h-0.5 rounded-full bg-gradient-to-r from-primary-500 to-accent-400"></span>
             )}
           </a>
         ))}
@@ -96,14 +98,16 @@ const isLinkActive = (href: string) => {
       {navLinks.map((link) => (
         <a
           href={link.href}
+          data-mobile-nav-link
+          data-href={link.href}
           class={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-[background-color,color] duration-200 ${
             isLinkActive(link.href)
-              ? 'bg-primary-50 text-primary-600 font-bold'
+              ? 'bg-primary-50 text-primary-600 font-bold active-mobile-nav-link'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
           {isLinkActive(link.href) && (
-            <span class="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0"></span>
+            <span class="nav-mobile-dot w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0"></span>
           )}
           {link.name}
         </a>
@@ -132,92 +136,156 @@ const isLinkActive = (href: string) => {
 </style>
 
 <script>
-  const initNavbar = () => {
-  let menuOpen = false;
-  const navbar = document.getElementById('navbar') as HTMLElement;
-  const mobileMenuBtn = document.getElementById('mobile-menu-btn') as HTMLButtonElement;
-  const mobileMenu = document.getElementById('mobile-menu') as HTMLElement;
-  // Handle scroll — add glass effect
-  let ticking = false;
-  if (!(window as any).__navScrollBound) {
-  (window as any).__navScrollBound = true;
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        const scrolled = window.scrollY > 20;
-        if (scrolled) {
-          navbar.style.background = 'rgba(255,255,255,0.85)';
-          navbar.style.backdropFilter = 'blur(20px)';
-          navbar.style.setProperty('-webkit-backdrop-filter', 'blur(20px)');
-          navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08), 0 1px 0 rgba(0,0,0,0.06)';
-        } else {
-          navbar.style.background = window.location.pathname === '/' ? 'transparent' : 'rgba(255,255,255,0.95)';
-          navbar.style.backdropFilter = scrolled ? 'blur(20px)' : 'none';
-          navbar.style.boxShadow = 'none';
+  const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
+  const checkLinkActive = (href: string, currentPath: string) => {
+    const normCurrent = normalizePath(currentPath);
+    const normHref = normalizePath(href);
+    if (normHref === '/') return normCurrent === '/';
+    return normCurrent === normHref || normCurrent.startsWith(normHref + '/');
+  };
+
+  const syncActiveNavLinks = () => {
+    const currentPath = window.location.pathname;
+
+    // Synchronize Desktop Navigation Links
+    document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]').forEach((link) => {
+      const href = link.getAttribute('data-href') || link.getAttribute('href') || '';
+      const active = checkLinkActive(href, currentPath);
+
+      link.classList.toggle('text-primary-600', active);
+      link.classList.toggle('font-bold', active);
+      link.classList.toggle('active-nav-link', active);
+      link.classList.toggle('text-slate-600', !active);
+
+      let indicator = link.querySelector('.nav-indicator');
+      if (active) {
+        if (!indicator) {
+          indicator = document.createElement('span');
+          indicator.className = 'nav-indicator absolute bottom-0 left-3.5 right-3.5 h-0.5 rounded-full bg-gradient-to-r from-primary-500 to-accent-400';
+          link.appendChild(indicator);
         }
-        ticking = false;
+      } else if (indicator) {
+        indicator.remove();
+      }
+    });
+
+    // Synchronize Mobile Navigation Links
+    document.querySelectorAll<HTMLAnchorElement>('[data-mobile-nav-link]').forEach((link) => {
+      const href = link.getAttribute('data-href') || link.getAttribute('href') || '';
+      const active = checkLinkActive(href, currentPath);
+
+      link.classList.toggle('bg-primary-50', active);
+      link.classList.toggle('text-primary-600', active);
+      link.classList.toggle('font-bold', active);
+      link.classList.toggle('active-mobile-nav-link', active);
+      link.classList.toggle('text-gray-600', !active);
+
+      let dot = link.querySelector('.nav-mobile-dot');
+      if (active) {
+        if (!dot) {
+          dot = document.createElement('span');
+          dot.className = 'nav-mobile-dot w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0';
+          link.prepend(dot);
+        }
+      } else if (dot) {
+        dot.remove();
+      }
+    });
+  };
+
+  const initNavbar = () => {
+    let menuOpen = false;
+    const navbar = document.getElementById('navbar') as HTMLElement;
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn') as HTMLButtonElement;
+    const mobileMenu = document.getElementById('mobile-menu') as HTMLElement;
+
+    // Sync active state on init
+    syncActiveNavLinks();
+
+    // Handle scroll — add glass effect
+    let ticking = false;
+    if (!(window as any).__navScrollBound) {
+      (window as any).__navScrollBound = true;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            const scrolled = window.scrollY > 20;
+            if (scrolled) {
+              navbar.style.background = 'rgba(255,255,255,0.85)';
+              navbar.style.backdropFilter = 'blur(20px)';
+              navbar.style.setProperty('-webkit-backdrop-filter', 'blur(20px)');
+              navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08), 0 1px 0 rgba(0,0,0,0.06)';
+            } else {
+              navbar.style.background = window.location.pathname === '/' ? 'transparent' : 'rgba(255,255,255,0.95)';
+              navbar.style.backdropFilter = scrolled ? 'blur(20px)' : 'none';
+              navbar.style.boxShadow = 'none';
+            }
+            ticking = false;
+          });
+          ticking = true;
+        }
       });
-      ticking = true;
     }
-  });
-  }
 
-  // Initialize
-  if (window.scrollY > 20) {
-    navbar.style.background = 'rgba(255,255,255,0.85)';
-    navbar.style.backdropFilter = 'blur(20px)';
-    navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08)';
-  } else if (window.location.pathname !== '/') {
-    navbar.style.background = 'rgba(255,255,255,0.95)';
-    navbar.style.boxShadow = '0 1px 0 rgba(0,0,0,0.06)';
-  }
+    // Initialize background
+    if (window.scrollY > 20) {
+      navbar.style.background = 'rgba(255,255,255,0.85)';
+      navbar.style.backdropFilter = 'blur(20px)';
+      navbar.style.boxShadow = '0 1px 30px rgba(79,70,229,0.08)';
+    } else if (window.location.pathname !== '/') {
+      navbar.style.background = 'rgba(255,255,255,0.95)';
+      navbar.style.boxShadow = '0 1px 0 rgba(0,0,0,0.06)';
+    }
 
-  // Toggle mobile menu
-  mobileMenuBtn?.addEventListener('click', () => {
-    menuOpen = !menuOpen;
-    mobileMenuBtn.classList.toggle('open', menuOpen);
-    mobileMenuBtn.setAttribute('aria-expanded', menuOpen.toString());
+    // Toggle mobile menu
+    mobileMenuBtn?.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      mobileMenuBtn.classList.toggle('open', menuOpen);
+      mobileMenuBtn.setAttribute('aria-expanded', menuOpen.toString());
 
-    if (menuOpen) {
-      mobileMenu.hidden = false;
-      mobileMenu.style.maxHeight = mobileMenu.scrollHeight + 'px';
-      mobileMenu.style.opacity = '1';
-    } else {
+      if (menuOpen) {
+        mobileMenu.hidden = false;
+        mobileMenu.style.maxHeight = mobileMenu.scrollHeight + 'px';
+        mobileMenu.style.opacity = '1';
+      } else {
+        mobileMenu.style.maxHeight = '0';
+        mobileMenu.style.opacity = '0';
+        window.setTimeout(() => {
+          if (!menuOpen) mobileMenu.hidden = true;
+        }, 500);
+      }
+    });
+
+    // Close on link click
+    const closeMenu = (returnFocus = false) => {
+      if (!menuOpen) return;
+      menuOpen = false;
+      mobileMenuBtn?.classList.remove('open');
+      mobileMenuBtn?.setAttribute('aria-expanded', 'false');
       mobileMenu.style.maxHeight = '0';
       mobileMenu.style.opacity = '0';
       window.setTimeout(() => {
         if (!menuOpen) mobileMenu.hidden = true;
       }, 500);
-    }
-  });
+      if (returnFocus) mobileMenuBtn?.focus();
+    };
 
-  // Close on link click
-  const closeMenu = (returnFocus = false) => {
-    if (!menuOpen) return;
-    menuOpen = false;
-    mobileMenuBtn?.classList.remove('open');
-    mobileMenuBtn?.setAttribute('aria-expanded', 'false');
-    mobileMenu.style.maxHeight = '0';
-    mobileMenu.style.opacity = '0';
-    window.setTimeout(() => {
-      if (!menuOpen) mobileMenu.hidden = true;
-    }, 500);
-    if (returnFocus) mobileMenuBtn?.focus();
-  };
-
-  mobileMenu?.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => closeMenu());
-  });
-
-  // Escape closes the open drawer and returns focus to its toggle
-  (window as any).__navClose = closeMenu;
-  if (!(window as any).__navKeyBound) {
-    (window as any).__navKeyBound = true;
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') (window as any).__navClose?.(true);
+    mobileMenu?.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => closeMenu());
     });
-  }
+
+    // Escape closes the open drawer and returns focus to its toggle
+    (window as any).__navClose = closeMenu;
+    if (!(window as any).__navKeyBound) {
+      (window as any).__navKeyBound = true;
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') (window as any).__navClose?.(true);
+      });
+    }
   };
+
   initNavbar();
   document.addEventListener('astro:page-load', initNavbar);
+  document.addEventListener('astro:after-swap', syncActiveNavLinks);
+  window.addEventListener('popstate', syncActiveNavLinks);
 </script>
