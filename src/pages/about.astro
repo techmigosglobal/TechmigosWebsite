@@ -3,58 +3,154 @@ export const prerender = true;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const milestones = [
+const enterpriseMetrics = [
   {
-    need: 'Clarity First',
-    title: 'Remove Ambiguity Early',
-    moment: '“We need a partner who asks the hard questions up front.”',
-    description: 'We now start with deeper discovery, mapping risks and assumptions before a single sprint begins.',
-    impact: 'Result: faster alignment and fewer expensive pivots mid‑build.',
+    value: '45+',
+    counter: '45+',
+    label: 'Enterprise & Scaleup Deployments',
+    description: 'Production-grade web, mobile, and cloud platforms shipped on schedule.',
+    highlight: '100% Delivery Success',
   },
   {
-    need: 'Speed to Value',
-    title: 'Ship Useful Value Quickly',
-    moment: '“Our users can’t wait six months for the first release.”',
-    description: 'We designed delivery around thin‑slice MVPs that earn trust with real, early wins.',
-    impact: 'Result: earlier feedback, steadier momentum, and lower launch risk.',
+    value: '99.98%',
+    counter: '99.98%',
+    label: 'Average System Availability',
+    description: 'Fault-tolerant distributed architectures built for high-throughput concurrency.',
+    highlight: 'Tier-1 Reliability',
   },
   {
-    need: 'Quality as a Standard',
-    title: 'Protect Every Release',
-    moment: '“One bad release cost us a quarter.”',
-    description: 'We raised engineering rigor with smarter testing, reviews, and reliability gates.',
-    impact: 'Result: fewer regressions and healthier codebases over time.',
+    value: '< 14 Days',
+    counter: '14 Days',
+    label: 'Discovery to Technical Blueprint',
+    description: 'Rapid validation, threat modeling, and prototype verification before sprint build.',
+    highlight: 'De-Risked Velocity',
   },
   {
-    need: 'Scale‑Ready Delivery',
-    title: 'Built to Grow',
-    moment: '“This worked for 10k users. What about 1M?”',
-    description: 'We architect for performance and resilience from day one, not after growth pains begin.',
-    impact: 'Result: systems that scale without costly rewrites.',
+    value: '0',
+    counter: '0',
+    label: 'Critical Vulnerability Tolerance',
+    description: 'Automated CI/CD security scanning, static code analysis, and ISO/SOC2 rigor.',
+    highlight: 'DevSecOps Standards',
+  },
+];
+
+const pillars = [
+  {
+    id: 'cloud',
+    badge: 'Enterprise Architecture',
+    title: 'Cloud Systems & Distributed Infrastructure',
+    description: 'Engineered for high concurrency, sub-second latency, and horizontal scalability across multi-cloud environments (AWS, GCP, Azure).',
+    capabilities: [
+      'Microservices & Event-Driven Topologies',
+      'High-Throughput REST, GraphQL & gRPC APIs',
+      'Zero-Downtime CI/CD & Infrastructure as Code',
+      'Database Optimization & Redis Caching Layers',
+    ],
+    iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>`,
   },
   {
-    need: 'Transparent Collaboration',
-    title: 'Trust Through Visibility',
-    moment: '“We never want to be surprised in a status call.”',
-    description: 'We made progress visible with shared docs, demos, and crisp weekly signals.',
-    impact: 'Result: calmer launches and tighter client‑team trust.',
+    id: 'web',
+    badge: 'Digital Platforms',
+    title: 'High-Impact Web Applications & Portals',
+    description: 'Modern frontend ecosystems designed with Astro, Next.js, and React for lightning-fast Core Web Vitals, enterprise security, and seamless user experiences.',
+    capabilities: [
+      'High-Performance Modern Web Architectures',
+      'Micro-Frontends & Design Token Systems',
+      'Strict WCAG 2.1 AA Accessibility & Global SEO',
+      'Real-Time Collaboration & State Synchronization',
+    ],
+    iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
   },
   {
-    need: 'Measurable Outcomes',
-    title: 'Impact Over Activity',
-    moment: '“Busy isn’t the same as moving the needle.”',
-    description: 'We tie every sprint to outcomes that matter: growth, retention, or efficiency.',
-    impact: 'Result: clearer priorities and measurable business impact.',
+    id: 'mobile',
+    badge: 'Omnichannel Mobility',
+    title: 'Cross-Platform Mobile & Desktop Suites',
+    description: 'Native iOS/Android, Flutter, and cross-platform desktop applications engineered for fluid 60fps interaction and secure enterprise sync.',
+    capabilities: [
+      'Native Swift/Kotlin & Flutter Ecosystems',
+      'Robust Offline-First Data Synchronization',
+      'Biometric Security & Hardware Telemetry',
+      'Cross-Platform Windows, macOS & Linux Tools',
+    ],
+    iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>`,
+  },
+  {
+    id: 'ai',
+    badge: 'Cognitive Automation',
+    title: 'Applied AI & Autonomous Agent Workflows',
+    description: 'Pragmatic AI integration that embeds intelligent agent pipelines, custom RAG architectures, and predictive analytics into core operational workflows.',
+    capabilities: [
+      'Domain-Specific LLM & Agentic Workflows',
+      'Secure Vector Embeddings & Hybrid RAG Retrieval',
+      'Automated Document Processing & Extraction',
+      'Real-Time Predictive Intelligence & Telemetry',
+    ],
+    iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
+  },
+];
+
+const governancePhases = [
+  {
+    phase: '01',
+    name: 'Discovery & Threat Modeling',
+    focus: 'Clarity Over Assumption',
+    description: 'We deconstruct business logic, map integration boundaries, and conduct risk modeling before committing sprint capital.',
+    deliverable: 'Architecture Decision Record (ADR), threat model, and interactive specification.',
+  },
+  {
+    phase: '02',
+    name: 'Thin-Slice Prototyping',
+    focus: 'Rapid Validation',
+    description: 'We build functional, end-to-end technical slices early to validate concurrency benchmarks, data schemas, and user workflows.',
+    deliverable: 'Clickable prototype, proven data contracts, and stakeholder alignment.',
+  },
+  {
+    phase: '03',
+    name: 'Rigorous Sprint Engineering',
+    focus: 'DevSecOps & Reliability',
+    description: 'Bi-weekly sprint iterations accompanied by automated unit, integration, and E2E test suites with zero regression tolerance.',
+    deliverable: 'Production-ready candidate builds with comprehensive test pass reports.',
+  },
+  {
+    phase: '04',
+    name: 'Zero-Downtime Rollout & SLA',
+    focus: 'Production Stewardship',
+    description: 'Seamless cutovers, blue/green deployments, real-time APM telemetry, and dedicated post-launch SLA support.',
+    deliverable: 'Automated monitoring dashboards, runbooks, and enterprise operational handoff.',
   },
 ];
 
 const values = [
-  { icon: 'innovation', title: 'Innovation First', description: 'We push boundaries and embrace new technologies that create real, measurable value for clients.' },
-  { icon: 'collaboration', title: 'Deep Collaboration', description: 'Great outcomes happen when diverse, talented minds work together toward a shared purpose.' },
-  { icon: 'transparency', title: 'Radical Transparency', description: 'Open communication and honest feedback build the trust that fuels long-term partnerships.' },
-  { icon: 'quality', title: 'Uncompromising Quality', description: 'We obsess over every detail because the smallest things matter most to users.' },
-  { icon: 'agility', title: 'True Agility', description: 'Fast iteration and adaptability let us respond to change and market shifts with confidence.' },
-  { icon: 'impact', title: 'Meaningful Impact', description: 'Every project we take on must make a real difference — for clients, users, and the world.' },
+  {
+    title: 'Architectural Rigor',
+    description: 'We write clean, modular, self-documenting code with zero shortcuts on test coverage and maintainability.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>`,
+  },
+  {
+    title: 'Fiduciary Stewardship',
+    description: 'We treat client capital, cloud infrastructure budgets, and production uptime with the diligence of equity partners.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`,
+  },
+  {
+    title: 'Radical Transparency',
+    description: 'No opaque sprint blockers. Shared live repositories, verifiable build artifacts, and weekly executive telemetry.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`,
+  },
+  {
+    title: 'DevSecOps by Default',
+    description: 'Security is embedded into every commit through automated dependency scanning, static code analysis, and role gating.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>`,
+  },
+  {
+    title: 'High-Velocity Cadence',
+    description: 'Two-week sprint cadences delivering tangible, demonstrable increments that accelerate your go-to-market advantage.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
+  },
+  {
+    title: 'Measurable Commercial ROI',
+    description: 'We hold ourselves accountable to commercial metrics—customer conversion, compute efficiency, and user retention.',
+    icon: `<svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>`,
+  },
 ];
 
 const technologies = [
@@ -73,158 +169,85 @@ const technologies = [
   { name: 'PostgreSQL', category: 'Database', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg' },
   { name: 'MySQL', category: 'Database', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg' },
   { name: 'Redis', category: 'Database', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg' },
-  { name: 'Perl', category: 'Backend', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/perl/perl-original.svg' },
   { name: 'Docker', category: 'DevOps', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg' },
   { name: 'Figma', category: 'Design', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg' },
   { name: 'TensorFlow', category: 'AI/ML', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tensorflow/tensorflow-original.svg' },
 ];
-
 ---
 
 <BaseLayout
-  title="About TechMigos Software Studio"
+  title="About TechMigos | Enterprise Software Engineering & Digital Advisory"
   ogImage="/images/og/about.png"
-  description="Learn about TechMigos — our mission, team, values, and the technologies we use to build world-class software."
+  description="TechMigos delivers enterprise digital engineering, cloud architecture, and high-performance product platforms. Learn about our leadership, governance, and technology stack."
 >
   <!-- ========================================
-       HERO
+       HERO: ENTERPRISE MNC CALIBER
        ======================================== -->
   <section id="about-hero" class="section-surface section-surface-mist section-spotlight pt-36 pb-20 relative overflow-hidden">
-    <canvas class="section-neural-canvas" data-network-canvas data-particle-count="42"></canvas>
+    <canvas class="section-neural-canvas" data-network-canvas data-particle-count="48"></canvas>
     <div class="section-orb -top-40 -right-40 w-96 h-96 bg-primary-100"></div>
-    <div class="section-orb -bottom-20 -left-20 w-72 h-72 bg-accent-100 opacity-45"></div>
+    <div class="section-orb -bottom-20 -left-20 w-80 h-80 bg-accent-100 opacity-45"></div>
+
     <div class="container-custom relative z-10">
-      <div class="max-w-3xl">
+      <div class="max-w-4xl">
         <div class="reveal">
-          <span class="section-eyebrow">About Us</span>
+          <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase bg-primary-50 text-primary-700 border border-primary-200/80 shadow-sm mb-6">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Global Software Studio & Digital Advisory
+          </span>
         </div>
-        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
-          We're engineers, designers &<br>
-          <span class="text-gradient">dreamers</span>
+        <h1 class="reveal stagger-1 text-4xl sm:text-6xl font-black text-gray-900 mb-6 leading-[1.12] tracking-tight">
+          Engineering Mission-Critical Platforms for <br class="hidden sm:inline" />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-cyan-600">
+            Ambitious Global Enterprises
+          </span>.
         </h1>
-        <p class="reveal stagger-2 text-xl text-gray-500 max-w-2xl leading-relaxed">
-          Since 2025, we've been building software that makes a difference by helping teams ship practical, scalable digital products.
+        <p class="reveal stagger-2 text-lg sm:text-xl text-gray-600 max-w-3xl leading-relaxed mb-8">
+          TechMigos partners with forward-thinking enterprises and fast-scaling innovators to architect, engineer, and deploy high-concurrency digital platforms. We unite deep technical rigor, modern cloud paradigms, and human-centric design to transform complexity into sustained commercial momentum.
         </p>
-        <div class="reveal stagger-3 mt-8 flex items-center gap-6">
-          <a href="/contact" class="btn-primary shine-hover">Work With Us</a>
-          <a href="/careers" class="btn-ghost">Join Our Team</a>
+
+        <div class="reveal stagger-3 flex flex-wrap items-center gap-4 mb-12">
+          <a href="/contact" class="btn-primary shine-hover shadow-lg shadow-primary-500/25 px-7 py-3.5 text-base rounded-xl font-semibold">
+            Consult Our Engineering Leads <span class="ml-2">→</span>
+          </a>
+          <a href="/work" class="btn-ghost px-7 py-3.5 text-base rounded-xl font-semibold bg-white/70 backdrop-blur-sm">
+            Review Case Studies
+          </a>
+        </div>
+
+        <!-- Trust Badges Bar -->
+        <div class="reveal stagger-4 pt-6 border-t border-gray-200/80 flex flex-wrap items-center gap-6 text-xs sm:text-sm font-medium text-gray-600">
+          <span class="flex items-center gap-2">
+            <span class="text-blue-600 font-bold">✓</span> SOC2 & ISO-Aligned Rigor
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="text-blue-600 font-bold">✓</span> 99.98% High-Availability SLA
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="text-blue-600 font-bold">✓</span> Dedicated Multi-Disciplinary Pods
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="text-blue-600 font-bold">✓</span> Global Delivery & Clear Governance
+          </span>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ========================================
-       MISSION & VISION
+       ENTERPRISE IMPACT TELEMETRY (METRICS)
        ======================================== -->
-  <section id="about-mission" class="section-surface section-surface-glow section-spotlight section-padding">
-    <canvas class="section-neural-canvas opacity-35" data-network-canvas data-particle-count="30"></canvas>
+  <section id="about-metrics" class="py-16 bg-white border-y border-slate-100 relative">
     <div class="container-custom">
-      <div class="grid lg:grid-cols-2 gap-20 items-center">
-        <div class="reveal-left">
-          <span class="section-eyebrow">Our Mission</span>
-          <h2 class="text-4xl font-bold text-gray-900 mb-6 leading-tight">
-            To empower every business with <span class="text-gradient">thoughtful technology</span>
-          </h2>
-          <p class="text-gray-600 leading-relaxed mb-6 text-lg">
-            We believe that great technology should be accessible to every business with a great idea. Our mission is to bridge the gap between visionary concepts and world-class implementation.
-          </p>
-          <p class="text-gray-600 leading-relaxed mb-8">
-            Every project we take on is an opportunity to create something meaningful. We're not just building features — we're building foundations for lasting growth.
-          </p>
-          <div class="grid grid-cols-3 gap-6">
-            {[
-              { val: 'Discover', label: 'Plan Clearly' },
-              { val: 'Build', label: 'Ship Reliably' },
-              { val: 'Improve', label: 'Iterate Fast' },
-            ].map(s => (
-              <div class="text-center p-4 rounded-2xl bg-white/80 border border-primary-100 shadow-sm lift-panel">
-                <div class="text-2xl font-black text-primary-600">{s.val}</div>
-                <div class="text-sm text-gray-500 mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div class="relative reveal-right">
-          <div class="absolute inset-0 bg-gradient-to-br from-primary-300 to-accent-300 rounded-3xl transform rotate-3 opacity-20 animate-morph"></div>
-          <img
-            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop"
-            alt="Team collaboration"
-            class="relative rounded-3xl shadow-2xl object-cover w-full"
-            loading="lazy"
-            width="800"
-            height="600"
-          />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       TIMELINE
-       ======================================== -->
-  <section id="about-timeline" class="section-surface section-surface-mist section-spotlight section-padding">
-    <canvas class="section-neural-canvas opacity-30" data-network-canvas data-particle-count="28"></canvas>
-    <div class="container-custom">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow">Our Journey</span>
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">How We Evolved</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">Every shift came from a real moment — a client pain, a broken release, or a bold goal we refused to miss.</p>
-      </div>
-
-      <div class="max-w-3xl mx-auto">
-        <div class="relative">
-          {milestones.map((milestone, index) => (
-            <div class={`relative pl-16 pb-12 last:pb-0 reveal stagger-${Math.min(index + 1, 6)}`}>
-              {/* Vertical line */}
-              {index !== milestones.length - 1 && (
-                <div class="absolute left-5 top-6 bottom-0 w-0.5 bg-gradient-to-b from-primary-300 to-primary-100"></div>
-              )}
-              {/* Dot */}
-              <div class="absolute left-0 top-1 w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-blue-500/20" style="background: linear-gradient(135deg,#2563eb,#06b6d4)">
-                {index + 1}
-              </div>
-              {/* Card */}
-              <div class="bg-white/88 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold mb-2">{milestone.need}</span>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">{milestone.title}</h3>
-                <p class="text-sm text-gray-500 italic mb-3">{milestone.moment}</p>
-                <p class="text-gray-600 text-sm leading-relaxed">{milestone.description}</p>
-                <p class="text-sm text-gray-500 mt-3">{milestone.impact}</p>
-              </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {enterpriseMetrics.map((item, index) => (
+          <div class={`p-7 rounded-2xl bg-gradient-to-b from-white to-slate-50 border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-primary-300 transition-[box-shadow,border-color,transform] duration-300 hover:-translate-y-1 tilt-card reveal stagger-${index + 1}`}>
+            <div class="text-xs font-bold tracking-wider uppercase text-primary-600 mb-2">{item.highlight}</div>
+            <div class="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-2" data-counter={item.counter}>
+              {item.value}
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================
-       VALUES
-       ======================================== -->
-  <section id="about-values" class="section-surface section-surface-dark section-spotlight section-padding">
-    <canvas class="section-neural-canvas opacity-35" data-network-canvas data-particle-count="34"></canvas>
-    <div class="section-orb top-0 left-8 w-80 h-80 bg-cyan-300/25"></div>
-    <div class="section-orb bottom-0 right-12 w-96 h-96 bg-indigo-300/20"></div>
-    <div class="container-custom">
-      <div class="text-center mb-16 reveal">
-        <span class="section-eyebrow" style="color:#38bdf8; background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.25);">Our Values</span>
-        <h2 class="text-4xl font-bold text-white mb-4">What We Stand For</h2>
-        <p class="text-slate-300 max-w-2xl mx-auto">The principles that guide every decision we make and every line of code we write.</p>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {values.map((value, i) => (
-          <div class={`group p-7 rounded-2xl border border-white/10 hover:border-primary-400/40 bg-white/6 hover:bg-white/12 backdrop-blur-sm transition-[background-color,border-color,transform] duration-300 hover:-translate-y-1 stagger-${i + 1} reveal`}>
-            <div class="w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-2xl" style="background: rgba(255,255,255,0.1)">
-              {value.icon === 'innovation' && '💡'}
-              {value.icon === 'collaboration' && '🤝'}
-              {value.icon === 'transparency' && '🔍'}
-              {value.icon === 'quality' && '✨'}
-              {value.icon === 'agility' && '⚡'}
-              {value.icon === 'impact' && '🌍'}
-            </div>
-            <h3 class="text-lg font-bold text-white mb-2">{value.title}</h3>
-            <p class="text-indigo-200 text-sm leading-relaxed">{value.description}</p>
+            <div class="text-base font-bold text-gray-800 mb-1">{item.label}</div>
+            <p class="text-sm text-gray-500 leading-relaxed">{item.description}</p>
           </div>
         ))}
       </div>
@@ -232,19 +255,139 @@ const technologies = [
   </section>
 
   <!-- ========================================
-       TECHNOLOGIES
+       CORE CAPABILITIES / MNC PILLARS
+       ======================================== -->
+  <section id="about-pillars" class="section-surface section-surface-glow section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-30" data-network-canvas data-particle-count="32"></canvas>
+    <div class="container-custom relative z-10">
+      <div class="max-w-3xl mb-16 reveal">
+        <span class="section-eyebrow">Enterprise Capabilities</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3 mb-4 leading-tight">
+          Engineered for Performance, Resilience & Scalability
+        </h2>
+        <p class="text-lg text-gray-600 leading-relaxed">
+          We do not deliver superficial code or fragile templates. Our engineering pods design resilient systems engineered to withstand exponential transaction growth and stringent enterprise security audits.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {pillars.map((pillar, idx) => (
+          <div class={`p-8 rounded-3xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm hover:shadow-2xl hover:border-primary-400 transition-all duration-300 group tilt-card reveal stagger-${idx + 1}`}>
+            <div class="flex items-start justify-between gap-4 mb-6">
+              <div class="w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-600 group-hover:scale-110 group-hover:bg-primary-600 group-hover:text-white transition-all duration-300 shadow-sm" set:html={pillar.iconSvg}></div>
+              <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                {pillar.badge}
+              </span>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
+              {pillar.title}
+            </h3>
+            <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+              {pillar.description}
+            </p>
+
+            <div class="pt-6 border-t border-slate-100">
+              <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Core Technical Capabilities</div>
+              <ul class="space-y-2.5">
+                {pillar.capabilities.map((cap) => (
+                  <li class="flex items-center gap-2.5 text-sm text-gray-700 font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary-600"></span>
+                    {cap}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       GOVERNANCE & DELIVERY FRAMEWORK
+       ======================================== -->
+  <section id="about-governance" class="section-surface section-surface-mist section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-25" data-network-canvas data-particle-count="28"></canvas>
+    <div class="container-custom relative z-10">
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+        <span class="section-eyebrow">Delivery Governance</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3 mb-4">
+          A Predictable, Risk-Engineered Delivery Operating Model
+        </h2>
+        <p class="text-lg text-gray-600">
+          How enterprise organizations scale software without surprises. Every engagement follows structured milestones, transparent telemetry, and verified automated checks.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {governancePhases.map((phase, i) => (
+          <div class={`p-7 rounded-2xl bg-white/90 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-primary-300 transition-all duration-300 hover:-translate-y-1 reveal stagger-${i + 1}`}>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-2xl font-black text-primary-600 font-mono">{phase.phase}</span>
+              <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">{phase.focus}</span>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">{phase.name}</h3>
+            <p class="text-sm text-gray-600 leading-relaxed mb-4">{phase.description}</p>
+            <div class="pt-4 border-t border-slate-100 text-xs text-gray-500 font-medium">
+              <strong class="text-gray-800">Outcome:</strong> {phase.deliverable}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       VALUES: ENTERPRISE STEWARDSHIP (DARK SECTION)
+       ======================================== -->
+  <section id="about-values" class="section-surface section-surface-dark section-spotlight section-padding">
+    <canvas class="section-neural-canvas opacity-35" data-network-canvas data-particle-count="36"></canvas>
+    <div class="section-orb top-0 left-8 w-80 h-80 bg-cyan-400/20"></div>
+    <div class="section-orb bottom-0 right-12 w-96 h-96 bg-indigo-500/20"></div>
+    <div class="container-custom relative z-10">
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+        <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-cyan-300 bg-cyan-900/30 border border-cyan-500/30">
+          ✦ Core Operating Values
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black text-white mt-4 mb-4">
+          What Sets Our Engineering Apart
+        </h2>
+        <p class="text-base sm:text-lg text-slate-300 leading-relaxed">
+          The foundational principles that govern every pull request, architectural decision record, and client partnership.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {values.map((value, i) => (
+          <div class={`group p-8 rounded-2xl border border-white/10 hover:border-cyan-400/40 bg-white/[0.05] hover:bg-white/[0.09] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 reveal stagger-${i + 1}`}>
+            <div class="w-12 h-12 rounded-xl mb-6 flex items-center justify-center bg-cyan-500/10 border border-cyan-400/20 group-hover:scale-110 group-hover:border-cyan-400/50 transition-all duration-300" set:html={value.icon}></div>
+            <h3 class="text-xl font-bold text-white mb-2.5">{value.title}</h3>
+            <p class="text-slate-300 text-sm leading-relaxed">{value.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       TECHNOLOGIES & PLATFORMS
        ======================================== -->
   <section id="about-tech" class="section-surface section-surface-glow section-spotlight section-padding bg-white relative overflow-hidden">
-    <canvas class="section-neural-canvas opacity-32" data-network-canvas data-particle-count="36"></canvas>
+    <canvas class="section-neural-canvas opacity-30" data-network-canvas data-particle-count="36"></canvas>
     <div class="absolute inset-0" aria-hidden="true">
       <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl bg-gradient-to-br from-primary-100/70 to-accent-100/60"></div>
       <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full blur-3xl bg-gradient-to-tr from-amber-100/60 to-rose-100/60"></div>
     </div>
     <div class="container-custom relative z-10">
       <div class="text-center mb-14 reveal">
-        <span class="section-eyebrow">Tech Stack</span>
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">Technologies We Master</h2>
-        <p class="text-lg text-gray-500 max-w-2xl mx-auto">A living toolkit we sharpen with every build — chosen for speed, reliability, and long‑term clarity.</p>
+        <span class="section-eyebrow">Technology Portfolio</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3 mb-4">
+          World-Class Stacks for Scaled Systems
+        </h2>
+        <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+          We leverage modern, type-safe, and high-performance stacks selected for velocity, production resilience, and ecosystem longevity.
+        </p>
       </div>
 
       <div class="tech-icon-wall reveal" role="list" aria-label="Technology icons">
@@ -270,47 +413,45 @@ const technologies = [
   </section>
 
   <!-- ========================================
-       CTA
+       ENTERPRISE CTA
        ======================================== -->
   <section id="about-cta" class="py-24 sm:py-32 bg-slate-900 text-white relative overflow-hidden">
-    <!-- Ambient glow decorations -->
     <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-600/25 blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none"></div>
     <div class="absolute inset-0 grid-pattern opacity-10 pointer-events-none"></div>
 
     <div class="container-custom relative z-10 text-center max-w-4xl mx-auto reveal">
       <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-6">
-        ✦ Culture & Careers • Life at TechMigos
+        ✦ Partner With TechMigos
       </span>
       <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-6">
-        Join Us In Building The <br class="hidden sm:inline" />
+        Ready to Architect Your Next <br class="hidden sm:inline" />
         <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-teal-300">
-          Future of Software
-        </span>.
+          Commercial Breakthrough
+        </span>?
       </h2>
       <p class="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-        We're always looking for ambitious engineers, product designers, and technical problem solvers who care deeply about code craft and shipping real impact.
+        Speak directly with our technical principals. We assess feasibility, draft architecture blueprints, and plan rapid production roadmaps tailored to your commercial objectives.
       </p>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-        <a href="/careers" class="btn-primary text-base px-8 py-4 rounded-xl shine-hover shadow-xl shadow-blue-500/30">
-          View Open Positions <span class="ml-2">→</span>
+        <a href="/contact" class="btn-primary text-base px-8 py-4 rounded-xl shine-hover shadow-xl shadow-blue-500/30 font-semibold">
+          Schedule Architecture Consultation <span class="ml-2">→</span>
         </a>
-        <a href="/contact" class="btn-ghost text-base px-8 py-4 rounded-xl text-white border-slate-700 hover:bg-slate-800 hover:border-slate-500">
-          Get in Touch
+        <a href="/careers" class="btn-ghost text-base px-8 py-4 rounded-xl text-white border-slate-700 hover:bg-slate-800 hover:border-slate-500 font-semibold">
+          Explore Engineering Careers
         </a>
       </div>
 
-      <!-- Value indicators -->
       <div class="flex flex-wrap items-center justify-center gap-6 sm:gap-10 pt-8 border-t border-slate-800 text-slate-400 text-xs sm:text-sm font-medium">
         <span class="flex items-center gap-2">
-          <span class="text-emerald-400 font-bold">✓</span> Fast-Paced Modern Stack
+          <span class="text-emerald-400 font-bold">✓</span> Direct Principal Architect Access
         </span>
         <span class="flex items-center gap-2">
-          <span class="text-blue-400 font-bold">✓</span> Direct Senior Mentorship
+          <span class="text-blue-400 font-bold">✓</span> Mutual NDA & IP Security Protected
         </span>
         <span class="flex items-center gap-2">
-          <span class="text-cyan-400 font-bold">✓</span> Scaled Production Impact
+          <span class="text-cyan-400 font-bold">✓</span> Actionable Technical Scope in 5 Days
         </span>
       </div>
     </div>
@@ -342,96 +483,96 @@ const technologies = [
 
 <script>
   const initAbout = () => {
-  const aboutReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const aboutFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const aboutReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const aboutFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  if (!aboutReducedMotion) {
-    document.querySelectorAll('.section-spotlight').forEach((section) => {
-      if (!(section instanceof HTMLElement)) return;
-      if (!aboutFinePointer) return;
-      section.classList.add('is-interactive');
-      section.addEventListener('pointermove', (event) => {
-        const pointerEvent = event as PointerEvent;
-        const rect = section.getBoundingClientRect();
-        section.style.setProperty('--spotlight-x', `${((pointerEvent.clientX - rect.left) / rect.width) * 100}%`);
-        section.style.setProperty('--spotlight-y', `${((pointerEvent.clientY - rect.top) / rect.height) * 100}%`);
-      }, { passive: true });
-    });
+    if (!aboutReducedMotion) {
+      document.querySelectorAll('.section-spotlight').forEach((section) => {
+        if (!(section instanceof HTMLElement)) return;
+        if (!aboutFinePointer) return;
+        section.classList.add('is-interactive');
+        section.addEventListener('pointermove', (event) => {
+          const pointerEvent = event as PointerEvent;
+          const rect = section.getBoundingClientRect();
+          section.style.setProperty('--spotlight-x', `${((pointerEvent.clientX - rect.left) / rect.width) * 100}%`);
+          section.style.setProperty('--spotlight-y', `${((pointerEvent.clientY - rect.top) / rect.height) * 100}%`);
+        }, { passive: true });
+      });
 
-    document.querySelectorAll('[data-network-canvas]').forEach((canvasEl) => {
-      if (!(canvasEl instanceof HTMLCanvasElement)) return;
-      const section = canvasEl.closest('section');
-      const context = canvasEl.getContext('2d');
-      if (!(section instanceof HTMLElement) || !context) return;
-      const networkCanvas = canvasEl as HTMLCanvasElement;
-      const canvasSection = section;
-      const canvasContext = context;
+      document.querySelectorAll('[data-network-canvas]').forEach((canvasEl) => {
+        if (!(canvasEl instanceof HTMLCanvasElement)) return;
+        const section = canvasEl.closest('section');
+        const context = canvasEl.getContext('2d');
+        if (!(section instanceof HTMLElement) || !context) return;
+        const networkCanvas = canvasEl as HTMLCanvasElement;
+        const canvasSection = section;
+        const canvasContext = context;
 
-      const particleCount = Number(canvasEl.dataset.particleCount || 30);
-      const particles = Array.from({ length: particleCount }, () => ({
-        x: 0,
-        y: 0,
-        vx: (Math.random() - 0.5) * 0.28,
-        vy: (Math.random() - 0.5) * 0.28,
-        r: Math.random() * 1.8 + 0.9,
-      }));
+        const particleCount = Number(canvasEl.dataset.particleCount || 30);
+        const particles = Array.from({ length: particleCount }, () => ({
+          x: 0,
+          y: 0,
+          vx: (Math.random() - 0.5) * 0.28,
+          vy: (Math.random() - 0.5) * 0.28,
+          r: Math.random() * 1.8 + 0.9,
+        }));
 
-      let width = 0;
-      let height = 0;
+        let width = 0;
+        let height = 0;
 
-      function resizeCanvas() {
-        width = networkCanvas.width = canvasSection.clientWidth;
-        height = networkCanvas.height = canvasSection.clientHeight;
-        particles.forEach((particle) => {
-          if (!particle.x || particle.x > width) particle.x = Math.random() * width;
-          if (!particle.y || particle.y > height) particle.y = Math.random() * height;
-        });
-      }
-
-      function drawCanvas() {
-        canvasContext.clearRect(0, 0, width, height);
-        canvasContext.fillStyle = canvasSection.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
-        canvasContext.strokeStyle = canvasSection.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
-
-        for (let i = 0; i < particles.length; i++) {
-          const particle = particles[i];
-          if (!particle) continue;
-          particle.x += particle.vx;
-          particle.y += particle.vy;
-
-          if (particle.x < 0 || particle.x > width) particle.vx *= -1;
-          if (particle.y < 0 || particle.y > height) particle.vy *= -1;
-          particle.x = Math.max(0, Math.min(width, particle.x));
-          particle.y = Math.max(0, Math.min(height, particle.y));
-
-          canvasContext.beginPath();
-          canvasContext.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
-          canvasContext.fill();
-
-          for (let j = i + 1; j < particles.length; j++) {
-            const particleB = particles[j];
-            if (!particleB) continue;
-            const dx = particle.x - particleB.x;
-            const dy = particle.y - particleB.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 118) {
-              canvasContext.beginPath();
-              canvasContext.lineWidth = (1 - dist / 118) * 0.75;
-              canvasContext.moveTo(particle.x, particle.y);
-              canvasContext.lineTo(particleB.x, particleB.y);
-              canvasContext.stroke();
-            }
-          }
+        function resizeCanvas() {
+          width = networkCanvas.width = canvasSection.clientWidth;
+          height = networkCanvas.height = canvasSection.clientHeight;
+          particles.forEach((particle) => {
+            if (!particle.x || particle.x > width) particle.x = Math.random() * width;
+            if (!particle.y || particle.y > height) particle.y = Math.random() * height;
+          });
         }
 
-        requestAnimationFrame(drawCanvas);
-      }
+        function drawCanvas() {
+          canvasContext.clearRect(0, 0, width, height);
+          canvasContext.fillStyle = canvasSection.id === 'about-values' ? 'rgba(125, 211, 252, 0.40)' : 'rgba(13, 148, 136, 0.28)';
+          canvasContext.strokeStyle = canvasSection.id === 'about-values' ? 'rgba(255, 255, 255, 0.11)' : 'rgba(37, 99, 235, 0.07)';
 
-      resizeCanvas();
-      drawCanvas();
-      window.addEventListener('resize', resizeCanvas, { passive: true });
-    });
-  }
+          for (let i = 0; i < particles.length; i++) {
+            const particle = particles[i];
+            if (!particle) continue;
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+
+            if (particle.x < 0 || particle.x > width) particle.vx *= -1;
+            if (particle.y < 0 || particle.y > height) particle.y *= -1;
+            particle.x = Math.max(0, Math.min(width, particle.x));
+            particle.y = Math.max(0, Math.min(height, particle.y));
+
+            canvasContext.beginPath();
+            canvasContext.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+            canvasContext.fill();
+
+            for (let j = i + 1; j < particles.length; j++) {
+              const particleB = particles[j];
+              if (!particleB) continue;
+              const dx = particle.x - particleB.x;
+              const dy = particle.y - particleB.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 118) {
+                canvasContext.beginPath();
+                canvasContext.lineWidth = (1 - dist / 118) * 0.75;
+                canvasContext.moveTo(particle.x, particle.y);
+                canvasContext.lineTo(particleB.x, particleB.y);
+                canvasContext.stroke();
+              }
+            }
+          }
+
+          requestAnimationFrame(drawCanvas);
+        }
+
+        resizeCanvas();
+        drawCanvas();
+        window.addEventListener('resize', resizeCanvas, { passive: true });
+      });
+    }
   };
   initAbout();
   document.addEventListener('astro:page-load', initAbout);

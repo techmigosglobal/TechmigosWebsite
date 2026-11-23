@@ -5,41 +5,72 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Project Support for Clients"
-  description="Get help from TechMigos for an active project, deployment issue, or product request. We triage support requests quickly and respond within one business day."
+  title="Enterprise Support & Incident Management | TechMigos"
+  description="Submit priority engineering support requests, report production incidents, or coordinate deployment assistance. TechMigos provides dedicated enterprise SLA triage."
   noIndex={true}
 >
-  <section class="pt-36 pb-16 relative overflow-hidden">
-    <div class="absolute inset-0 dot-pattern opacity-50"></div>
-    <div class="absolute -top-28 -right-24 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
-    <div class="absolute bottom-0 left-0 w-80 h-80 bg-accent-100 rounded-full blur-3xl opacity-40"></div>
+  <!-- ========================================
+       HERO: ENTERPRISE SUPPORT HELPDESK
+       ======================================== -->
+  <section class="pt-36 pb-16 relative overflow-hidden section-surface-mist">
+    <div class="absolute inset-0 dot-pattern opacity-40"></div>
+    <div class="absolute -top-28 -right-24 w-96 h-96 bg-primary-100/70 rounded-full blur-3xl opacity-60"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-accent-100/60 rounded-full blur-3xl opacity-40"></div>
+
     <div class="container-custom relative z-10">
-      <div class="max-w-3xl">
-        <span class="section-eyebrow reveal">Need Help?</span>
-        <h1 class="reveal stagger-1 text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-          Project Support
-          <span class="text-gradient">Desk</span>
+      <div class="max-w-4xl">
+        <div class="reveal">
+          <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-sm mb-6">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            24/7 Enterprise Client Operations & Incident Response
+          </span>
+        </div>
+        <h1 class="reveal stagger-1 text-4xl sm:text-6xl font-black text-gray-900 mb-4 leading-tight tracking-tight">
+          Enterprise Project Support & <br class="hidden sm:inline" />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-cyan-600">
+            Incident Management Desk
+          </span>.
         </h1>
-        <p class="reveal stagger-2 text-xl text-gray-500 leading-relaxed max-w-2xl">
-          Tell us what is broken, blocked, or unclear and we will route it to the right person.
-          For production incidents, include the exact page, error message, and steps to reproduce.
+        <p class="reveal stagger-2 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-3xl mb-8">
+          Direct engineering ticket submission for TechMigos enterprise clients and partners. Our principal engineering pods triage production inquiries according to strict contractual SLAs.
         </p>
+
+        <!-- Live Operations Telemetry Bar -->
+        <div class="reveal stagger-3 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 max-w-3xl">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs sm:text-sm font-bold text-gray-800">All Cloud & Client Systems Operational</span>
+          </div>
+          <div class="flex items-center gap-6 text-xs sm:text-sm text-gray-500 font-medium">
+            <span>Avg Response: <strong class="text-primary-700 font-semibold">&lt; 45 Mins</strong></span>
+            <span>P1 Severity SLA: <strong class="text-emerald-700 font-semibold">1 Hour Active</strong></span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="pb-32 bg-white">
+  <!-- ========================================
+       TICKET SUBMISSION & CHANNELS
+       ======================================== -->
+  <section class="pb-32 pt-8 bg-white">
     <div class="container-custom">
-      <div class="grid lg:grid-cols-5 gap-16">
+      <div class="grid lg:grid-cols-5 gap-12 sm:gap-16">
+        <!-- Main Support Form -->
         <div class="lg:col-span-3 reveal-left">
-          <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-            <div class="flex items-start justify-between gap-6 mb-8">
+          <div class="bg-white rounded-3xl border border-slate-200/90 shadow-lg p-8 sm:p-10 relative">
+            <div class="flex items-start justify-between gap-6 mb-8 pb-6 border-b border-slate-100">
               <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Open a support request</h2>
-                <p class="text-gray-500 text-sm">We usually reply within one business day. Urgent issues should be marked high priority.</p>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Open an Engineering Ticket</h2>
+                <p class="text-gray-500 text-sm">Please provide complete reproduction context to accelerate diagnosis and deployment resolution.</p>
               </div>
-              <div class="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-50 text-2xl">
-                🛟
+              <div class="hidden sm:flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-50 border border-primary-100 text-primary-600 text-2xl shadow-sm flex-shrink-0">
+                <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
             </div>
 
@@ -48,7 +79,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
               <div class="grid sm:grid-cols-2 gap-6">
                 <div class="form-group">
-                  <label for="name" class="form-label">
+                  <label for="name" class="form-label font-semibold text-gray-800 text-sm">
                     Full Name <span class="text-red-500">*</span>
                   </label>
                   <input
@@ -56,123 +87,122 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     id="name"
                     name="name"
                     required
-                    class="form-input form-control form-control--muted"
-                    placeholder="John Smith"
+                    class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                    placeholder="e.g. Rajesh Kumar"
                   />
                 </div>
                 <div class="form-group">
-                  <label for="email" class="form-label">
-                    Email <span class="text-red-500">*</span>
+                  <label for="email" class="form-label font-semibold text-gray-800 text-sm">
+                    Work Email <span class="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     required
-                    class="form-input form-control form-control--muted"
-                    placeholder="john@company.com"
+                    class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                    placeholder="rajesh@enterprise.com"
                   />
                 </div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-6">
                 <div class="form-group">
-                  <label for="company" class="form-label">Company</label>
+                  <label for="company" class="form-label font-semibold text-gray-800 text-sm">Organization / Client Account</label>
                   <input
                     type="text"
                     id="company"
                     name="company"
-                    class="form-input form-control form-control--muted"
-                    placeholder="Your company or organization"
+                    class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                    placeholder="Company name"
                   />
                 </div>
                 <div class="form-group">
-                  <label for="product" class="form-label">Product / Project</label>
+                  <label for="product" class="form-label font-semibold text-gray-800 text-sm">Target Application / Service Affected</label>
                   <input
                     type="text"
                     id="product"
                     name="product"
-                    class="form-input form-control form-control--muted"
-                    placeholder="Website, app, campaign, or area affected"
+                    class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                    placeholder="e.g. Production Web Portal, iOS App, API Gateway"
                   />
                 </div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-6">
                 <div class="form-group">
-                  <label for="topic" class="form-label">
-                    Support Topic <span class="text-red-500">*</span>
+                  <label for="topic" class="form-label font-semibold text-gray-800 text-sm">
+                    Inquiry Domain <span class="text-red-500">*</span>
                   </label>
                   <select
                     id="topic"
                     name="topic"
                     required
-                    class="form-input form-control form-control--muted appearance-none"
+                    class="form-input form-control form-control--muted appearance-none w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm bg-white"
                   >
-                    <option value="">Choose a topic</option>
-                    <option value="technical">Technical issue</option>
-                    <option value="deployment">Deployment help</option>
-                    <option value="bug">Bug report</option>
-                    <option value="content">Content update</option>
-                    <option value="access">Account access</option>
-                    <option value="billing">Billing or invoice</option>
-                    <option value="teacher-training">Teacher training or technical guidance</option>
-                    <option value="other">Other</option>
+                    <option value="">Select ticket category</option>
+                    <option value="production-incident">Production Incident / Service Outage</option>
+                    <option value="deployment">Deployment Pipeline / Release Assistance</option>
+                    <option value="bug">Application Bug / Defect Report</option>
+                    <option value="security">Security / Compliance / Access Request</option>
+                    <option value="cloud-infra">Cloud Infrastructure & Performance Scaling</option>
+                    <option value="billing">Commercial / Billing & Invoice Inquiry</option>
+                    <option value="other">General Technical Consultation</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="priority" class="form-label">
-                    Priority <span class="text-red-500">*</span>
+                  <label for="priority" class="form-label font-semibold text-gray-800 text-sm">
+                    Severity Level <span class="text-red-500">*</span>
                   </label>
                   <select
                     id="priority"
                     name="priority"
                     required
-                    class="form-input form-control form-control--muted appearance-none"
+                    class="form-input form-control form-control--muted appearance-none w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm bg-white"
                   >
-                    <option value="">Choose priority</option>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="">Select severity level</option>
+                    <option value="urgent">P1 - Critical (System Down / &lt; 1h Response)</option>
+                    <option value="high">P2 - High Priority (Major Workflow Blocked)</option>
+                    <option value="medium">P3 - Medium (Non-Critical Defect)</option>
+                    <option value="low">P4 - Low (Enhancement / General Question)</option>
                   </select>
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="subject" class="form-label">
-                  Subject <span class="text-red-500">*</span>
+                <label for="subject" class="form-label font-semibold text-gray-800 text-sm">
+                  Ticket Headline <span class="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   id="subject"
                   name="subject"
                   required
-                  class="form-input form-control form-control--muted"
-                  placeholder="Short summary of the issue"
+                  class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                  placeholder="Concise summary of the incident or request"
                 />
               </div>
 
               <div class="form-group">
-                <label for="message" class="form-label">
-                  Request Details <span class="text-red-500">*</span>
+                <label for="message" class="form-label font-semibold text-gray-800 text-sm">
+                  Detailed Diagnostic Information <span class="text-red-500">*</span>
                 </label>
                 <textarea
                   id="message"
                   name="message"
                   required
-                  rows="6"
-                  class="form-input form-control form-control--muted form-textarea resize-none"
-                  placeholder="Describe what happened, what you expected, the page or feature involved, and any steps to reproduce it."
+                  rows="5"
+                  class="form-input form-control form-control--muted w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-sm"
+                  placeholder="Describe the anomaly, environment (Staging/Production), steps to reproduce, HTTP status codes, error logs, or affected user accounts."
                 ></textarea>
               </div>
 
               <button
                 type="submit"
                 id="submit-btn"
-                class="btn-primary w-full justify-center py-4 text-base shine-hover group"
+                class="btn-primary w-full justify-center py-4 text-base rounded-xl font-bold shine-hover shadow-lg shadow-primary-600/30 group"
               >
-                <span id="btn-text">Send Support Request</span>
+                <span id="btn-text">Submit Support Ticket</span>
                 <svg id="btn-icon" class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                 </svg>
@@ -185,61 +215,95 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
+        <!-- Sidebar: Enterprise Escalation & Protocols -->
         <div class="lg:col-span-2 reveal-right space-y-6">
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-primary-900 to-slate-900 text-white shadow-xl">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-3">
+              ✦ Guaranteed Enterprise SLAs
+            </span>
+            <h3 class="text-xl font-bold text-white mb-2">Priority Response Protocol</h3>
+            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+              Contracted clients receive prioritized triaging through our automated ticketing dispatch and direct on-call engineering rotations.
+            </p>
+            <div class="space-y-2 text-xs font-medium text-slate-200">
+              <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10">
+                <span>P1 (Production Down)</span>
+                <strong class="text-emerald-400">&lt; 1 Hour Response</strong>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10">
+                <span>P2 (Feature Blocked)</span>
+                <strong class="text-cyan-300">&lt; 4 Hours Response</strong>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10">
+                <span>P3 / P4 (Standard Inquiries)</span>
+                <strong class="text-slate-300">Same Business Day</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Channels -->
           <!--email_off-->
           {[
             {
-              icon: '⚡',
-              title: 'Urgent issues',
-              value: '+919959703547',
+              iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>`,
+              title: 'Critical Outage Hotline',
+              value: '+91 99597 03547',
               href: 'tel:+919959703547',
-              sub: 'Call or WhatsApp for blocked deployments and production outages',
+              sub: 'Direct phone & WhatsApp escalation for live production outages',
             },
             {
-              icon: '📧',
-              title: 'Email support',
+              iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
+              title: 'Engineering Operations Mail',
               value: 'info@techmigos.com',
               href: 'mailto:info@techmigos.com',
-              sub: 'Best for screenshots, logs, and longer explanations',
+              sub: 'Best for diagnostic log exports, stack traces, and screenshots',
             },
             {
-              icon: '🕐',
-              title: 'Response window',
-              value: 'Within 1 business day',
-              href: 'mailto:info@techmigos.com',
-              sub: 'High priority items are reviewed first during office hours',
-            },
-            {
-              icon: '📍',
-              title: 'Office hours',
-              value: 'Mon–Fri: 9AM – 6PM IST',
+              iconSvg: `<svg class="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+              title: 'Standard Operating Hours',
+              value: 'Mon–Fri: 9:00 AM – 6:30 PM IST',
               href: 'tel:+919959703547',
-              sub: 'Weekend support is handled by appointment',
+              sub: 'Continuous 24/7 coverage active for enterprise SLA contracts',
             },
           ].map((item, i) => (
             <a
               href={item.href}
-              class={`flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white hover:border-primary-300 hover:shadow-xl transition-all duration-300 group glow-card stagger-${i + 1}`}
+              class={`flex items-start gap-4 p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-primary-400 hover:shadow-xl transition-all duration-300 group glow-card stagger-${i + 1}`}
             >
-              <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform" style="background: linear-gradient(135deg, rgba(79,70,229,0.1), rgba(6,182,212,0.1))">
-                {item.icon}
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary-50 border border-primary-100 group-hover:scale-110 transition-transform">
+                <div set:html={item.iconSvg} />
               </div>
               <div>
-                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">{item.title}</div>
-                <div class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{item.value}</div>
-                <div class="text-sm text-gray-500 mt-0.5">{item.sub}</div>
+                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{item.title}</div>
+                <div class="font-bold text-gray-900 group-hover:text-primary-600 transition-colors text-base">{item.value}</div>
+                <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">{item.sub}</div>
               </div>
             </a>
           ))}
           <!--/email_off-->
 
-          <div class="rounded-3xl border border-gray-100 bg-gray-50 p-6">
-            <h3 class="text-base font-bold text-gray-900 mb-4">Include these details if possible</h3>
-            <ul class="space-y-3 text-sm text-gray-600">
-              <li class="flex gap-3"><span class="text-primary-600">•</span>Exact page or feature name</li>
-              <li class="flex gap-3"><span class="text-primary-600">•</span>Steps to reproduce the issue</li>
-              <li class="flex gap-3"><span class="text-primary-600">•</span>Error message or screenshot</li>
-              <li class="flex gap-3"><span class="text-primary-600">•</span>Any recent changes before the issue started</li>
+          <!-- Diagnostic context recommendations -->
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span class="text-primary-600">✦</span> Recommended Diagnostic Context
+            </h3>
+            <ul class="space-y-2.5 text-xs text-gray-600">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-500 font-bold">✓</span>
+                <span>Specific URL endpoint, app version, and target device / browser.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-500 font-bold">✓</span>
+                <span>Exact step-by-step reproduction sequence.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-500 font-bold">✓</span>
+                <span>Console stack trace, network status code, or server error payload.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-500 font-bold">✓</span>
+                <span>Timestamp of first occurrence and recent environment deployments.</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -247,9 +311,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 
+  <!-- Toast Feedback Notification -->
   <div id="form-toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl shadow-2xl transform translate-y-24 opacity-0 transition-[transform,opacity] duration-500 z-50 flex items-center gap-3" role="status" aria-live="polite">
     <span id="toast-icon" class="text-xl"></span>
-    <p id="toast-message" class="font-medium"></p>
+    <p id="toast-message" class="font-medium text-sm"></p>
   </div>
 </BaseLayout>
 
@@ -264,20 +329,13 @@ const initSupport = () => {
   const btnIcon = document.getElementById('btn-icon') as HTMLElement;
   const btnSpinner = document.getElementById('btn-spinner') as HTMLElement;
 
-  document.querySelectorAll('.form-input').forEach((input) => {
-    input.addEventListener('focus', () => {
-      (input as HTMLElement).parentElement?.classList.add('focused');
-    });
-    input.addEventListener('blur', () => {
-      (input as HTMLElement).parentElement?.classList.remove('focused');
-    });
-  });
+  if (!form || !toast || !submitBtn) return;
 
   function showToast(message: string, type: 'success' | 'error') {
     toast.className = `fixed bottom-8 right-8 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transition-[transform,opacity] duration-500 ${
-      type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
     }`;
-    toastIcon.textContent = type === 'success' ? '✅' : '❌';
+    toastIcon.textContent = type === 'success' ? '✓' : '✕';
     toastMessage.textContent = message;
     toast.style.transform = 'translateY(0)';
     toast.style.opacity = '1';
@@ -289,12 +347,12 @@ const initSupport = () => {
 
   function setLoading(loading: boolean) {
     submitBtn.disabled = loading;
-    btnText.textContent = loading ? 'Sending...' : 'Send Support Request';
-    btnIcon.classList.toggle('hidden', loading);
-    btnSpinner.classList.toggle('hidden', !loading);
+    btnText.textContent = loading ? 'Dispatching Ticket...' : 'Submit Support Ticket';
+    btnIcon?.classList.toggle('hidden', loading);
+    btnSpinner?.classList.toggle('hidden', !loading);
   }
 
-  form?.addEventListener('submit', async (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
     setLoading(true);
 
@@ -309,10 +367,10 @@ const initSupport = () => {
 
       const message = [
         `Subject: ${subject}`,
-        `Support Topic: ${topic}`,
-        `Priority: ${priority}`,
-        company ? `Company: ${company}` : '',
-        product ? `Product / Project: ${product}` : '',
+        `Support Domain: ${topic}`,
+        `Severity Level: ${priority}`,
+        company ? `Company/Organization: ${company}` : '',
+        product ? `Target Application: ${product}` : '',
         '',
         details,
       ].filter(Boolean).join('\n');
@@ -332,19 +390,19 @@ const initSupport = () => {
         .insert([payload]);
 
       if (error) {
-        throw new Error(error.message || 'Request failed.');
+        throw new Error(error.message || 'Request dispatch failed.');
       }
 
-      showToast('Support request sent. We will review it shortly.', 'success');
+      showToast('Support ticket dispatched successfully. Our triage engineering team has received your request.', 'success');
       form.reset();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Something went wrong. Please email us directly.';
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please reach our direct hotline at +91 99597 03547.';
       showToast(message, 'error');
     } finally {
       setLoading(false);
     }
   });
-  };
-  initSupport();
-  document.addEventListener('astro:page-load', initSupport);
+};
+initSupport();
+document.addEventListener('astro:page-load', initSupport);
 </script>

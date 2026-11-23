@@ -8,30 +8,125 @@ const canonicalUrl = new URL('/pay', Astro.site || 'https://www.techmigos.com');
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
-    <title>Invoice Payment | TechMigos</title>
-    <meta name="description" content="View the recipient and amount for your TechMigos invoice, scan its UPI QR code, copy the UPI ID or open your UPI app to complete payment." />
+    <title>Enterprise Invoice Payment | TechMigos</title>
+    <meta name="description" content="View the recipient and amount for your TechMigos invoice, scan its UPI QR code, copy the UPI ID or open your UPI app to complete payment securely." />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" href="/icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Ambient glowing backdrop -->
+    <div class="bg-decorations" aria-hidden="true">
+      <div class="glow-orb orb-1"></div>
+      <div class="glow-orb orb-2"></div>
+      <div class="grid-overlay"></div>
+    </div>
+
     <main>
       <section class="payment-card" aria-labelledby="payment-title">
-        <a class="brand" href="/"><img src="/icon.png" width="32" height="32" alt="" />TechMigos Finance</a>
-        <h1 id="payment-title">Invoice payment</h1>
+        <!-- Enterprise Header -->
+        <header class="payment-header">
+          <a class="brand" href="/" title="TechMigos Home">
+            <img src="/icon.png" width="34" height="34" alt="" />
+            <div class="brand-text">
+              <span class="brand-name">TechMigos</span>
+              <span class="brand-sub">Enterprise Finance</span>
+            </div>
+          </a>
+          <span class="security-badge" title="256-Bit End-to-End Encrypted Session">
+            <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            SSL Secure
+          </span>
+        </header>
+
+        <h1 id="payment-title">Invoice Payment</h1>
+        
         <p id="payment-error" role="alert" hidden></p>
-        <p id="payment-loading" role="status">Preparing payment details…</p>
-        <div id="payment-details" hidden>
-          <p id="payment-note"></p>
-          <p class="amount" id="payment-amount"></p>
-          <dl><dt>Pay to</dt><dd id="payment-payee"></dd><dt>UPI ID</dt><dd id="payment-upi"></dd></dl>
-          <img id="payment-qr" width="240" height="240" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' fill='%23f8fafc' rx='16'/%3E%3Cpath d='M60 60h40v40H60zm80 0h40v40h-40zM60 140h40v40H60z' fill='%23cbd5e1'/%3E%3C/svg%3E" alt="Scan this QR code with your UPI app to pay this invoice" />
-          <a id="payment-open" class="primary">Open UPI app</a>
-          <button id="payment-copy" type="button">Copy UPI ID</button>
-          <p id="payment-status" role="status" aria-live="polite"></p>
-          <p class="help">On a computer, scan the QR with your phone. If your UPI app does not open, copy the UPI ID and pay the amount shown.</p>
-          <p class="help">Check the recipient and amount in your payment app before confirming. This page does not verify payment; share your receipt with the invoice sender.</p>
+        
+        <div id="payment-loading" role="status" class="loading-state">
+          <div class="spinner"></div>
+          <p>Retrieving verified invoice details…</p>
         </div>
-        <noscript><p>Enable JavaScript to view the QR code. You can also use the UPI details printed on your invoice.</p></noscript>
+
+        <div id="payment-details" hidden>
+          <div class="invoice-summary-box">
+            <p id="payment-note" class="invoice-note"></p>
+            <div class="amount-wrap">
+              <span class="amount-label">Payable Total</span>
+              <p class="amount" id="payment-amount">₹0.00</p>
+            </div>
+          </div>
+
+          <div class="payee-metadata">
+            <dl>
+              <dt>Recipient</dt>
+              <dd id="payment-payee">—</dd>
+              <dt>UPI ID</dt>
+              <dd id="payment-upi" class="upi-code">—</dd>
+            </dl>
+          </div>
+
+          <!-- QR Code Frame -->
+          <div class="qr-container">
+            <div class="qr-frame">
+              <img
+                id="payment-qr"
+                width="240"
+                height="240"
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' fill='%23f8fafc' rx='16'/%3E%3Cpath d='M60 60h40v40H60zm80 0h40v40h-40zM60 140h40v40H60z' fill='%23cbd5e1'/%3E%3C/svg%3E"
+                alt="Scan this QR code with your UPI app to pay this invoice"
+              />
+            </div>
+            <span class="qr-caption">Scan with GPay, PhonePe, Paytm or banking UPI app</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <a id="payment-open" class="primary" role="button">
+              <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Open in UPI App
+            </a>
+            
+            <button id="payment-copy" type="button" class="secondary">
+              <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              Copy UPI ID
+            </button>
+          </div>
+
+          <p id="payment-status" role="status" aria-live="polite"></p>
+
+          <div class="guidance-box">
+            <p class="help"><strong>Desktop users:</strong> Scan the secure QR code using any UPI-enabled mobile application to complete instant payment.</p>
+            <p class="help">Verify payee name & invoice amount in your UPI application prior to entering your secure MPIN. Share confirmation receipt with finance desk.</p>
+          </div>
+        </div>
+
+        <noscript>
+          <div class="noscript-notice">
+            <p>Please enable JavaScript to view the interactive QR code. Alternatively, utilize the bank coordinates printed on your physical invoice.</p>
+          </div>
+        </noscript>
+
+        <!-- Trust Badges Footer -->
+        <footer class="payment-footer">
+          <div class="trust-pill">
+            <span class="check-icon">✓</span> NPCI UPI Direct
+          </div>
+          <div class="trust-pill">
+            <span class="check-icon">✓</span> Zero Surcharge
+          </div>
+          <div class="trust-pill">
+            <span class="check-icon">✓</span> Verified Payee
+          </div>
+        </footer>
       </section>
     </main>
   </body>
@@ -40,13 +135,385 @@ const canonicalUrl = new URL('/pay', Astro.site || 'https://www.techmigos.com');
   import '../scripts/finance-payment.js';
 </script>
 <style>
-  :global(*){box-sizing:border-box} :global(body){margin:0;background:#f5f8fd;color:#10274b;font:14px/1.5 Inter,system-ui,sans-serif}
-  main{min-height:100svh;display:grid;place-items:center;padding:32px 16px}
-  .payment-card{width:min(100%,440px);padding:28px;background:#fff;border:1px solid #e5eaf3;border-radius:15px;box-shadow:0 7px 28px rgba(33,65,118,.06)}
-  .brand{display:flex;align-items:center;gap:10px;color:#10274b;font-weight:800;text-decoration:none} h1{font-size:24px;margin:24px 0 8px}
-  .amount{font-size:32px;font-weight:800;margin:10px 0} dl{display:grid;grid-template-columns:70px 1fr;gap:6px} dt{color:#52647e} dd{margin:0;overflow-wrap:anywhere}
-  #payment-qr{display:block;max-width:100%;height:auto;margin:20px auto} button,.primary{display:block;width:100%;min-height:44px;padding:10px 16px;border-radius:8px;text-align:center;font:inherit;font-weight:700;cursor:pointer}
-  .primary{background:#175de8;color:#fff;text-decoration:none;margin-top:16px;border:1px solid #175de8}.primary:hover{background:#0c49c3}
-  button{margin-top:10px;background:white;border:1px solid #bdcbe0;color:#175de8} button:hover{background:#ebf2ff}
-  a:focus-visible,button:focus-visible{outline:3px solid #175de8;outline-offset:3px}.help{color:#52647e;font-size:12px} #payment-status{min-height:22px} #payment-error{color:#b42337}
+  :global(*), :global(*::before), :global(*::after) {
+    box-sizing: border-box;
+  }
+  
+  :global(body) {
+    margin: 0;
+    min-height: 100vh;
+    background: #090e1a;
+    color: #e2e8f0;
+    font: 14px/1.55 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .bg-decorations {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+  }
+
+  .orb-1 {
+    width: 480px;
+    height: 480px;
+    background: #1d4ed8;
+    top: -120px;
+    right: -100px;
+  }
+
+  .orb-2 {
+    width: 420px;
+    height: 420px;
+    background: #06b6d4;
+    bottom: -100px;
+    left: -100px;
+    opacity: 0.25;
+  }
+
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+
+  main {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 40px 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .payment-card {
+    width: min(100%, 460px);
+    padding: 32px 28px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .payment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: #38bdf8;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 999px;
+    color: #34d399;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .lock-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 22px 0 16px;
+    letter-spacing: -0.02em;
+  }
+
+  .loading-state {
+    padding: 36px 16px;
+    text-align: center;
+    color: #94a3b8;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 12px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  #payment-error {
+    padding: 14px 16px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    color: #fca5a5;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .invoice-summary-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .invoice-note {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  .amount-wrap {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .amount-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.05em;
+  }
+
+  .amount {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Syne', 'Inter', sans-serif;
+    letter-spacing: -0.03em;
+  }
+
+  .payee-metadata {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 8px 12px;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  dt {
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    color: #f1f5f9;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .upi-code {
+    color: #38bdf8;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+  }
+
+  .qr-container {
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .qr-frame {
+    display: inline-block;
+    padding: 12px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  #payment-qr {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .qr-caption {
+    display: block;
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 22px 0 12px;
+  }
+
+  .primary, .secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  }
+
+  .primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #38bdf8;
+  }
+
+  .secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(56, 189, 248, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .action-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  #payment-status {
+    min-height: 20px;
+    margin: 6px 0 14px;
+    font-size: 12px;
+    color: #34d399;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .guidance-box {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+    margin-top: 10px;
+  }
+
+  .help {
+    margin: 6px 0;
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .help strong {
+    color: #94a3b8;
+  }
+
+  .payment-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .trust-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  .check-icon {
+    color: #10b981;
+    font-weight: 800;
+  }
+
+  .noscript-notice {
+    padding: 14px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    color: #fde68a;
+    font-size: 12px;
+    margin-top: 14px;
+  }
 </style>

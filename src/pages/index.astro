@@ -35,15 +35,15 @@ const branches = Array.from({ length: 48 }, (_, index) => {
 });
 
 const services = [
-  { id: 'web', name: 'Web development', detail: 'Websites, storefronts, and applications built around what people come to do.', color: 'blue' },
-  { id: 'mobile', name: 'Mobile apps', detail: 'Android and iOS experiences that make the important tasks easy to find and finish.', color: 'orange' },
-  { id: 'desktop', name: 'Desktop software', detail: 'Tools for Windows, macOS, and Linux that fit the way teams already work.', color: 'green' },
+  { id: 'web', name: 'Enterprise Web Platforms', detail: 'High-concurrency web applications, cloud portals, and resilient systems engineered for sub-second performance.', color: 'blue' },
+  { id: 'mobile', name: 'Mobile Engineering', detail: 'Native iOS & Android and cross-platform ecosystems designed for fluid 60fps interaction and secure synchronization.', color: 'orange' },
+  { id: 'desktop', name: 'Desktop & Cloud Systems', detail: 'Mission-critical software for Windows, macOS, and Linux that integrates seamlessly with enterprise workflows.', color: 'green' },
 ];
 
 const chapters = [
-  { title: 'Find the right problem', detail: 'Agree on the people, workflows, and decisions the product needs to support.' },
-  { title: 'Make it testable', detail: 'Put a prototype in front of people early enough for their feedback to change the plan.' },
-  { title: 'Build for the next release', detail: 'Ship the useful parts first, then use what you learn to decide what comes next.' },
+  { title: 'Strategic Discovery & Threat Modeling', detail: 'Deconstruct business requirements, identify architectural edge cases, and align on clear measurable success criteria.' },
+  { title: 'Thin-Slice Prototyping & Validation', detail: 'Deploy interactive, testable prototypes to validate user flows and system throughput before full-scale build.' },
+  { title: 'Resilient Engineering & Continuous Telemetry', detail: 'Ship modular, well-tested code in rapid bi-weekly sprints, continuously instrumented for performance and security.' },
 ];
 
 const motes = Array.from({ length: 23 }, (_, index) => ({
@@ -137,10 +137,10 @@ const motes = Array.from({ length: 23 }, (_, index) => ({
     <section class="signal-services signal-wrap" id="signal-services" aria-labelledby="signal-services-title">
       <div class="signal-section-head" data-signal-reveal>
         <div>
-          <p class="signal-kicker">What we build</p>
-          <h2 id="signal-services-title">Software for the<br />way people work.</h2>
+          <p class="signal-kicker">Enterprise Capabilities</p>
+          <h2 id="signal-services-title">Software for the<br />way modern business works.</h2>
         </div>
-        <p>TechMigos is a software development studio based in Hyderabad, India. We work with businesses and product teams from the first prototype through release and the next version.</p>
+        <p>TechMigos is a global software engineering studio based in Hyderabad, India. We partner with ambitious enterprises and fast-scaling ventures from architecture discovery to resilient production scale.</p>
       </div>
       <div class="signal-service-list">
         {services.map(({ id, name, detail, color }) => (
@@ -218,10 +218,10 @@ const motes = Array.from({ length: 23 }, (_, index) => ({
     <section class="signal-contact signal-wrap" aria-labelledby="signal-contact-title">
       <div class="signal-contact-rings" aria-hidden="true"><i></i><i></i><i></i></div>
       <div data-signal-reveal>
-        <p class="signal-kicker">Work with TechMigos</p>
-        <h2 id="signal-contact-title">What would you<br />like to build?</h2>
-        <p>Tell us about the product, the people using it, or the workflow you want to make easier.</p>
-        <a class="signal-cta" href="/contact">Plan a project <span aria-hidden="true">↗</span></a>
+        <p class="signal-kicker">Partner with TechMigos</p>
+        <h2 id="signal-contact-title">What would you<br />like to architect?</h2>
+        <p>Tell us about your technical roadmap, infrastructure scaling challenges, or the next-generation digital product you want to engineer.</p>
+        <a class="signal-cta" href="/contact">Schedule an Architecture Session <span aria-hidden="true">↗</span></a>
       </div>
     </section>
     <div class="signal-preferences signal-wrap">
