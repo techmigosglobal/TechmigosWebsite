@@ -74,7 +74,7 @@ const isPreframedHero = heroImage.includes('/screenshots/');
     <div class="reveal-scale justify-self-center lg:justify-self-end w-full max-w-xl lg:max-w-2xl">
       {isDesktop ? (
         <div class="animate-float-slow">
-          <BrowserFrame src={heroImage} alt={`${appName} desktop screen`} priority={true} url={isExternalUrl(webUrl) ? new URL(webUrl).hostname : 'hastkala.vercel.app'} />
+          <BrowserFrame src={heroImage} alt={`${appName} desktop screen`} priority={true} url={isExternalUrl(webUrl) ? new URL(webUrl).hostname : 'app.techmigos.com'} />
         </div>
       ) : isPreframedHero ? (
         <div class="animate-float-slow">

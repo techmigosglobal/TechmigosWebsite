@@ -6,7 +6,7 @@ import { loadSiteContent } from '../lib/siteContent';
 import '../styles/signal-garden.css';
 
 const { projects } = await loadSiteContent();
-const selectedWork = ['hastkala', 'focus-today', 'notiva'].flatMap((slug) =>
+const selectedWork = ['focus-today', 'notiva', 'spendscanr'].flatMap((slug) =>
   projects.filter((project) => project.slug === slug)
 );
 

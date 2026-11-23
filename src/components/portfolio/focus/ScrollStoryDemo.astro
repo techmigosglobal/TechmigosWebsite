@@ -53,7 +53,7 @@ const isExternalUrl = (url: string) => /^https?:\/\//.test(url);
         <div class="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-sm">
           <div class="mx-auto w-full" id="focus-story-phone">
             {isDesktop ? (
-              <BrowserFrame src={initialStep.image} alt={initialStep.alt} url={isExternalUrl(webUrl) ? new URL(webUrl).hostname : 'hastkala.vercel.app'} />
+              <BrowserFrame src={initialStep.image} alt={initialStep.alt} url={isExternalUrl(webUrl) ? new URL(webUrl).hostname : 'app.techmigos.com'} />
             ) : (
               <PhoneFrame src={initialStep.image} alt={initialStep.alt} />
             )}
