@@ -243,6 +243,47 @@
       "team": "Product strategy, UX, mobile UI, and QA review",
       "services": "Mobile Product Design and Development",
       "featured": true
+    },
+    {
+      "slug": "hastkala",
+      "title": "Hastkala",
+      "category": "Web",
+      "emoji": "🏺",
+      "tags": [
+        "Next.js",
+        "E-Commerce",
+        "Artisan Marketplace",
+        "Tailwind CSS"
+      ],
+      "image": "/images/home/hastkala-artisan.png",
+      "description": "A Next.js Indian artisan e-commerce marketplace connecting 2,000+ craftspeople across 25+ states directly with buyers through smart filters and curated craft stories.",
+      "result": "Live Artisan Marketplace",
+      "href": "/work/hastkala",
+      "overview": "Hastkala is a web-based artisan marketplace built to connect Indian craftspeople directly with customers. The platform showcases 50 curated handcrafted products across Home Decor, Textiles, Lighting, and Furniture — highlighting 2,000+ artisans empowered, 50K+ happy customers, and 25+ states covered.",
+      "challenge": "Traditional artisan goods needed a dedicated digital storefront that honors craft heritage while still delivering fast, modern e-commerce discovery across a 50-product catalog.",
+      "solution": "We built a Next.js storefront featuring category tabs, a ₹0–₹10,000 price-range slider, sort controls, discount badges, material provenance tags, star ratings with review counts, search, wishlist, cart, and a mission-driven About and Sell flow.",
+      "results": [
+        {
+          "metric": "50 Products",
+          "label": "Curated across Home Decor, Textiles, Lighting, and Furniture"
+        },
+        {
+          "metric": "2,000+ Artisans",
+          "label": "Highlighted across 25+ Indian states"
+        },
+        {
+          "metric": "Smart Filters",
+          "label": "Category tabs, ₹0–₹10,000 price slider, and sort controls"
+        },
+        {
+          "metric": "Live on Vercel",
+          "label": "Production-deployed Next.js storefront"
+        }
+      ],
+      "timeline": "E-commerce product strategy, UI design, and Next.js build",
+      "team": "Next.js engineering, UI/UX design, and QA",
+      "services": "E-Commerce Web App Strategy & Engineering",
+      "featured": true
     }
   ]
 }

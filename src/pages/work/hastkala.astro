@@ -1,4 +1,213 @@
 ---
 export const prerender = true;
-return Astro.redirect('/work', 301);
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/portfolio/focus/HeroSection.astro';
+import ShowcaseCarousel from '../../components/portfolio/focus/ShowcaseCarousel.astro';
+import FeatureGrid from '../../components/portfolio/focus/FeatureGrid.astro';
+import ScrollStoryDemo from '../../components/portfolio/focus/ScrollStoryDemo.astro';
+import TrustCards from '../../components/portfolio/focus/TrustCards.astro';
+import FinalCta from '../../components/portfolio/focus/FinalCta.astro';
+
+const appName = 'Hastkala';
+const contactUrl = '/contact';
+const liveUrl = 'https://ecommerce-site-taupe-seven.vercel.app/';
+
+const showcaseSlides = [
+  {
+    src: '/images/portfolio/hastkala/screen-hero.png',
+    alt: 'Hastkala storefront hero showing Celebrate the Artistry of Indian Hands and artisan impact bar',
+    title: 'Hero & Artisan Impact Bar',
+    caption: 'Opens with "Celebrate the Artistry of Indian Hands", dual CTAs (Explore Collection and Our Story), and an immediate impact strip: 2000+ Artisans Empowered, 50K+ Happy Customers, 100% Handcrafted, and 25+ States Covered.',
+  },
+  {
+    src: '/images/portfolio/hastkala/screen-catalog.png',
+    alt: 'Hastkala catalog filter bar with Category tabs, ₹0–₹10000 Price Range slider, and Sort By controls',
+    title: 'Inline Catalog Filtering — 50 Products',
+    caption: 'Category pills (All, Home Decor, Textiles, Lighting, Furniture), a live ₹0–₹10000 price-range slider, and Sort By options (Featured, Price: Low to High, Price: High to Low, Top Rated) keep discovery fast without page reloads.',
+  },
+  {
+    src: '/images/portfolio/hastkala/screen-products.png',
+    alt: 'Hastkala product cards displaying discount badges, material tags, star ratings, and Add to Cart buttons',
+    title: 'Material-First Product Cards',
+    caption: 'Each card pairs a discount badge (-37% to -43%) and wishlist toggle with material provenance tags (Clay, Carved terracotta, Ceramic with natural earth pigment paints), review counts, and one-click Add to Cart.',
+  },
+  {
+    src: '/images/portfolio/hastkala/screen-showcase.png',
+    alt: 'Hastkala Home Decor and Lighting product grid featuring brass candle stands and carved wood pieces',
+    title: 'Curated Craft Categories',
+    caption: 'Brass Candle Stands, Decorative Wooden Room Dividers, and Brass Spice Boxes sit alongside ceramics and textiles in a uniform 3-column desktop grid with clear pricing and strikethrough comparisons.',
+  },
+  {
+    src: '/images/portfolio/hastkala/screen-footer.png',
+    alt: 'Hastkala brand values cards and terracotta footer with Shop, Company, and Support links',
+    title: 'Brand Values & Storefront Footer',
+    caption: 'Three value pillars — Sustainable & Ethical, Unique & Authentic, and Heritage & Tradition — reinforce trust above a structured Shop, Company, and Support footer.',
+  },
+];
+
+const features = [
+  {
+    icon: '01',
+    title: 'Mission-Led Hero',
+    description: 'Pairs editorial serif typography and warm terracotta accents with a 4-stat artisan impact bar right above the catalog.',
+  },
+  {
+    icon: '02',
+    title: 'Multi-Axis Filtering',
+    description: 'Combine category tabs (Home Decor, Textiles, Lighting, Furniture), a ₹0–₹10,000 price slider, and 4 sort modes in one view.',
+  },
+  {
+    icon: '03',
+    title: 'Provenance Product Cards',
+    description: 'Highlights material tags, artisan origin stories, star ratings, review counts, and percentage savings on every item.',
+  },
+  {
+    icon: '04',
+    title: 'Full Storefront Navigation',
+    description: 'Header bar includes Shop, Categories, About, Sell, live Search, Wishlist, Cart, and Login actions.',
+  },
+  {
+    icon: '05',
+    title: 'Ethical Craft Pillars',
+    description: 'Dedicated Sustainable & Ethical, Unique & Authentic, and Heritage & Tradition sections explain why handcrafted matters.',
+  },
+  {
+    icon: '06',
+    title: 'Production Next.js Build',
+    description: 'Prerendered Next.js storefront deployed on Vercel with responsive layouts and fast client-side filtering.',
+  },
+];
+
+const storySteps = [
+  {
+    image: '/images/portfolio/hastkala/screen-hero.png',
+    alt: 'Hastkala hero and impact bar',
+    title: 'Lead With Artisan Heritage',
+    description: 'Visitors immediately see the human craft story and key metrics (2,000+ Artisans Empowered, 50K+ Happy Customers, 25+ States Covered) before browsing products.',
+  },
+  {
+    image: '/images/portfolio/hastkala/screen-catalog.png',
+    alt: 'Hastkala catalog filter bar',
+    title: 'Narrow 50 Products Effortlessly',
+    description: 'Shoppers switch between All, Home Decor, Textiles, Lighting, and Furniture or drag the ₹0–₹10,000 slider while watching the live product count update.',
+  },
+  {
+    image: '/images/portfolio/hastkala/screen-products.png',
+    alt: 'Hastkala product card details',
+    title: 'Build Confidence on Every Card',
+    description: 'Material badges, verified review counts, discount tags, and clear ₹ pricing help buyers evaluate authenticity and value at a glance.',
+  },
+  {
+    image: '/images/portfolio/hastkala/screen-footer.png',
+    alt: 'Hastkala values and footer',
+    title: 'Close With Ethical Trust',
+    description: 'Fair-wage commitments, cultural heritage messaging, and direct support links complete the storefront journey.',
+  },
+];
+
+const caseStudyNotes = [
+  {
+    quote: 'Placing the 2,000+ Artisans and 25+ States strip directly beneath the hero anchors the marketplace in real craftspeople before the first product card appears.',
+    name: 'Brand Architecture',
+    role: 'Artisan-first storefront hierarchy',
+  },
+  {
+    quote: 'Combining category tabs, a ₹0–₹10,000 price slider, and sort controls in a single horizontal panel keeps all 50 products one interaction away.',
+    name: 'Catalog Discovery',
+    role: 'Zero-reload filtering UX',
+  },
+  {
+    quote: 'Material provenance badges (Clay, Pure brass, Carved terracotta) give handcrafted goods the trust signals mass-market e-commerce lacks.',
+    name: 'Product Card Design',
+    role: 'Material provenance as conversion cue',
+  },
+];
 ---
+
+<BaseLayout
+  title="Hastkala Indian Artisan E-Commerce Case Study"
+  description="Hastkala case study: a Next.js Indian artisan marketplace with 50 handcrafted products, smart category and price filters, material tags, and a live Vercel storefront."
+  ogImage="/images/home/hastkala-artisan.png"
+  ogType="article"
+>
+  <script
+    is:inline
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'CreativeWork',
+      name: 'Hastkala Indian Artisan E-Commerce Case Study',
+      description:
+        'A Next.js Indian artisan marketplace with 50 handcrafted products, smart category and price filters, material tags, and a live Vercel storefront.',
+      url: 'https://www.techmigos.com/work/hastkala',
+      creator: {
+        '@type': 'Organization',
+        name: 'TechMigos',
+        url: 'https://www.techmigos.com',
+      },
+      image: 'https://www.techmigos.com/images/home/hastkala-artisan.png',
+    })}
+  />
+
+  <HeroSection
+    appName={appName}
+    eyebrow="Indian Artisan E-Commerce Platform"
+    tagline='"Celebrate the Artistry of Indian Hands" — a Next.js marketplace connecting 2,000+ artisans across 25+ states with buyers through smart filters, material-provenance cards, and heritage storytelling.'
+    heroImage="/images/portfolio/hastkala/screen-hero.png"
+    webUrl={liveUrl}
+    primaryLabel="Visit Live Site ↗"
+    supportText="50 curated handcrafted products • 4 categories • ₹0–₹10,000 price slider • Star ratings & discount badges • Search, wishlist & cart."
+    isDesktop={true}
+  />
+
+  <ShowcaseCarousel
+    slides={showcaseSlides}
+    eyebrow="Platform Showcase — Live Storefront"
+    title="Hastkala: From Hero to Handcrafted Cart"
+    description="Real desktop captures of the live Hastkala storefront — hero and impact strip, inline catalog filters, material-tagged product cards, curated craft grids, and brand values."
+    isDesktop={true}
+  />
+
+  <FeatureGrid
+    features={features}
+    eyebrow="Feature Stack"
+    title="Built for Artisan Discovery and Confident Commerce"
+    description="Hastkala pairs a 50-product handcrafted catalog with instant category and price filtering, material provenance tags, and an editorial brand identity."
+  />
+
+  <ScrollStoryDemo
+    steps={storySteps}
+    webUrl={liveUrl}
+    eyebrow="Product Narrative"
+    title="From Artisan Story to Craft in Your Cart"
+    description="Walk through the live Hastkala buyer journey: hero impact metrics, inline catalog filtering, material-rich product cards, and ethical craft pillars."
+    accessEyebrow="Live Experience"
+    primaryLabel="Explore the Live Site ↗"
+    isDesktop={true}
+  />
+
+  <TrustCards
+    items={caseStudyNotes}
+    eyebrow="Case Study Notes"
+    title="Product Decisions Behind Hastkala"
+  />
+
+  <FinalCta
+    webUrl={contactUrl}
+    title="Build a Handcrafted Artisan Marketplace"
+    description="Use the Hastkala direction as a reference for curated e-commerce catalogs, instant multi-axis filtering, and culturally rooted brand storefronts."
+    primaryLabel="Start a Conversation"
+  />
+
+  <section class="bg-slate-100 py-8">
+    <div class="container-custom flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+      <p class="font-semibold text-slate-800">Hastkala by TechMigos</p>
+      <div class="flex items-center gap-4">
+        <a href={liveUrl} target="_blank" rel="noopener noreferrer" class="hover:text-primary-700 font-medium">Visit Live Site ↗</a>
+        <a href="/work" class="hover:text-primary-700 font-medium">All Projects</a>
+        <a href="/contact" class="hover:text-primary-700 font-medium">Start Similar Build</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

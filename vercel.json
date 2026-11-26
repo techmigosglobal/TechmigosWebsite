@@ -21,18 +21,8 @@
       "permanent": true
     },
     {
-      "source": "/work/hastkala",
-      "destination": "/work",
-      "permanent": true
-    },
-    {
-      "source": "/work/hastkala/index.html",
-      "destination": "/work",
-      "permanent": true
-    },
-    {
       "source": "/portfolio/hastkala",
-      "destination": "/work",
+      "destination": "/work/hastkala",
       "permanent": true
     },
     {
